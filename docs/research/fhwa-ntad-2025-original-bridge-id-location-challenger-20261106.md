@@ -51,3 +51,24 @@ Exact original response SHA-256 values: Socrata 25-row sample **f20c98b58f3b34cb
 To test whether the observed source-view disagreement is specific to a single ordered state's first 25 bridge records, the original runner now accepts **only explicitly audited state codes 6 and 36**. The live workflow repeats the exact 25-source-row and bounded NTAD ID/geometry query for code **36**, in addition to code **6**. Strict positive and negative synthetic tests cover the second 2025 state and reject arbitrary other state selectors, avoiding uncontrolled whole-country harvesting. The two samples are nonrandom and are not regional/national frequency estimates.
 
 The source/CI result for this *new combined state-6/state-36 HEAD* is pending until independently observed. Both raw provider responses must be source-hashed and reviewed; a successful older state-6 job cannot be used as proof for the new state-36 execution.
+
+## Exact two-state original source results — 2026-11-06
+
+[Latest original provider workflow #42269564860](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42269564860) completed **SUCCESS** on code commit 4322e1c874b048c9036bfee429cd20c0633eafb3. **14/14** synthetic adversarial tests passed before both independent bounded original 2025 ID/geometry queries.
+
+| 2025 state code | Matched exact unique ID | NBI attribute/age agree | Geometry vs historic DMS up to 25 m | >25–250 m | >250 m | Maximum approximate difference |
+|---|---:|---:|---:|---:|---:|---:|
+| 6 (California) | 25/25 | 25/25 | 20 | 2 | 3 | 1,676.57 m |
+| 36 (New York) | 25/25 | 25/25 | 24 | 1 | 0 | 62.85 m |
+| **Total, nonrandom selected records** | **50/50** | **50/50** | **44** | **3** | **3** | **1,676.57 m** |
+
+Both source regions have **25/25** original published NTAD LATDD/LONGDD values concordant with the published NTAD EPSG:4326 *point geometry*, with **zero** >25 m differences. In the same 50 cases, the original historical NBI coded coordinates are exactly equal between the FHWA Socrata and NTAD legacy NBI *attribute* tables. Yet **6/50** original point coordinates and decoded historic NBI angular magnitudes differ by >25 m. This is a bounded source representation discrepancy, NOT independently confirmed accuracy error, insured exposure, observed loss or regional anomaly rate.
+
+| State | Original FHWA 25-row response | Original NTAD 25-feature response |
+|---|---|---|
+| 6 | 3,676 bytes; SHA256 `f20c98b58f3b34cb14d6370ce61d418ace0c90e734b392e763422b3f3b8a687f` | 7,305 bytes; SHA256 `3cf70827384a2176ac736f3b99388a034e3e1476439fbea4edc0b82834aa5553` |
+| 36 | 3,676 bytes; SHA256 `895903b99f08b3c6c5878433cc53d01febd3af22a4245c0d5f588c31d87e9e73` | 7,288 bytes; SHA256 `6e3792dcc3f5c0088adbb3c460002126aa4b716bf2a19f134d3ee3a8a8d17b11` |
+
+This exact source result unambiguously **retains 6 flagged locations for independent source/vintage/geodesy review** and prohibits automatically selecting either source's point value as truth. All raw individual bridge IDs and coordinates were held in ephemeral GitHub runner memory only. Response hashes are not publisher-signed. Even a 25 m discrepancy threshold has not been validated as a legitimate underwriting, flood/earthquake intensity join or claims model coordinate tolerance.
+
+**Decision: Draft / no CAT exposure admission.** Next scientifically relevant checks are official historic NBI-to-current NTAD geometry processing documentation, an independently sourced bridge-position control, and explicit 2025 snapshot vintage reconciliation. Latest full repository CI must be independently assessed at the **last** PR commit rather than assuming a passing source workflow is sufficient.
