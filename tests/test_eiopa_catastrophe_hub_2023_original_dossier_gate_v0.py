@@ -26,7 +26,9 @@ class EIOPAOriginalPublicationEvidenceTests(unittest.TestCase):
         self.assertTrue(report["original_loss_workbook_bytes_fetched_via_proxy"])
         self.assertTrue(report["original_exposure_workbook_complete_bytes_fetched"])
         self.assertTrue(report["original_exposure_workbook_sha256_verified"])
-        self.assertFalse(report["original_exposure_OOXML_quarantine_passed"])
+        self.assertFalse(report["original_exposure_generic_unpinned_OOXML_policy_passed"])
+        self.assertTrue(report["original_exposure_source_pinned_CRC_sheet_metadata_passed"])
+        self.assertFalse(report["original_exposure_financial_cells_rights_admitted"])
         self.assertEqual(
             report["original_exposure_workbook_sha256_from_official_TLS"],
             "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
@@ -98,7 +100,9 @@ class EIOPAOriginalPublicationEvidenceTests(unittest.TestCase):
             ("actual_eiopa_xlsx_bytes_obtained_in_this_research", False),
             ("historical_loss_workbook_sha256", "0"*64),
             ("exposure_workbook_sha256", "0"*64),
-            ("exposure_OOXML_security_quarantine_passed", True),
+            ("exposure_generic_unpinned_OOXML_policy_passed", True),
+            ("exposure_source_pinned_CRC_sheet_metadata_passed", False),
+            ("exposure_financial_cells_model_admitted", True),
         )
         for field, value in cases:
             with self.subTest(field=field):
