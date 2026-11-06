@@ -60,6 +60,43 @@ class SourceRightsAndCalibrationNoGoTests(unittest.TestCase):
         with self.assertRaises(gate.SourceRightsBlocked):
             gate.validate_registry(doc)
 
+    def test_eiopa_original_note_limits_to_2020_ciara_not_1990_daria(self):
+        record = self.record(self.register, "eiopa_catastrophe_data_hub_2023")
+        self.assertIn("Ciara/Sabine 2020", record["period"])
+        self.assertIn("NOT Daria January 1990", record["limitations"])
+        self.assertIn("NUTS2_AGGREGATED", record["granularity"])
+        self.assertIn("EIOPA_WEBSITE_REPRODUCTION_WITH_CREDIT", record["licence_review"])
+        self.assertEqual(record["rights_url"], "https://www.eiopa.europa.eu/legal-notice_en")
+
+    def test_eiopa_daria_event_or_site_level_claim_promotion_blocked(self):
+        replacements = (
+            ("period", "1990 Daria windstorm original observed insured claims"),
+            ("period", "2021 collection Daria 1990 and Ciara 2020"),
+            ("granularity", "NUTS3_53_KREISE_ALL_RV_INSURED_SITES"),
+            ("denominator", "100PCT_RV_BOOK_GERMANY_1990"),
+            ("rights_url", "https://www.eiopa.europa.eu/tools-and-data/catastrophe-data-hub_en"),
+            ("limitations", "Verified exact Daria 1990 insured individual R&V claims"),
+        )
+        for field, value in replacements:
+            with self.subTest(field=field, altered=value):
+                doc = self.altered()
+                self.record(doc, "eiopa_catastrophe_data_hub_2023")[field] = value
+                with self.assertRaises(gate.SourceRightsBlocked):
+                    gate.validate_registry(doc)
+
+    def test_eiopa_web_license_does_not_imply_workbook_sha_or_ri_approval(self):
+        for f, v in (
+            ("licence_review", "CC-BY-FREE_ALL_WORKBOOK_THIRD_PARTY_RIGHTS_VERIFIED"),
+            ("access", "REAL_CIARA_RV_CLAIMS_CALIBRATION"),
+            ("source_file_sha256", "c"*64),
+            ("approval_evidence", "FULL_NATIVE_RV_INSURER_MODEL_APPROVED"),
+        ):
+            doc = self.altered()
+            self.record(doc, "eiopa_catastrophe_data_hub_2023")[f] = v
+            with self.subTest(field=f):
+                with self.assertRaises(gate.SourceRightsBlocked):
+                    gate.validate_registry(doc)
+
     def test_hanze_economic_and_c3s_modelled_must_never_be_claimed_insured(self):
         for sid in ("hanze_european_windstorm_impacts_v1_2025",
                     "c3s_european_windstorm_tier3_reanalysis",
