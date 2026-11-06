@@ -7,6 +7,8 @@ on:
       - '.github/workflows/dwd-kyrill-2007-three-station-metadata-shapes.yml'
       - 'scripts/dwd_kyrill_2007_station_metadata_probe_v0.py'
       - 'tests/test_dwd_kyrill_2007_station_metadata_probe_v0.py'
+      - 'scripts/dwd_kyrill_2007_station_validity_v0.py'
+      - 'tests/test_dwd_kyrill_2007_station_validity_v0.py'
       - 'docs/research/dwd_kyrill_2007_three_station_metadata_probe_20261106.md'
   workflow_dispatch:
 permissions:
@@ -25,7 +27,9 @@ jobs:
         with:
           python-version: '3.14'
       - name: Offline metadata ZIP security and provenance regression
-        run: python -m unittest tests.test_dwd_kyrill_2007_station_metadata_probe_v0 -v
+        run: |
+          python -m unittest tests.test_dwd_kyrill_2007_station_metadata_probe_v0 -v
+          python -m unittest tests.test_dwd_kyrill_2007_station_validity_v0 -v
       - name: Acquire exactly three original DWD station metadata ZIPs and inspect shape
         shell: bash
         run: |
@@ -43,6 +47,10 @@ jobs:
               "$base/Meta_Daten_zehn_min_fx_${id}.zip"
           done
           python -m scripts.dwd_kyrill_2007_station_metadata_probe_v0 \
+            --zip-00433 "$tmp/Meta_Daten_zehn_min_fx_00433.zip" \
+            --zip-01262 "$tmp/Meta_Daten_zehn_min_fx_01262.zip" \
+            --zip-03379 "$tmp/Meta_Daten_zehn_min_fx_03379.zip" > "$tmp/source-schema-probe.json"
+          python -m scripts.dwd_kyrill_2007_station_validity_v0 \
             --zip-00433 "$tmp/Meta_Daten_zehn_min_fx_00433.zip" \
             --zip-01262 "$tmp/Meta_Daten_zehn_min_fx_01262.zip" \
             --zip-03379 "$tmp/Meta_Daten_zehn_min_fx_03379.zip"
