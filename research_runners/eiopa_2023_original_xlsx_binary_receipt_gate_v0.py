@@ -16,8 +16,9 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 RECEIPT = ROOT / "research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml"
-SCHEMA = "EIOPA_2023_ORIGINAL_XLSX_PROXY_BINARY_RECEIPT_V0"
+SCHEMA = "EIOPA_2023_ORIGINAL_XLSX_BINARY_SOURCE_RECEIPT_V1"
 ORIGINAL_SHA = "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
+EXPOSURE_SHA = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
 EXPECTED_URLS = {
     "HISTORICAL_INSURED_LOSSES":
         "https://www.eiopa.europa.eu/document/download/50e6b095-174c-4d9c-b9dd-1376dc1d43eb_en?filename=Historical+loss+data.xlsx",
@@ -45,6 +46,9 @@ FALSE_FLAGS = {
 }
 HEADER_FIELDS = set(EXPECTED_HEAD) | FALSE_FLAGS | {
     "proxy_transport_not_independent_origin_TLSPIN",
+    "second_full_source_obtained_by_official_TLS_runner",
+    "second_source_original_OOXML_security_quarantine_passed",
+    "official_TLS_receipt_run_url", "official_TLS_receipt_artifact_id",
     "website_reproduction_attribution_reviewed", "note", "originals",
 }
 ATTACHMENT_FIELDS = {
@@ -72,7 +76,11 @@ def verify_source_receipt(d: dict) -> dict:
     if (
         d["proxy_transport_not_independent_origin_TLSPIN"] is not True
         or d["website_reproduction_attribution_reviewed"] is not True
-        or len(d["note"]) < 90
+        or d["second_full_source_obtained_by_official_TLS_runner"] is not True
+        or d["second_source_original_OOXML_security_quarantine_passed"] is not False
+        or d["official_TLS_receipt_run_url"] != "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42270505316"
+        or d["official_TLS_receipt_artifact_id"] != 13528648193
+        or len(d["note"]) < 250
     ):
         raise EIOPASourceIntegrityBlocked("proxy provenance limitation or licence notice suppressed")
     originals = d["originals"]
@@ -107,23 +115,27 @@ def verify_source_receipt(d: dict) -> dict:
                 raise EIOPASourceIntegrityBlocked("unreproduced complete loss workbook SHA or ZIP facts")
         elif not (
             row["publisher_listing_size"] == "5.33 MB"
-            and row["retrieval_status"] == "PROXY_TRUNCATED_ORIGINAL_BYTES_NOT_AUTHENTICATED"
-            and row["whole_binary_sha256"] == "NOT_VERIFIED"
-            and row["whole_binary_size_bytes"] == 0
+            and row["retrieval_status"] == "FULL_BYTES_FROM_EIOPA_TLS_GITHUB_RUNNER_OOXML_QUARANTINED"
+            and row["whole_binary_sha256"] == EXPOSURE_SHA
+            and row["whole_binary_size_bytes"] == 5593551
             and row["zip_central_directory_members"] == 0
             and row["zip_central_directory_worksheets"] == 0
             and row["sha256_repeat_independent_implementation_agreed"] is False
         ):
-            raise EIOPASourceIntegrityBlocked("partial exposure download promoted as complete original")
+            raise EIOPASourceIntegrityBlocked("full exposure SHA does not clear OOXML safety or scientific rights")
     if seen != set(EXPECTED_URLS):
         raise EIOPASourceIntegrityBlocked("original EIOPA family identity drift")
     return {
         "schema": SCHEMA,
-        "status": "ONE_SOURCE_XLSX_SHA256_VERIFIED_EXPOSURE_TRUNCATED_NO_LOSS_MODEL",
-        "publisher_link_complete_binary_count": 1,
+        "status": "TWO_ORIGINAL_XLSX_BINARY_SHAS_VERIFIED_EXPOSURE_OOXML_QUARANTINE_BLOCKED",
+        "publisher_link_complete_binary_count": 2,
         "publisher_link_full_hash": ORIGINAL_SHA,
         "publisher_link_complete_bytes": 28209,
-        "other_publisher_xlsx_has_full_binary": False,
+        "other_publisher_xlsx_has_full_binary": True,
+        "original_exposure_full_SHA": EXPOSURE_SHA,
+        "original_exposure_complete_bytes": 5593551,
+        "original_exposure_SHA_independently_repeated": False,
+        "original_exposure_OOXML_quarantine_passed": False,
         "insurer_claim_cells_analyzed": False,
         "original_XLSX_bytes_committed": False,
         "workbook_specific_rights_clearance": False,
