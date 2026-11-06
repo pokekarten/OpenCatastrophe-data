@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# One historical Kyrill wind footprint mapped onto independently fictional sites.
+schema_version = "XWS_KYRILL_2007_NRW_10000_FICTIONAL_SOURCE_HAZARD_ONLY_V0"
+source_historical_event = "Kyrill 2007-01-18"
+source_existing_index_candidate_id = "xws.european-extreme-windstorms"
+source_original_four_pdf_or_netcdf = "four separate original classic CDF1 NetCDF files"
+original_Kyrill_source_sha_list_receipt = "research/observations/xws_kyrill_2007_original_netcdf_receipts_v0.toml"
+original_historical_event_count = 1
+original_source_geographic_grid = "CF rotated pole 177.5 E / 37.5 N, 0.22 degree cell spacing"
+original_XWS_source_gust_unit = "metres per second"
+original_NRW_HU_2022_full_zip_sha256 = "10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da"
+original_fictional_OED_2025_source_zip_sha256 = "5b0055ce71314f7d7baf4f67008cd4abba3df28a4bce0690bbe9521a3cc35757"
+original_fictional_OED_manifest_sha256 = "b4713a9a09a55193d39b64550bc1408ba588303d8a4e658f05536b3dbe14b416"
+github_source_and_geocrosswalk_proof_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42107349622"
+github_derived_research_artifact_id = 13452772144
+github_derived_research_artifact_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42107349622/artifacts/13452772144"
+github_derived_artifact_zip_sha256 = "631ef3b4f25ac5512bb8c71d936fc2d1ee6922af2f3ab01df17ca3f987a0f918"
+derived_site_hazard_csv_sha256 = "80ad88ddcb8860d7f2396a35a2e3ce57d3b73eb4b98353503e9a04bd3dac8cdf"
+original_source_is_historical_not_synthetic_storm = true
+fictional_insurance_policy_count = 10000
+fictional_source_building_location_count = 10000
+fictional_Kreis_count = 53
+distinct_original_rotated_XWS_grid_cells_used = 79
+fictional_building_TIV_eur_reconciled = 4826029500
+mean_Kyrill_recalibrated_gust_m_per_s = 29.02092687625885
+median_Kyrill_recalibrated_gust_m_per_s = 29.009979248046875
+min_Kyrill_recalibrated_gust_m_per_s = 27.325130462646484
+max_Kyrill_recalibrated_gust_m_per_s = 33.040733337402344
+median_Kyrill_recalibrated_lower95_gust_m_per_s = 19.536
+median_Kyrill_recalibrated_upper95_gust_m_per_s = 43.079
+historical_gust_missing_site_count = 0
+recalibrated_95_bounds_bracket_mean_at_all_10000_sites = true
+derived_research_artifact_is_NRW_building_TIV_estimate = false
+actual_RV_insured_risks_or_addresses_observed = false
+german_wind_construction_fragility_verified = false
+real_insurance_policy_terms_verified = false
+oasis_native_Kyrill_GUL_IL_RI_executed = false
+annual_event_occurrence_rate_or_frequency_verified = false
+gross_net_OEP_AEP_authorized = false
+XWS_four_footprint_products_are_four_independent_events = false
+source_files_republished_to_GitHub = false
+raw_third_party_NetCDF_stored_in_Neon = false
