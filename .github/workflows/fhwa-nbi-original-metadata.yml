@@ -8,6 +8,8 @@ on:
       - ".github/workflows/fhwa-nbi-original-metadata.yml"
       - "research_runners/fhwa_nbi_socrata_metadata_gate_v0.py"
       - "tests/test_fhwa_nbi_socrata_metadata_gate_v0.py"
+      - "research_runners/fhwa_nbi_socrata_original_rows_v0.py"
+      - "tests/test_fhwa_nbi_socrata_original_rows_v0.py"
   workflow_dispatch:
 
 permissions:
@@ -50,3 +52,21 @@ jobs:
             --original-metadata "$ORIGINAL"
           # Raw FHWA metadata stays only in ephemeral runner temporary storage.
           # No source bridge rows, secrets, artifact uploads or model writes.
+      - name: Verify synthetic bounded original-row samples
+        run: python -m unittest tests.test_fhwa_nbi_socrata_original_rows_v0 -v
+      - name: Audit original FHWA NBI exact selected 50 bridge-year rows (research only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          ORIGINAL="$RUNNER_TEMP/fhwa-pced-83j4-selected-50.json"
+          trap 'rm -f "$ORIGINAL"' EXIT
+          curl --fail --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 90 --retry 0 \
+            --max-filesize 200000 \
+            --output "$ORIGINAL" \
+            'https://data.transportation.gov/resource/pced-83j4.json?%24select=year%2Cstate_code_001%2Cstructure_number_008%2Clat_016%2Clong_017%2Cyear_built_027&%24order=year%20DESC%2Cstate_code_001%20ASC%2Cstructure_number_008%20ASC&%24limit=50'
+          python -m research_runners.fhwa_nbi_socrata_original_rows_v0 \
+            --original-sample "$ORIGINAL"
+          # No raw bridge-level rows or geographic coordinates persist.
