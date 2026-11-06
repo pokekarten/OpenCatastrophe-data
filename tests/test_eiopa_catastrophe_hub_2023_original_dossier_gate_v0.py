@@ -23,9 +23,14 @@ class EIOPAOriginalPublicationEvidenceTests(unittest.TestCase):
         report = gate.validate_evidence(self.original)
         self.assertEqual(report["public_original_publisher_attachments_named"], 3)
         self.assertTrue(report["wind_insured_loss_event_is_only_Ciara_2020"])
+        self.assertTrue(report["original_loss_workbook_bytes_fetched_via_proxy"])
+        self.assertEqual(
+            report["original_loss_workbook_sha256_from_source_proxy"],
+            "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
+        )
         for field in (
-            "original_workbook_source_bytes_fetched",
-            "original_workbook_sha256_verified",
+            "original_exposure_workbook_complete_bytes_fetched",
+            "original_exposure_workbook_sha256_verified",
             "Daria_1990_insured_claims_provided",
             "German_insurer_site_loss_calibration_approved",
             "insured_GUL_IL_RI_OEP_AEP_model_executed",
@@ -85,8 +90,9 @@ class EIOPAOriginalPublicationEvidenceTests(unittest.TestCase):
             ("publisher_transformed_redistribution_requires_special_notice", False),
             ("publisher_third_party_rights_automatically_cleared", True),
             ("licence_workbook_specific_restrictions_checked", True),
-            ("actual_eiopa_xlsx_bytes_obtained_in_this_research", True),
-            ("original_workbook_sha256", "0"*64),
+            ("actual_eiopa_xlsx_bytes_obtained_in_this_research", False),
+            ("historical_loss_workbook_sha256", "0"*64),
+            ("exposure_workbook_sha256", "0"*64),
         )
         for field, value in cases:
             with self.subTest(field=field):
