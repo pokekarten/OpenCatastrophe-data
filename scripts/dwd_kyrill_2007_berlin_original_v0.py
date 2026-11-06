@@ -56,8 +56,13 @@ def _utc_stamp(value: str) -> datetime:
         t = datetime.strptime(value, "%Y%m%d%H%M")
     except ValueError as exc:
         raise OriginalDWDGateError("invalid original DWD calendar timestamp") from exc
-    if t.second or t.minute % 10 or not START_SOURCE <= t <= END_SOURCE:
-        raise OriginalDWDGateError("source time out of archive or 10-minute grid")
+    # Report only the invalid timestamp CLASS, not original observation rows.
+    if t.second or t.minute % 10:
+        raise OriginalDWDGateError("original timestamp off strict 10-minute cadence")
+    if t < START_SOURCE:
+        raise OriginalDWDGateError("original source timestamp before declared archive start")
+    if t > END_SOURCE:
+        raise OriginalDWDGateError("original source timestamp after declared archive end")
     return t
 
 
