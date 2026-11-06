@@ -22,7 +22,8 @@ from eiopa_2023_ephemeral_official_xlsx_fetch_v0 import (
 )
 from eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0 import (
     MAX_FILE_BYTES, MAX_MEMBERS, MAX_ONE_MEMBER, MAX_RATIO,
-    MAX_TOTAL_UNCOMPRESSED
+    MAX_TOTAL_UNCOMPRESSED, EIOPAQuarantineBlocked,
+    inspect_original_xlsx
 )
 
 SOURCE_SHA256 = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
@@ -117,7 +118,25 @@ def inspect_zip_directory_without_cells(path: Path) -> dict:
             })
     if len(blocked) == LIMIT:
         raise EIOPAQuarantineIndexBlocked("too many source offending entries to publish a useful bounded receipt")
+    # Independent *source-pinned* metadata/CRC admission check. Only the
+    # previously exact-SHA-pinned 5,420-byte printer driver blob is ignored
+    # as nonfinancial metadata. All other macro/ActiveX/externalLink/unsafe
+    # ZIP classes remain fail-closed. Never publish returned sheet names.
+    try:
+        source_pinned = inspect_original_xlsx(path, "FLOOD_WIND_EXPOSURE")
+    except EIOPAQuarantineBlocked:
+        source_pinned = None
     return {
+        "source_pinned_original_workbook_metadata_CRC_quarantine_passed": source_pinned is not None,
+        "source_pinned_original_workbook_sheet_count": (
+            source_pinned["sheet_count"] if source_pinned is not None else None
+        ),
+        "source_pinned_printer_settings_blob_count_only": (
+            source_pinned["source_pinned_printer_metadata_only_blob_count"]
+            if source_pinned is not None else None
+        ),
+        "source_pinned_original_workbook_sheet_names_published": False,
+        "source_pinned_nonfinancial_printer_settings_data_executed_or_interpreted": False,
         "schema": SCHEMA,
         "status": "SOURCE_OOXML_METADATA_ONLY_DIAGNOSTIC_NOT_CONTENT_ADMISSION",
         "source_family": "FLOOD_WIND_EXPOSURE",
