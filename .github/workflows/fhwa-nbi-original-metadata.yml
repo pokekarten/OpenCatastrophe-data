@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: FHWA NBI Original Public Metadata Source Gate
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/fhwa-nbi-original-metadata.yml"
+      - "research_runners/fhwa_nbi_socrata_metadata_gate_v0.py"
+      - "tests/test_fhwa_nbi_socrata_metadata_gate_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fhwa-nbi-metadata-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  metadata:
+    name: Public NBI metadata authenticity and schema smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact PR head without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Exercise synthetic schema corruption tests first
+        run: python -m unittest tests.test_fhwa_nbi_socrata_metadata_gate_v0 -v
+      - name: Fetch exact public FHWA dataset metadata with strict bounds
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          ORIGINAL="$RUNNER_TEMP/fhwa-pced-83j4-original-metadata.json"
+          trap 'rm -f "$ORIGINAL"' EXIT
+          curl --fail --silent --show-error --location \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 90 --retry 0 \
+            --max-filesize 4000000 \
+            --output "$ORIGINAL" \
+            'https://data.transportation.gov/api/views/pced-83j4.json'
+          python -m research_runners.fhwa_nbi_socrata_metadata_gate_v0 \
+            --original-metadata "$ORIGINAL"
+          # Raw FHWA metadata stays only in ephemeral runner temporary storage.
+          # No source bridge rows, secrets, artifact uploads or model writes.
