@@ -84,3 +84,39 @@ Then a separately modeled insurance terms and occurrence/loss financial
 module can yield conditional insured losses. A scientifically justified
 **complete annual catalogue**, including zero-event years, joint-event
 clustering and weights, is required before calling any result OEP or AEP.
+
+## Actually executed on original-source derived 10,000-site hazard (6 November 2026)
+
+[Exact-head GitHub run #42184547517](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42184547517)
+for source head `776e67650a5b95e131facabc01199164ecb13c6f`
+completed **SUCCESS**, including **7/7** fully fictional, independently
+hand-calculated and tamper-negative tests, original four XWS CSV source
+acquisition with the unchanged exact SHA pins, the prior original 2022 NRW
+source-geocoded 10k building OED ZIP, the actual Daria single-storm spatial
+overlay, the new invented six-case calculation and the distinct research
+artifact upload. No external original provider bytes were committed.
+
+**Actual executed invented direct-value outputs (EUR cents).** Each cell is
+the summed deterministic fictional building damage in one single 1990
+storm footprint; no actual R+V losses or risk frequencies are represented.
+
+| Entirely invented response | Daria lower95 gust | Daria mean gust | Daria upper95 gust |
+| --- | ---: | ---: | ---: |
+| Illustrative resilient | 51,664,177 cents (EUR 516,641.77) | 1,183,776,300 cents (EUR 11,837,763.00) | 9,689,363,445 cents (EUR 96,893,634.45) |
+| Illustrative fragile | 516,640,272 cents (EUR 5,166,402.72) | 11,837,762,107 cents (EUR 118,377,621.07) | 80,682,516,747 cents (EUR 806,825,167.47) |
+
+The six outcomes share exactly **10,000 fictional site IDs**, **53 official
+2022 NRW Kreise**, **EUR 4,826,029,500 invented TIV** and the **same original
+Daria 1990 physical event**. They are sensitivity outputs, not a six-event
+catalogue. The hazard inputs are the XWS *modelled/recalibrated historical
+wind footprints*, not individually measured gust at every building.
+
+Time-limited GitHub Action outputs (14-day retention from 2026-11-06):
+
+- [Invented conditional site/county/six-case impact ZIP, artifact #13487290246](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42184547517/artifacts/13487290246)
+- [Original-derived hazard site ZIP, artifact #13486802367](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42184547517/artifacts/13486802367)
+- [Original source SHA and licence-only receipt, artifact #13486727784](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42184547517/artifacts/13486727784)
+
+The preserved integer-cent totals and input schema in this document remain
+inspectable when temporary artifact links expire, but replay of asset-level
+outputs still requires source-compliant original acquisition/reproduction.
