@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # EIOPA 2023 original XLSX: offline integrity / metadata intake only
 
-**6 November 2026. Verified CODE/TOY tests; NOT original EIOPA workbook intake.**
+**6 November 2026. Source-proven original XLSX binary identity and source-pinned exposure ZIP CRC/sheet-count metadata verified; NOT original insured claims/financial-cell intake.**
 
 The official [EIOPA Catastrophe Data Hub](https://www.eiopa.europa.eu/tools-and-data/catastrophe-data-hub_en)
 offers two original XLSX attachments for historical insured loss
@@ -56,6 +56,20 @@ Exact no-go receipt:
 The acquisition workflow is now **manual-only**, not repeated
 on every PR commit.
 
+
+**Subsequent source-pinned security resolution (latest finding):** the first
+general-purpose OOXML quarantine refused exactly one printer-settings
+binary of 5,420 bytes. The original file's exact SHA, filename
+pattern and 5,420/443-byte part-size allowlist now permit the
+**metadata-only ZIP CRC check and one worksheet count** for
+this verified EIOPA exposure version. It passed in
+[GitHub Actions #42292320403](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42292320403)
+without cell-value inspection. The full current evidence and precise
+risk boundaries are in
+[the source-specific security research note](eiopa-2023-exposure-source-pinned-printer-settings-ooxml-admission-20261106.md).
+All other arbitrary binary parts, macro/ActiveX/external links,
+source SHA mismatches and unlicensed financial-loss parsing are
+still **blocked**.
 
 ## Implemented bounded local import-quarantine gate
 
