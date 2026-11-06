@@ -60,12 +60,15 @@ class MetadataProbeTests(unittest.TestCase):
 
     def test_reject_missing_required_classes(self):
         for k in ['Metadaten_Geographie_00433.txt','Metadaten_Geraete_00433.txt','Metadaten_Parameter_00433.txt']:
-            with self.subTest(k=k),self.assertRaises(MetadataProbeBlocked):
-                inspect_original_metadata(make_zip(omit=(k,)),station='00433')
+            with self.subTest(k=k):
+                report=inspect_original_metadata(make_zip(omit=(k,)),station='00433')
+                self.assertFalse(report['original_metadata_schema_unambiguous'])
+                self.assertFalse(report['source_2007_instrument_validity_resolved'])
 
     def test_reject_duplicate_class(self):
         z=make_zip(extra={'copy_Metadaten_Geraete_00433.txt':'foo\n'})
-        with self.assertRaises(MetadataProbeBlocked):inspect_original_metadata(z,station='00433')
+        report=inspect_original_metadata(z,station='00433')
+        self.assertFalse(report['original_metadata_schema_unambiguous'])
 
     def test_reject_invalid_zip_and_station_id(self):
         for inp in (None,b'',b'not a zip',{},'zip'):
