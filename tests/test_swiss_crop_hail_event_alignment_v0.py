@@ -105,7 +105,46 @@ class SwissHailEventJoinTests(unittest.TestCase):
         self.assertEqual(summary["nonzero_impact_cells"], 2)
         self.assertEqual(summary["unmatched_positions_with_positive_impact"], 1)
         self.assertEqual(summary["positive_impact_matrix_cells_on_unmatched_positions"], 1)
+        self.assertEqual(
+            [r["positive_impact_matrix_cells_on_unmatched_positions"]
+             for r in summary["positive_impact_coverage_by_source_event"]],
+            [0, 1]
+        )
         self.assertFalse(summary["full_damage_coordinate_key_coverage"])
+
+    def test_event_wise_positive_unmatched_cells_are_not_annual_claims(self):
+        rows = audit.unmatched_positive_impacts_by_event(
+            [(46.3, 8.2), (46.4, 8.3)],
+            [(46.3, 8.2), (47.0, 9.0), (47.1, 9.1)],
+            [100, 200, 300], [0, 3, 5, 7],
+            [0, 1, 1, 2, 0, 1, 2], [10, 0, 3, 4, 1, 0, 5],
+        )
+        self.assertEqual([row["event_ordinal"] for row in rows], [100, 200, 300])
+        self.assertEqual([row["positive_impact_matrix_cells"] for row in rows],
+                         [2, 2, 1])
+        self.assertEqual(
+            [row["positive_impact_matrix_cells_on_unmatched_positions"]
+             for row in rows], [1, 1, 1]
+        )
+        self.assertEqual(
+            [row["unmatched_positions_with_positive_impact"] for row in rows],
+            [1, 1, 1]
+        )
+        # The same missing position in multiple study events stays multiple
+        # matrix cells, never an invented number of distinct insured claims.
+        self.assertEqual(sum(
+            row["positive_impact_matrix_cells_on_unmatched_positions"]
+            for row in rows
+        ), 3)
+
+    def test_event_wise_empty_stored_rows_are_zero(self):
+        rows = audit.unmatched_positive_impacts_by_event(
+            [(46.3, 8.2)], [(47.0, 9.0)],
+            [100, 200], [0, 0, 1], [0], [0],
+        )
+        self.assertEqual([r["positive_impact_matrix_cells"] for r in rows], [0, 0])
+        self.assertEqual([r["unmatched_positions_with_positive_impact"] for r in rows],
+                         [0, 0])
 
     def test_source_regression_12_radar_events_24_crop_grid_pairs(self):
         from research_runners.swiss_crop_hail_hdf5_metadata_profile_v0 import (
