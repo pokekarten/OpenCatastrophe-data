@@ -102,20 +102,24 @@ class TestDWDKyrill2007Original(unittest.TestCase):
 
     def test_strict_utc_grid_and_source_bounds(self):
         for ts in ("200701181201","2007011812","200701181260",
-                   "199912312340","201001010000","200702300000"):
+                   "199911302350","201001010000","200702300000"):
             with self.subTest(ts=ts),self.assertRaises(OriginalDWDGateError):
                 _utc_stamp(ts)
 
-    def test_only_single_pre_2000_mez_archive_edge_is_allowed(self):
-        self.assertEqual(_utc_stamp("199912312350"),datetime(1999,12,31,23,50))
-        for ts in ("199912312340", "199912310000", "199901010000"):
+    def test_bounded_pre_2000_december_prelude_excluded_not_mislabelled_utc(self):
+        self.assertEqual(_utc_stamp("199912010000"),datetime(1999,12,1))
+        self.assertEqual(_utc_stamp("199912312340"),datetime(1999,12,31,23,40))
+        for ts in ("199911302350", "199901010000", "199812312350"):
             with self.subTest(ts=ts), self.assertRaises(OriginalDWDGateError):
                 _utc_stamp(ts)
-        rows=[("00433","199912312350","3","5.0"),*ROWS]
+        rows=[("00433","199912010000","3","5.0"),
+              ("00433","199912312340","2","6.0"),*ROWS]
         report=audit_original_archive(archive(rows))
-        self.assertTrue(report["pre_2000_mez_edge_tick_not_analyzed"])
+        self.assertEqual(report["pre_2000_december_source_clock_rows_excluded"],2)
+        self.assertTrue(report["pre_2000_non_utc_measurements_not_used_for_kyrill"])
         self.assertFalse(report["archive_first_clock_is_utc"])
-        self.assertEqual(report["archive_first_original_clock_label"],"1999-12-31T23:50:00")
+        self.assertEqual(report["archive_first_original_clock_label"],"1999-12-01T00:00:00")
+        self.assertEqual(report["daily_10minute_gust_aggregates"][1]["valid_gust_records"],3)
 
     def test_nonfinite_negative_and_unphysical_gust_rejected(self):
         for value in ("inf","NaN","-1","-998","200.01","invalid"):
