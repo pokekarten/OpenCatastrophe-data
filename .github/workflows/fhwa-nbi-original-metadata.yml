@@ -12,6 +12,8 @@ on:
       - "tests/test_fhwa_nbi_socrata_original_rows_v0.py"
       - "research_runners/ntad_nbi_2025_point_layer_schema_v0.py"
       - "tests/test_ntad_nbi_2025_point_layer_schema_v0.py"
+      - "research_runners/fhwa_ntad_2025_cross_source_audit_v0.py"
+      - "tests/test_fhwa_ntad_2025_cross_source_audit_v0.py"
   workflow_dispatch:
 
 permissions:
@@ -107,3 +109,10 @@ jobs:
           python -m research_runners.ntad_nbi_2025_point_layer_schema_v0 \
             --original-layer-metadata "$ORIGINAL"
           # The NTAD source feature/geometry endpoint is never queried.
+      - name: Test source-independent exact-key bridge joins and negative controls
+        run: python -m unittest tests.test_fhwa_ntad_2025_cross_source_audit_v0 -v
+      - name: Independently compare bounded original 2025 NBI and NTAD feature rows
+        run: python -m research_runners.fhwa_ntad_2025_cross_source_audit_v0 --original-sources
+        # Official HTTPS-only hosts; max 25 selected source rows/100 returned
+        # feature rows; all raw bridge IDs and geographic coordinates in
+        # memory only. Prints source SHA and aggregate mismatch statistics.
