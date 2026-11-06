@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: EIOPA 2023 original exposure OOXML ZIP-index research (NO XLSX rows)
+
+# One initial PR run, then remove pull_request trigger and retain dispatch only.
+# NOTE GitHub evaluates PR paths over the entire PR file diff, not latest commit.
+# Official source data live only in tempfile and are NOT uploaded.
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/eiopa-2023-exposure-zip-index-one-shot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eiopa-2023-exposure-zip-index-temporary
+  cancel-in-progress: false
+
+jobs:
+  source-zip-metadata-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout research code read-only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Stable Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Run privacy-preserving synthetic ZIP metadata negative tests
+        run: |
+          python -m unittest discover -s tests -p 'test_eiopa_2023_exposure_ooxml_quarantine_index_v0.py' -v
+      - name: Official one-shot exposure XLSX GET; ZIP central directory only, NO cells
+        run: |
+          python research_runners/eiopa_2023_exposure_ooxml_quarantine_index_v0.py \
+            --receipt "${{ runner.temp }}/eiopa-2023-exposure-original-OOXML-members-NOT-CLAIMS.json"
+      - name: Upload only OOXML fixed category counts and original source SHA
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: EIOPA-2023-OFFICIAL-EXPOSURE-OOXML-QUARANTINE-DIAG-NO-CELLS
+          path: ${{ runner.temp }}/eiopa-2023-exposure-original-OOXML-members-NOT-CLAIMS.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
