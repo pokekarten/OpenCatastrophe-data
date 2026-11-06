@@ -89,3 +89,51 @@ still required before gross/insured/net OEP/AEP.
 
 **No original raw XWS CSVs, third-party GPL model code or empirical
 vulnerability table is copied to this Apache-2.0 repo.**
+
+## Source-executed original Daria results (6 November 2026)
+
+[GitHub Actions #42186724440](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42186724440)
+ran the **actual independently SHA-pinned original XWS Daria four-file data**
+and the previous public 2022 NRW 10k site candidate artifact. It
+completed **SUCCESS**, including **7/7 offline invented-case arithmetic and
+tamper-negative tests**, source provenance, full 10k historical wind
+crosswalk, county/national index conservation, original file cleanup and
+separate artifact publication.
+
+| One actual physical Daria storm — alternate recalibrated wind view | Site count with gust **>25 m/s** | Source-sampled excess-cubed index (m/s)^3 | Source-sampled **fictional TIV-weighted** excess-cubed index (EUR × (m/s)^3) |
+| --- | ---: | ---: | ---: |
+| Lower95 | 0 | 0 | 0 |
+| Mean | 10,000 | 1,712,587.556079097 | 823,006,245,211.093029375 |
+| Upper95 | 10,000 | 82,498,054.421179508 | 39,754,699,715,302.518552750 |
+
+These are exact report decimal strings from the executed source runner
+and the declared method's **threshold**. Neither the large
+value-weighted index number nor the unweighted storm index is a currency
+loss estimate or annual return period.
+
+**Revealed model-selection ambiguity:** under the strictly fixed XWS
+25 m/s excess-cube index the lower95 gust view produces zero at all
+10,000 sampled sites, whereas our distinct *invented* wind-damage
+response allows damage even below 25 m/s. This is a **different
+response-threshold hypothesis**, not a discrepancy that a money
+calibration or arbitrary multiplier may silently hide. Research
+must document/cross-validate physical threshold choice instead of
+choosing whichever curve creates desired insurer loss.
+
+Provider source geometry and fictitious values are unchanged:
+10k public candidate buildings across 53 NRW Kreise, original
+XWS raster and same original Daria 1990 event, **EUR 4,826,029,500
+completely hypothetical** 2025-like building value, no observed
+R+V exposure.
+
+[Original-derived county-index artifact #13488155988](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42186724440/artifacts/13488155988),
+5072-byte GitHub Actions ZIP, is retained approximately 14 days
+(to 20 November 2026). It contains the 53-Kreise × 3-views CSV,
+the exact input SHAs and model-admission refusal receipt. No provider
+original source bytes are redistributed in this ZIP. Source original
+XWS CSVs remain rights-gated and retrievable only through the prior
+source compliant workflow.
+
+**This run proves reproducible relative wind-severity contrasts,
+not empirically calibrated wind damage, contract loss, gross/net EP,
+the completeness of a calendar-year catalogue or real reinsurer risk.**
