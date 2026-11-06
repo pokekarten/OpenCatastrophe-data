@@ -26,9 +26,9 @@ REQUIRED = {
     "year": "number",
     "state_code_001": "number",
     "structure_number_008": "text",
-    "lat_016": None,
-    "long_017": None,
-    "year_built_027": None,
+    "lat_016": "number",
+    "long_017": "number",
+    "year_built_027": "number",
 }
 
 

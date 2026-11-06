@@ -89,6 +89,11 @@ class FHWAOriginalMetadataGateTests(unittest.TestCase):
         next(col for col in f["columns"] if col["fieldName"] == "year")["dataTypeName"] = "text"
         with self.assertRaisesRegex(gate.Blocked, "type changed"):
             gate.audit_metadata(wire(f))
+        for coordinate in ("lat_016", "long_017", "year_built_027"):
+            x = fixture()
+            next(c for c in x["columns"] if c["fieldName"] == coordinate)["dataTypeName"] = "text"
+            with self.subTest(field=coordinate), self.assertRaisesRegex(gate.Blocked, "type changed"):
+                gate.audit_metadata(wire(x))
 
     def test_invalid_bytes_and_nonfinite_json_rejected(self):
         for original in (b"", b"<html>Error</html>" * 5, b"\xff" * 100,
