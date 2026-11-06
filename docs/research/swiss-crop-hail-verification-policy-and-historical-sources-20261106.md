@@ -75,3 +75,13 @@ Passing original-source workflow: https://github.com/pokekarten/OpenCatastrophe-
 - **Scientific interpretation:** The primary paper's field-level / municipality-imputed data and evaluation populations need not be identical to the published processed gridded HDF5 files. Its reported 1 km no-exposure claim fractions cannot be reconstructed by treating the current released gridded file as raw insurer claims. This difference is not evidence of published-paper error or time-change causality.
 
 The deterministic aggregate per-crop original-source evidence is preserved in research/observations/swiss_crop_hail_original_n_fields_support_v0.toml. No values or original files are stored in Git or Neon; rights, original HSS reproduction, annual frequencies, financial loss severities and production admission remain unresolved.
+
+## Published model-code review (read-only, version tag 1.0)
+
+Original source: https://github.com/raphael-portmann/202403_crop_hail_damage_footprint/tree/1.0 and exact publisher release https://zenodo.org/records/12784190 . The code has **not been imported or executed** on original data by OpenCatastrophe.
+
+The versioned utility.py function for converting raw crop damage grids to CLIMADA Impact selects rows where the supplied NetCDF field n_fields_exp is strictly positive. Separately, its exposure_from_gpd function drops exposure rows where crop-area value is zero. This **demonstrates an explicit source-filtering stage in published code** and is compatible with the finding that the released HDF5 exposure tables contain no n_fields == 0 rows. It does **not prove** the exact released HDF5 creation notebook applied that same code path for every crop and resolution, nor does it reconstruct underlying claims without the unreleased preprocessing inputs.
+
+The README also states that certain plots require additional NetCDF files or randomized municipality-claim placement datasets that are **available upon request**, not automatically included among the published four Zenodo releases. Therefore, the original field-level claims-based mismatch and some paper figures are not reproducible from the eight checked released files alone.
+
+**Annual-frequency warning:** The published Impact conversion helper assigns its event frequency array the value one and computes some event-mean quantities using a span of selected original dates. Those are artefacts of a historical study and **not a defensible independently calibrated yearly stochastic CAT occurrence model**. OpenCatastrophe must not convert this metadata into annual AEP/OEP without a complete independently validated annual hail event set and losses. See the publication itself for the study objective, binary damage footprint skill, and its stated source limitations.
