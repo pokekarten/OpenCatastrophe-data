@@ -125,5 +125,36 @@ class NBISelectedOriginalRowTests(unittest.TestCase):
                 gate.audit_rows(wire(rows()), expected_count=3,
                                 expected_year=selector)
 
+    def test_official_legacy_nbi_dms_examples_exact_hundredth_arcsecond(self):
+        # FHWA historical Coding Guide examples, not real source site rows.
+        self.assertEqual(gate._coded_hundredths("35271855", 8),
+                         35 * 360000 + 27 * 6000 + 1855)
+        self.assertAlmostEqual(
+            gate.legacy_unsigned_degree_magnitude("35271855", 8),
+            35 + 27 / 60 + 18.55 / 3600, places=12)
+        self.assertEqual(gate._coded_hundredths("081055065", 9),
+                         81 * 360000 + 5 * 6000 + 5065)
+        self.assertAlmostEqual(
+            gate.legacy_unsigned_degree_magnitude(81055065, 9),
+            81 + 5 / 60 + 50.65 / 3600, places=12)
+        self.assertAlmostEqual(
+            gate.legacy_unsigned_degree_magnitude("081060000", 9),
+            81 + 6 / 60, places=12)
+
+    def test_legacy_zero_or_incomplete_code_never_becomes_actual_geopoint(self):
+        for value, width in [(0, 8), ("00000000", 8), ("000000000", 9),
+                             (True, 8), ("", 8), ("33602500", 8),
+                             ("086306000", 9), ("33.452", 8), (None, 9)]:
+            with self.subTest(value=value):
+                self.assertIsNone(gate.legacy_unsigned_degree_magnitude(value, width))
+        sample = rows()
+        sample[0]["lat_016"] = "00000000"
+        sample[1]["long_017"] = "000000000"
+        proof = gate.audit_rows(wire(sample), expected_count=3)
+        self.assertEqual(proof["legacy_zero_sentinel_coordinate_pair_count"], 2)
+        self.assertEqual(proof["legacy_dms_format_unverified_count"], 2)
+        self.assertFalse(proof["signed_decimal_coordinate_pair_exported"])
+        self.assertNotIn("33452500", json.dumps(proof))
+
 if __name__ == "__main__":
     unittest.main()

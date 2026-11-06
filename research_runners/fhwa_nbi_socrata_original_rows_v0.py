@@ -40,26 +40,62 @@ def _nonnegative_int(value: object, field: str, *, low: int, high: int) -> int:
     return result
 
 
-def _original_dms(value: object, width: int) -> bool:
-    """Format-only test of legacy coded DDMMSSss / DDDMMSSss; no CRS claim."""
+def _coded_hundredths(value: object, width: int) -> int | None:
+    """Unsigned *angular magnitude*, in exact hundredths of arcseconds.
+
+    Legacy NBI item 16 is DDMMSSss (8 characters); item 17 DDDMMSSss
+    (9 characters). Input may have lost leading zeroes through the numeric
+    Socrata API. This is not a signed coordinate, CRS or bridge geometry.
+    """
+    if width not in (8, 9):
+        return None
     if type(value) is int:
         digits = str(value)
     elif type(value) is str:
         digits = value
     else:
-        return False
-    if not digits.isascii() or not digits.isdigit() or len(digits) > width:
-        return False
-    normalized = digits.zfill(width)
-    degrees = int(normalized[:width - 6])
-    minutes = int(normalized[width - 6:width - 4])
-    seconds_hundredths = int(normalized[width - 4:])
-    if minutes >= 60 or seconds_hundredths >= 6000:
-        return False
-    if width == 8:
-        return 13 <= degrees <= 72
-    return 64 <= degrees <= 175
+        return None
+    if not digits or not digits.isascii() or not digits.isdigit() or len(digits) > width:
+        return None
+    padded = digits.zfill(width)
+    degrees = int(padded[:width - 6])
+    minutes = int(padded[width - 6:width - 4])
+    hundredths = int(padded[width - 4:])
+    # NBI permits all-zero (unknown) codes in some circumstances; never
+    # turn an absent location into an actual point (0,0).
+    if not (degrees or minutes or hundredths):
+        return None
+    if minutes >= 60 or hundredths >= 6000:
+        return None
+    if width == 8 and not 13 <= degrees <= 72:
+        return None
+    if width == 9 and not 64 <= degrees <= 175:
+        return None
+    return degrees * 360000 + minutes * 6000 + hundredths
 
+
+def legacy_unsigned_degree_magnitude(value: object, width: int) -> float | None:
+    """Exact DMS code -> unsigned degree magnitude; no automatic hemisphere.
+
+    Kept for isolated, synthetic vector tests and ephemeral original source
+    QA only. Callers must separately establish datum, hemisphere and
+    independent spatial accuracy before constructing any real GeoJSON/OED.
+    """
+    units = _coded_hundredths(value, width)
+    return units / 360000 if units is not None else None
+
+
+def _zero_sentinel(value: object, width: int) -> bool:
+    if type(value) is int:
+        return value == 0
+    return (type(value) is str and bool(value) and len(value) <= width
+            and value.isascii() and value.isdigit() and
+            all(char == "0" for char in value))
+
+
+def _original_dms(value: object, width: int) -> bool:
+    """True only for nonzero syntactically plausible legacy NBI angular codes."""
+    return _coded_hundredths(value, width) is not None
 
 def audit_rows(original: bytes, *, expected_count: int = EXPECTED_COUNT,
                expected_sha256: str | None = None,
@@ -98,6 +134,7 @@ def audit_rows(original: bytes, *, expected_count: int = EXPECTED_COUNT,
     years: Counter[int] = Counter()
     states = set()
     dms_good = dms_unverified = built_valid = built_invalid = 0
+    zero_sentinel_pair_count = 0
     for row in rows:
         if type(row) is not dict or not set(row).issubset(COLUMNS):
             raise Blocked("original sample must contain only six selected API fields")
@@ -119,6 +156,8 @@ def audit_rows(original: bytes, *, expected_count: int = EXPECTED_COUNT,
         states.add(st)
         lat = row.get("lat_016")
         lon = row.get("long_017")
+        if _zero_sentinel(lat, 8) or _zero_sentinel(lon, 9):
+            zero_sentinel_pair_count += 1
         if _original_dms(lat, 8) and _original_dms(lon, 9):
             dms_good += 1
         else:
@@ -146,6 +185,9 @@ def audit_rows(original: bytes, *, expected_count: int = EXPECTED_COUNT,
         "unique_bridge_year_state_structure_in_sample": len(seen),
         "legacy_dms_format_plausible_count": dms_good,
         "legacy_dms_format_unverified_count": dms_unverified,
+        "legacy_zero_sentinel_coordinate_pair_count": zero_sentinel_pair_count,
+        "legacy_angular_conversion_contract": "unsigned_hundredth_arcsecond_no_CRS_or_hemisphere",
+        "signed_decimal_coordinate_pair_exported": False,
         "build_year_range_plausible_count": built_valid,
         "build_year_unknown_or_unverified_count": built_invalid,
         "original_row_response_provider_signed": False,
