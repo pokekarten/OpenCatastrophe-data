@@ -163,6 +163,42 @@ class TestInventedDariaDirectImpact(unittest.TestCase):
                 with self.assertRaisesRegex(model.InventedDamageBlocked, "hazard-only"):
                     calculate(p)
 
+    def test_malformed_original_provider_receipt_fails_closed(self):
+        malformed = (
+            None, [], "not-an-object",
+            {"status": "OFFICIAL_ORIGINAL_XWS_CSV_BYTES_PARSED_NOT_MODEL_ADMITTED",
+             "original_files": []},
+            {"status": "OFFICIAL_ORIGINAL_XWS_CSV_BYTES_PARSED_NOT_MODEL_ADMITTED",
+             "original_files": {**{k: {"full_sha256": v} for k, v in SYNTHETIC_PINS.items()},
+                                "grid": "not-a-digest-object"}},
+        )
+        with TemporaryDirectory() as d:
+            for i, value in enumerate(malformed):
+                path = Path(d) / f"malformed-provider-{i}.zip"
+                fake_hazard(path, mutate_manifest=lambda m, v=value: m.__setitem__(
+                    "provider_original_four_XWS_CSV_source_receipt", v))
+                with self.assertRaisesRegex(model.InventedDamageBlocked,
+                                            "original provider CSV SHA identity mismatch"):
+                    calculate(path)
+
+    def test_duplicate_original_source_receipt_json_key_rejected(self):
+        with TemporaryDirectory() as d:
+            original = Path(d) / "original.zip"
+            forged = Path(d) / "duplicate-key.zip"
+            fake_hazard(original)
+            with zipfile.ZipFile(original) as z:
+                parts = {name: z.read(name) for name in z.namelist()}
+            raw = parts[model.MANIFEST_NAME].decode("utf-8")
+            self.assertIn('"schema":', raw)
+            parts[model.MANIFEST_NAME] = raw.replace(
+                '"schema":', '"schema": "FORGED", "schema":', 1).encode("utf-8")
+            with zipfile.ZipFile(forged, "w") as z:
+                for name, content in parts.items():
+                    z.writestr(name, content)
+            with self.assertRaisesRegex(model.InventedDamageBlocked,
+                                        "source receipt JSON invalid"):
+                calculate(forged)
+
     def test_changed_source_hash_and_original_provider_hash_rejected(self):
         with TemporaryDirectory() as d:
             p = Path(d) / "source.zip"
