@@ -3,7 +3,7 @@
 """No GDV TDM / EIOPA sample promotion / HANZE economic-loss calibration."""
 from __future__ import annotations
 from copy import deepcopy
-import json
+import tomllib
 from pathlib import Path
 import sys
 import unittest
@@ -16,7 +16,7 @@ import rva_germany_wind_loss_calibration_source_gate_v0 as gate
 class SourceRightsAndCalibrationNoGoTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.register = json.loads(gate.DEFAULT.read_text(encoding="utf-8"))
+        cls.register = tomllib.loads(gate.DEFAULT.read_text(encoding="utf-8"))
 
     def altered(self):
         return deepcopy(self.register)
