@@ -114,7 +114,7 @@ def validate_registry(doc: dict) -> dict:
             src["observed_measure"] != measure
             or src["licence_review"] != rights
             or src["access"] != access
-            or src["approval_evidence"] not in ("NONE", "SOURCE_ONLY_CI_42246960507")
+            or src["approval_evidence"] not in ("NONE", "SOURCE_ONLY_CI_42246960507", "SOURCE_BINARY_PROXY_SHA_ONLY_NO_CELLS")
             or len(src["limitations"]) < 30
             or len(src["denominator"]) < 18
             or not src["granularity"]
@@ -151,6 +151,17 @@ def validate_registry(doc: dict) -> dict:
                 raise SourceRightsBlocked(
                     "EIOPA Ciara-2020-only event, NUTS2 anonymity or insurer GWP-sample limits altered"
                 )
+        if sid == "eiopa_catastrophe_data_hub_2023":
+            if (
+                src["source_file_sha256"] !=
+                "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
+                or src["approval_evidence"] != "SOURCE_BINARY_PROXY_SHA_ONLY_NO_CELLS"
+                or "the exposure XLSX response was truncated by proxy" not in src["limitations"]
+                or src["access"] != "REFERENCE_ONLY"
+            ):
+                raise SourceRightsBlocked(
+                    "EIOPA binary original loss SHA does NOT verify exposure, cells or licence"
+                )
         if sid == "nrw_hu22_2022_building_footprints":
             if (
                 src["source_file_sha256"] !=
@@ -158,7 +169,9 @@ def validate_registry(doc: dict) -> dict:
                 or src["approval_evidence"] != "SOURCE_ONLY_CI_42246960507"
             ):
                 raise SourceRightsBlocked("authentic original HU22 source/rights receipt drift")
-        elif src["source_file_sha256"] != "NOT_ACQUIRED" or src["approval_evidence"] != "NONE":
+        elif sid != "eiopa_catastrophe_data_hub_2023" and (
+            src["source_file_sha256"] != "NOT_ACQUIRED" or src["approval_evidence"] != "NONE"
+        ):
             raise SourceRightsBlocked("unfetched or unlicensed external observations claimed imported")
         kinds[src["observed_measure"]] += 1
     if seen != set(EXPECTED):
@@ -173,6 +186,8 @@ def validate_registry(doc: dict) -> dict:
         "German_site_specific_GUL_vulnerability_fit_approved": False,
         "annual_OEP_AEP_return_frequency_estimated": False,
         "external_workbook_original_bytes_ingested": False,
+        "EIOPA_original_loss_binary_retrieved_from_source_proxy": True,
+        "EIOPA_original_exposure_binary_complete": False,
         "licence_or_data_reuse_approval_inferred": False,
     }
 
