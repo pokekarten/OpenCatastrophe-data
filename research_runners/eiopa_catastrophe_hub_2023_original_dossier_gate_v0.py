@@ -58,8 +58,8 @@ EXPECTED_STRING = {
         "58.3PCT_TABLE_4_APPROX_59PCT_TEXT",
     "sample_Germany_2020_property_fire_GWP_coverage": "63.6PCT_TABLE_4",
     "admission": "PUBLIC_METADATA_REFERENCE_ONLY_NO_DARIA_FIT_NO_RV_POLICY_NO_EP",
-    "unfetched_reason":
-        "Official EIOPA HTTPS GitHub Actions run 42270505316 delivered both workbooks: historical loss 28209 bytes SHA256 201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6 and exposure 5593551 bytes SHA256 f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79. Strict OOXML security quarantine rejected active/external/huge member; no full workbook CRC, worksheets, insurer loss rows or reuse licence confirmed",
+    "source_event_and_workbook_rights_status":
+        "Official EIOPA HTTPS GitHub Actions run 42270505316 delivered both originals: historical loss 28209 bytes SHA256 201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6 and exposure 5593551 bytes SHA256 f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79. Generic OOXML quarantine initially blocked one printerSettings binary; original source-SHA-pinned 5420B printerSettings metadata-only exception passed full ZIP CRC and one workbook sheet in GitHub Actions 42292320403. No insurer claim cells, workbook-specific third-party rights, German wind loss calibration or annual EP verified.",
 }
 EXPECTED_BOOLEANS = {
     "workbook_content_read_or_modelled": False,
@@ -77,7 +77,9 @@ EXPECTED_BOOLEANS = {
     "GWP_sample_covers_RV_geolocated_NRW_book": False,
     "licence_workbook_specific_restrictions_checked": False,
     "actual_eiopa_xlsx_bytes_obtained_in_this_research": True,
-    "exposure_OOXML_security_quarantine_passed": False,
+    "exposure_generic_unpinned_OOXML_policy_passed": False,
+    "exposure_source_pinned_CRC_sheet_metadata_passed": True,
+    "exposure_financial_cells_model_admitted": False,
 }
 EXPECTED_INTEGERS = {
     "each_disclosed_data_point_minimum_independent_company_submissions": 3,
@@ -148,7 +150,9 @@ def validate_evidence(doc: dict) -> dict:
         "original_loss_workbook_bytes_fetched_via_proxy": True,
         "original_exposure_workbook_complete_bytes_fetched": True,
         "original_exposure_workbook_sha256_from_official_TLS": "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79",
-        "original_exposure_OOXML_quarantine_passed": False,
+        "original_exposure_generic_unpinned_OOXML_policy_passed": False,
+        "original_exposure_source_pinned_CRC_sheet_metadata_passed": True,
+        "original_exposure_financial_cells_rights_admitted": False,
         "original_loss_workbook_sha256_from_source_proxy": "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6",
         "original_exposure_workbook_sha256_verified": True,
         "wind_insured_loss_event_is_only_Ciara_2020": True,
