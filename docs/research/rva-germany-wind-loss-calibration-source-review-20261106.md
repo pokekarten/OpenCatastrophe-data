@@ -9,7 +9,7 @@ SPDX-License-Identifier: Apache-2.0
 new numerical wind vulnerability calibration admitted.**
 
 We now have a six-source rights-and-scientific-kind register at
-[research/observations/rva_germany_wind_loss_calibration_source_register_v0.json](../../research/observations/rva_germany_wind_loss_calibration_source_register_v0.json).
+[research/observations/rva_germany_wind_loss_calibration_source_register_v0.toml](../../research/observations/rva_germany_wind_loss_calibration_source_register_v0.toml).
 The corresponding fail-closed Python source-classification gate is
 in research_runners/rva_germany_wind_loss_calibration_source_gate_v0.py
 with eight independent regression/negative test cases in
