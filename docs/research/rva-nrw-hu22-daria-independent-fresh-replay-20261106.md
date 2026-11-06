@@ -93,18 +93,41 @@ the earlier 14-day GitHub Actions result.
 
 ## Precise remaining governance boundary
 
-The short-lived earlier sample artifact **still exists as a
-hardcoded source in the ordinary, lower-cost XWS PR workflow**.
-It expires **2026-11-19T19:52:57Z**; as long as that
-workflow's source path remains, it is not itself safe after expiry.
-The new **full** replay is a separate opt-in high-I/O code path,
-and its `workflow_dispatch` route is directly available after the
-workflow code is on the repository default branch. While this
-research PR is still Draft, reproducibility is demonstrated by the
-above pull-request-triggered initial workflow run and by a possible
-manual *rerun of the workflow run*, not by claiming that an
-unmerged workflow is already available for new default-branch
-dispatches.
+**Ordinary, low-cost CI artifact-dependency cutover now completed
+on this research PR.** The original
+[`.github/workflows/rva-nrw-xws-daria-source.yml`](../../.github/workflows/rva-nrw-xws-daria-source.yml)
+has been renamed explicitly **"source preflight (NO 10k)"** and
+does **not** run `gh run download` or use historical HU22
+artifact `#13447603258` / run `#42097472463`. Its
+source-only admission receipt explicitly reports
+`actual_2022_NRW_10k_site_overlay_executed_in_this_workflow=false`,
+`original_CLIMADA_source_method_body_parity_executed_in_this_workflow=false`,
+`actual_insurer_RV_geographies_or_loss_calculated=false` and
+`annual_frequency_or_OEP_AEP_calculated=false`. It still
+downloads/verifies all **four** pinned original XWS Daria storm CSV
+sources and **three** original pinned CLIMADA 6.1.0 GPL-code
+identities, parses the real PAA/MDD method definitions and runs
+the offline positive/negative mock-source tests. These checks do
+NOT substitute for site-level or financial-model calculations.
+
+The source-only cutover was independently executed successfully in
+[GitHub Actions run #42249222937](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42249222937)
+at commit `875c7349ac59d3696833eda03f1bf61ca5b651b9`,
+including **five** new CI scope/integrity negative tests in
+`tests/test_rva_nrw_xws_daria_source_only_ci_contract_v0.py`.
+The original `#13447603258` GitHub artifact expires
+**2026-11-19T19:52:57Z**, but the *updated* source-only
+CI no longer needs it. This is a genuine elimination of
+the cheap-run dependency, NOT proof of automatic 10k physical-model
+recalculation on every PR push.
+
+The **full** fresh-from-provider replay remains a separate opt-in
+high-I/O code path. Its `workflow_dispatch` route becomes
+manually available when its workflow code is merged onto the
+repository's default branch. While this research PR remains Draft,
+the earlier successful pull-request-triggered original full-source
+execution proves the implementation, but not default-branch
+manual-dispatch availability or scientific model acceptance.
 
 **Cost/rate governance correction:** The initial success was
 obtained using a temporary pull-request trigger on the new workflow.
@@ -144,10 +167,14 @@ method-body parity has an explicit minimal nonnumeric class adapter.
 
 ## Status of Issue #1400
 
-The **independent-source reconstructibility P0** gate has a
-successful actual CI run. Keep
+The **independent-source reconstructibility P0** gate
+and **normal low-cost source-only CI dependency cutover** each
+have successful actual GitHub Actions runs. Keep
 [Issue #1400](https://github.com/pokekarten/OpenCatastrophe-data/issues/1400)
-open until the ordinary XWS workflow no longer hardcodes the
-expiring original OED artifact, the full replay workflow has an
-available long-lived dispatch/merge route, and a post-2026-11-19
-fresh replay proves persistence over the cutoff.
+open until the full costly replay workflow has a reviewed and
+available default-branch `workflow_dispatch`/merge route, any
+applicable official HU 2022 product-specific reuse/attribution terms
+are documented, and an independent *post-2026-11-19*
+full original-provider rebuild verifies persistence over the
+earlier artifact's expiry. Do not treat passing source-only
+CI as passing the 10,000-site full CAT model.
