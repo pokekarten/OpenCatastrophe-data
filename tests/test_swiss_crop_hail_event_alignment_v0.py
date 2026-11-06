@@ -64,6 +64,28 @@ class SwissHailEventJoinTests(unittest.TestCase):
         self.assertEqual(result["unmatched_damage_grid_positions"], 1)
         self.assertEqual(result["positive_impact_matrix_cells_on_unmatched_positions"], 0)
 
+    def test_source_pair_summary_counts_actual_positive_cells_not_stored_zeros(self):
+        # Sparse CSR matrices may contain explicit zero entries, not actual impacts.
+        import numpy as np
+        exposure = {"exposures": {
+            "block0_items": np.asarray([b"latitude", b"longitude"]),
+            "block0_values": np.asarray([[46.3, 8.2], [46.4, 8.3]]),
+            "axis1": np.asarray([0, 1]),
+        }}
+        damage = {
+            "coord_exp": np.asarray([[46.3, 8.2], [47.0, 9.0]]),
+            "date": np.asarray([100, 200]),
+            "imp_mat/indptr": np.asarray([0, 2, 3]),
+            "imp_mat/indices": np.asarray([0, 1, 1]),
+            "imp_mat/data": np.asarray([2.5, 0.0, 3.0]),
+        }
+        summary = audit.source_pair_summary(exposure, damage, [100, 200, 300])
+        self.assertEqual(summary["stored_impact_matrix_cells"], 3)
+        self.assertEqual(summary["nonzero_impact_cells"], 2)
+        self.assertEqual(summary["unmatched_positions_with_positive_impact"], 1)
+        self.assertEqual(summary["positive_impact_matrix_cells_on_unmatched_positions"], 1)
+        self.assertFalse(summary["full_damage_coordinate_key_coverage"])
+
     def test_source_regression_12_radar_events_24_crop_grid_pairs(self):
         from research_runners.swiss_crop_hail_hdf5_metadata_profile_v0 import (
             CROPS, RESOLUTIONS_KM,
