@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DWD Kyrill 2007 Original Berlin 10min Gust Holdout
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dwd-kyrill-2007-original-berlin-holdout.yml'
+      - 'scripts/dwd_kyrill_2007_berlin_original_v0.py'
+      - 'tests/test_dwd_kyrill_2007_berlin_original_v0.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dwd-kyrill-2007-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-source-berlin-kyrill-gust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact PR source without persisted token
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Verify malformed ZIP/temporal/quality/source guards (synthetic only)
+        run: python -m unittest tests.test_dwd_kyrill_2007_berlin_original_v0 -v
+      - name: Fetch and audit REAL DWD historical January 2007 station 00433
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          original="$RUNNER_TEMP/10minutenwerte_extrema_wind_00433_20000101_20091231_hist.zip"
+          summary="$RUNNER_TEMP/berlin-kyrill-2007-station-gust-preflight.json"
+          trap 'rm -f "$original" "$summary"' EXIT
+          curl --fail --silent --show-error --noproxy '*' \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 150 --retry 0 --max-filesize 4000000 --output "$original" \
+            'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00433_20000101_20091231_hist.zip'
+          python -m scripts.dwd_kyrill_2007_berlin_original_v0 \
+            --original-zip "$original" --output "$summary"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'berlin-kyrill-2007-station-gust-preflight.json').read_text())
+          assert r['contract']=='OC_DWD_2007_KYRILL_BERLIN_TEMPELHOF_ORIGINAL_GUST_PREFLIGHT_V0'
+          assert r['dwd_station_id']=='00433'
+          assert r['original_archive_byte_count']==2292326
+          assert len(r['original_archive_sha256'])==64
+          assert [d['day_utc'] for d in r['daily_10minute_gust_aggregates']]==[
+              '2007-01-17','2007-01-18','2007-01-19','2007-01-20']
+          assert sum(d['observed_10minute_records'] for d in r['daily_10minute_gust_aggregates'])>0
+          assert all(d['observed_10minute_records'] + d['unobserved_10minute_slots']==144
+                     for d in r['daily_10minute_gust_aggregates'])
+          assert r['scientific_admission'] is False
+          assert r['annual_AAL'] is None and r['annual_AEP'] is None and r['annual_OEP'] is None
+          assert r['source_original_raw_gust_rows_persisted'] is False
+          assert r['historical_kyrill_label_day_utc_exact_identity_confirmed'] is False
+          print('Original DWD source research preflight: daily aggregates ONLY')
+          print(json.dumps(r, sort_keys=True, indent=2, allow_nan=False))
+          PY
+          # No measured source rows or original ZIP persist outside ephemeral job.
