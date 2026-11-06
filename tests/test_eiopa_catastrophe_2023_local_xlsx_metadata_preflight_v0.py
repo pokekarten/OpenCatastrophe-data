@@ -44,6 +44,46 @@ def fixture(path: Path, *, sheet=XML, extra: dict | None = None,
 
 
 class OfflineEIOPAOriginalXLSXQuarantineTests(unittest.TestCase):
+    def test_source_pinned_printer_settings_only_cannot_apply_to_foreign_zip(self):
+        part = ZipInfo("xl/printerSettings/printerSettings1.bin")
+        part.file_size = 5420
+        part.compress_size = 443
+        good = gate.allow_source_pinned_printer_metadata_only(
+            part, "FLOOD_WIND_EXPOSURE",
+            gate.PINNED_EIOPA_EXPOSURE_SHA, gate.PINNED_EIOPA_EXPOSURE_SIZE
+        )
+        self.assertTrue(good)
+        for name, family, sha, length, size in (
+            ("xl/printerSettings/printerSettings1.bin", "HISTORICAL_INSURED_LOSSES",
+             gate.PINNED_EIOPA_EXPOSURE_SHA, gate.PINNED_EIOPA_EXPOSURE_SIZE, 5420),
+            ("xl/printerSettings/printerSettings1.bin", "FLOOD_WIND_EXPOSURE",
+             "f"*64, gate.PINNED_EIOPA_EXPOSURE_SIZE, 5420),
+            ("xl/printerSettings/printerSettings1.bin", "FLOOD_WIND_EXPOSURE",
+             gate.PINNED_EIOPA_EXPOSURE_SHA, 5593552, 5420),
+            ("xl/printerSettings/printerSettings1.exe", "FLOOD_WIND_EXPOSURE",
+             gate.PINNED_EIOPA_EXPOSURE_SHA, gate.PINNED_EIOPA_EXPOSURE_SIZE, 5420),
+            ("xl/printerSettings/../../vbaProject.bin", "FLOOD_WIND_EXPOSURE",
+             gate.PINNED_EIOPA_EXPOSURE_SHA, gate.PINNED_EIOPA_EXPOSURE_SIZE, 5420),
+            ("xl/vbaProject.bin", "FLOOD_WIND_EXPOSURE",
+             gate.PINNED_EIOPA_EXPOSURE_SHA, gate.PINNED_EIOPA_EXPOSURE_SIZE, 5420),
+            ("xl/printerSettings/printerSettings1.bin", "FLOOD_WIND_EXPOSURE",
+             gate.PINNED_EIOPA_EXPOSURE_SHA, gate.PINNED_EIOPA_EXPOSURE_SIZE, 6000),
+        ):
+            part = ZipInfo(name)
+            part.file_size = size
+            part.compress_size = 443
+            with self.subTest(name=name, family=family, sha=sha, length=length, size=size):
+                self.assertFalse(gate.allow_source_pinned_printer_metadata_only(
+                    part, family, sha, length
+                ))
+
+    def test_generic_printer_driver_binary_stays_blocked_without_source_sha_pin(self):
+        with TemporaryDirectory() as d:
+            p = Path(d)/"untrusted.xlsx"
+            fixture(p, extra={"xl/printerSettings/printerSettings1.bin":b"S"*5420})
+            with self.assertRaisesRegex(gate.EIOPAQuarantineBlocked, "active, external or huge"):
+                gate.inspect_original_xlsx(p, "FLOOD_WIND_EXPOSURE")
+
     def test_two_synthetic_source_families_integrity_and_no_loss_read(self):
         with TemporaryDirectory() as d:
             root = Path(d)
