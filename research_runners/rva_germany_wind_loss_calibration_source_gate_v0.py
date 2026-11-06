@@ -29,7 +29,7 @@ EXPECTED = {
     ),
     "eiopa_catastrophe_data_hub_2023": (
         "www.eiopa.europa.eu", "ACTUAL_PARTIAL_MARKET_INSURED_BUILDING_LOSS_AND_EXPOSURE_AGGREGATES",
-        "DATASET_SPECIFIC_REUSE_AND_WORKBOOK_PROVENANCE_NOT_VERIFIED",
+        "EIOPA_WEBSITE_REPRODUCTION_WITH_CREDIT_AND_DERIVATIVE_DISCLAIMER; WORKBOOK_THIRD_PARTY_RIGHTS_NOT_VERIFIED",
         "REFERENCE_ONLY",
     ),
     "hanze_european_windstorm_impacts_v1_2025": (
@@ -135,6 +135,22 @@ def validate_registry(doc: dict) -> dict:
                 raise SourceRightsBlocked("source URL not a canonical HTTPS reference")
         if urlparse(src["landing_url"]).hostname != hostname:
             raise SourceRightsBlocked("source host is not the verified original publisher")
+        if sid == "eiopa_catastrophe_data_hub_2023":
+            if (
+                src["rights_url"] != "https://www.eiopa.europa.eu/legal-notice_en"
+                or src["granularity"] != "NUTS2_AGGREGATED_NOT_SITE_ANONYMIZED_MIN_THREE_COMPANY_VALUES"
+                or "Ciara/Sabine 2020" not in src["period"]
+                or "2013 flood" not in src["period"]
+                or "2017 wildfire" not in src["period"]
+                or "Daria" in src["period"]
+                or src["denominator"] !=
+                    "35_EUROPEAN_GROUPS_PLUS_9_SOLO;59PCT_EEA_PROPERTY_GWP_AND_63PCT_DE_GWP_ONLY_NOT_INSURED_SITES"
+                or "NOT Daria January 1990" not in src["limitations"]
+                or "XLSX byte retrieval blocked" not in src["limitations"]
+            ):
+                raise SourceRightsBlocked(
+                    "EIOPA Ciara-2020-only event, NUTS2 anonymity or insurer GWP-sample limits altered"
+                )
         if sid == "nrw_hu22_2022_building_footprints":
             if (
                 src["source_file_sha256"] !=
