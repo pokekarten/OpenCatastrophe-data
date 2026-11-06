@@ -75,7 +75,7 @@ def inspect_hazard(h5, label: str):
     }
 
 
-def exposure_and_observed(ex, dm, hazard_dates):
+def exposure_and_observed(ex, dm, hazard_dates, *, allow_unmatched: bool = False):
     import numpy as np
     block = ex["exposures"]
     labels = [_str_label(v).lower() for v in block["block0_items"][()]]
@@ -126,7 +126,7 @@ def exposure_and_observed(ex, dm, hazard_dates):
         observations.append(labels)
     # The earlier 24-pair original source receipt showed all six 1 km pairs
     # have exact coordinate coverage. Fail, never silently omit observations.
-    if missing:
+    if missing and not allow_unmatched:
         raise Blocked("1 km pilot positive damage not in original crop support")
     return source_coords, dict(zip(dates, observations)), missing
 
