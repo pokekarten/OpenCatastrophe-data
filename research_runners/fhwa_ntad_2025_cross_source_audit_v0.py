@@ -40,7 +40,7 @@ SOCRATA_FIELDS = (
     "year,state_code_001,structure_number_008,lat_016,long_017,year_built_027"
 )
 NTAD_FIELDS = (
-    "STATE_CODE_001,STRUCTURE_NUMBER_008,LAT_016,LONG_017,YEAR_BUILT_027"
+    "STATE_CODE_001,STRUCTURE_NUMBER_008,LAT_016,LONG_017,YEAR_BUILT_027,LATDD,LONGDD"
 )
 SAFE_ID = re.compile(r"[A-Za-z0-9 _-]{1,15}\Z")
 
@@ -150,6 +150,10 @@ def compare_sources(socrata_original: bytes, ntad_original: bytes) -> dict:
     comparisons = within_25 = within_250 = beyond_250 = 0
     max_challenger_distance = 0.0
     attr_code_concordance = attr_code_discordance = attr_code_unknown = 0
+    decimal_available = decimal_missing = 0
+    decimal_vs_source_comparisons = decimal_vs_source_over_25 = 0
+    decimal_vs_geom_comparisons = decimal_vs_geom_over_25 = 0
+    max_decimal_vs_source_m = max_decimal_vs_geom_m = 0.0
     for key in matched:
         row = selected[key]
         feature = grouped[key][0]
@@ -187,6 +191,27 @@ def compare_sources(socrata_original: bytes, ntad_original: bytes) -> dict:
             coded_missing += 1
         else:
             coded_valid += 1
+        # The same official NTAD layer independently publishes LATDD/LONGDD.
+        # Compare their angular magnitudes to coded legacy fields and the
+        # published point geometry, keeping individual values in memory only.
+        dd_lat, dd_lon = attr.get("LATDD"), attr.get("LONGDD")
+        decimal_ok = (
+            type(dd_lat) in (float, int) and type(dd_lon) in (float, int)
+            and isfinite(dd_lat) and isfinite(dd_lon)
+            and 13 <= abs(dd_lat) <= 72 and 64 <= abs(dd_lon) <= 175
+        )
+        if decimal_ok:
+            decimal_available += 1
+            if lat is not None and lon is not None:
+                gap = hypot(
+                    abs(abs(dd_lat) - lat) * 111_320,
+                    abs(abs(dd_lon) - lon) * 111_320 * cos(radians(lat)),
+                )
+                decimal_vs_source_comparisons += 1
+                decimal_vs_source_over_25 += int(gap > 25)
+                max_decimal_vs_source_m = max(max_decimal_vs_source_m, gap)
+        else:
+            decimal_missing += 1
         geom = feature.get("geometry")
         if (type(geom) is not dict or type(geom.get("x")) not in (int, float)
                 or type(geom.get("y")) not in (int, float)
@@ -197,6 +222,15 @@ def compare_sources(socrata_original: bytes, ntad_original: bytes) -> dict:
             geoms_missing += 1
             continue
         geoms_valid += 1
+        if decimal_ok:
+            gap = hypot(
+                abs(abs(float(geom["y"])) - abs(dd_lat)) * 111_320,
+                abs(abs(float(geom["x"])) - abs(dd_lon)) * 111_320
+                * cos(radians(abs(dd_lat))),
+            )
+            decimal_vs_geom_comparisons += 1
+            decimal_vs_geom_over_25 += int(gap > 25)
+            max_decimal_vs_geom_m = max(max_decimal_vs_geom_m, gap)
         if lat is None or lon is None:
             continue
         # Only unsigned-magnitude comparison: not a geodetic survey,
@@ -216,7 +250,10 @@ def compare_sources(socrata_original: bytes, ntad_original: bytes) -> dict:
     if (len(matched) + unmatched + duplicates != len(base) or
             geoms_valid + geoms_missing != len(matched) or
             ref_year_agree + ref_year_disagree + ref_year_unknown != len(matched) or
-            within_25 + within_250 + beyond_250 != comparisons):
+            within_25 + within_250 + beyond_250 != comparisons or
+            decimal_available + decimal_missing != len(matched) or
+            decimal_vs_source_comparisons > decimal_available or
+            decimal_vs_geom_comparisons > decimal_available):
         raise Blocked("source join counts do not conserve")
     return {
         "schema": SCHEMA,
@@ -243,6 +280,16 @@ def compare_sources(socrata_original: bytes, ntad_original: bytes) -> dict:
         "matched_ntad_missing_invalid_geometry": geoms_missing,
         "matched_source_valid_unsigned_dms": coded_valid,
         "matched_source_missing_invalid_dms": coded_missing,
+        "ntad_decimal_LATDD_LONGDD_available": decimal_available,
+        "ntad_decimal_LATDD_LONGDD_missing_invalid": decimal_missing,
+        "ntad_decimal_vs_source_legacy_comparisons": decimal_vs_source_comparisons,
+        "ntad_decimal_vs_source_legacy_over_25_m": decimal_vs_source_over_25,
+        "ntad_decimal_vs_source_legacy_max_approx_m":
+            round(max_decimal_vs_source_m, 2) if decimal_vs_source_comparisons else None,
+        "ntad_decimal_vs_point_geometry_comparisons": decimal_vs_geom_comparisons,
+        "ntad_decimal_vs_point_geometry_over_25_m": decimal_vs_geom_over_25,
+        "ntad_decimal_vs_point_geometry_max_approx_m":
+            round(max_decimal_vs_geom_m, 2) if decimal_vs_geom_comparisons else None,
         "angular_magnitude_comparisons": comparisons,
         "approx_delta_up_to_25_m": within_25,
         "approx_delta_over_25_up_to_250_m": within_250,
@@ -253,6 +300,9 @@ def compare_sources(socrata_original: bytes, ntad_original: bytes) -> dict:
         "socrata_and_ntad_different_snapshot_dates_possible": True,
         "longitude_sign_or_geodetic_datum_independently_proven": False,
         "zero_unmatched_geometries_silently_assumed": False,
+        "requires_manual_review_of_original_angular_discrepancies":
+            beyond_250 > 0 or within_250 > 0,
+        "independent_point_geometry_agreement_admitted": False,
         "all_original_source_rows_or_features_exported": False,
         "independent_official_survey_validation": False,
         "complete_NBI_SNBI_crosswalk_validated": False,

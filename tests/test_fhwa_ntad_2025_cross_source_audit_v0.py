@@ -32,6 +32,8 @@ def layer_features(source=None):
                 "LAT_016": row["lat_016"],
                 "LONG_017": row["long_017"],
                 "YEAR_BUILT_027": 1970,
+                "LATDD": 33 + 45 / 60 + 25 / 3600,
+                "LONGDD": -(86 + 30 / 60),
             },
             "geometry": {
                 "x": -(86 + 30 / 60),
@@ -64,6 +66,9 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertEqual(report["approx_delta_up_to_25_m"], 25)
         self.assertEqual(report["matched_source_year_built_equal"], 25)
         self.assertEqual(report["matched_nbi_coded_coordinate_strings_equal"], 25)
+        self.assertEqual(report["ntad_decimal_LATDD_LONGDD_available"], 25)
+        self.assertEqual(report["ntad_decimal_vs_source_legacy_over_25_m"], 0)
+        self.assertEqual(report["ntad_decimal_vs_point_geometry_over_25_m"], 0)
         self.assertFalse(report["model_input_admitted"])
         self.assertFalse(report["longitude_sign_or_geodetic_datum_independently_proven"])
         self.assertNotIn("SRC2025", json.dumps(report))
@@ -120,6 +125,8 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertEqual(report["matched_nbi_coded_coordinate_strings_different"], 1)
         self.assertEqual(report["matched_source_year_built_different"], 1)
         self.assertEqual(report["approx_delta_over_250_m"], 1)
+        self.assertEqual(report["ntad_decimal_vs_source_legacy_over_25_m"], 0)
+        self.assertEqual(report["ntad_decimal_vs_point_geometry_over_25_m"], 1)
         self.assertEqual(report["angular_magnitude_comparisons"], 24)
         self.assertNotIn("-80.0", json.dumps(report))
         self.assertFalse(report["independent_official_survey_validation"])
@@ -163,6 +170,27 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertTrue(proof.NTAD_API.startswith("https://services.arcgis.com/"))
         self.assertEqual(proof.MAX_SAMPLES, 100)
 
+
+    def test_ntad_decimal_fields_can_diverge_from_legacy_codes_independently(self):
+        f = layer_features()
+        f[0]["attributes"]["LATDD"] = 34.3
+        report = proof.compare_sources(wire(source_rows()), wire(arcgis(f)))
+        self.assertEqual(report["matched_unique_bridge_state_ids"], 25)
+        self.assertEqual(report["matched_nbi_coded_coordinate_strings_equal"], 25)
+        self.assertEqual(report["ntad_decimal_vs_source_legacy_over_25_m"], 1)
+        self.assertEqual(report["ntad_decimal_vs_point_geometry_over_25_m"], 1)
+        self.assertEqual(report["approx_delta_over_250_m"], 0)
+        self.assertFalse(report["independent_point_geometry_agreement_admitted"])
+
+    def test_missing_ntad_decimal_columns_do_not_invent_concordance(self):
+        f = layer_features()
+        f[0]["attributes"].pop("LATDD")
+        f[1]["attributes"]["LONGDD"] = None
+        proof_result = proof.compare_sources(wire(source_rows()), wire(arcgis(f)))
+        self.assertEqual(proof_result["ntad_decimal_LATDD_LONGDD_available"], 23)
+        self.assertEqual(proof_result["ntad_decimal_LATDD_LONGDD_missing_invalid"], 2)
+        self.assertEqual(proof_result["ntad_decimal_vs_point_geometry_comparisons"], 23)
+        self.assertEqual(proof_result["angular_magnitude_comparisons"], 25)
 
 if __name__ == "__main__":
     unittest.main()
