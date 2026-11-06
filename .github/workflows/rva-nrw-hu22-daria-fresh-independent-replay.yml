@@ -120,11 +120,14 @@ jobs:
             --original-xws-csv-dir "${{ runner.temp }}/fresh-xws-source-csv" \
             --original-geocoded-nrw-oed-zip "${{ runner.temp }}/nrw-hu22-fresh-repacked.zip" \
             --out-derived-gust-zip "${{ runner.temp }}/fresh-Daria1990-hazard-only.zip"
-      - name: Switch to independently pinned NumPy SciPy only after original HU22 rebuild
+      - name: Create separate isolated Python 3.11 venv for pinned original CLIMADA parity
         run: |
-          # Keep the proven original HU22/pyarrow pipeline untouched.
-          # Numeric published-method parity follows in a distinct Python phase.
-          python -m pip install --disable-pip-version-check --no-input numpy==1.26.4 scipy==1.14.1
+          # ODS/pandas 3/pyarrow need NumPy 2; do not corrupt that source env.
+          # The original CLIMADA method float64 gate runs in an isolated venv.
+          python -m venv "${{ runner.temp }}/climada61-parity-venv"
+          "${{ runner.temp }}/climada61-parity-venv/bin/python" -m pip install --disable-pip-version-check --no-input \
+            numpy==1.26.4 scipy==1.14.1
+          "${{ runner.temp }}/climada61-parity-venv/bin/python" -m pip check
           python -m pip check
       - name: Source-original CLIMADA v6.1.0 GPL methods fetched into isolated ephemeral directory
         run: |
@@ -136,7 +139,7 @@ jobs:
           curl -fsSL --retry 2 --max-time 45 "$base/climada/entity/impact_funcs/base.py" -o "${{ runner.temp }}/fresh-climada61-original-gpl/base.py"
       - name: Exact original CLIMADA source-method to independent Decimal 60k cent-parity
         run: |
-          python research_runners/rva_nrw_daria_climada61_original_method_parity_v0.py \
+          "${{ runner.temp }}/climada61-parity-venv/bin/python" research_runners/rva_nrw_daria_climada61_original_method_parity_v0.py \
             --source-hazard-zip "${{ runner.temp }}/fresh-Daria1990-hazard-only.zip" \
             --source-climada-dir "${{ runner.temp }}/fresh-climada61-original-gpl" \
             --out-receipt "${{ runner.temp }}/fresh-independent-replay-method-parity-NOT-RV-LOSS.json"
@@ -177,7 +180,8 @@ jobs:
             "${{ runner.temp }}/nrw-hu22-fresh-repacked.zip" \
             "${{ runner.temp }}/fresh-xws-source-csv" \
             "${{ runner.temp }}/fresh-Daria1990-hazard-only.zip" \
-            "${{ runner.temp }}/fresh-climada61-original-gpl"
+            "${{ runner.temp }}/fresh-climada61-original-gpl" \
+            "${{ runner.temp }}/climada61-parity-venv"
       - name: Publish only source-bound method parity, no 901MB originals or individual locations
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
