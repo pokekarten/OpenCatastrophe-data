@@ -15,7 +15,9 @@ original_pdf_sha256 = "NOT_ACQUIRED"
 historical_loss_workbook_sha256 = "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
 exposure_workbook_sha256 = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
 exposure_workbook_binary_bytes = 5593551
-exposure_OOXML_security_quarantine_passed = false
+exposure_generic_unpinned_OOXML_policy_passed = false
+exposure_source_pinned_CRC_sheet_metadata_passed = true
+exposure_financial_cells_model_admitted = false
 historical_loss_workbook_binary_bytes = 28209
 historical_loss_workbook_original_source_byte_receipt = "research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml"
 workbook_content_read_or_modelled = false
@@ -52,7 +54,7 @@ premium_share_can_be_treated_as_buildings_or_contracts_share = false
 GWP_sample_covers_RV_geolocated_NRW_book = false
 licence_workbook_specific_restrictions_checked = false
 actual_eiopa_xlsx_bytes_obtained_in_this_research = true
-unfetched_reason = "Official EIOPA HTTPS GitHub Actions run 42270505316 delivered both workbooks: historical loss 28209 bytes SHA256 201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6 and exposure 5593551 bytes SHA256 f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79. Strict OOXML security quarantine rejected active/external/huge member; no full workbook CRC, worksheets, insurer loss rows or reuse licence confirmed"
+source_event_and_workbook_rights_status = "Official EIOPA HTTPS GitHub Actions run 42270505316 delivered both originals: historical loss 28209 bytes SHA256 201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6 and exposure 5593551 bytes SHA256 f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79. Generic OOXML quarantine initially blocked one printerSettings binary; original source-SHA-pinned 5420B printerSettings metadata-only exception passed full ZIP CRC and one workbook sheet in GitHub Actions 42292320403. No insurer claim cells, workbook-specific third-party rights, German wind loss calibration or annual EP verified."
 admission = "PUBLIC_METADATA_REFERENCE_ONLY_NO_DARIA_FIT_NO_RV_POLICY_NO_EP"
 
 [[original_attachments]]
