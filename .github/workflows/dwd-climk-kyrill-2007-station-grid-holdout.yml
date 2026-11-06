@@ -9,6 +9,7 @@ on:
       - 'scripts/dwd_climk_kyrill_station_grid_holdout_v0.py'
       - 'tests/test_dwd_climk_kyrill_station_grid_holdout_v0.py'
       - 'docs/research/dwd_climk_kyrill_2007_real_station_native_grid_20261106.md'
+      - 'docs/research/evidence/dwd-climk-kyrill-2007-real-station-native-era5-grid-20261106.md'
       - 'docs/research/evidence/dwd-kyrill-2007-three-station-history-source-receipt-20261106.md'
       - 'docs/research/evidence/dwd-kyrill-2007-berlin-tempelhof-original-fx10-20261106.md'
       - 'docs/research/evidence/dwd-kyrill-2007-munich-two-stations-original-fx10-20261106.md'
@@ -68,6 +69,15 @@ jobs:
                      r['height_or_roughness_normalized'] is False for r in data['station_to_grid_results'])
           assert data['wind_model_bias_calibrated'] is False
           assert data['annual_AAL'] is None and data['annual_AEP'] is None and data['annual_OEP'] is None
+          # Exact independently reviewed source-live aggregate, NOT invented source values.
+          proof=Path('docs/research/evidence/dwd-climk-kyrill-2007-real-station-native-era5-grid-20261106.md').read_text(encoding='utf-8')
+          fence=chr(96)*3
+          assert proof.count(fence+'json\n')==1 and proof.count('\n'+fence+'\n')==1
+          receipt=json.loads(proof.split(fence+'json\n',1)[1].split('\n'+fence+'\n',1)[0])
+          assert data==receipt, 'original DWD/CLIMK station-native source proof changed; do not silently refresh'
+          assert receipt['station_to_grid_results'][1]['era5_native_cell_x']==135
+          assert receipt['station_to_grid_results'][1]['era5_original_kyrill_storm_footprint_max_gust_mps']=='34.324'
+          assert receipt['station_to_grid_results'][1]['in_same_era5_cell_as_fictional_city_marker'] is False
           print('REAL original CLIMK native-grid sampling AT original DWD station coordinates (research-only):')
           print(json.dumps(data,sort_keys=True,indent=2,allow_nan=False))
           PY
