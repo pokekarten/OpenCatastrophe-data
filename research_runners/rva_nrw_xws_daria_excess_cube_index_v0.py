@@ -59,6 +59,21 @@ def _number(value: str, *, maximum: Decimal) -> Decimal:
     return d
 
 
+def _uint(value: object, *, maximum: int) -> int:
+    """Accept canonical raw-overlay integers and CSV text, never bool/float."""
+    if type(value) is int:
+        n = value
+    elif isinstance(value, str) and value.isascii() and value.isdigit():
+        n = int(value)
+        if str(n) != value:
+            raise WindIndexBlocked("noncanonical integer text")
+    else:
+        raise WindIndexBlocked("unsupported original source integer type")
+    if not 0 <= n <= maximum:
+        raise WindIndexBlocked("original source integer exceeds bound")
+    return n
+
+
 def _format(value: Decimal) -> str:
     return format(value, "f")
 
@@ -128,19 +143,14 @@ def compute_index(
             not isinstance(ident, str) or not ident or ident in unique
             or not isinstance(county, str) or len(county) != 5 or not county.isdigit()
             or row["ActualRVInsuredSiteObserved"] != "false"
-            or not row["XWS1990DariaNearestSourceGridId"].isdigit()
+            or _uint(row["XWS1990DariaNearestSourceGridId"], maximum=300_000) < 0
             or _number(row["NearestXWSGridPointKm"], maximum=Decimal(45)) > 45
         ):
             raise WindIndexBlocked("duplicate/nonphysical or claimed insured site")
         unique.add(ident)
-        tiv_text = row["Fictional2025BuildingTIVEUR"]
-        if (
-            not isinstance(tiv_text, str) or not tiv_text.isdigit()
-            or str(int(tiv_text)) != tiv_text
-            or not 1 <= int(tiv_text) <= 500_000_000
-        ):
+        tiv = _uint(row["Fictional2025BuildingTIVEUR"], maximum=500_000_000)
+        if tiv < 1:
             raise WindIndexBlocked("invented TIV source not conserved")
-        tiv = int(tiv_text)
         gusts = [_number(row[field], maximum=Decimal(300)) for _, field in VIEWS]
         if not gusts[0] <= gusts[1] <= gusts[2]:
             raise WindIndexBlocked("reversed same-event original XWS wind uncertainty views")
@@ -185,7 +195,7 @@ def compute_index(
             source_row["FictionalBuildingsWithMeanGustGE25Mps"],
             source_row["FictionalTIVWithMeanGustGE25MpsEUR"],
         )
-        if actual_text != tuple(str(v) for v in values):
+        if tuple(_uint(v, maximum=10**15) for v in actual_text) != tuple(values):
             raise WindIndexBlocked("original county/site exposure not reconciled")
 
     result_rows = []
