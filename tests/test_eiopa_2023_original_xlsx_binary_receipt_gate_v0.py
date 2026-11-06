@@ -24,9 +24,14 @@ class OriginalBinarySourceReceiptTests(unittest.TestCase):
         self.assertEqual(v["publisher_link_full_hash"],
                          "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6")
         self.assertEqual(v["publisher_link_complete_bytes"], 28209)
-        self.assertEqual(v["publisher_link_complete_binary_count"], 1)
+        self.assertEqual(v["publisher_link_complete_binary_count"], 2)
+        self.assertTrue(v["other_publisher_xlsx_has_full_binary"])
+        self.assertEqual(v["original_exposure_full_SHA"],
+                         "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79")
+        self.assertEqual(v["original_exposure_complete_bytes"], 5593551)
+        self.assertFalse(v["original_exposure_SHA_independently_repeated"])
+        self.assertFalse(v["original_exposure_OOXML_quarantine_passed"])
         for key in (
-            "other_publisher_xlsx_has_full_binary",
             "insurer_claim_cells_analyzed",
             "original_XLSX_bytes_committed",
             "workbook_specific_rights_clearance",
@@ -43,6 +48,7 @@ class OriginalBinarySourceReceiptTests(unittest.TestCase):
             (0, "zip_central_directory_worksheets", 2),
             (0, "sha256_repeat_independent_implementation_agreed", False),
             (1, "whole_binary_sha256", "b"*64),
+            (1, "whole_binary_size_bytes", 5000000),
             (1, "retrieval_status", "COMPLETE_BYTES_RETURNED_BY_SOURCE_PROXY"),
             (1, "zip_central_directory_worksheets", 3),
         ):
@@ -79,6 +85,9 @@ class OriginalBinarySourceReceiptTests(unittest.TestCase):
             ("publisher_legal_notice", "https://other.example/copyright"),
             ("proxy_transport_not_independent_origin_TLSPIN", False),
             ("website_reproduction_attribution_reviewed", False),
+            ("second_full_source_obtained_by_official_TLS_runner", False),
+            ("second_source_original_OOXML_security_quarantine_passed", True),
+            ("official_TLS_receipt_artifact_id", 123),
         ):
             d=deepcopy(self.original)
             d[key]=value
