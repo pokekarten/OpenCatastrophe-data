@@ -6,8 +6,8 @@ SPDX-License-Identifier: Apache-2.0
 # Ciara/Sabine 2020: event-matched wind source path for EIOPA validation
 
 **6 November 2026. Source discovery ONLY — no ERA5 original
-meteorology bytes, EIOPA original XLSX sheets or insurer claims
-were obtained or imported. No CAT model, loss calibration,
+meteorology bytes, EIOPA original worksheet financial cell
+contents or insurer claims were imported. No CAT model, loss calibration,
 GUL/IL/RI, annual frequency or gross/net OEP/AEP admitted.**
 
 ## Why Daria 1990 must stay separate
@@ -97,10 +97,16 @@ geocoding or the actual NRW 53-Kreis insured property TIV.
   [#42270505316](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42270505316):
   **5,593,551 original bytes**, SHA-256
   `f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79`.
-  The original OOXML security quarantine BLOCKED unsafe/complex
-  workbook content and is not relaxed. Neither actual insured-loss
-  worksheet cells nor workbook-specific licence have been
-  verified; a second exposure source-hash replay remains pending.
+  The generic initial OOXML security quarantine blocked one
+  **5,420-byte printer-settings binary**, which is a permitted
+  normal Office XML part. The subsequent exact original
+  SHA-pinned limited exception preserved all other binary
+  no-go gates, passed full ZIP member CRC checks and verified
+  exactly one worksheet from workbook metadata in
+  [#42292320403](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42292320403).
+  **Actual insured-loss cells and workbook-specific licence
+  remain unverified**; independent exposure SHA confirmation
+  from a separate source channel remains pending.
   No original XLSX binary stored in public GitHub.
   Separate receipt:
   `research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml`.
