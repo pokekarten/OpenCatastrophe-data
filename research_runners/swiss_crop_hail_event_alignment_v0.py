@@ -57,6 +57,32 @@ def _str_label(value) -> str:
     return str(value)
 
 
+def coordinate_key_coverage(exposure_positions, damage_positions) -> dict[str, object]:
+    """Bounded spatial key coverage, not row matching or scientific admission.
+
+    Five decimal places (~metre) prevent assuming equal row counts/order.
+    Expose only aggregate key counts, never coordinates.
+    """
+    source_keys = [(round(float(lat), 5), round(float(lon), 5))
+                   for lat, lon in exposure_positions]
+    damage_keys = [(round(float(lat), 5), round(float(lon), 5))
+                   for lat, lon in damage_positions]
+    source_set = set(source_keys)
+    matches = sum(key in source_set for key in damage_keys)
+    return {
+        "source_unique_key_count": len(source_set),
+        "source_duplicate_key_count": len(source_keys) - len(source_set),
+        "damage_unique_key_count": len(set(damage_keys)),
+        "damage_duplicate_key_count": len(damage_keys) - len(set(damage_keys)),
+        "damage_positions_matching_exposure_key": matches,
+        "damage_positions_without_exposure_key": len(damage_keys) - matches,
+        "coordinate_key_rounding_decimals": 5,
+        "full_damage_coordinate_key_coverage": (matches == len(damage_keys) and
+                                                  len(damage_keys) > 0 and
+                                                  len(source_keys) == len(source_set)),
+    }
+
+
 def source_pair_summary(exposure, damage, hazard_dates) -> dict[str, object]:
     import numpy as np
     # pandas/PyTables fixed release layout observed from real ZIP schema.
@@ -66,18 +92,23 @@ def source_pair_summary(exposure, damage, hazard_dates) -> dict[str, object]:
         raise Blocked("original exposure float block lacks unique lat/lon columns")
     float_matrix = block["block0_values"][()]
     positions = damage["coord_exp"][()]
-    rows = len(block["axis1"])
-    if (float_matrix.ndim != 2 or float_matrix.shape[0] != rows or
-            positions.shape != (rows, 2) or rows == 0):
-        raise Blocked("crop exposure and observed-damage positions incompatible")
+    exposure_count = len(block["axis1"])
+    damage_count = len(positions)
+    if (float_matrix.ndim != 2 or float_matrix.shape[0] != exposure_count or
+            positions.ndim != 2 or positions.shape[1] != 2 or
+            exposure_count == 0 or damage_count == 0):
+        raise Blocked("original exposure or damage coordinates have invalid matrix dimensions")
     expected = np.stack([
         float_matrix[:, labels.index("latitude")],
         float_matrix[:, labels.index("longitude")],
     ], axis=1)
     finite = bool(np.isfinite(expected).all() and np.isfinite(positions).all())
-    aligned = int(np.count_nonzero(
-        np.all(np.isclose(expected, positions, atol=0.000001, rtol=0), axis=1)
-    )) if finite else 0
+    if not finite:
+        raise Blocked("original spatial coordinates include nonfinite positions")
+    metrics = coordinate_key_coverage(expected, positions)
+    aligned = int(np.count_nonzero(np.all(
+        np.isclose(expected, positions, atol=0.000001, rtol=0), axis=1
+    ))) if exposure_count == damage_count else 0
     dates = damage["date"][()]
     if not verify_dates_subset(hazard_dates, dates):
         raise Blocked("reported crop damage event dates are not a strict subset of radar events")
@@ -88,15 +119,17 @@ def source_pair_summary(exposure, damage, hazard_dates) -> dict[str, object]:
     if (len(pointers) != n_events+1 or pointers[0] != 0 or
             pointers[-1] != len(indices) or len(indices) != len(values) or
             np.any(np.diff(pointers) < 0) or
-            (len(indices) and (np.min(indices) < 0 or np.max(indices) >= rows))):
+            (len(indices) and (np.min(indices) < 0 or np.max(indices) >= damage_count))):
         raise Blocked("original damage CSR data do not match event or location axes")
     if not (np.isfinite(values).all() and np.all(values >= 0)):
         raise Blocked("reported crop impact values contain nonfinite/negative entries")
     observed_dates = sorted(int(x) for x in dates)
     return {
-        "position_count": rows,
+        "exposure_position_count": exposure_count,
+        "damage_position_count": damage_count,
         "exact_order_coordinate_matches_1e_6_degrees": aligned,
-        "position_alignment_complete": aligned == rows,
+        "positions_equal_count_and_order": exposure_count == damage_count and aligned == exposure_count,
+        **metrics,
         "finite_coordinates": finite,
         "observed_event_count": n_events,
         "observed_event_dates_are_radar_subset": True,
@@ -151,7 +184,8 @@ def main() -> int:
         "meshs_poh_radar_grid_points": 454400,
         "radar_event_count": 12,
         "all_event_date_sets_subset": True,
-        "all_coordinate_pairs_row_aligned": all(x["position_alignment_complete"] for x in summaries),
+        "all_damage_position_keys_covered": all(x["full_damage_coordinate_key_coverage"] for x in summaries),
+        "all_same_rows_in_same_order": all(x["positions_equal_count_and_order"] for x in summaries),
         "pair_summaries": summaries,
         "source_bytes_retained": False,
         "raw_coordinates_exported": False,
