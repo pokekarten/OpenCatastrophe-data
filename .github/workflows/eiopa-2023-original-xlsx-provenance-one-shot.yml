@@ -1,14 +1,13 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-name: EIOPA 2023 original XLSX two-source provenance one-shot (NO claims)
+name: EIOPA 2023 original XLSX on-demand provenance (NO claims)
 
-# Temporary PR trigger for one bounded read-only official original-source
-# verification. Remove pull_request after initial result and keep manual-only.
-# Neither provider workbook will be stored/uploaded.
+# One official source provenance run succeeded at GitHub Actions #42270505316.
+# From this commit onwards: MANUAL ONLY. Do not cause repeated network
+# requests when ordinary PR documentation/research edits occur.
+# Workflow dispatch is available after this Draft PR is reviewed and
+# the workflow is available on the default branch.
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/eiopa-2023-original-xlsx-provenance-one-shot.yml"
   workflow_dispatch:
 
 permissions:
