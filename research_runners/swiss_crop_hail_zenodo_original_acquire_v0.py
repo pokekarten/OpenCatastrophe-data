@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Bounded, original-host-only acquisition of five version-specific Zenodo source files.
+"""Bounded, original-host-only acquisition of eight version-specific Zenodo source files.
 
 Only externally held temporary files are processed. No model admission or
 raw-source byte persistence is implied by a successful receipt.
@@ -97,8 +97,10 @@ def acquire_one(asset: str, target: Path, opener) -> int:
             if total == 0 or (expected is not None and total != expected):
                 raise Blocked("empty or truncated source file")
             return total
-    except (HTTPError, URLError, OSError, TimeoutError) as exc:
-        raise Blocked("original source acquisition failed") from exc
+    except HTTPError as exc:
+        raise Blocked(f"{asset}: original publisher returned HTTP {exc.code}") from exc
+    except (URLError, OSError, TimeoutError) as exc:
+        raise Blocked(f"{asset}: original publisher transport failed ({type(exc).__name__})") from exc
 
 
 def verify(assets: tuple[str, ...], opener=None) -> dict[str, object]:
@@ -130,6 +132,7 @@ def main() -> int:
     parser.add_argument("--include-radar", action="store_true")
     parser.add_argument("--include-archives", action="store_true", help="also verify original two crop data ZIPs")
     parser.add_argument("--include-code", action="store_true", help="verify original Zenodo software archive (never execute)")
+    parser.add_argument("--code-only", action="store_true", help="diagnose exact software archive independently without other downloads")
     args = parser.parse_args()
     assets = ("exposure_metadata", "damage_metadata", "radar_metadata")
     if args.include_radar:
