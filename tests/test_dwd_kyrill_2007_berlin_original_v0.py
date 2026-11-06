@@ -102,9 +102,20 @@ class TestDWDKyrill2007Original(unittest.TestCase):
 
     def test_strict_utc_grid_and_source_bounds(self):
         for ts in ("200701181201","2007011812","200701181260",
-                   "199912312350","201001010000","200702300000"):
+                   "199912312340","201001010000","200702300000"):
             with self.subTest(ts=ts),self.assertRaises(OriginalDWDGateError):
                 _utc_stamp(ts)
+
+    def test_only_single_pre_2000_mez_archive_edge_is_allowed(self):
+        self.assertEqual(_utc_stamp("199912312350"),datetime(1999,12,31,23,50))
+        for ts in ("199912312340", "199912310000", "199901010000"):
+            with self.subTest(ts=ts), self.assertRaises(OriginalDWDGateError):
+                _utc_stamp(ts)
+        rows=[("00433","199912312350","3","5.0"),*ROWS]
+        report=audit_original_archive(archive(rows))
+        self.assertTrue(report["pre_2000_mez_edge_tick_not_analyzed"])
+        self.assertFalse(report["archive_first_clock_is_utc"])
+        self.assertEqual(report["archive_first_original_clock_label"],"1999-12-31T23:50:00")
 
     def test_nonfinite_negative_and_unphysical_gust_rejected(self):
         for value in ("inf","NaN","-1","-998","200.01","invalid"):
