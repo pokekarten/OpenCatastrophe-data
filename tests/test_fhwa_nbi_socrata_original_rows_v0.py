@@ -102,5 +102,28 @@ class NBISelectedOriginalRowTests(unittest.TestCase):
             gate.audit_rows(wire(rows()), expected_count=3, expected_sha256="0"*64)
 
 
+    def test_selected_state_and_year_reject_unexpected_original_rows(self):
+        good = gate.audit_rows(
+            wire(rows()), expected_count=3, expected_state_code=1, expected_year=2025)
+        self.assertTrue(good["all_sample_rows_match_explicit_selectors"])
+        self.assertEqual(good["expected_query_state_code"], 1)
+        self.assertEqual(good["expected_query_year"], 2025)
+        bad_state = rows()
+        bad_state[2]["state_code_001"] = "6"
+        with self.assertRaisesRegex(gate.Blocked, "explicit state selector"):
+            gate.audit_rows(wire(bad_state), expected_count=3, expected_state_code=1)
+        bad_year = rows()
+        bad_year[0]["year"] = "2024"
+        with self.assertRaisesRegex(gate.Blocked, "explicit year selector"):
+            gate.audit_rows(wire(bad_year), expected_count=3, expected_year=2025)
+        for selector in (True, 0, 100):
+            with self.assertRaises(gate.Blocked):
+                gate.audit_rows(wire(rows()), expected_count=3,
+                                expected_state_code=selector)
+        for selector in (True, 1900, 2027):
+            with self.assertRaises(gate.Blocked):
+                gate.audit_rows(wire(rows()), expected_count=3,
+                                expected_year=selector)
+
 if __name__ == "__main__":
     unittest.main()

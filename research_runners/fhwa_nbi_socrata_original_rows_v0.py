@@ -62,10 +62,18 @@ def _original_dms(value: object, width: int) -> bool:
 
 
 def audit_rows(original: bytes, *, expected_count: int = EXPECTED_COUNT,
-               expected_sha256: str | None = None) -> dict:
+               expected_sha256: str | None = None,
+               expected_state_code: int | None = None,
+               expected_year: int | None = None) -> dict:
     """Validate original bounded rows, report aggregate diagnostics only."""
     if type(expected_count) is not int or not 1 <= expected_count <= EXPECTED_COUNT:
         raise Blocked("invalid bounded expected sample count")
+    if expected_state_code is not None and (
+            type(expected_state_code) is not int or not 1 <= expected_state_code <= 99):
+        raise Blocked("invalid bounded expected state selector")
+    if expected_year is not None and (
+            type(expected_year) is not int or not 1992 <= expected_year <= 2026):
+        raise Blocked("invalid bounded expected original year selector")
     if type(original) is not bytes or not 2 <= len(original) <= MAX_BYTES:
         raise Blocked("complete bounded original JSON row sample required")
     digest = sha256(original).hexdigest()
@@ -95,6 +103,10 @@ def audit_rows(original: bytes, *, expected_count: int = EXPECTED_COUNT,
             raise Blocked("original sample must contain only six selected API fields")
         yr = _nonnegative_int(row.get("year"), "year", low=1992, high=2026)
         st = _nonnegative_int(row.get("state_code_001"), "state code", low=1, high=99)
+        if expected_state_code is not None and st != expected_state_code:
+            raise Blocked("selected original row violates explicit state selector")
+        if expected_year is not None and yr != expected_year:
+            raise Blocked("selected original row violates explicit year selector")
         ident = row.get("structure_number_008")
         if (type(ident) is not str or not 1 <= len(ident) <= 40 or
                 ident.strip() != ident):
@@ -126,6 +138,9 @@ def audit_rows(original: bytes, *, expected_count: int = EXPECTED_COUNT,
         "original_response_sha256": digest,
         "original_response_bytes": len(original),
         "sample_rows": len(rows),
+        "expected_query_state_code": expected_state_code,
+        "expected_query_year": expected_year,
+        "all_sample_rows_match_explicit_selectors": True,
         "year_count_histogram": {str(y): years[y] for y in sorted(years)},
         "distinct_state_codes_in_selected_sample": len(states),
         "unique_bridge_year_state_structure_in_sample": len(seen),
@@ -152,6 +167,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--original-sample", type=Path, required=True)
     parser.add_argument("--expected-sha256")
+    parser.add_argument("--expected-count", type=int, default=EXPECTED_COUNT)
+    parser.add_argument("--expected-state-code", type=int)
+    parser.add_argument("--expected-year", type=int)
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     source = args.original_sample
@@ -161,7 +179,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.out is not None and (args.out.is_symlink() or args.out.exists() or
                                  args.out.resolve() == source.resolve()):
         parser.error("refuse existing or source-aliased output")
-    receipt = audit_rows(source.read_bytes(), expected_sha256=args.expected_sha256)
+    receipt = audit_rows(
+        source.read_bytes(), expected_sha256=args.expected_sha256,
+        expected_count=args.expected_count, expected_state_code=args.expected_state_code,
+        expected_year=args.expected_year,
+    )
     result = json.dumps(receipt, sort_keys=True, indent=2, allow_nan=False) + "\n"
     if args.out is None:
         print(result, end="")
