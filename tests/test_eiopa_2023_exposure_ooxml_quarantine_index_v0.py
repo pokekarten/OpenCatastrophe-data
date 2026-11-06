@@ -94,6 +94,17 @@ class OriginalSourceQuarantineMetadataTests(TestCase):
         self.assertFalse(receipt["all_ZIP_member_CRCs_checked"])
         self.assertFalse(receipt["workbook_XML_or_worksheet_cells_read"])
 
+    def test_expensive_original_metadata_replay_must_be_manual_only(self):
+        yml = (ROOT/".github/workflows/eiopa-2023-exposure-zip-index-one-shot.yml"
+               ).read_text(encoding="utf-8")
+        block = yml.split("\non:\n",1)[1].split("\npermissions:",1)[0]
+        self.assertEqual(block, "  workflow_dispatch:\n")
+        self.assertIn("contents: read", yml)
+        self.assertIn("retention-days: 14", yml)
+        self.assertIn("eiopa-2023-exposure-original-OOXML-members-NOT-CLAIMS.json", yml)
+        self.assertNotIn("*.xlsx", yml)
+        self.assertNotIn("actions: write", yml)
+
     def test_wrong_original_sha_and_size_rejected_before_zip_index_audit(self):
         with tempfile.TemporaryDirectory() as temp:
             p = Path(temp)/"toy.xlsx"
