@@ -14,6 +14,8 @@ on:
       - "research_runners/rva_nrw_daria_climada61_original_method_parity_v0.py"
       - "research_runners/rva_germany_wind_loss_calibration_source_gate_v0.py"
       - "research_runners/eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py"
+      - "research_runners/eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0.py"
+      - "tests/test_eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0.py"
       - "research/observations/eiopa_catastrophe_hub_2023_original_dossier_v0.toml"
       - "tests/test_eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py"
       - "research/observations/rva_germany_wind_loss_calibration_source_register_v0.toml"
@@ -56,6 +58,9 @@ jobs:
         run: |
           python research_runners/eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py
           python -m unittest discover -s tests -p 'test_eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py' -v
+      - name: Offline EIOPA original XLSX quarantine integrity and no-loss negative tests
+        run: |
+          python -m unittest discover -s tests -p 'test_eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0.py' -v
       - name: Original XWS CSV source, geographic identity and no-model negative tests
         run: python -m unittest discover -s tests -p 'test_xws_daria_1990_original_csv_preflight_v0.py' -v
       - name: Entirely invented conditional impact arithmetic and negative tests
