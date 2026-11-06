@@ -11,6 +11,7 @@ on:
       - "research_runners/rva_nrw_xws_daria_invented_damage_v0.py"
       - "research_runners/rva_nrw_xws_daria_excess_cube_index_v0.py"
       - "research_runners/rva_nrw_daria_climada61_source_challenger_v0.py"
+      - "research_runners/rva_nrw_daria_climada61_original_method_parity_v0.py"
       - "tests/test_rva_nrw_daria_climada61_source_challenger_v0.py"
       - "docs/research/rva-nrw-daria-climada61-source-challenger-20261106.md"
       - "tests/test_rva_nrw_xws_daria_excess_cube_index_v0.py"
@@ -47,6 +48,10 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_excess_cube_index_v0.py' -v
       - name: Original-code-isolated CLIMADA 6.1.0 PAA MDD interpolation negative tests
         run: python -m unittest discover -s tests -p 'test_rva_nrw_daria_climada61_source_challenger_v0.py' -v
+      - name: Pinned binary dependencies for original CLIMADA numeric method parity
+        run: |
+          python -m pip install --disable-pip-version-check --no-input numpy==1.26.4 scipy==1.14.1
+          python -m pip check
       - name: Read exact original external GPL CLIMADA 6.1.0 source metadata (no redistribution)
         run: |
           set -eu
@@ -121,6 +126,12 @@ jobs:
             --source-hazard-zip "${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip" \
             --source-climada-dir "${{ runner.temp }}/climada61-original-gpl" \
             --out-comparison-zip "${{ runner.temp }}/rva-nrw-Daria1990-CLIMADA61-EU-methods-NOT-INSURER-LOSS.zip"
+      - name: Execute original source-pinned CLIMADA 6.1 computational methods versus Decimal replay
+        run: |
+          python research_runners/rva_nrw_daria_climada61_original_method_parity_v0.py \
+            --source-hazard-zip "${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip" \
+            --source-climada-dir "${{ runner.temp }}/climada61-original-gpl" \
+            --out-receipt "${{ runner.temp }}/daria1990-climada61-original-method-parity-NOT-FULL-NATIVE.json"
       - name: Remove original public CSV bytes before any source-derived research artifact
         run: |
           rm -rf -- "${{ runner.temp }}/xws-daria-original-csv"
@@ -156,6 +167,14 @@ jobs:
         with:
           name: rva-nrw-Daria1990-CLIMADA61-source-bound-EU-methods-NOT-RV-LOSS
           path: ${{ runner.temp }}/rva-nrw-Daria1990-CLIMADA61-EU-methods-NOT-INSURER-LOSS.zip
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
+      - name: Publish original source method numeric parity receipt (NOT full native CLIMADA)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Daria1990-original-CLIMADA61-method-level-NOT-FULL-NATIVE-parity
+          path: ${{ runner.temp }}/daria1990-climada61-original-method-parity-NOT-FULL-NATIVE.json
           if-no-files-found: error
           retention-days: 14
           compression-level: 6
