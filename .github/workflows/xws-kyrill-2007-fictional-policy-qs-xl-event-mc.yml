@@ -62,7 +62,7 @@ jobs:
           assert d["fictional_sample_site_count"]==10000
           assert d["fictional_sample_total_tiv_eur"]==4826029500
           assert d["conditional_marginal_expected_reference"]["original_Schwierz_one_event_reference_conditional_GUL_EUR"]=="53686.91"
-          assert d["fixed_rng_seed_specific_to_this_toy_not_FFBK_RIM"]==20261105
+          assert d["fixed_rng_seed_for_this_research_only"]==20261105
           assert d["n_trials_per_dependence_scenario"]==2048
           assert len(d["scenario_results"])==2
           assert d["gross_net_OEP_AEP_computed"] is False
@@ -75,7 +75,7 @@ jobs:
             "research/observations/xws_kyrill_2007_nrw10k_fictional_policy_qs_xl_event_mc_v0.toml"
           ).read_text(encoding="utf-8"))
           assert receipt["exact_machine_summary_json_sha256"]==hashlib.sha256(p.read_bytes()).hexdigest()
-          assert receipt["seed_specific_to_this_toy_not_FFBK_or_RIM"]==d["fixed_rng_seed_specific_to_this_toy_not_FFBK_RIM"]
+          assert receipt["seed_for_this_research_only"]==d["fixed_rng_seed_for_this_research_only"]
           assert receipt["trials_per_dependence_case"]==d["n_trials_per_dependence_scenario"]
           assert receipt["original_previous_stochastic_unmodified_conditional_expected_gul_eur"]==d["conditional_marginal_expected_reference"]["original_Schwierz_one_event_reference_conditional_GUL_EUR"]
           assert receipt["source_original_xws_hazard_10k_zip_sha256"]==d["XWS_original_site_wind_zip_SHA256"]
