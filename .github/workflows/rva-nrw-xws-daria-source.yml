@@ -20,6 +20,7 @@ on:
       - "docs/research/rva-nrw-xws-daria-invented-event-direct-value-20261106.md"
       - "tests/test_rva_nrw_xws_daria_10k_original_gust_overlay_v0.py"
       - "tests/test_xws_daria_1990_original_csv_preflight_v0.py"
+      - "tests/test_rva_nrw_xws_daria_source_only_ci_contract_v0.py"
       - "docs/research/rva-nrw-xws-daria-original-wind-source-20261105.md"
   workflow_dispatch:
 
@@ -39,6 +40,8 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
+      - name: Source-only CI scope cannot masquerade as 10k or download expired artifact
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_source_only_ci_contract_v0.py' -v
       - name: Original XWS CSV source, geographic identity and no-model negative tests
         run: python -m unittest discover -s tests -p 'test_xws_daria_1990_original_csv_preflight_v0.py' -v
       - name: Entirely invented conditional impact arithmetic and negative tests
