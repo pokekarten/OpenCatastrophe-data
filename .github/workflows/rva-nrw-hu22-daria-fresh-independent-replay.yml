@@ -1,0 +1,183 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: NRW HU22 full original fresh reconstruction to Daria CLIMADA parity
+
+# This is a costly, opt-in 901 MB source read and 11.2m-feature stream.
+# PR trigger fires only when the replay workflow itself is changed;
+# regular R+V commits MUST NOT trigger the full original acquisition.
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nrw-hu22-daria-full-independent-original-rebuild
+  cancel-in-progress: false
+
+jobs:
+  original-hu22-daria-independent-rebuild:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact source commit read-only, no persisted credential
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Stable Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Ephemeral disk capacity and pinned OED geometry/numeric libraries
+        run: |
+          df -h "${{ runner.temp }}"
+          python -m pip install --disable-pip-version-check --no-input \
+            -r requirements-eu-flood-spatial.txt ods-tools==5.0.8 \
+            numpy==1.26.4 scipy==1.14.1
+          python -m pip check
+      - name: Offline first full-official/HU geometry and XWS-CLIMADA negative tests
+        run: |
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_full_zip_stratified_reservoir_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu22_full_original_download_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_gfk_residential_candidate_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_10k_original_gust_overlay_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_daria_climada61_source_challenger_v0.py' -v
+      - name: Deterministically regenerate hypothetical 2025 NRW 53-Kreis 10k OED
+        run: |
+          python research_runners/export_rva_nrw_53kreis_oed_pilot_v0.py \
+            "${{ runner.temp }}/nrw-fictional-10k-base" \
+            --pv-case no_pv_reweight --valuation-pattern age_archetype --sample-size 10000
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          base=Path(os.environ["RUNNER_TEMP"])/"nrw-fictional-10k-base"
+          expected={"location.csv":"d116f2ef749c09b2dc10f3111095e75711057a89346653b0582ea362e38d2cee",
+                    "account.csv":"fe5f7fc20bc2fbd4001c79a169d7cac5a925f71b83059737c29632658c9e20a0"}
+          for name,sha in expected.items():
+              actual=hashlib.sha256((base/name).read_bytes()).hexdigest()
+              assert actual==sha,(name,actual,sha)
+          m=json.loads((base/"manifest.json").read_text())
+          assert m["NRW_fictional_conditional_sample_contracts"]==10000
+          assert m["exported_fictional_building_TIV_eur"]==4826029500
+          assert m["actual_RV_insured_building_sites"] is False
+          print("Confirmed exact original 2026-11-05 fictional OED input SHA: 2/2; no insured R+V risks")
+          PY
+      - name: Fresh official full 901092946-byte HU2022 archive, not GitHub artifact
+        run: |
+          python research_runners/rva_nrw_hu22_full_original_download_v0.py \
+            --output-original-zip "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip" --live
+      - name: Full original 11232755-feature SHA/CRC stream and independent 53-Kreis rebuild
+        run: |
+          python research_runners/rva_nrw_hu22_full_source_to_fictional_oed_v0.py \
+            --original-2022-hu-zip "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip" \
+            --fictional-nrw-oed "${{ runner.temp }}/nrw-fictional-10k-base" \
+            --output "${{ runner.temp }}/nrw-hu22-fresh-geocoded-source"
+          python - <<'PY'
+          import json,os,hashlib
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          m=json.loads((root/"nrw-hu22-fresh-geocoded-source"/"manifest.json").read_text())
+          assert m["schema"]=="RVA_NRW_2022_HU_STRATIFIED_PHYSICAL_CANDIDATES_GEO_OED_V0"
+          assert m["source_original_2022_HU_complete_archive_SHA256"]=="10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da"
+          assert m["source_original_2022_HU_full_CRCs_verified"] is True
+          assert m["physical_building_candidates_selected"]==10000
+          assert m["real_source_counties_represented"]==53
+          assert m["fictional_policy_count"]==10000
+          assert m["physical_building_footprints_are_actual_RV_insured_sites"] is False
+          assert m["model_input_approved"] is False
+          for name,sha in m["output_file_SHA256"].items():
+              assert hashlib.sha256((root/"nrw-hu22-fresh-geocoded-source"/name).read_bytes()).hexdigest()==sha
+          print("Full source-to-OED replay verified: HU22 SHA/CRC, 10k source candidates, 53 counties, no real insurer")
+          PY
+      - name: Erase full 901 MB source immediately after authenticated scan
+        run: rm -f -- "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip"
+      - name: Repack fresh source-derived OED only inside ephemeral CI
+        run: |
+          python - <<'PY'
+          import os,zipfile
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          src=root/"nrw-hu22-fresh-geocoded-source"
+          expected={"location.csv","account.csv","physical_candidate_evidence.csv","manifest.json"}
+          assert {p.name for p in src.iterdir()}==expected
+          with zipfile.ZipFile(root/"nrw-hu22-fresh-repacked.zip","x",compression=zipfile.ZIP_DEFLATED) as out:
+              for name in sorted(expected):
+                  out.write(src/name,arcname=name)
+          PY
+      - name: Fetch and verify original Daria 1990 XWS four public provider CSVs
+        run: |
+          python research_runners/xws_daria_1990_original_csv_preflight_v0.py --live \
+            --out-receipt "${{ runner.temp }}/fresh-daria-original-csv-rights-sha.json" \
+            --out-ephemeral-original-dir "${{ runner.temp }}/fresh-xws-source-csv"
+      - name: Original Daria source footprint mapped onto freshly rebuilt 10k candidates
+        run: |
+          python research_runners/rva_nrw_xws_daria_10k_original_gust_overlay_v0.py \
+            --original-xws-csv-dir "${{ runner.temp }}/fresh-xws-source-csv" \
+            --original-geocoded-nrw-oed-zip "${{ runner.temp }}/nrw-hu22-fresh-repacked.zip" \
+            --out-derived-gust-zip "${{ runner.temp }}/fresh-Daria1990-hazard-only.zip"
+      - name: Source-original CLIMADA v6.1.0 GPL methods fetched into isolated ephemeral directory
+        run: |
+          set -eu
+          mkdir -p "${{ runner.temp }}/fresh-climada61-original-gpl"
+          base="https://raw.githubusercontent.com/CLIMADA-project/climada_python/v6.1.0"
+          curl -fsSL --retry 2 --max-time 45 "$base/climada/entity/impact_funcs/storm_europe.py" -o "${{ runner.temp }}/fresh-climada61-original-gpl/storm_europe.py"
+          curl -fsSL --retry 2 --max-time 45 "$base/climada/engine/calibration_opt.py" -o "${{ runner.temp }}/fresh-climada61-original-gpl/calibration_opt.py"
+          curl -fsSL --retry 2 --max-time 45 "$base/climada/entity/impact_funcs/base.py" -o "${{ runner.temp }}/fresh-climada61-original-gpl/base.py"
+      - name: Exact original CLIMADA source-method to independent Decimal 60k cent-parity
+        run: |
+          python research_runners/rva_nrw_daria_climada61_original_method_parity_v0.py \
+            --source-hazard-zip "${{ runner.temp }}/fresh-Daria1990-hazard-only.zip" \
+            --source-climada-dir "${{ runner.temp }}/fresh-climada61-original-gpl" \
+            --out-receipt "${{ runner.temp }}/fresh-independent-replay-method-parity-NOT-RV-LOSS.json"
+      - name: Freeze strict no-artifact-dependency original source replay proof
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          proof=json.loads((root/"fresh-independent-replay-method-parity-NOT-RV-LOSS.json").read_text())
+          cases=proof["separate_original_method_numerical_parity"]
+          assert len(cases)==6 and all(
+              r["locations"]==10000 and r["sites_with_cent_rounding_difference"]==0
+              and r["max_site_cent_difference"]==0
+              and r["original_method_rounded_eur_cents"]==r["independent_Decimal_adapter_eur_cents"]
+              for r in cases)
+          values={(r["source_method"],r["same_original_storm_view"]):r["original_method_rounded_eur_cents"]
+                  for r in cases}
+          expected={
+              ("schwierz_2010_CLIMADA61","lower95"):12224,
+              ("schwierz_2010_CLIMADA61","mean"):10999796,
+              ("schwierz_2010_CLIMADA61","upper95"):1721892751,
+              ("welker_2021_CLIMADA61","lower95"):21893,
+              ("welker_2021_CLIMADA61","mean"):19531425,
+              ("welker_2021_CLIMADA61","upper95"):3059869204,
+          }
+          assert values==expected, (values,expected)
+          assert proof["full_native_CLIMADA_package_installed"] is False
+          assert proof["no_real_insurer_loss_treaty_or_annual_OEP_AEP"] is True
+          print("FRESH SOURCE REPLAY PASSED: official 901MB HU22 -> 10k/53 -> Daria -> original CLIMADA 60k, exact 6 original totals/zero mismatches")
+          PY
+      - name: Always erase provider raw geocodes, original wind and GPL source before result publishing
+        if: always()
+        run: |
+          rm -rf -- "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip" \
+            "${{ runner.temp }}/nrw-fictional-10k-base" \
+            "${{ runner.temp }}/nrw-hu22-fresh-geocoded-source" \
+            "${{ runner.temp }}/nrw-hu22-fresh-repacked.zip" \
+            "${{ runner.temp }}/fresh-xws-source-csv" \
+            "${{ runner.temp }}/fresh-Daria1990-hazard-only.zip" \
+            "${{ runner.temp }}/fresh-climada61-original-gpl"
+      - name: Publish only source-bound method parity, no 901MB originals or individual locations
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: independent-FRESH-original-HU22-Daria-CLIMADA-method-parity-NOT-RV-LOSS
+          path: |
+            ${{ runner.temp }}/fresh-independent-replay-method-parity-NOT-RV-LOSS.json
+            ${{ runner.temp }}/fresh-daria-original-csv-rights-sha.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
