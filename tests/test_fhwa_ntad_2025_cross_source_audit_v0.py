@@ -64,6 +64,9 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertEqual(report["matched_unique_bridge_state_ids"], 25)
         self.assertEqual(report["source_ids_absent_in_bounded_ntad_response"], 0)
         self.assertEqual(report["approx_delta_up_to_25_m"], 25)
+        self.assertEqual(report["approx_north_component_over_25_m"], 0)
+        self.assertEqual(report["approx_east_component_over_25_m"], 0)
+        self.assertEqual(report["approx_both_components_over_25_m"], 0)
         self.assertEqual(report["matched_source_year_built_equal"], 25)
         self.assertEqual(report["matched_nbi_coded_coordinate_strings_equal"], 25)
         self.assertEqual(report["ntad_decimal_LATDD_LONGDD_available"], 25)
@@ -125,6 +128,9 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertEqual(report["matched_nbi_coded_coordinate_strings_different"], 1)
         self.assertEqual(report["matched_source_year_built_different"], 1)
         self.assertEqual(report["approx_delta_over_250_m"], 1)
+        self.assertEqual(report["approx_east_component_over_25_m"], 1)
+        self.assertEqual(report["approx_north_component_over_25_m"], 0)
+        self.assertEqual(report["approx_only_east_component_over_25_m"], 1)
         self.assertEqual(report["ntad_decimal_vs_source_legacy_over_25_m"], 0)
         self.assertEqual(report["ntad_decimal_vs_point_geometry_over_25_m"], 1)
         self.assertEqual(report["angular_magnitude_comparisons"], 24)
@@ -216,6 +222,36 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
                 with self.assertRaises(Blocked):
                     proof.arcgis_where_from_exact_source_rows(source_rows(),
                                                               state=unreviewed)
+
+    def test_different_north_east_and_dual_axis_source_discrepancies(self):
+        features = layer_features()
+        # Only north component exceeds 25 m.
+        features[0]["geometry"]["y"] += 0.002
+        # Only east component exceeds 25 m.
+        features[1]["geometry"]["x"] -= 0.003
+        # Both components exceed 25 m.
+        features[2]["geometry"]["x"] -= 0.002
+        features[2]["geometry"]["y"] += 0.002
+        audited = proof.compare_sources(wire(source_rows()), wire(arcgis(features)))
+        self.assertEqual(audited["approx_north_component_over_25_m"], 2)
+        self.assertEqual(audited["approx_east_component_over_25_m"], 2)
+        self.assertEqual(audited["approx_only_north_component_over_25_m"], 1)
+        self.assertEqual(audited["approx_only_east_component_over_25_m"], 1)
+        self.assertEqual(audited["approx_both_components_over_25_m"], 1)
+        self.assertGreater(audited["max_approx_north_component_m"], 25)
+        self.assertGreater(audited["max_approx_east_component_m"], 25)
+        self.assertFalse(audited["model_input_admitted"])
+        self.assertNotIn("SRC2025", json.dumps(audited))
+
+    def test_small_diagonal_deltas_do_not_falsely_mark_single_axis(self):
+        f = layer_features()
+        # About 16.7 m per axis: combined hypotenuse > 25? Here 23.6 m.
+        f[0]["geometry"]["y"] += 0.00015
+        f[0]["geometry"]["x"] -= 0.00018
+        row = proof.compare_sources(wire(source_rows()), wire(arcgis(f)))
+        self.assertEqual(row["approx_north_component_over_25_m"], 0)
+        self.assertEqual(row["approx_east_component_over_25_m"], 0)
+        self.assertEqual(row["approx_both_components_over_25_m"], 0)
 
 if __name__ == "__main__":
     unittest.main()
