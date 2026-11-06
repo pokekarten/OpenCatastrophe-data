@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# EIOPA ORIGINAL SOURCE METADATA ONLY: no insurer/claim/worksheet value records.
+
+schema = "EIOPA_2023_EXPOSURE_SOURCE_PINNED_OOXML_METADATA_RECEIPT_V0"
+checked_as_of = "2026-11-06"
+official_publisher = "EIOPA - European Insurance and Occupational Pensions Authority"
+source_url = "https://www.eiopa.europa.eu/document/download/d2be6f79-3e44-47f1-821f-97ff41e9d7b6_en?filename=Flood+and+Windstorm_exposure_data.xlsx"
+source_sha256 = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
+original_source_bytes = 5593551
+original_zip_members = 31
+original_zip_total_declared_expanded_bytes = 76586443
+diagnosis_run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42291363788"
+source_pinned_success_run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42292320403"
+source_pinned_evidence_artifact_id = 13540506478
+source_pinned_evidence_artifact_expires_utc = "2026-11-20T20:54:55Z"
+original_binary_bytes_redistributed = false
+original_filename_or_workbook_cell_data_published = false
+
+# The generic defence-in-depth scanner correctly flagged a .bin entry.
+# OOXML 15.2.15 permits printer-specific data. Exact SHA + exact path format,
+# one instance + 5,420/443-byte observed ZIP metadata allow only
+# nonsemantic ZIP integrity/workbook.xml metadata checks.
+generic_binary_scanner_reported_single_printer_settings_member = true
+original_printer_settings_blob_count = 1
+original_printer_settings_expanded_bytes = 5420
+original_printer_settings_compressed_bytes = 443
+source_sha_pinned_printer_metadata_only_exception_applied = true
+other_macro_external_embedded_object_exceptions_added = false
+printer_driver_binary_interpreted_or_executed = false
+printer_driver_raw_bytes_published = false
+source_pinned_original_zip_all_member_CRC_verified = true
+source_pinned_original_workbook_sheet_count = 1
+source_pinned_workbook_sheet_names_published = false
+source_pinned_workbook_cells_or_formula_values_read_for_semantics = false
+source_pinned_metadata_quarantine_status = "PASS_METADATA_AND_CRC_ONLY_NOT_INSURER_CLAIMS"
+original_workbook_specific_licence_and_tdm_rights_cleared = false
+insurer_building_exposure_values_or_claim_cells_ingested = false
+ciara2020_event_specific_NUTS2_insured_loss_join_verified = false
+R_V_insurer_portfolio_or_GUL_IL_RI_OEP_AEP_model_admitted = false
+source_sha_independently_repeated_twice = false
