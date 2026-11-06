@@ -46,6 +46,27 @@ class SwissHailEventJoinTests(unittest.TestCase):
         self.assertEqual(summary["source_duplicate_key_count"], 1)
         self.assertFalse(summary["full_damage_coordinate_key_coverage"])
 
+    def test_duplicate_damage_keys_do_not_pass_full_one_to_one_coverage(self):
+        # Every damage row can match an exposure key while two damage rows
+        # still collide after rounding. Such a join is not one-to-one.
+        summary = audit.coordinate_key_coverage(
+            [(46.3, 8.2), (46.4, 8.3)],
+            [(46.3, 8.2), (46.3, 8.2), (46.4, 8.3)],
+        )
+        self.assertEqual(summary["damage_positions_without_exposure_key"], 0)
+        self.assertEqual(summary["damage_duplicate_key_count"], 1)
+        self.assertEqual(summary["damage_unique_key_count"], 2)
+        self.assertFalse(summary["full_damage_coordinate_key_coverage"])
+
+    def test_rounding_collision_on_damage_side_is_not_full_coverage(self):
+        summary = audit.coordinate_key_coverage(
+            [(46.3, 8.2), (46.4, 8.3)],
+            [(46.30000001, 8.2), (46.30000002, 8.2)],
+        )
+        self.assertEqual(summary["damage_duplicate_key_count"], 1)
+        self.assertEqual(summary["damage_positions_without_exposure_key"], 0)
+        self.assertFalse(summary["full_damage_coordinate_key_coverage"])
+
     def test_unmatched_grid_positions_with_actual_positive_impacts(self):
         result = audit.unmatched_positive_impact_summary(
             [(46.3, 8.2), (46.4, 8.3)],
