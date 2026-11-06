@@ -172,3 +172,69 @@ acceptance check before claiming reproducibility across engines.
 vulnerability and independent loss calibration, coverage/limits and
 outward reinsurance model, complete annual event catalogue including
 zero years and clustering, consequently no gross/net OEP/AEP.
+
+## Exact published original-method execution parity (6 November 2026)
+
+[GitHub Actions original-code execution #42244616104](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42244616104)
+completed **SUCCESS** with original XWS source and original CLIMADA
+v6.1.0 source identities. Its separate
+[method-level numerical parity receipt #13515854358](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42244616104/artifacts/13515854358)
+documents exactly **60,000 per-building values checked**: two
+source-authenticated published impact methods × three source
+recalibrated wind views of the **same** Daria 1990 event × 10,000
+2022 public NRW building candidates.
+
+The separate research runner
+`research_runners/rva_nrw_daria_climada61_original_method_parity_v0.py`
+executes the **unchanged AST method bodies** from the three
+original-byte-verified, GPL-v3 CLIMADA 6.1.0 source files:
+`ImpfStormEurope.from_schwierz`,
+`ImpfStormEurope.from_welker`,
+`change_impf` and `ImpactFunc.calc_mdr`. It replaces only
+CLIMADA's external **nonnumeric class lifecycle** with a strictly
+checked minimal class state and uses pinned NumPy 1.26.4 /
+SciPy 1.14.1 in an ephemeral CI environment.
+
+**It is NOT a fully installed, native CLIMADA distribution** and
+does not claim its broader exposure/hazard workflow, event-year
+simulation or insurance financial engine work. No external GPL
+source bytes are committed or included in result artifacts.
+
+| Original published method and source wind case | Original float64 method aggregate | Independent Decimal aggregate | Asset cent differences |
+| --- | ---: | ---: | ---: |
+| Schwierz / lower95 | EUR 122.24 | EUR 122.24 | **0/10,000** |
+| Schwierz / mean | EUR 109,997.96 | EUR 109,997.96 | **0/10,000** |
+| Schwierz / upper95 | EUR 17,218,927.51 | EUR 17,218,927.51 | **0/10,000** |
+| Welker / lower95 | EUR 218.93 | EUR 218.93 | **0/10,000** |
+| Welker / mean | EUR 195,314.25 | EUR 195,314.25 | **0/10,000** |
+| Welker / upper95 | EUR 30,598,692.04 | EUR 30,598,692.04 | **0/10,000** |
+
+The original float64 PAA/MDD/MDR components deviate from the
+Decimal source replay by at most approximately **5.02×10^-16**
+in absolute value (binary floating-point representation).
+All sampled *per-site* integer-cent impacts match **exactly**.
+After this observation, the committed parity runner was strengthened
+to **zero tolerated differences in integer cents per site**, rather
+than allowing up to one cent as a floating-point round-off
+accommodation; this policy must remain enforced in subsequent CI.
+That tightening has its **own new-head CI gate** and must not be
+represented as passed until that run completes.
+
+**Bounded claim:** Scientific formulas and method implementation
+agree at the original source-based Daria site inputs; this does
+not validate actual R&V insurance, German buildings' roof/physical
+vulnerability, compatibility of 3-second gust conventions with
+the original literature calibration, zero-event-year frequency,
+insured GUL/IL, reinsurance RI or gross/net annual EP.
+A full conda/mamba native CLIMADA 6.1.0 package run, if required,
+must be separately installed and validated against the original
+package documentation/conda dependencies.
+
+**Future source-replay reproducibility blocker:** The linked
+original 2022 geocoded 10k research source artifact from
+[earlier run #42097472463](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42097472463)
+is a temporary GitHub Actions artifact, not immutable long-term
+source storage. The workflow must replace this dependency with
+an enduring rights-aware source-intake/rebuild plan before those
+artifacts expire. Immutable checksum/rights receipts alone cannot
+recreate their source bytes.
