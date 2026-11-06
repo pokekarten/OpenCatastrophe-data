@@ -29,6 +29,30 @@ MAX_RATIO = 1000
 MAX_WORKBOOK_XML = 800_000
 NAME_RE = re.compile(r"^[A-Za-z0-9 _().+\-]{1,31}$")
 NS = {"s": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+# See OOXML ISO/IEC 29500 Printer Settings Part, 15.2.15.
+# This is a raw printer-specific blob, *not* financial spreadsheet content.
+# For precisely one SHA-pinned original published EIOPA exposure XLSX,
+# permit metadata/ZIP integrity inspection while NEVER opening, parsing,
+# executing, extracting, or uploading the binary driver settings part.
+PINNED_EIOPA_EXPOSURE_SHA = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
+PINNED_EIOPA_EXPOSURE_SIZE = 5593551
+PINNED_SOURCE_PRINTER_FILE = re.compile(r"xl/printerSettings/printerSettings[1-9][0-9]*\\.bin\\Z")
+PINNED_SOURCE_PRINTER_UNCOMPRESSED = 5420
+PINNED_SOURCE_PRINTER_COMPRESSED = 443
+
+
+def allow_source_pinned_printer_metadata_only(info, family: str, source_sha: str, source_size: int) -> bool:
+    """A very narrow original-identity exception; binary content is never read."""
+    return (
+        family == "FLOOD_WIND_EXPOSURE"
+        and source_sha == PINNED_EIOPA_EXPOSURE_SHA
+        and source_size == PINNED_EIOPA_EXPOSURE_SIZE
+        and bool(PINNED_SOURCE_PRINTER_FILE.fullmatch(info.filename))
+        and info.file_size == PINNED_SOURCE_PRINTER_UNCOMPRESSED
+        and info.compress_size == PINNED_SOURCE_PRINTER_COMPRESSED
+        and not (info.flag_bits & 1)
+    )
+
 
 
 class EIOPAQuarantineBlocked(ValueError):
@@ -54,6 +78,7 @@ def inspect_original_xlsx(path: Path, family: str) -> dict:
     if family not in MAX_FILE_BYTES:
         raise EIOPAQuarantineBlocked("original EIOPA family unknown")
     raw = _readonly_file(path, family)
+    original_sha = hashlib.sha256(raw).hexdigest()
     try:
         from io import BytesIO
         with zipfile.ZipFile(BytesIO(raw), "r") as z:
@@ -68,17 +93,26 @@ def inspect_original_xlsx(path: Path, family: str) -> dict:
                 raise EIOPAQuarantineBlocked("missing core XLSX workbook parts")
             total = 0
             sheet_parts = 0
+            ignored_source_printer_blobs = 0
             for info in infos:
                 name = info.filename
                 p = PurePosixPath(name)
                 if (name.startswith("/") or "\\" in name or ".." in p.parts
                     or not name or info.flag_bits & 1 or info.is_dir()):
                     raise EIOPAQuarantineBlocked("encrypted/unsafe XLSX ZIP paths are blocked")
+                original_printer_metadata_only = allow_source_pinned_printer_metadata_only(
+                    info, family, original_sha, len(raw)
+                )
+                if original_printer_metadata_only:
+                    ignored_source_printer_blobs += 1
+                    if ignored_source_printer_blobs != 1:
+                        raise EIOPAQuarantineBlocked("multiple pinned printer device blobs")
                 if (name.startswith("xl/externalLinks/")
                     or name.startswith("xl/embeddings/")
                     or name.startswith("xl/activeX/")
                     or name.startswith("xl/vbaProject")
-                    or name.endswith((".bin", ".exe", ".dll", ".js", ".vbs"))
+                    or (name.endswith((".bin", ".exe", ".dll", ".js", ".vbs"))
+                        and not original_printer_metadata_only)
                     or info.file_size > MAX_ONE_MEMBER):
                     raise EIOPAQuarantineBlocked("active, external or huge OOXML member")
                 if info.compress_size == 0 and info.file_size > 0:
@@ -122,10 +156,12 @@ def inspect_original_xlsx(path: Path, family: str) -> dict:
     return {
         "source_family": family,
         "input_type": "LOCAL_BYTES_ORIGIN_NOT_INDEPENDENTLY_ATTESTED",
-        "sha256": hashlib.sha256(raw).hexdigest(),
+        "sha256": original_sha,
         "original_file_size_bytes": len(raw),
         "zip_member_count": len(infos),
         "zip_crc_passed": True,
+        "source_pinned_printer_metadata_only_blob_count": ignored_source_printer_blobs,
+        "printer_driver_blob_opened_parsed_or_executed": False,
         "sheet_count": len(names_safe),
         "worksheet_names_sanitized": names_safe,
         "worksheet_cells_or_loss_values_read": False,
