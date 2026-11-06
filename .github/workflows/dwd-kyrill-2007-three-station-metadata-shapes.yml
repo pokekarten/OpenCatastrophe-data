@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DWD Kyrill 2007 Three Station Original Metadata Shapes
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dwd-kyrill-2007-three-station-metadata-shapes.yml'
+      - 'scripts/dwd_kyrill_2007_station_metadata_probe_v0.py'
+      - 'tests/test_dwd_kyrill_2007_station_metadata_probe_v0.py'
+      - 'docs/research/dwd_kyrill_2007_three_station_metadata_probe_20261106.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-station-metadata-shapes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout branch source without persisting credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Offline metadata ZIP security and provenance regression
+        run: python -m unittest tests.test_dwd_kyrill_2007_station_metadata_probe_v0 -v
+      - name: Acquire exactly three original DWD station metadata ZIPs and inspect shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          base='https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data'
+          tmp="$RUNNER_TEMP/dwd-kyrill-metadata-2007"
+          mkdir -p "$tmp"
+          trap 'rm -rf "$tmp"' EXIT
+          for id in 00433 01262 03379; do
+            curl --fail --silent --show-error --noproxy '*' \
+              --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+              --max-time 80 --retry 0 --max-filesize 30000 \
+              --output "$tmp/Meta_Daten_zehn_min_fx${id}.zip" \
+              "$base/Meta_Daten_zehn_min_fx${id}.zip"
+          done
+          python -m scripts.dwd_kyrill_2007_station_metadata_probe_v0 \
+            --zip-00433 "$tmp/Meta_Daten_zehn_min_fx_00433.zip" \
+            --zip-01262 "$tmp/Meta_Daten_zehn_min_fx_01262.zip" \
+            --zip-03379 "$tmp/Meta_Daten_zehn_min_fx_03379.zip"
+          # All original metadata ZIPs stay ephemeral; no meteorological observations are read.
