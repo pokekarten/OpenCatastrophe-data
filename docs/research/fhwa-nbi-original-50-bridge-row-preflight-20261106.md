@@ -59,3 +59,9 @@ python -m research_runners.fhwa_nbi_socrata_original_rows_v0 \
 Original row response bytes are ephemeral; no sources copied into public Git,
 no identifiable bridge rows in GitHub artifacts and no Neon mutations.
 Keep Draft and `model_input_admitted=false`.
+
+## Original FHWA API evidence, first bounded live sample (2026-11-06)
+
+[Exact-head GitHub source run #42257223552](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42257223552) **SUCCESS**: original API response **6,959 bytes**, SHA-256 `eb3391f675610bd10b97468f19ceee26f760ffbd3e5bf4f61eaac5a1419f1904`. The runner executed **8/8 synthetic fail-closed tests** and then the actual 50-row original source request. All 50 selected records have distinct bridge-year/state/structure keys, historical NBI DMS-format-plausible latitude/longitude and plausible construction-year ranges. All 50 report **2025** and come from **one state code** because the deterministic sort reaches that state first. This is a successful **format and bounded access proof only**, not even a cross-state distribution benchmark, and not validation of accurate GIS bridge positions.
+
+The source response is not publisher-signed, the original rows are not saved in Git or uploaded to workflow artifacts, and the sample is intentionally nonrepresentative. A future multi-state original-source check should scope each query by a verified state/year selector, ensure original row schema/uniqueness and record aggregate results separately; it must not infer market-share, national total, fragility, insurance ownership/TIV or CAT-loss estimates. Full repository CI must be checked at the **latest head**, independent of this passing source-only workflow.
