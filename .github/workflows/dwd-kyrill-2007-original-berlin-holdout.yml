@@ -8,6 +8,7 @@ on:
       - '.github/workflows/dwd-kyrill-2007-original-berlin-holdout.yml'
       - 'scripts/dwd_kyrill_2007_berlin_original_v0.py'
       - 'tests/test_dwd_kyrill_2007_berlin_original_v0.py'
+      - 'docs/research/evidence/dwd-kyrill-2007-berlin-tempelhof-original-fx10-20261106.md'
   workflow_dispatch:
 
 permissions:
@@ -63,6 +64,21 @@ jobs:
           assert r['annual_AAL'] is None and r['annual_AEP'] is None and r['annual_OEP'] is None
           assert r['source_original_raw_gust_rows_persisted'] is False
           assert r['historical_kyrill_label_day_utc_exact_identity_confirmed'] is False
+          # Fail closed on original archive-byte drift and any semantic/QN reclassification.
+          # The source-receipt is licensed Markdown with exactly one JSON block;
+          # no raw station observation rows are committed to Git.
+          proof=Path('docs/research/evidence/dwd-kyrill-2007-berlin-tempelhof-original-fx10-20261106.md').read_text(encoding='utf-8')
+          newline=chr(10)
+          assert proof.count('```json'+newline)==1
+          assert proof.count(newline+'```'+newline)==1
+          recorded=json.loads(proof.split('```json'+newline,1)[1].split(newline+'```'+newline,1)[0])
+          assert r==recorded, 'provider source/QN/metadata differs from pinned original-run research receipt'
+          assert recorded['original_archive_sha256']=='56d4e4d64958ca1dc926af58dabed796c550e2ff4969f81868cfb797b1ed891e'
+          assert recorded['pre_2000_december_source_clock_rows_excluded']==6
+          assert all(d['quality_flag_record_counts']=={'1':144} and
+                     d['max_3second_gust_within_10minutes_mps_qn2_or_qn3'] is None
+                     for d in recorded['daily_10minute_gust_aggregates'])
+          assert recorded['daily_10minute_gust_aggregates'][1]['max_3second_gust_within_10minutes_mps_all_quality']=='33.5'
           print('Original DWD source research preflight: daily aggregates ONLY')
           print(json.dumps(r, sort_keys=True, indent=2, allow_nan=False))
           PY
