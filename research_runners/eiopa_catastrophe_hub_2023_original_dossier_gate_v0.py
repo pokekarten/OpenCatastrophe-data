@@ -43,7 +43,7 @@ EXPECTED_STRING = {
     "legal_notice_url": "https://www.eiopa.europa.eu/legal-notice_en",
     "original_pdf_sha256": "NOT_ACQUIRED",
     "historical_loss_workbook_sha256": "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6",
-    "exposure_workbook_sha256": "NOT_VERIFIED_PROXY_RESPONSE_TRUNCATED",
+    "exposure_workbook_sha256": "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79",
     "historical_loss_workbook_original_source_byte_receipt":
         "research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml",
     "insured_wind_claim_event": "CIARA_SABINE_FEBRUARY_2020",
@@ -59,7 +59,7 @@ EXPECTED_STRING = {
     "sample_Germany_2020_property_fire_GWP_coverage": "63.6PCT_TABLE_4",
     "admission": "PUBLIC_METADATA_REFERENCE_ONLY_NO_DARIA_FIT_NO_RV_POLICY_NO_EP",
     "unfetched_reason":
-        "Original historical loss XLSX delivered in full via Context.dev source-proxy from official EIOPA link (28209 bytes, SHA256 201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6); exposure XLSX proxy reply truncated, thus no full exposure digest; no worksheet contents, loss rows or reuse licence confirmed",
+        "Official EIOPA HTTPS GitHub Actions run 42270505316 delivered both workbooks: historical loss 28209 bytes SHA256 201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6 and exposure 5593551 bytes SHA256 f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79. Strict OOXML security quarantine rejected active/external/huge member; no full workbook CRC, worksheets, insurer loss rows or reuse licence confirmed",
 }
 EXPECTED_BOOLEANS = {
     "workbook_content_read_or_modelled": False,
@@ -77,10 +77,12 @@ EXPECTED_BOOLEANS = {
     "GWP_sample_covers_RV_geolocated_NRW_book": False,
     "licence_workbook_specific_restrictions_checked": False,
     "actual_eiopa_xlsx_bytes_obtained_in_this_research": True,
+    "exposure_OOXML_security_quarantine_passed": False,
 }
 EXPECTED_INTEGERS = {
     "each_disclosed_data_point_minimum_independent_company_submissions": 3,
     "historical_loss_workbook_binary_bytes": 28209,
+    "exposure_workbook_binary_bytes": 5593551,
     "sample_groups": 35,
     "sample_solo_undertakings": 9,
 }
@@ -127,8 +129,8 @@ def validate_evidence(doc: dict) -> dict:
             or item["publisher_size_label"] != expected_size
             or type(item["page"]) is not int or item["page"] != page
             or item["source_sha256"] != (
-                "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6" if ident == "HISTORICAL_INSURED_LOSSES"
-                else "NOT_ACQUIRED"
+                "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
+                if ident == "HISTORICAL_INSURED_LOSSES" else "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
             )
             or not item["name"].endswith(".pdf" if page else ".xlsx")
             or urlparse(item["original_url"]).hostname != "www.eiopa.europa.eu"
@@ -141,9 +143,11 @@ def validate_evidence(doc: dict) -> dict:
         "status": "EIOPA_CIARA_2020_NUTS2_SAMPLE_REFERENCE_ONLY_NOT_DARIA_1990",
         "public_original_publisher_attachments_named": 3,
         "original_loss_workbook_bytes_fetched_via_proxy": True,
-        "original_exposure_workbook_complete_bytes_fetched": False,
+        "original_exposure_workbook_complete_bytes_fetched": True,
+        "original_exposure_workbook_sha256_from_official_TLS": "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79",
+        "original_exposure_OOXML_quarantine_passed": False,
         "original_loss_workbook_sha256_from_source_proxy": "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6",
-        "original_exposure_workbook_sha256_verified": False,
+        "original_exposure_workbook_sha256_verified": True,
         "wind_insured_loss_event_is_only_Ciara_2020": True,
         "Daria_1990_insured_claims_provided": False,
         "source_residential_commercial_splits_can_be_suppressed": True,
