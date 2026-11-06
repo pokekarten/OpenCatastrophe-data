@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Swiss original 2 4 8 km LV95 maximum MESHS POH binary skill
+
+on:
+  pull_request:
+    paths:
+      - "research_runners/swiss_crop_hail_original_coarse_max_hazard_pilot_v0.py"
+      - "tests/test_swiss_crop_hail_original_coarse_max_hazard_pilot_v0.py"
+      - "research_runners/swiss_crop_hail_original_1km_skill_pilot_v0.py"
+      - ".github/workflows/swiss-crop-hail-original-coarse-skill.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swiss-hail-coarse-lv95-max-skill-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-coarse-hazard:
+    name: Max-aggregate original MESHS POH in LV95 and score 2 4 8 km
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout without persisted GitHub credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install pinned spatial/numeric source validator dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input "numpy==2.3.5" "h5py==3.14.0" "scipy==1.16.2" "pyproj==3.7.2"
+          python -m pip check
+      - name: Offline resolution geometry/aggregation regression suite
+        run: python -m unittest -v tests.test_swiss_crop_hail_original_coarse_max_hazard_pilot_v0
+      - name: Original released source 2 4 8km LV95 max radar pilot
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python -m research_runners.swiss_crop_hail_original_coarse_max_hazard_pilot_v0

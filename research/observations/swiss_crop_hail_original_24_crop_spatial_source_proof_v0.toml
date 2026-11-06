@@ -1,0 +1,369 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Aggregate source-derived geometry reconciliation only, no insurer records or raw bytes.
+schema_version = "SWISS_CROP_HAIL_ORIGINAL_24_CROP_RESOLUTION_SPATIAL_SOURCE_PROOF_V0"
+observation_date = "2026-11-06"
+publisher_exposure = "https://zenodo.org/records/11064756"
+publisher_damage = "https://zenodo.org/records/11064767"
+publisher_radar = "https://zenodo.org/records/11064781"
+workflow_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42185656526"
+workflow_commit_sha = "76572c2c309e0d98721bcf0bc29ee19233b92f22"
+verified_source_file_hashes = "research/observations/swiss_crop_hail_zenodo_original_eight_file_receipts_v0.toml"
+radar_event_count = 12
+radar_grid_points = 454400
+original_crop_resolution_pairs_checked = 24
+full_damage_coordinate_coverage_pairs = 19
+partial_damage_coordinate_coverage_pairs = 5
+unmatched_damage_raster_positions_across_pairs = 1003
+unmatched_raster_positions_with_positive_observed_impact = 461
+positive_impact_matrix_entries_on_unmatched_positions = 550
+coordinates_joined_by = "rounded_lat_lon_5_decimals"
+event_dates_all_observed_subsets_of_radar_source = true
+crop_exposure_observation_year = 2021
+damage_observation_years = "2017-2021"
+temporal_exposure_mismatch_causality_proven = false
+raw_source_bytes_persisted = false
+raw_coordinates_published = false
+individual_insurer_claims_published = false
+rights_or_science_admitted = false
+loss_amount_or_insurer_TIV_validated = false
+annual_frequency_validated = false
+portfolio_gul_il_ri_ready = false
+yearly_oep_aep_ready = false
+note = "Observed damage-grid cells outside published crop exposure include positive impact entries. Do not filter automatically; investigate 2021 exposure versus 2017-2021 damage and geometry semantics before any calibration."
+
+[[crop_resolution]]
+crop = "barley"
+resolution_km = 1
+exposure_position_count = 7622
+damage_position_count = 7622
+spatial_match_count = 7622
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 10
+observed_impact_matrix_nonzero_cells = 1335
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "barley"
+resolution_km = 2
+exposure_position_count = 3057
+damage_position_count = 3057
+spatial_match_count = 3057
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 10
+observed_impact_matrix_nonzero_cells = 907
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "barley"
+resolution_km = 4
+exposure_position_count = 991
+damage_position_count = 991
+spatial_match_count = 991
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 10
+observed_impact_matrix_nonzero_cells = 513
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "barley"
+resolution_km = 8
+exposure_position_count = 325
+damage_position_count = 325
+spatial_match_count = 325
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 10
+observed_impact_matrix_nonzero_cells = 280
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "field_crops"
+resolution_km = 1
+exposure_position_count = 12742
+damage_position_count = 12742
+spatial_match_count = 12742
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 5106
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "field_crops"
+resolution_km = 2
+exposure_position_count = 4104
+damage_position_count = 4104
+spatial_match_count = 4104
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 2512
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "field_crops"
+resolution_km = 4
+exposure_position_count = 1321
+damage_position_count = 1321
+spatial_match_count = 1321
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 1195
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "field_crops"
+resolution_km = 8
+exposure_position_count = 441
+damage_position_count = 441
+spatial_match_count = 441
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 574
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "grapevine"
+resolution_km = 1
+exposure_position_count = 2297
+damage_position_count = 2297
+spatial_match_count = 2297
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 661
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "grapevine"
+resolution_km = 2
+exposure_position_count = 1283
+damage_position_count = 1283
+spatial_match_count = 1283
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 401
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "grapevine"
+resolution_km = 4
+exposure_position_count = 690
+damage_position_count = 690
+spatial_match_count = 690
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 254
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "grapevine"
+resolution_km = 8
+exposure_position_count = 311
+damage_position_count = 311
+spatial_match_count = 311
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 159
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "maize"
+resolution_km = 1
+exposure_position_count = 10965
+damage_position_count = 10965
+spatial_match_count = 10965
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 3129
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "maize"
+resolution_km = 2
+exposure_position_count = 3439
+damage_position_count = 3806
+spatial_match_count = 3439
+unmatched_damage_positions = 367
+unmatched_positions_with_positive_impact = 201
+positive_impact_matrix_cells_on_unmatched_positions = 247
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 1713
+full_spatial_key_coverage = false
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "maize"
+resolution_km = 4
+exposure_position_count = 1262
+damage_position_count = 1262
+spatial_match_count = 1262
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 864
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "maize"
+resolution_km = 8
+exposure_position_count = 432
+damage_position_count = 432
+spatial_match_count = 432
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 12
+observed_impact_matrix_nonzero_cells = 441
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "rapeseed"
+resolution_km = 1
+exposure_position_count = 5895
+damage_position_count = 5895
+spatial_match_count = 5895
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 11
+observed_impact_matrix_nonzero_cells = 1543
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "rapeseed"
+resolution_km = 2
+exposure_position_count = 2256
+damage_position_count = 2567
+spatial_match_count = 2256
+unmatched_damage_positions = 311
+unmatched_positions_with_positive_impact = 121
+positive_impact_matrix_cells_on_unmatched_positions = 133
+original_damage_event_count = 11
+observed_impact_matrix_nonzero_cells = 1113
+full_spatial_key_coverage = false
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "rapeseed"
+resolution_km = 4
+exposure_position_count = 877
+damage_position_count = 878
+spatial_match_count = 877
+unmatched_damage_positions = 1
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 11
+observed_impact_matrix_nonzero_cells = 607
+full_spatial_key_coverage = false
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "rapeseed"
+resolution_km = 8
+exposure_position_count = 292
+damage_position_count = 293
+spatial_match_count = 292
+unmatched_damage_positions = 1
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 11
+observed_impact_matrix_nonzero_cells = 332
+full_spatial_key_coverage = false
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "wheat"
+resolution_km = 1
+exposure_position_count = 9667
+damage_position_count = 9667
+spatial_match_count = 9667
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 11
+observed_impact_matrix_nonzero_cells = 2515
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "wheat"
+resolution_km = 2
+exposure_position_count = 3066
+damage_position_count = 3389
+spatial_match_count = 3066
+unmatched_damage_positions = 323
+unmatched_positions_with_positive_impact = 139
+positive_impact_matrix_cells_on_unmatched_positions = 170
+original_damage_event_count = 11
+observed_impact_matrix_nonzero_cells = 1428
+full_spatial_key_coverage = false
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "wheat"
+resolution_km = 4
+exposure_position_count = 1103
+damage_position_count = 1103
+spatial_match_count = 1103
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 11
+observed_impact_matrix_nonzero_cells = 720
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0
+
+[[crop_resolution]]
+crop = "wheat"
+resolution_km = 8
+exposure_position_count = 371
+damage_position_count = 371
+spatial_match_count = 371
+unmatched_damage_positions = 0
+unmatched_positions_with_positive_impact = 0
+positive_impact_matrix_cells_on_unmatched_positions = 0
+original_damage_event_count = 11
+observed_impact_matrix_nonzero_cells = 372
+full_spatial_key_coverage = true
+source_coordinate_duplicates = 0

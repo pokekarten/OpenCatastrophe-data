@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Swiss crop hail Zenodo original source receipts
+
+on:
+  pull_request:
+    paths:
+      - "research_runners/swiss_crop_hail_zenodo_original_acquire_v0.py"
+      - "research_runners/swiss_crop_hail_asset_preflight_v0.py"
+      - "tests/test_swiss_crop_hail_zenodo_original_acquire_v0.py"
+      - "tests/test_swiss_crop_hail_asset_preflight_v0.py"
+      - ".github/workflows/swiss-crop-hail-original-zenodo-receipts.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swiss-hail-zenodo-original-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  seven-data-originals:
+    name: Seven original gridded data and metadata sources (non-admission)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact source without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Offline synthetic download, redirect, checksum and ZIP regression
+        run: >-
+          python -m unittest -v
+          tests.test_swiss_crop_hail_asset_preflight_v0
+          tests.test_swiss_crop_hail_zenodo_original_acquire_v0
+      - name: Re-fetch seven pinned original crop and radar bytes
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python -m research_runners.swiss_crop_hail_zenodo_original_acquire_v0 --include-radar --include-archives
+
+  software-code-original:
+    name: Original published model code ZIP (non-admission)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact source without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Offline synthetic download, redirect, checksum and ZIP regression
+        run: >-
+          python -m unittest -v
+          tests.test_swiss_crop_hail_asset_preflight_v0
+          tests.test_swiss_crop_hail_zenodo_original_acquire_v0
+      - name: Re-fetch exact versioned published model code ZIP without execution
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python -m research_runners.swiss_crop_hail_zenodo_original_acquire_v0 --code-only

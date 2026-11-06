@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Original publisher bytes fetched in ephemeral public GitHub CI, checksum receipt only.
+schema_version = "SWISS_CROP_HAIL_ZENODO_ORIGINAL_FIVE_FILES_V0"
+observation_date = "2026-11-05"
+publisher = "Zenodo (Portmann et al. 2024 linked crop-hail assets)"
+paper_doi = "https://doi.org/10.5194/nhess-24-2541-2024"
+github_exact_revision = "43a8c62ec629f23a01fe32b4f221a379959d6a91"
+github_workflow_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42113817334"
+github_job_id = 127548029639
+source_receipt_status = "PASS"
+verified_original_files = 5
+offline_synthetic_tests_passed = 18
+publisher_md5_matched_for_all_downloads = true
+source_file_sha256_computed_for_all_downloads = true
+original_file_storage = "GitHub ephemeral runner temporary directory, automatically removed"
+original_files_committed_or_redistributed = false
+original_hdf5_scientific_field_semantics_verified = false
+individual_insurer_claims_included = false
+source_reuse_rights_fully_admitted = false
+model_scientific_fitness_admitted = false
+annual_event_catalogue_calibrated = false
+actual_crop_insured_values_verified = false
+gross_net_loss_ep_ready = false
+remark = "The five receipts prove exact publisher-stated MD5 of three metadata CSVs and two HDF5 radar products with original-byte SHA-256 on one public runner. They do not prove an insurance loss model or unrestricted upstream rights."
+
+[[original_file]]
+asset = "exposure_metadata"
+record_id = 11064756
+original_filename = "metadata.csv"
+bytes = 1720
+original_sha256 = "45a9e2bccd7571ada9e3bbb77482dbadfa4868c704527164e544e18d4013b9db"
+
+[[original_file]]
+asset = "damage_metadata"
+record_id = 11064767
+original_filename = "metadata.csv"
+bytes = 2368
+original_sha256 = "cc88233701f06f952d5881a762b690bd9e14d55c24995298a61fbf70ea7759a5"
+
+[[original_file]]
+asset = "radar_metadata"
+record_id = 11064781
+original_filename = "metadata.csv"
+bytes = 227
+original_sha256 = "682dc230bfaa3d416a07c04874ca6d0e8222eb9280e467b8228f72fc1c579474"
+
+[[original_file]]
+asset = "radar_meshs_h5"
+record_id = 11064781
+original_filename = "hail_MESHS_CH_12_events_2017_2021.h5"
+bytes = 6205459
+original_sha256 = "4ec457cfad8019cfb50d1e03399f2a7c53063eb2d6bd0d26e007d8201786db5b"
+
+[[original_file]]
+asset = "radar_poh_h5"
+record_id = 11064781
+original_filename = "hail_POH_CH_12_events_2017_2021.h5"
+bytes = 8919115
+original_sha256 = "f6773a9152e9954f271c7d0951e27403dd46b9142b4253a54b97f374171a0ae7"
