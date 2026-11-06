@@ -33,3 +33,7 @@ python -m scripts.dwd_kyrill_2007_berlin_original_v0 \
 ```
 
 The offline unit tests use a **constructed toy ZIP**; they are not real January 2007 wind observations. Only a successful original-provider source execution may be reported as an observed-data preflight.
+
+## Original-provider archive boundary correction (2026-11-06)
+
+The first original-source GitHub Actions replay flagged a source timestamp in **1999-12** even though the historical archive filename labels the 2000–2009 block. This was a genuine source-contract mismatch, not a synthetic test failure. The revised auditor permits **only the single original clock label `1999-12-31 23:50` as an archival edge tick**, explicitly marks it *MEZ/non-UTC*, never uses it for the January 2007 hazard window, and rejects every other pre-2000 timestamp. The historical DWD source documentation says timestamps before 2000 use MEZ and from 2000 onward UTC. A subsequent successful exact-head run must confirm this narrow allowance is actually sufficient; it is not a wholesale relaxation of time validation.
