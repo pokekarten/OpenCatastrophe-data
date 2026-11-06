@@ -182,13 +182,19 @@ Daria calibration**:
    **28,209 bytes**; independently repeated SHA-256
    `201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6`.
    Its ZIP central directory has **29 members, one worksheet part**.
-   The **exposure** XLSX proxy result was truncated and still has
-   **NO full SHA-256**. Neither original workbook has been
-   stored in GitHub; no workbook sheet *contents*, claim columns,
-   row amounts, per-insurer exposures, source CRC test or
-   workbook-specific third-party permission is established.
+   The **exposure** XLSX proxy result was initially truncated,
+   but official EIOPA HTTPS GitHub Actions
+   [#42270505316](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42270505316)
+   later returned the full file: **5,593,551 bytes**,
+   SHA-256 `f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79`.
+   The strict XLSX OOXML quarantine **BLOCKED** its complex/active
+   member. Neither original workbook has been stored in GitHub;
+   no workbook sheet *contents*, claim columns, row amounts,
+   per-insurer exposures, ZIP all-member CRC or workbook-specific
+   third-party permission is established. The large exposure
+   hash still needs independent repeated-source confirmation.
    See `research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml`
-   for exact source-proxy provenance and fail-closed receipt.
+   for both source SHA receipts and no-go conditions.
 
 Reproducible metadata-only original-source receipt:
 `research/observations/eiopa_catastrophe_hub_2023_original_dossier_v0.toml`.
