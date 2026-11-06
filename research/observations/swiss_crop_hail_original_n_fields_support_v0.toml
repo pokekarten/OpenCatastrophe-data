@@ -1,0 +1,364 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Verified original source HDF5 n_fields >=1 support mask; overlapping crop/resolution data only.
+schema_version = "SWISS_CROP_HAIL_ORIGINAL_ACTUAL_N_FIELDS_SUPPORT_V0"
+review_date = "2026-11-06"
+original_workflow_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42245432836"
+original_source_commit_sha = "18e711a1e0a6e2e51f1d2ecc8fad1724e8a2e062"
+original_source_exposure_record = "https://zenodo.org/records/11064756"
+original_source_damage_record = "https://zenodo.org/records/11064767"
+paper_doi = "https://doi.org/10.5194/nhess-24-2541-2024"
+reused_verified_hashes_file = "research/observations/swiss_crop_hail_zenodo_original_eight_file_receipts_v0.toml"
+verified_original_crop_resolution_pairs = 24
+cropland_field_count_threshold = 1
+positive_observed_event_grid_cells_across_all_overlapping_pairs = 28674
+positive_event_grid_cells_with_crop_exposure = 28124
+positive_event_grid_cells_on_present_coordinate_with_zero_fields = 0
+positive_event_grid_cells_on_missing_exposure_coordinates = 550
+positive_event_grid_cells_outside_exposure = 550
+published_grids_are_not_original_claims = true
+counts_repeat_across_crops_resolutions_events = true
+cause_of_missing_positions_verified = false
+published_paper_hss_reproduced = false
+real_insured_loss_values_verified = false
+original_external_bytes_committed = false
+unrestricted_source_rights_verified = false
+annual_cat_model_admitted = false
+gross_net_oep_aep_ready = false
+note = "All released 2021 exposure grid positions in the source HDF5s have n_fields >=1. The 550 positive out-of-exposure event-grid entries arise from missing coordinate keys, not present coordinates with zero n_fields. This does not reconstruct the unpublished field-level insurer claims used in the study."
+
+[[crop_resolution]]
+crop = "barley"
+resolution_km = 1
+original_selected_event_days = 10
+exposure_positions = 7622
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 7622
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 1335
+positive_event_grid_cells_with_n_fields_ge_1 = 1335
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "barley"
+resolution_km = 2
+original_selected_event_days = 10
+exposure_positions = 3057
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 3057
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 907
+positive_event_grid_cells_with_n_fields_ge_1 = 907
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "barley"
+resolution_km = 4
+original_selected_event_days = 10
+exposure_positions = 991
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 991
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 513
+positive_event_grid_cells_with_n_fields_ge_1 = 513
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "barley"
+resolution_km = 8
+original_selected_event_days = 10
+exposure_positions = 325
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 325
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 280
+positive_event_grid_cells_with_n_fields_ge_1 = 280
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "field_crops"
+resolution_km = 1
+original_selected_event_days = 12
+exposure_positions = 12742
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 12742
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 5106
+positive_event_grid_cells_with_n_fields_ge_1 = 5106
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "field_crops"
+resolution_km = 2
+original_selected_event_days = 12
+exposure_positions = 4104
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 4104
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 2512
+positive_event_grid_cells_with_n_fields_ge_1 = 2512
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "field_crops"
+resolution_km = 4
+original_selected_event_days = 12
+exposure_positions = 1321
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 1321
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 1195
+positive_event_grid_cells_with_n_fields_ge_1 = 1195
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "field_crops"
+resolution_km = 8
+original_selected_event_days = 12
+exposure_positions = 441
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 441
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 574
+positive_event_grid_cells_with_n_fields_ge_1 = 574
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "grapevine"
+resolution_km = 1
+original_selected_event_days = 12
+exposure_positions = 2297
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 2297
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 661
+positive_event_grid_cells_with_n_fields_ge_1 = 661
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "grapevine"
+resolution_km = 2
+original_selected_event_days = 12
+exposure_positions = 1283
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 1283
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 401
+positive_event_grid_cells_with_n_fields_ge_1 = 401
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "grapevine"
+resolution_km = 4
+original_selected_event_days = 12
+exposure_positions = 690
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 690
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 254
+positive_event_grid_cells_with_n_fields_ge_1 = 254
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "grapevine"
+resolution_km = 8
+original_selected_event_days = 12
+exposure_positions = 311
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 311
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 159
+positive_event_grid_cells_with_n_fields_ge_1 = 159
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "maize"
+resolution_km = 1
+original_selected_event_days = 12
+exposure_positions = 10965
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 10965
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 3129
+positive_event_grid_cells_with_n_fields_ge_1 = 3129
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "maize"
+resolution_km = 2
+original_selected_event_days = 12
+exposure_positions = 3439
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 3806
+damage_grid_positions_missing_exposure_geometry = 367
+observed_positive_event_grid_cells = 1713
+positive_event_grid_cells_with_n_fields_ge_1 = 1466
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 247
+positive_event_grid_cells_outside_nonzero_exposure = 247
+
+[[crop_resolution]]
+crop = "maize"
+resolution_km = 4
+original_selected_event_days = 12
+exposure_positions = 1262
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 1262
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 864
+positive_event_grid_cells_with_n_fields_ge_1 = 864
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "maize"
+resolution_km = 8
+original_selected_event_days = 12
+exposure_positions = 432
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 432
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 441
+positive_event_grid_cells_with_n_fields_ge_1 = 441
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "rapeseed"
+resolution_km = 1
+original_selected_event_days = 11
+exposure_positions = 5895
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 5895
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 1543
+positive_event_grid_cells_with_n_fields_ge_1 = 1543
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "rapeseed"
+resolution_km = 2
+original_selected_event_days = 11
+exposure_positions = 2256
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 2567
+damage_grid_positions_missing_exposure_geometry = 311
+observed_positive_event_grid_cells = 1113
+positive_event_grid_cells_with_n_fields_ge_1 = 980
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 133
+positive_event_grid_cells_outside_nonzero_exposure = 133
+
+[[crop_resolution]]
+crop = "rapeseed"
+resolution_km = 4
+original_selected_event_days = 11
+exposure_positions = 877
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 878
+damage_grid_positions_missing_exposure_geometry = 1
+observed_positive_event_grid_cells = 607
+positive_event_grid_cells_with_n_fields_ge_1 = 607
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "rapeseed"
+resolution_km = 8
+original_selected_event_days = 11
+exposure_positions = 292
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 293
+damage_grid_positions_missing_exposure_geometry = 1
+observed_positive_event_grid_cells = 332
+positive_event_grid_cells_with_n_fields_ge_1 = 332
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "wheat"
+resolution_km = 1
+original_selected_event_days = 11
+exposure_positions = 9667
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 9667
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 2515
+positive_event_grid_cells_with_n_fields_ge_1 = 2515
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "wheat"
+resolution_km = 2
+original_selected_event_days = 11
+exposure_positions = 3066
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 3389
+damage_grid_positions_missing_exposure_geometry = 323
+observed_positive_event_grid_cells = 1428
+positive_event_grid_cells_with_n_fields_ge_1 = 1258
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 170
+positive_event_grid_cells_outside_nonzero_exposure = 170
+
+[[crop_resolution]]
+crop = "wheat"
+resolution_km = 4
+original_selected_event_days = 11
+exposure_positions = 1103
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 1103
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 720
+positive_event_grid_cells_with_n_fields_ge_1 = 720
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
+
+[[crop_resolution]]
+crop = "wheat"
+resolution_km = 8
+original_selected_event_days = 11
+exposure_positions = 371
+exposure_positions_with_n_fields_zero = 0
+published_damage_grid_positions = 371
+damage_grid_positions_missing_exposure_geometry = 0
+observed_positive_event_grid_cells = 372
+positive_event_grid_cells_with_n_fields_ge_1 = 372
+positive_event_grid_cells_with_present_n_fields_zero = 0
+positive_event_grid_cells_with_missing_geometry = 0
+positive_event_grid_cells_outside_nonzero_exposure = 0
