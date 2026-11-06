@@ -27,10 +27,16 @@ EIOPA identifies **35 large European insurance groups and 9 solo
 undertakings** in an ad-hoc collection conducted in 2021, published
 in 2023. The source explicitly warns it is **not 100% of the market**.
 The regulator hosts original historical-loss and wind-exposure XLSX
-attachments. The relevant workbooks have **NOT** been acquired,
-checksummed, verified for product-specific reuse, modelled as a
-complete denominator, joined to source NRW building locations, or
-fed into our model. A public regulator aggregate does not identify
+attachments. Both original EIOPA XLSX files have since been
+temporarily downloaded via exact official HTTPS sources, with
+original SHA-256 byte identities verified. The exposure XLSX source
+also passed a **source-SHA-pinned ZIP CRC and one-sheet metadata
+check**, following a constrained nonexecuted Excel printer-settings
+binary exception. They have **NOT** been approved for product-specific
+data reuse, parsed for insurer claim/financial cells, modelled as a
+complete denominator, joined to original NRW building locations, or
+fed into our model. See
+[original OOXML security resolution](eiopa-2023-exposure-source-pinned-printer-settings-ooxml-admission-20261106.md). A public regulator aggregate does not identify
 insured individual R+V buildings or company-specific losses.
 
 **GDV Naturgefahrenreport 2026 (priority 2; aggregate actual reported
@@ -187,11 +193,16 @@ Daria calibration**:
    [#42270505316](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42270505316)
    later returned the full file: **5,593,551 bytes**,
    SHA-256 `f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79`.
-   The strict XLSX OOXML quarantine **BLOCKED** its complex/active
-   member. Neither original workbook has been stored in GitHub;
+   The *initial generic* XLSX quarantine blocked exactly one
+   standardized printer-settings binary; the later SHA-pinned
+   nonexecuted metadata-only exception passed full original ZIP
+   CRC and confirmed one sheet in
+   [#42292320403](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42292320403). Neither original workbook has been stored in GitHub;
    no workbook sheet *contents*, claim columns, row amounts,
-   per-insurer exposures, ZIP all-member CRC or workbook-specific
-   third-party permission is established. The large exposure
+   per-insurer exposures or workbook-specific third-party
+   permission is established. Original exposure ZIP CRC
+   and the one-sheet workbook structure are now proved,
+   but **not** the contents of that sheet. The large exposure
    hash still needs independent repeated-source confirmation.
    See `research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml`
    for both source SHA receipts and no-go conditions.
