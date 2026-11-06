@@ -83,11 +83,19 @@ geocoding or the actual NRW 53-Kreis insured property TIV.
   source period/region, CDS licence acceptance, full downloaded
   original byte SHA256, original geographic projection, cell count
   and time-step completeness **before** aggregating multi-hour gusts.
-- Obtain/verify the original EIOPA XLSX workbook bytes and
-  workbook-specific reuse constraints. The original loss workbook
-  was listed at 27.55 KB and the exposure workbook at 5.33 MB,
-  but their direct retrieval was not successful on this
-  review; zero workbook sheets, rows or hashes were inspected.
+- Independently obtain/verify the complete original EIOPA XLSX
+  workbook bytes and workbook-specific reuse constraints.
+  The original historical loss workbook (publisher listed 27.55 KB)
+  was subsequently returned by a source-proxy as **28,209 bytes**
+  with repeated SHA-256
+  `201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6`.
+  This is **binary identity evidence only**: no worksheet names,
+  financial cell values or claims were inspected, no original
+  bytes stored in repo, and source-proxy delivery is not independently
+  TLS-attested. The exposure XLSX (publisher listed 5.33 MB)
+  response was truncated before whole-file receipt and still has
+  **NO verified original SHA-256**. Separate receipt:
+  `research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml`.
 - Preserve actual EIOPA observed **incurred insured building
   claims** separate from other claims, residential/commercial
   combined values, EIOPA partial sample GWP shares, economic
