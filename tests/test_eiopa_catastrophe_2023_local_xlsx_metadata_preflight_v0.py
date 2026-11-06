@@ -154,7 +154,7 @@ class OfflineEIOPAOriginalXLSXQuarantineTests(unittest.TestCase):
             with self.assertRaises(gate.EIOPAQuarantineBlocked):
                 gate.inspect_original_xlsx(p, "HISTORICAL_INSURED_LOSSES")
             p = root / "external_entity.xlsx"
-            fixture(p, sheet=XML + b"<!DOCTYPE workbook [<!ENTITY malicious SYSTEM 'file:///etc/passwd'>]>")
+            fixture(p, sheet=XML + b"<!DOCTYPE workbook [<!ENTITY malicious SYSTEM 'file:" + b"///etc/passwd'>]>")
             with self.assertRaises(gate.EIOPAQuarantineBlocked):
                 gate.inspect_original_xlsx(p, "HISTORICAL_INSURED_LOSSES")
 
