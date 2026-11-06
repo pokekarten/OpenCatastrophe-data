@@ -106,10 +106,18 @@ manual *rerun of the workflow run*, not by claiming that an
 unmerged workflow is already available for new default-branch
 dispatches.
 
-No frequency of automated full source downloads is configured:
-GitHub PR triggering is scoped strictly to **modifications of the
-new full replay workflow file itself**; ordinary documentation
-or model edits should not download the 901 MB ZIP again.
+**Cost/rate governance correction:** The initial success was
+obtained using a temporary pull-request trigger on the new workflow.
+GitHub evaluates pull-request `paths` filters against the
+**entire PR diff**, not just the latest commit. Therefore the initial
+trigger was **not sufficiently selective**: a subsequent documentation
+edit would rerun the 901 MB acquisition. Once recognized, we removed
+the `pull_request` trigger altogether; the final, safe workflow is
+**`workflow_dispatch` only** and will not automatically download
+large source files on ordinary commits. It can be manually dispatched
+when the reviewed workflow is on the default branch; until then,
+the successful previous PR-run attests to correct computation but
+does not imply a currently runnable manual dispatch entry.
 
 The official open Geobasis NRW data are described under open data
 licence terms. There are differing general authority summaries,
