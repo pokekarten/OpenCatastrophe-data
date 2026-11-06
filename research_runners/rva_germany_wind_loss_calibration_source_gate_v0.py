@@ -157,6 +157,8 @@ def validate_registry(doc: dict) -> dict:
                 "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
                 or src["approval_evidence"] != "SOURCE_BINARY_PROXY_SHA_ONLY_NO_CELLS"
                 or "the exposure XLSX response was truncated by proxy" not in src["limitations"]
+                or "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79" not in src["limitations"]
+                or "OOXML security quarantine failed" not in src["limitations"]
                 or src["access"] != "REFERENCE_ONLY"
             ):
                 raise SourceRightsBlocked(
