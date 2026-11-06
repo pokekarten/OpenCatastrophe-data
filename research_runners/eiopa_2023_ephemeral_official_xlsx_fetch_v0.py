@@ -11,9 +11,8 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
+import hashlib
 from pathlib import Path
-import shutil
 import ssl
 import tempfile
 from urllib.error import HTTPError, URLError
@@ -118,26 +117,69 @@ def inspect_official_original_bytes(directory: Path, opener=None) -> dict:
                            "HISTORICAL_INSURED_LOSSES", opener=opener)
     bounded_single_request(URLS["FLOOD_WIND_EXPOSURE"], expo,
                            "FLOOD_WIND_EXPOSURE", opener=opener)
-    proof = inspect_pair(loss, expo)
-    if proof["originals"][0]["sha256"] != FIRST_SHA256:
+    # Byte identity is a separate gate from spreadsheet content safety.
+    # We may publish verified raw SHA+size even if the *original* spreadsheet
+    # contains OOXML features requiring human review. NEVER relax quarantine.
+    originals = []
+    for name, family in ((loss, "HISTORICAL_INSURED_LOSSES"),
+                         (expo, "FLOOD_WIND_EXPOSURE")):
+        sha = hashlib.sha256()
+        with name.open("rb") as handle:
+            for part in iter(lambda: handle.read(65536), b""):
+                sha.update(part)
+        originals.append({
+            "source_family": family,
+            "sha256": sha.hexdigest(),
+            "original_file_size_bytes": name.stat().st_size,
+            "original_publisher_path": URLS[family],
+            "publisher_origin_only_via_strict_TLS_host": True,
+            "workbook_cells_examined": False,
+        })
+    if (originals[0]["sha256"] != FIRST_SHA256 or
+        originals[0]["original_file_size_bytes"] != 28209):
         raise EIOPAOriginalDownloadBlocked(
-            "official 2023 original loss XLSX hash differs from independent source receipt"
+            "official 2023 original loss XLSX binary changed from earlier independently observed receipt"
         )
-    if proof["originals"][0]["original_file_size_bytes"] != 28209:
-        raise EIOPAOriginalDownloadBlocked("original loss XLSX byte count changed")
+    try:
+        parsed = inspect_pair(loss, expo)
+    except EIOPAQuarantineBlocked:
+        # Protect against changing the file format validator to let known
+        # externalLinks, embedded objects or malicious OOXML slip through.
+        # Only binary SHA/size identity is released as metadata.
+        parsed = None
+    safe_full = parsed is not None
+    if safe_full:
+        # Even when the parser passed, this does NOT establish provenance,
+        # rights, claims event scope or any insurance model validation.
+        for original, result in zip(originals, parsed["originals"]):
+            if original["sha256"] != result["sha256"]:
+                raise EIOPAOriginalDownloadBlocked("binary identity diverged across original readers")
+            original.update({
+                "zip_crc_passed": result["zip_crc_passed"],
+                "zip_member_count": result["zip_member_count"],
+                "sheet_count": result["sheet_count"],
+                "worksheet_names_sanitized": result["worksheet_names_sanitized"],
+            })
     return {
         "schema": SCHEMA,
-        "status": "OFFICIAL_ORIGINALS_BINARY_INTEGRITY_ONLY_NOT_LOSS_CALIBRATION",
+        "status": (
+            "OFFICIAL_ORIGINALS_FULL_XLSX_METADATA_CHECKED_NOT_CLAIMS"
+            if safe_full else
+            "OFFICIAL_ORIGINALS_BINARY_SHA_ONLY_XLSX_QUARANTINE_BLOCKED"
+        ),
         "official_source": "https://www.eiopa.europa.eu/tools-and-data/catastrophe-data-hub_en",
         "source_original_TLS_host_restricted_to_EIOPA": True,
         "source_original_get_attempts_per_file": 1,
         "original_loss_exact_previously_verified_SHA": True,
         "original_exposure_new_SHA_must_be_independently_verified_before_model": True,
+        "both_original_source_binary_files_complete": True,
+        "full_XLSX_worksheet_metadata_and_CRC_passed": safe_full,
+        "full_XLSX_quarantine_passed": safe_full,
         "public_original_XLSX_bytes_uploaded": False,
         "insurer_claim_cells_or_NUTS2_event_loss_observed": False,
         "publisher_rights_for_workbook_analysis_verified": False,
         "actual_German_RV_insurer_model_or_annual_EP": False,
-        "originals": proof["originals"],
+        "originals": originals,
     }
 
 
