@@ -105,6 +105,35 @@ def unmatched_positive_impact_summary(
     }
 
 
+def unmatched_positive_impacts_by_event(
+    exposure_positions, damage_positions, event_dates, indptr, indices, values
+) -> list[dict[str, int]]:
+    """Aggregate *observed* positive sparse cells per original event ordinal.
+
+    Event ordinals represent selected publication event days, not a complete
+    annual frequency sample. Counts repeat across crops/resolutions and are
+    neither unique claims nor monetary insurance loss.
+    """
+    source_keys = {(round(float(lat), 5), round(float(lon), 5))
+                   for lat, lon in exposure_positions}
+    missing = {i for i, (lat, lon) in enumerate(damage_positions)
+               if (round(float(lat), 5), round(float(lon), 5)) not in source_keys}
+    rows = []
+    for event_pos, ordinal in enumerate(event_dates):
+        left, right = int(indptr[event_pos]), int(indptr[event_pos + 1])
+        positive_indices = [int(i) for i, impact in zip(indices[left:right],
+                                                        values[left:right])
+                            if float(impact) > 0]
+        unmatched = [i for i in positive_indices if i in missing]
+        rows.append({
+            "event_ordinal": int(ordinal),
+            "positive_impact_matrix_cells": len(positive_indices),
+            "positive_impact_matrix_cells_on_unmatched_positions": len(unmatched),
+            "unmatched_positions_with_positive_impact": len(set(unmatched)),
+        })
+    return rows
+
+
 def source_pair_summary(exposure, damage, hazard_dates) -> dict[str, object]:
     import numpy as np
     # pandas/PyTables fixed release layout observed from real ZIP schema.
@@ -147,6 +176,15 @@ def source_pair_summary(exposure, damage, hazard_dates) -> dict[str, object]:
         raise Blocked("reported crop impact values contain nonfinite/negative entries")
     observed_dates = sorted(int(x) for x in dates)
     nonjoin = unmatched_positive_impact_summary(expected, positions, indices, values)
+    by_event = unmatched_positive_impacts_by_event(
+        expected, positions, dates, pointers, indices, values
+    )
+    if (sum(row["positive_impact_matrix_cells_on_unmatched_positions"]
+            for row in by_event) !=
+            nonjoin["positive_impact_matrix_cells_on_unmatched_positions"] or
+            sum(row["positive_impact_matrix_cells"] for row in by_event) !=
+            int(np.count_nonzero(values))):
+        raise Blocked("original event-wise positive impact counts failed conservation")
     return {
         "exposure_position_count": exposure_count,
         "damage_position_count": damage_count,
@@ -160,6 +198,7 @@ def source_pair_summary(exposure, damage, hazard_dates) -> dict[str, object]:
         "stored_impact_matrix_cells": len(values),
         "nonzero_impact_cells": int(np.count_nonzero(values)),
         "csr_structurally_valid": True,
+        "positive_impact_coverage_by_source_event": by_event,
         **nonjoin,
         "individual_observed_impacts_exported": False,
         "interpretable_as_insured_loss_currency": False,
@@ -203,6 +242,19 @@ def main() -> int:
                             with open_member(dmzip, dmnames[dmname]) as impact:
                                 joined = source_pair_summary(exp, impact, radar_dates)
                         summaries.append({"crop": crop, "resolution_km": km, **joined})
+    # Cross-pair counts are summed over source observations, never deduped
+    # into putative claims or interpreted as an annual storm sample.
+    by_original_day = {int(day): 0 for day in radar_dates}
+    for pair in summaries:
+        for row in pair["positive_impact_coverage_by_source_event"]:
+            by_original_day[row["event_ordinal"]] += (
+                row["positive_impact_matrix_cells_on_unmatched_positions"]
+            )
+    if sum(by_original_day.values()) != sum(
+        row["positive_impact_matrix_cells_on_unmatched_positions"]
+        for row in summaries
+    ):
+        raise Blocked("cross-pair historical event-cell totals do not conserve")
     print(json.dumps({
         "schema_version": "swiss-hail-source-alignment-audit-v0",
         "original_hdf5_pairs_checked": len(summaries),
@@ -212,6 +264,12 @@ def main() -> int:
         "all_damage_position_keys_covered": all(x["full_damage_coordinate_key_coverage"] for x in summaries),
         "all_same_rows_in_same_order": all(x["positions_equal_count_and_order"] for x in summaries),
         "sum_unmatched_positive_impact_matrix_cells": sum(x["positive_impact_matrix_cells_on_unmatched_positions"] for x in summaries),
+        "unmatched_positive_impact_matrix_cells_by_original_event": [
+            {"event_ordinal": ordinal,
+             "positive_cells_summed_across_crop_resolution_pairs": by_original_day[ordinal]}
+            for ordinal in sorted(by_original_day)
+        ],
+        "unmatched_positive_counts_are_not_unique_claims_or_annual_samples": True,
         "sum_unmatched_positions_with_positive_impact": sum(x["unmatched_positions_with_positive_impact"] for x in summaries),
         "pair_summaries": summaries,
         "source_bytes_retained": False,
