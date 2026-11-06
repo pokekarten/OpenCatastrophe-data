@@ -16,6 +16,9 @@ on:
       - "research_runners/eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py"
       - "research_runners/eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0.py"
       - "research_runners/eiopa_2023_exposure_ooxml_quarantine_index_v0.py"
+      - "research_runners/eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py"
+      - "research/observations/eiopa_2023_exposure_source_pinned_ooxml_metadata_receipt_20261106.toml"
+      - "tests/test_eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py"
       - "tests/test_eiopa_2023_exposure_ooxml_quarantine_index_v0.py"
       - "research_runners/eiopa_2023_original_xlsx_binary_receipt_gate_v0.py"
       - "research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml"
@@ -73,6 +76,10 @@ jobs:
       - name: EIOPA original OOXML ZIP central-directory privacy and quarantine diagnostics
         run: |
           python -m unittest discover -s tests -p 'test_eiopa_2023_exposure_ooxml_quarantine_index_v0.py' -v
+      - name: EIOPA original exposure full CRC and sheet-count metadata-only receipt NO insurer losses
+        run: |
+          python research_runners/eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py
+          python -m unittest discover -s tests -p 'test_eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py' -v
       - name: Original XWS CSV source, geographic identity and no-model negative tests
         run: python -m unittest discover -s tests -p 'test_xws_daria_1990_original_csv_preflight_v0.py' -v
       - name: Entirely invented conditional impact arithmetic and negative tests
