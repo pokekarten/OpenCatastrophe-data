@@ -67,7 +67,7 @@ jobs:
           }
           for name, expected in pinned.items():
               raw = (root / name).read_bytes()
-              actual = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\\0" + raw).hexdigest()
+              actual = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
               assert actual == expected, (name, actual, expected)
           print("Original CLIMADA v6.1.0 GPL source Git blob identities verified (3/3).")
           PY
