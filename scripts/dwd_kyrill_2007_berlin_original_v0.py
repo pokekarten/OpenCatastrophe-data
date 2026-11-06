@@ -60,7 +60,7 @@ def _utc_stamp(value: str) -> datetime:
     if t.second or t.minute % 10:
         raise OriginalDWDGateError("original timestamp off strict 10-minute cadence")
     if t < START_SOURCE:
-        raise OriginalDWDGateError("original source timestamp before declared archive start")
+        raise OriginalDWDGateError("original source timestamp before declared archive start; source year-month: " + t.strftime("%Y-%m"))
     if t > END_SOURCE:
         raise OriginalDWDGateError("original source timestamp after declared archive end")
     return t
