@@ -32,15 +32,29 @@ all ZIP member CRC, workbook worksheet names/cells, policy data,
 publisher TLS chain independent of the retrieval proxy,
 workbook-specific rights, or insurer risk/loss models.
 
-The EIOPA **exposure XLSX** retrieval also reached source bytes,
-but the response was **truncated by the scraping proxy to roughly
-80 KB of base64**, so the full original file SHA/CRC/structure
-**cannot be calculated or asserted**. The published file size
-label (5.33 MB) is not a whole-file byte count.
-Both original workbooks remain absent from the GitHub repository
-and published research artifacts; no financial cells have been
-inspected. Exact receipt:
+**Second, successful official-source run:** the original
+**exposure XLSX** was subsequently downloaded through a
+single bounded HTTPS GET from the official EIOPA domain
+in [GitHub Actions #42270505316](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42270505316):
+**5,593,551 bytes**, SHA-256
+`f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79`. The old source-proxy response was truncated,
+but this later complete publisher TLS transfer produced a full
+original-byte hash for both XLSX files. The resulting GitHub
+artifact **#13528648193** contains *only* hashes, lengths and
+provenance flags; raw Excel data were deleted from the runner.
+
+**Crucial unchanged security limitation:** the original XLSX
+content validator **rejected an active/external/huge OOXML
+member**. It was NOT bypassed; workbook sheet contents,
+all-member ZIP CRC, financial loss cells, rights and valid
+insurance model dimensions remain UNVERIFIED. Source identity
+is not data-model readiness. The exposure hash has not yet
+been independently repeated by another download.
+Both original files remain absent from the GitHub repository.
+Exact no-go receipt:
 `research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml`.
+The acquisition workflow is now **manual-only**, not repeated
+on every PR commit.
 
 
 ## Implemented bounded local import-quarantine gate
