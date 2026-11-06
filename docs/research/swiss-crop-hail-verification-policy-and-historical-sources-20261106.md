@@ -64,3 +64,14 @@ https://geofiles.be.ch/geoportal/pub/metaarchiv/LANDKULT/LANDKULT_NUTZFL_2024_01
 These are a **candidate historical source only**: neither original archived bytes, licensing, price, historical polygon coverage nor portability across Swiss cantons have been checked. Historical data must not be copied into public GitHub or an insurer database without source-specific rights checks.
 
 **Strict boundary:** No annual hail catalogue rate, insured sum, individual claim amount, quantitative severity model, GUL/IL/RI, or gross/net OEP/AEP curve has been validated or admitted by this work.
+
+## New original-byte verification: released HDF5 actual n_fields source mask
+
+Passing original-source workflow: https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42245432836 . Its execution downloaded both originally published ZIPs into temporary runner storage, checked publisher MD5, opened all 24 original HDF5 crop/damage pairs, read each exposure's actual n_fields field and distinguished three categories for every positive observed event-grid matrix entry: n_fields >= 1, existing source coordinate with n_fields == 0, and coordinate absent from the source exposure table.
+
+- 28,674 positive event-grid matrix entries across all overlapping crop/resolution comparisons: **28,124 on n_fields >= 1 source support**, **0 on present coordinates with n_fields == 0**, **550 at positions entirely absent from the released 2021 exposure table**.
+- In these exact published HDF5 files the exposure table already contains **no positions with n_fields == 0**. Thus a rounded-coordinate key is equivalent to n_fields >= 1 **for this released source version and default threshold 1 only**. Do not generalise to historical or alternative crop data, or higher n_fields thresholds.
+- Rechecked out-of-support positive entries: maize 2 km 247, rapeseed 2 km 133, wheat 2 km 170; other crop/resolution published positive entries are within released 2021 support. These are sparse event-by-raster observations, not identifiable insurance claims.
+- **Scientific interpretation:** The primary paper's field-level / municipality-imputed data and evaluation populations need not be identical to the published processed gridded HDF5 files. Its reported 1 km no-exposure claim fractions cannot be reconstructed by treating the current released gridded file as raw insurer claims. This difference is not evidence of published-paper error or time-change causality.
+
+The deterministic aggregate per-crop original-source evidence is preserved in research/observations/swiss_crop_hail_original_n_fields_support_v0.toml. No values or original files are stored in Git or Neon; rights, original HSS reproduction, annual frequencies, financial loss severities and production admission remain unresolved.
