@@ -33,6 +33,7 @@ NTAD_API = (
 )
 SCHEMA = "OC_NBI_2025_INDEPENDENT_SOURCE_ID_GEOMETRY_CHALLENGE_V0"
 STATE = 6
+RESEARCH_STATES = frozenset((6, 36))
 YEAR = 2025
 SAMPLE_COUNT = 25
 MAX_SAMPLES = 100
@@ -60,10 +61,17 @@ def _decode(original: bytes, *, upper_bound: int) -> object:
         raise Blocked("not strict original source JSON") from exc
 
 
-def source_rows(original: bytes) -> list[dict]:
+def _validated_research_state(state: object) -> int:
+    if type(state) is not int or state not in RESEARCH_STATES:
+        raise Blocked("only two explicitly reviewed 2025 state selectors allowed")
+    return state
+
+
+def source_rows(original: bytes, *, state: int = STATE) -> list[dict]:
     """Re-use source-vintaged, duplicate/identity guarded original FHWA gate."""
+    state = _validated_research_state(state)
     audit_rows(original, expected_count=SAMPLE_COUNT,
-               expected_state_code=STATE, expected_year=YEAR)
+               expected_state_code=state, expected_year=YEAR)
     rows = _decode(original, upper_bound=200_000)
     if type(rows) is not list:
         raise Blocked("expected original Socrata selected row array")
@@ -74,7 +82,10 @@ def source_rows(original: bytes) -> list[dict]:
     return rows
 
 
-def arcgis_where_from_exact_source_rows(rows: list[dict]) -> str:
+def arcgis_where_from_exact_source_rows(
+    rows: list[dict], *, state: int = STATE
+) -> str:
+    state = _validated_research_state(state)
     if type(rows) is not list or len(rows) != SAMPLE_COUNT:
         raise Blocked("requires verified fixed-size original source selection")
     ids = []
@@ -88,7 +99,9 @@ def arcgis_where_from_exact_source_rows(rows: list[dict]) -> str:
     if len(set(ids)) != len(ids):
         raise Blocked("duplicate source bridge identity in query")
     quoted = ",".join("'" + ident + "'" for ident in sorted(ids))
-    return ("STATE_CODE_001 IN ('06','6') "
+    codes = list(dict.fromkeys((f"{state:02d}", str(state))))
+    where_state = ",".join("'" + code + "'" for code in codes)
+    return ("STATE_CODE_001 IN (" + where_state + ") "
             "AND STRUCTURE_NUMBER_008 IN (" + quoted + ")")
 
 
@@ -105,13 +118,16 @@ def _valid_source_id(value: object) -> str | None:
     return value if type(value) is str and SAFE_ID.fullmatch(value) else None
 
 
-def compare_sources(socrata_original: bytes, ntad_original: bytes) -> dict:
+def compare_sources(
+    socrata_original: bytes, ntad_original: bytes, *, state: int = STATE
+) -> dict:
     """Only exact source-state/structure pairs can be compared.
 
     Discrepancies are approximate metric *challenges*, NOT surveyed truth.
     No inference about longitude sign, EPSG transform or source-row equality.
     """
-    base = source_rows(socrata_original)
+    state = _validated_research_state(state)
+    base = source_rows(socrata_original, state=state)
     layer = _decode(ntad_original, upper_bound=500_000)
     if type(layer) is not dict or layer.get("error") is not None:
         raise Blocked("NTAD original response is not an ArcGIS feature query")
@@ -123,7 +139,7 @@ def compare_sources(socrata_original: bytes, ntad_original: bytes) -> dict:
     feats = layer.get("features")
     if type(feats) is not list or len(feats) > MAX_SAMPLES:
         raise Blocked("NTAD original response missing bounded feature array")
-    selected = {(STATE, row["structure_number_008"]): row for row in base}
+    selected = {(state, row["structure_number_008"]): row for row in base}
     if len(selected) != len(base):
         raise Blocked("duplicate source ID in source selection")
     grouped = defaultdict(list)
@@ -258,7 +274,7 @@ def compare_sources(socrata_original: bytes, ntad_original: bytes) -> dict:
     return {
         "schema": SCHEMA,
         "source_year": YEAR,
-        "source_state_code": STATE,
+        "source_state_code": state,
         "socrata_original_sha256": sha256(socrata_original).hexdigest(),
         "socrata_original_bytes": len(socrata_original),
         "ntad_original_sha256": sha256(ntad_original).hexdigest(),
@@ -332,33 +348,37 @@ def _get_original(url: str, bound: int) -> bytes:
     return contents
 
 
-def run_original_pair() -> dict:
+def run_original_pair(*, state: int = STATE) -> dict:
+    state = _validated_research_state(state)
     q = urlencode({
         "$select": SOCRATA_FIELDS,
-        "$where": "year=2025 AND state_code_001=6",
+        "$where": f"year={YEAR} AND state_code_001={state}",
         "$order": "structure_number_008 ASC",
         "$limit": str(SAMPLE_COUNT),
     })
     first = _get_original(SOCRATA_API + "?" + q, 200_000)
-    rows = source_rows(first)
-    where = arcgis_where_from_exact_source_rows(rows)
+    rows = source_rows(first, state=state)
+    where = arcgis_where_from_exact_source_rows(rows, state=state)
     second_q = urlencode({
         "where": where, "outFields": NTAD_FIELDS,
         "returnGeometry": "true", "outSR": "4326",
         "resultRecordCount": str(MAX_SAMPLES), "f": "json",
     })
     second = _get_original(NTAD_API + "?" + second_q, 500_000)
-    return compare_sources(first, second)
+    return compare_sources(first, second, state=state)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--state", type=int, choices=sorted(RESEARCH_STATES),
+                        default=STATE)
     parser.add_argument("--original-sources", action="store_true",
                         help="retrieve only bounded official public source responses")
     opts = parser.parse_args()
     if not opts.original_sources:
         parser.error("research source-run only; use module functions for offline tests")
-    print(json.dumps(run_original_pair(), sort_keys=True, indent=2, allow_nan=False))
+    print(json.dumps(run_original_pair(state=opts.state),
+                     sort_keys=True, indent=2, allow_nan=False))
     return 0
 
 

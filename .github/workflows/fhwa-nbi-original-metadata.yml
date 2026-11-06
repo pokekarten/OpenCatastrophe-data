@@ -111,8 +111,10 @@ jobs:
           # The NTAD source feature/geometry endpoint is never queried.
       - name: Test source-independent exact-key bridge joins and negative controls
         run: python -m unittest tests.test_fhwa_ntad_2025_cross_source_audit_v0 -v
-      - name: Independently compare bounded original 2025 NBI and NTAD feature rows
-        run: python -m research_runners.fhwa_ntad_2025_cross_source_audit_v0 --original-sources
+      - name: Independently compare two 2025 original-state NBI and NTAD feature samples
+        run: |
+          python -m research_runners.fhwa_ntad_2025_cross_source_audit_v0 --original-sources --state 6
+          python -m research_runners.fhwa_ntad_2025_cross_source_audit_v0 --original-sources --state 36
         # Official HTTPS-only hosts; max 25 selected source rows/100 returned
         # feature rows; all raw bridge IDs and geographic coordinates in
         # memory only. Prints source SHA and aggregate mismatch statistics.

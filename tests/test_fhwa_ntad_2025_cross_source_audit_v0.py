@@ -192,5 +192,30 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertEqual(proof_result["ntad_decimal_vs_point_geometry_comparisons"], 23)
         self.assertEqual(proof_result["angular_magnitude_comparisons"], 25)
 
+    def test_independently_selected_second_state_36_preserves_full_source_identity(self):
+        rows = source_rows()
+        for row in rows:
+            row["state_code_001"] = "36"
+        features = layer_features()
+        for feature in features:
+            feature["attributes"]["STATE_CODE_001"] = "36"
+        clause = proof.arcgis_where_from_exact_source_rows(rows, state=36)
+        self.assertIn("STATE_CODE_001 IN ('36')", clause)
+        report = proof.compare_sources(wire(rows), wire(arcgis(features)), state=36)
+        self.assertEqual(report["source_state_code"], 36)
+        self.assertEqual(report["matched_unique_bridge_state_ids"], 25)
+        self.assertEqual(report["ntad_decimal_vs_source_legacy_over_25_m"], 0)
+        self.assertFalse(report["model_input_admitted"])
+
+    def test_unreviewed_states_cannot_expand_original_data_harvest(self):
+        for unreviewed in (0, 1, 37, 99, True, "6"):
+            with self.subTest(state=unreviewed):
+                with self.assertRaises(Blocked):
+                    proof.compare_sources(wire(source_rows()), wire(arcgis()),
+                                          state=unreviewed)
+                with self.assertRaises(Blocked):
+                    proof.arcgis_where_from_exact_source_rows(source_rows(),
+                                                              state=unreviewed)
+
 if __name__ == "__main__":
     unittest.main()
