@@ -36,7 +36,7 @@ NS = {"s": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
 # executing, extracting, or uploading the binary driver settings part.
 PINNED_EIOPA_EXPOSURE_SHA = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
 PINNED_EIOPA_EXPOSURE_SIZE = 5593551
-PINNED_SOURCE_PRINTER_FILE = re.compile(r"xl/printerSettings/printerSettings[1-9][0-9]*\\.bin\\Z")
+PINNED_SOURCE_PRINTER_FILE = re.compile(r"xl/printerSettings/printerSettings[1-9][0-9]*\.bin\Z")
 PINNED_SOURCE_PRINTER_UNCOMPRESSED = 5420
 PINNED_SOURCE_PRINTER_COMPRESSED = 443
 
