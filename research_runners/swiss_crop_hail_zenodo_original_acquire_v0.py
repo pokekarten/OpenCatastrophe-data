@@ -141,6 +141,10 @@ def main() -> int:
         assets += ("exposure_zip", "damage_zip")
     if args.include_code:
         assets += ("code_zip",)
+    if args.code_only:
+        if args.include_code or args.include_radar or args.include_archives:
+            parser.error("--code-only cannot be combined with other selections")
+        assets = ("code_zip",)
     try:
         print(json.dumps(verify(assets), sort_keys=True))
     except Blocked as exc:
