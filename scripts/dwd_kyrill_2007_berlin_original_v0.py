@@ -41,7 +41,7 @@ MAX_ROWS = 600_000
 MAX_MEMBERS = 30
 MAX_MEMBER_BYTES = 80_000_000
 MAX_OBSERVATION = Decimal("200")
-START_SOURCE = datetime(1999, 12, 31, 23, 50)  # one pre-2000 MEZ edge tick, NOT UTC
+START_SOURCE = datetime(1999, 12, 1)  # bounded MEZ-labeled archive prelude, NOT UTC
 UTC_SOURCE_START = datetime(2000, 1, 1)
 END_SOURCE = datetime(2009, 12, 31, 23, 50)
 
@@ -134,6 +134,7 @@ def audit_original_archive(raw: bytes, *, expected_sha256: str | None = None) ->
             raise OriginalDWDGateError("original source ZIP SHA256 mismatch")
     seen = set()
     rows = 0
+    december_1999_prelude_rows = 0
     first = last = None
     report = {day: {"observed_rows":0, "missing_fx_10":0, "valid_fx_10":0,
                     "quality_flags":Counter(), "max_fx_10_mps_all_quality":None,
@@ -170,6 +171,10 @@ def audit_original_archive(raw: bytes, *, expected_sha256: str | None = None) ->
                         raise OriginalDWDGateError("unexpected source quality flag")
                     gust = _gust(value)
                     rows += 1
+                    if time < UTC_SOURCE_START:
+                        # DWD specifies MEZ before 2000, UTC afterwards; exclude
+                        # the entire bounded 1999-12 prelude from event scoring.
+                        december_1999_prelude_rows += 1
                     if rows > MAX_ROWS:
                         raise OriginalDWDGateError("original source exceeds row cap")
                     if WINDOW_START<=time<=WINDOW_END:
@@ -223,7 +228,8 @@ def audit_original_archive(raw: bytes, *, expected_sha256: str | None = None) ->
         "original_archive_byte_count":len(raw),
         "archive_first_original_clock_label":first.isoformat(),
         "archive_first_clock_is_utc":first >= UTC_SOURCE_START,
-        "pre_2000_mez_edge_tick_not_analyzed":first == START_SOURCE,
+        "pre_2000_december_source_clock_rows_excluded":december_1999_prelude_rows,
+        "pre_2000_non_utc_measurements_not_used_for_kyrill":True,
         "archive_last_utc":last.isoformat()+"Z",
         "full_source_product_rows":rows,
         "window_utc_start":WINDOW_START.isoformat()+"Z",
