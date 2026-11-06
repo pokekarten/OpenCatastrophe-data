@@ -9,6 +9,7 @@ on:
       - 'scripts/dwd_kyrill_2007_munich_original_v0.py'
       - 'scripts/dwd_kyrill_2007_berlin_original_v0.py'
       - 'tests/test_dwd_kyrill_2007_munich_original_v0.py'
+      - 'docs/research/evidence/dwd-kyrill-2007-munich-two-stations-original-fx10-20261106.md'
   workflow_dispatch:
 
 permissions:
@@ -68,6 +69,34 @@ jobs:
           assert not r['same_measurement_height_verified']
           assert not r['same_historical_storm_attribution_proven']
           assert r['annual_AAL'] is None and r['annual_AEP'] is None and r['annual_OEP'] is None
+          # Reproduce both original archives against the immutable research
+          # source observation receipt. No provider rows or ZIP bytes are committed.
+          evidence_path=Path('docs/research/evidence/dwd-kyrill-2007-munich-two-stations-original-fx10-20261106.md')
+          proof=evidence_path.read_text(encoding='utf-8')
+          nl=chr(10)
+          assert proof.count('```json'+nl)==1
+          assert proof.count(nl+'```'+nl)==1
+          pinned=json.loads(proof.split('```json'+nl,1)[1].split(nl+'```'+nl,1)[0])
+          assert r==pinned, 'DWD original 2007 station FX10 source/QN/day aggregates differ from pinned receipt'
+          expected={
+              '01262':('ca273211d92b48449c1e92e140a3b6c5b4c99999307aa1ef2fad4fcb6c486fca',2293243,523154,'33.0',{'1':144}),
+              '03379':('4a5abf0fdfbf073cee91179f018863e871a496e23199d8c9476d96ff934f0ff7',2643542,525519,'29.0',{'3':144}),
+          }
+          for station in r['stations']:
+              ident=station['dwd_station_id']
+              digest,size,rows,gust,qn=expected[ident]
+              assert station['original_archive_sha256']==digest
+              assert station['original_archive_bytes']==size
+              assert station['full_product_rows']==rows
+              assert station['pre_2000_local_clock_prelude_excluded']==6
+              day=station['four_day_window_utc'][1]
+              assert day['day_utc']=='2007-01-18'
+              assert day['max_3second_gust_mps_all_quality']==gust
+              assert day['quality_flag_record_counts']==qn
+              assert all(d['observed_10minute_records']==144 and
+                         d['missing_value_records']==0 and
+                         d['unobserved_10minute_slots']==0
+                         for d in station['four_day_window_utc'])
           print('ORIGINAL DWD MUNICH STATION RESEARCH AGGREGATES ONLY (NOT CALIBRATED):')
           print(json.dumps(r,indent=2,sort_keys=True,allow_nan=False))
           PY
