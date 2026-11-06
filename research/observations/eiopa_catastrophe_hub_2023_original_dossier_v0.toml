@@ -13,7 +13,9 @@ technical_note_pdf = "https://www.eiopa.europa.eu/system/files/2023-12/Technical
 legal_notice_url = "https://www.eiopa.europa.eu/legal-notice_en"
 original_pdf_sha256 = "NOT_ACQUIRED"
 historical_loss_workbook_sha256 = "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
-exposure_workbook_sha256 = "NOT_VERIFIED_PROXY_RESPONSE_TRUNCATED"
+exposure_workbook_sha256 = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
+exposure_workbook_binary_bytes = 5593551
+exposure_OOXML_security_quarantine_passed = false
 historical_loss_workbook_binary_bytes = 28209
 historical_loss_workbook_original_source_byte_receipt = "research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml"
 workbook_content_read_or_modelled = false
@@ -50,7 +52,7 @@ premium_share_can_be_treated_as_buildings_or_contracts_share = false
 GWP_sample_covers_RV_geolocated_NRW_book = false
 licence_workbook_specific_restrictions_checked = false
 actual_eiopa_xlsx_bytes_obtained_in_this_research = true
-unfetched_reason = "Original historical loss XLSX delivered in full via Context.dev source-proxy from official EIOPA link (28209 bytes, SHA256 201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6); exposure XLSX proxy reply truncated, thus no full exposure digest; no worksheet contents, loss rows or reuse licence confirmed"
+unfetched_reason = "Official EIOPA HTTPS GitHub Actions run 42270505316 delivered both workbooks: historical loss 28209 bytes SHA256 201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6 and exposure 5593551 bytes SHA256 f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79. Strict OOXML security quarantine rejected active/external/huge member; no full workbook CRC, worksheets, insurer loss rows or reuse licence confirmed"
 admission = "PUBLIC_METADATA_REFERENCE_ONLY_NO_DARIA_FIT_NO_RV_POLICY_NO_EP"
 
 [[original_attachments]]
@@ -75,4 +77,4 @@ name = "Flood and Windstorm exposure data - catastrophe data hub.xlsx"
 publisher_size_label = "5.33 MB"
 page = 0
 original_url = "https://www.eiopa.europa.eu/document/download/d2be6f79-3e44-47f1-821f-97ff41e9d7b6_en?filename=Flood+and+Windstorm_exposure_data.xlsx"
-source_sha256 = "NOT_ACQUIRED"
+source_sha256 = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
