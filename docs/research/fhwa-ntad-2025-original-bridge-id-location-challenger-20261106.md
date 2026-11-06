@@ -89,3 +89,23 @@ Two additional synthetic negative/positive regression tests check the conservati
 - **State 36 (New York):** 25/25 exact identities; **1** north-only component above 25 m, **0** east-only and **0** both-axis. Maximum approximate component magnitudes **62.51 m north** and **23.18 m east**; vector-distance gate previously found **1** combined exceedance.
 
 This is a source-view comparison, **not** a scientific claim that the true bridge moved north/east or that published geometry is wrong. Components use unsigned legacy source angular magnitudes, not independently surveyed signed geodesy. The diagnostic is now extended to report an explicit **diagonal-only vector threshold** and to assert exact conservation: north-only + east-only + both-axis + diagonal-only = all >25 m vector outliers. Additional synthetic regression verifies a vector over 25 m with each component below 25 m. A full original live run and repository CI on that newest code must independently pass. The persistent rule remains `model_input_admitted=false` for every case.
+
+## Exact original two-state diagonal/axis audit — 2026-11-06
+
+[GitHub original source workflow run #42292781813](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42292781813) completed **SUCCESS** on exact source commit `5d57ccd8398b75a80671db4709b8e456ab479649`. The runner executed **17/17** isolated synthetic adversarial tests, then independently fetched both original 2025 source sets and produced only aggregate source-bound receipts.
+
+| Source region | Exact join count | North-only >25 m | East-only >25 m | Both axes >25 m | Combined >25 m, neither axis >25 m | Total diagonal distance >25 m |
+|---|---:|---:|---:|---:|---:|---:|
+| California (state code 6) | 25/25 | 0 | 1 | 3 | 1 | 5 |
+| New York (state code 36) | 25/25 | 1 | 0 | 0 | 0 | 1 |
+| **Total (nonrandom and nonindependent public source views)** | **50/50** | **1** | **1** | **3** | **1** | **6** |
+
+The new **diagonal-only** category closes the previous apparent 4-vs-5 California discrepancy: a two-dimensional vector can exceed a 25 m diagnostic distance even when its north/east components are each at or below 25 m. The new executable conservation contract verifies north-only + east-only + both-axis + diagonal-only = all vector-distance outliers, and the independent source re-fetch returned these exact values.
+
+The original provider source SHA256s remained unchanged under the same bounded query and returned bytes:
+- California FHWA: `f20c98b58f3b34cb14d6370ce61d418ace0c90e734b392e763422b3f3b8a687f`; NTAD: `3cf70827384a2176ac736f3b99388a034e3e1476439fbea4edc0b82834aa5553`.
+- New York FHWA: `895903b99f08b3c6c5878433cc53d01febd3af22a4245c0d5f588c31d87e9e73`; NTAD: `6e3792dcc3f5c0088adbb3c460002126aa4b716bf2a19f134d3ee3a8a8d17b11`.
+
+**Hard scientific boundary:** No independent geodetic survey, provider bridge-location editorial pipeline, accurate signed displacement or underlying source-version equality was established. The original per-bridge data remains ephemeral; neither raw identifiers nor coordinates were uploaded, printed or inserted into Neon. This is a conflict **diagnostic**, not a location promotion for CAT intensity footprints or an insured loss probability. Production admission stays **false**.
+
+The latest documentation-only commit following this source receipt requires a fresh exact-head CI result; green source checks from its predecessor must not be attributed to the newer commit without verification.
