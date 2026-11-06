@@ -85,9 +85,16 @@ class OfficialSourceCRSGeosTests(unittest.TestCase):
 
     def test_version_drift_and_unsupported_crs_op_block(self):
         import pyproj
+        import shapely
+        self.assertEqual(crs.REVIEWED_SHAPELY_VERSIONS, frozenset(("2.1.2", "2.2.0")))
         with patch.object(pyproj,"__version__","0.0.0"):
             with self.assertRaises(crs.CRSBlocked):
                 crs._reviewed_transformer()
+        for unreviewed in ("0.0.0", "2.1.1", "2.2.1", "3.0.0"):
+            with self.subTest(shapely=unreviewed):
+                with patch.object(shapely,"__version__",unreviewed):
+                    with self.assertRaises(crs.CRSBlocked):
+                        crs._reviewed_transformer()
 
     def test_near_gridline_coordinate_is_not_treated_as_survey_exact(self):
         # Synthetic ETRS89 lon precisely equals one WorldCover grid line.
@@ -114,6 +121,9 @@ class OfficialSourceCRSGeosTests(unittest.TestCase):
         self.assertFalse(receipt["raw_source_geometry_or_address_persisted"])
         self.assertFalse(receipt["raw_building_coordinates_or_ids_emitted"])
         self.assertEqual(len(receipt["source_response_sha256"]),64)
+        import shapely
+        self.assertEqual(receipt["shapely_version"], shapely.__version__)
+        self.assertIn(receipt["shapely_version"], crs.REVIEWED_SHAPELY_VERSIONS)
         self.assertFalse(receipt["model_input_approved"])
 
     def test_bad_http_status_redirect_transport_mime_and_size_fail_closed(self):
