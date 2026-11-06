@@ -121,7 +121,7 @@ class EventFinancialMcTests(unittest.TestCase):
         self.assertFalse(report["native_Oasis_or_NextGen_Kyrill_financial_loss_run"])
         self.assertFalse(report["actual_RV_policy_terms_or_reinsurance_observed"])
         self.assertEqual(len(report["scenario_results"]),2)
-        self.assertEqual(report["fixed_rng_seed_specific_to_this_toy_not_FFBK_RIM"],20261105)
+        self.assertEqual(report["fixed_rng_seed_for_this_research_only"],20261105)
         self.assertIn("Bernoulli",report["invented_secondary_uncertainty"])
         self.assertNotIn("annual_ep",json.dumps(report).lower())
 
@@ -137,7 +137,7 @@ class EventFinancialMcTests(unittest.TestCase):
         self.assertEqual(proof["synthetic_NRW_site_count"],10000)
         self.assertEqual(proof["synthetic_NRW_counties"],53)
         self.assertEqual(proof["synthetic_total_tiv_eur"],4826029500)
-        self.assertEqual(proof["seed_specific_to_this_toy_not_FFBK_or_RIM"],m.SEED)
+        self.assertEqual(proof["seed_for_this_research_only"],m.SEED)
         self.assertEqual(proof["trials_per_dependence_case"],m.TRIALS)
         self.assertRegex(proof["exact_machine_summary_json_sha256"],r"^[0-9a-f]{64}$")
         for label,value in (
