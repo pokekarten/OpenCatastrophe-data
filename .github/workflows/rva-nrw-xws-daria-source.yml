@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-name: NRW XWS Daria 1990 original open wind source preflight
+name: NRW XWS Daria 1990 public source and CLIMADA method preflight (NO 10k)
 
 on:
   pull_request:
@@ -25,12 +25,11 @@ on:
 
 permissions:
   contents: read
-  actions: read
 
 jobs:
-  original-xws-daria-public-wind:
+  original-xws-daria-public-sources-only:
     runs-on: ubuntu-24.04
-    timeout-minutes: 9
+    timeout-minutes: 8
     steps:
       - name: Source commit read-only checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -48,10 +47,6 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_excess_cube_index_v0.py' -v
       - name: Original-code-isolated CLIMADA 6.1.0 PAA MDD interpolation negative tests
         run: python -m unittest discover -s tests -p 'test_rva_nrw_daria_climada61_source_challenger_v0.py' -v
-      - name: Pinned binary dependencies for original CLIMADA numeric method parity
-        run: |
-          python -m pip install --disable-pip-version-check --no-input numpy==1.26.4 scipy==1.14.1
-          python -m pip check
       - name: Read exact original external GPL CLIMADA 6.1.0 source metadata (no redistribution)
         run: |
           set -eu
@@ -83,105 +78,81 @@ jobs:
             --out-ephemeral-original-dir "${{ runner.temp }}/xws-daria-original-csv"
       - name: Offline 1990 XWS 3-second original site overlay negative checks
         run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_10k_original_gust_overlay_v0.py' -v
-      - name: Read exact earlier full-source NRW 10k OED research artifact via GitHub
+      - name: Validate original four Daria CSV SHA pins and original CLIMADA PAA/MDD method definitions ONLY
         env:
-          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: research_runners
         run: |
-          gh run download 42097472463 --repo "${{ github.repository }}" \
-            --name "rva-nrw-hu2022-10k-official-physical-candidates-fictional-insurance-NOT-CAT-model" \
-            --dir "${{ runner.temp }}/nrw-source-geocoded-10k"
           python - <<'PY'
+          import hashlib
+          import json
           import os
           from pathlib import Path
-          import zipfile
+          from xws_daria_1990_original_csv_preflight_v0 import validate_original_bundle
+          from rva_nrw_xws_daria_10k_original_gust_overlay_v0 import NAMES,PINNED_SOURCE_FILES
+          from rva_nrw_daria_climada61_source_challenger_v0 import (
+              MODEL_NAMES,SOURCE_PINS,parse_pinned_public_curves,git_blob_sha1
+          )
+
           root=Path(os.environ["RUNNER_TEMP"])
-          source=root/"nrw-source-geocoded-10k"
-          expected={"location.csv","account.csv","physical_candidate_evidence.csv","manifest.json"}
-          assert {p.name for p in source.iterdir()}==expected
-          with zipfile.ZipFile(root/"nrw-original-10k-verified-repacked.zip","x",
-                               compression=zipfile.ZIP_DEFLATED) as out:
-              for name in sorted(expected):
-                  out.write(source/name,arcname=name)
+          xwsdir=root/"xws-daria-original-csv"
+          cdir=root/"climada61-original-gpl"
+          raw={name:(xwsdir/filename).read_bytes() for name,filename in NAMES.items()}
+          source=validate_original_bundle(raw)
+          assert source["status"]=="OFFICIAL_ORIGINAL_XWS_CSV_BYTES_PARSED_NOT_MODEL_ADMITTED"
+          assert source["storm"]=="Daria / Burns Day storm, January 1990"
+          for name,(size,sha) in PINNED_SOURCE_FILES.items():
+              assert source["original_files"][name]["full_bytes"]==size
+              assert source["original_files"][name]["full_sha256"]==sha
+          climada={name:(cdir/name).read_bytes() for name in SOURCE_PINS}
+          curves=parse_pinned_public_curves(climada)
+          assert set(curves)==set(MODEL_NAMES)
+          assert len(curves[MODEL_NAMES[0]]["wind"])>=3
+          assert len(curves[MODEL_NAMES[1]]["wind"])>len(curves[MODEL_NAMES[0]]["wind"])
+          actual={name:git_blob_sha1(blob) for name,blob in climada.items()}
+          assert actual==SOURCE_PINS
+          scope={
+              "schema":"NRW_XWS_DARIA_CLIMADA61_SOURCE_ONLY_CI_EXPLICIT_NO_10K_V0",
+              "status":"VERIFIED_ORIGINAL_SOURCE_BYTES_AND_METHOD_DEFINITIONS_ONLY",
+              "original_physical_storm":"Daria 1990",
+              "original_XWS_full_source_sha256":{
+                  name:source["original_files"][name]["full_sha256"] for name in sorted(PINNED_SOURCE_FILES)
+              },
+              "original_CLIMADA_release":"CLIMADA-project/climada_python@v6.1.0",
+              "original_CLIMADA_git_blob_sha1":dict(sorted(actual.items())),
+              "checked_original_XWS_full_source_bytes":True,
+              "checked_original_CLIMADA_PAA_MDD_method_sources":True,
+              "checked_offline_negative_and_synthetic_method_fixtures":True,
+              "actual_2022_NRW_10k_site_overlay_executed_in_this_workflow":False,
+              "original_CLIMADA_source_method_body_parity_executed_in_this_workflow":False,
+              "actual_insurer_RV_geographies_or_loss_calculated":False,
+              "annual_frequency_or_OEP_AEP_calculated":False,
+              "full_replay_requires_separate_manually_dispatched_901MB_HU22_workflow":True,
+              "source_attribution":"(c) Met Office, University of Reading and University of Exeter; CC BY 4.0",
+              "original_third_party_bytes_uploaded":False,
+          }
+          target=root/"xws-daria-source-only-NOT-10k-NOT-CAT.json"
+          with target.open("x",encoding="utf-8") as f:
+              json.dump(scope,f,sort_keys=True,indent=2)
+              f.write("\n")
+          print(json.dumps({
+              "status":scope["status"],
+              "xws_source_files_verified":len(PINNED_SOURCE_FILES),
+              "climada_original_source_files_verified":len(SOURCE_PINS),
+              "full_10k_or_insurer_model_executed":False
+          },sort_keys=True))
           PY
-      - name: Historical original Daria 1990 XWS gust over 10k public NRW buildings
-        run: |
-          python research_runners/rva_nrw_xws_daria_10k_original_gust_overlay_v0.py \
-            --original-xws-csv-dir "${{ runner.temp }}/xws-daria-original-csv" \
-            --original-geocoded-nrw-oed-zip "${{ runner.temp }}/nrw-original-10k-verified-repacked.zip" \
-            --out-derived-gust-zip "${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip"
-      - name: Invented direct-value wind impact for ONE physical Daria storm (not insurer CAT loss)
-        run: |
-          python research_runners/rva_nrw_xws_daria_invented_damage_v0.py \
-            --source-hazard-zip "${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip" \
-            --out-fictional-direct-impact-zip "${{ runner.temp }}/rva-nrw-Daria1990-INVENTED-direct-impact-NOT-CAT-LOSS.zip"
-      - name: Source-bound asset-sampled XWS excess-cubed wind severity (NOT damage)
-        run: |
-          python research_runners/rva_nrw_xws_daria_excess_cube_index_v0.py \
-            --original-xws-csv-dir "${{ runner.temp }}/xws-daria-original-csv" \
-            --original-geocoded-nrw-oed-zip "${{ runner.temp }}/nrw-original-10k-verified-repacked.zip" \
-            --out-severity-index-zip "${{ runner.temp }}/rva-nrw-Daria1990-XWS-asset-sampled-cubic-index-NOT-LOSS.zip"
-      - name: Original CLIMADA 6.1 European published method challenger on historical Daria (NOT R+V loss)
-        run: |
-          python research_runners/rva_nrw_daria_climada61_source_challenger_v0.py \
-            --source-hazard-zip "${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip" \
-            --source-climada-dir "${{ runner.temp }}/climada61-original-gpl" \
-            --out-comparison-zip "${{ runner.temp }}/rva-nrw-Daria1990-CLIMADA61-EU-methods-NOT-INSURER-LOSS.zip"
-      - name: Execute original source-pinned CLIMADA 6.1 computational methods versus Decimal replay
-        run: |
-          python research_runners/rva_nrw_daria_climada61_original_method_parity_v0.py \
-            --source-hazard-zip "${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip" \
-            --source-climada-dir "${{ runner.temp }}/climada61-original-gpl" \
-            --out-receipt "${{ runner.temp }}/daria1990-climada61-original-method-parity-NOT-FULL-NATIVE.json"
-      - name: Remove original public CSV bytes before any source-derived research artifact
+      - name: Always remove original wind and GPL method source bytes
+        if: always()
         run: |
           rm -rf -- "${{ runner.temp }}/xws-daria-original-csv"
           rm -rf -- "${{ runner.temp }}/climada61-original-gpl"
-          rm -rf -- "${{ runner.temp }}/nrw-source-geocoded-10k"
-          rm -f -- "${{ runner.temp }}/nrw-original-10k-verified-repacked.zip"
-      - name: Publish only historical original XWS hazard assigned to fictional NRW buildings
+      - name: Publish source-only SHA/method scope receipt (NO 10k site run)
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: rva-nrw-10k-physical-public-XWS-Daria-1990-historical-wind-gust-NOT-CAT-LOSS
-          path: ${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip
+          name: XWS-Daria-1990-CLIMADA61-four-source-SHA-only-NOT-10k-MODEL
+          path: |
+            ${{ runner.temp }}/xws-daria-source-only-NOT-10k-NOT-CAT.json
+            ${{ runner.temp }}/xws-daria-1990-original-metadata-receipt.json
           if-no-files-found: error
           retention-days: 14
           compression-level: 6
-      - name: Publish invented single-event direct-value sensitivity separately from original hazard
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: rva-nrw-Daria1990-INVENTED-conditional-direct-value-NOT-CAT-LOSS
-          path: ${{ runner.temp }}/rva-nrw-Daria1990-INVENTED-direct-impact-NOT-CAT-LOSS.zip
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 6
-      - name: Publish separate source-bound intensity severity INDEX (never money loss)
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: rva-nrw-Daria1990-source-asset-sampled-cubic-SEVERITY-INDEX-NOT-LOSS
-          path: ${{ runner.temp }}/rva-nrw-Daria1990-XWS-asset-sampled-cubic-index-NOT-LOSS.zip
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 6
-      - name: Publish source-interpreted European winterstorm impact methods (not calibrated German loss)
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: rva-nrw-Daria1990-CLIMADA61-source-bound-EU-methods-NOT-RV-LOSS
-          path: ${{ runner.temp }}/rva-nrw-Daria1990-CLIMADA61-EU-methods-NOT-INSURER-LOSS.zip
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 6
-      - name: Publish original source method numeric parity receipt (NOT full native CLIMADA)
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: Daria1990-original-CLIMADA61-method-level-NOT-FULL-NATIVE-parity
-          path: ${{ runner.temp }}/daria1990-climada61-original-method-parity-NOT-FULL-NATIVE.json
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 6
-      - name: Publish only original file SHAs/source statistics/rights/no-CAT-admission
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: rva-nrw-xws-Daria-1990-original-wind-CSV-source-only-receipt
-          path: ${{ runner.temp }}/xws-daria-1990-original-metadata-receipt.json
-          if-no-files-found: error
-          retention-days: 14
