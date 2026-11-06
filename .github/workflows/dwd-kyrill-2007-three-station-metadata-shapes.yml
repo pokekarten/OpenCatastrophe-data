@@ -39,8 +39,8 @@ jobs:
             curl --fail --silent --show-error --noproxy '*' \
               --proto '=https' --proto-redir '=https' --connect-timeout 20 \
               --max-time 80 --retry 0 --max-filesize 30000 \
-              --output "$tmp/Meta_Daten_zehn_min_fx${id}.zip" \
-              "$base/Meta_Daten_zehn_min_fx${id}.zip"
+              --output "$tmp/Meta_Daten_zehn_min_fx_${id}.zip" \
+              "$base/Meta_Daten_zehn_min_fx_${id}.zip"
           done
           python -m scripts.dwd_kyrill_2007_station_metadata_probe_v0 \
             --zip-00433 "$tmp/Meta_Daten_zehn_min_fx_00433.zip" \
