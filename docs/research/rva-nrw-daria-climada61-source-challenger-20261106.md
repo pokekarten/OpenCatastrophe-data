@@ -120,3 +120,55 @@ model, explicit zeros, insured contract mapping, financial module
 and outward reinsurance/retro chronology with NextGen.
 
 **Status remains NOT MODEL ADMITTED for actual carrier risk.**
+ 
+## Observed exact-source CI execution: 6 November 2026
+
+The original XWS Daria 1990 source run
+[GitHub Actions #42230854661](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42230854661)
+completed **SUCCESS** at git head `0c0a57965086dadd98b7e75c56fe6853188c97ff`.
+The workflow verified the exact three original CLIMADA **v6.1.0**
+GPL-source Git-blob identities (3/3), completed 7/7 independent
+synthetic CLIMADA-method regression tests, downloaded the unchanged
+original four XWS Daria CSV sources, regenerated the actual
+10,000-location original-hazard overlay, and computed six
+source-replayed PAA × MDD scenarios.
+
+**Exact model-run results: EUR integer cents** (fictional replacement
+values, direct building-value sensitivity, **not actual insurer loss**):
+
+| Published European impact-method replay | Daria lower95 gust | Daria mean gust | Daria upper95 gust |
+| --- | ---: | ---: | ---: |
+| Schwierz 2010 in CLIMADA 6.1 | 12,224 cents (EUR 122.24) | 10,999,796 cents (EUR 109,997.96) | 1,721,892,751 cents (EUR 17,218,927.51) |
+| Welker 2021 in CLIMADA 6.1 | 21,893 cents (EUR 218.93) | 19,531,425 cents (EUR 195,314.25) | 3,059,869,204 cents (EUR 30,598,692.04) |
+
+Every case uses identical original physical Daria event identity,
+10,000 public NRW 2022 building candidates, 53 Kreise and EUR
+4,826,029,500 **invented** building TIV. The three original
+recalibrated wind fields are same-event uncertainty views rather than
+independent years or loss confidence quantiles.
+
+The mean-gust CLIMADA-method theoretical direct values differ greatly
+from the prior wholly invented values (EUR 11,837,763 for the invented
+resilient function and EUR 118,377,621.07 for the invented fragile
+function). They are deliberately **not** reconciled by choosing
+arbitrary scale factors. The external European methods are published,
+but are not empirically fitted/verified against source-matched German
+construction, roof type, insurer coverage, 3-second-gust measurement
+conventions or R&V claims. The lower95 source field produces some
+small CLIMADA output even though the separate *fixed 25 m/s cubic
+severity index* is zero: published PAA/MDD at low gust is not
+identical to the strictly thresholded SSI definition.
+
+Time-limited [CLIMADA comparison artifact #13507852666](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42230854661/artifacts/13507852666)
+contains all 10k × six site-level values, county summaries,
+source-identity hashes and explicit false promotion flags. Original
+CLIMADA GPL source code and raw XWS CSV data remain external to
+GitHub repository and artifact. The source-based replay is
+**not native installed CLIMADA execution**; an actual native
+CLIMADA-to-standalone numerical parity test remains a follow-up
+acceptance check before claiming reproducibility across engines.
+
+**Remaining hard NO-GO:** true R&V exposure, approved German
+vulnerability and independent loss calibration, coverage/limits and
+outward reinsurance model, complete annual event catalogue including
+zero years and clustering, consequently no gross/net OEP/AEP.
