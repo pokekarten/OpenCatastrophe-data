@@ -134,3 +134,71 @@ Supporting published methodological research:
 previously completed original-source numerical method parity;
 NO-GO for external-data copying, GDV text/data mining,
 German/R+V claims calibration or annual gross/net OEP/AEP.
+
+## Original EIOPA 2023 technical note: exact event identity and original attachments
+
+Original dated publisher references:
+- [EIOPA Catastrophe Data Hub official publication](https://www.eiopa.europa.eu/tools-and-data/catastrophe-data-hub_en), 5 December 2023.
+- [EIOPA-BoS-22/505 original 14-page technical note](https://www.eiopa.europa.eu/system/files/2023-12/Technical%20description%20-%20Catastrophe%20Data%20Hub.pdf), 27 November 2023, particularly pages 3, 6, 8–11.
+- [Historical loss data — exact EIOPA publisher XLSX link](https://www.eiopa.europa.eu/document/download/50e6b095-174c-4d9c-b9dd-1376dc1d43eb_en?filename=Historical+loss+data.xlsx), publisher listing **27.55 KB**.
+- [Flood and Windstorm exposure data — exact EIOPA publisher XLSX link](https://www.eiopa.europa.eu/document/download/d2be6f79-3e44-47f1-821f-97ff41e9d7b6_en?filename=Flood+and+Windstorm_exposure_data.xlsx), publisher listing **5.33 MB**.
+- [EIOPA-specific legal notice](https://www.eiopa.europa.eu/legal-notice_en): general website-source reproduction with EIOPA credit; additional explicit attribution/nonendorsement disclaimers for transformed publication; original third-party rights are not overridden, and EIOPA-branded tooling may have special licence conditions.
+
+The original EIOPA technical note resolves a major **NO-GO for direct
+Daria calibration**:
+
+1. **Only one observed insured wind-event set is provided: the
+   extratropical windstorm *Ciara / Sabine / Elsa* of early February
+   **2020**.** The other two claim events are the Portugal wildfire in
+   June 2017 and the June 2013 Central European flood. **There are no
+   1990 Daria insured claim-event observations in this released EIOPA
+   dataset.** Our physical XWS Daria 1990 source and this EIOPA
+   Ciara 2020 loss sample must **not** be event-matched or directly
+   numerically fitted.
+2. Insured **windstorm/flood building sums insured** use the
+   **year-end 2020** exposure vintage, originally received at
+   CRESTA-low resolution / NUTS3 and subsequently **published at
+   NUTS2** for anonymous public use. The publication's
+   description of sum insured specifies netting of reinsurance
+   business and coinsurance. This cannot be assumed equivalent to
+   our hypothetical per-asset EUR4.826bn *gross* building
+   replacement TIV or a particular policy GUL/IL/RI basis.
+3. Only **35 European insurance groups and 9 solo undertakings**
+   contributed. EIOPA reports **about 59% EEA-wide** (table:
+   **58.3%**) and **63.6% Germany** **2020 direct-business
+   fire/property gross-written-premium** sample representation.
+   This coverage fraction is **not** a physical building count,
+   contractual sums-insured market share, annual expected loss,
+   R&V market share or per-location insurer probability.
+4. Each public loss data point comprises **at least three
+   submitting insurance entities** for anonymity; some
+   residential/commercial splits are withheld and shown as
+   **RES+COM** instead. Inferring a particular R&V insured building,
+   individual company loss, postcode or NRW Kreis claim from
+   these aggregates is not scientifically or ethically supported.
+5. The public EIOPA site lists both original XLSX attachments,
+   but direct workbook access **did not succeed** during this
+   research (web extraction unsupported and the direct historical
+   loss XLSX transfer failed). Therefore **no original XLSX
+   workbook was downloaded, parsed, hash-authenticated or stored
+   in this repository**; no workbook sheet names, data columns,
+   original byte SHA-256, row-level event loss amounts or further
+   EIOPA-specific redistribution permissions are asserted.
+
+Reproducible metadata-only original-source receipt:
+`research/observations/eiopa_catastrophe_hub_2023_original_dossier_v0.toml`.
+Its checks:
+`research_runners/eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py`
+and `tests/test_eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py`.
+They are **offline and source-bound**, prevent erroneous
+Ciara→Daria mapping and false insurer exposure or licence
+claims, and do not fetch or cache third-party XLSX bytes.
+
+**Next eligible scientific model case:** first source an
+independent, rights-cleared *Ciara-2020* wind-footprint definition
+with matching wind metric and 2020 population/repair-cost
+denominators. Only then review whether EIOPA's NUTS2
+residential/commercial observed-loss aggregates can support a
+**regional holdout or plausibility bound**, not a building-level
+R&V claim-function fit. The actual Daria-1990 research
+remains a separate original-source technical demonstrator.
