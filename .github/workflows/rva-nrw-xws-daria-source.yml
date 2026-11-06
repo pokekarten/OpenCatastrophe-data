@@ -8,6 +8,9 @@ on:
       - ".github/workflows/rva-nrw-xws-daria-source.yml"
       - "research_runners/xws_daria_1990_original_csv_preflight_v0.py"
       - "research_runners/rva_nrw_xws_daria_10k_original_gust_overlay_v0.py"
+      - "research_runners/rva_nrw_xws_daria_invented_damage_v0.py"
+      - "tests/test_rva_nrw_xws_daria_invented_damage_v0.py"
+      - "docs/research/rva-nrw-xws-daria-invented-event-direct-value-20261106.md"
       - "tests/test_rva_nrw_xws_daria_10k_original_gust_overlay_v0.py"
       - "tests/test_xws_daria_1990_original_csv_preflight_v0.py"
       - "docs/research/rva-nrw-xws-daria-original-wind-source-20261105.md"
@@ -32,6 +35,8 @@ jobs:
           python-version: "3.11"
       - name: Original XWS CSV source, geographic identity and no-model negative tests
         run: python -m unittest discover -s tests -p 'test_xws_daria_1990_original_csv_preflight_v0.py' -v
+      - name: Entirely invented conditional impact arithmetic and negative tests
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_invented_damage_v0.py' -v
       - name: Source-original FULL CSV byte hashes and licence receipt (no raw upload)
         run: |
           python research_runners/xws_daria_1990_original_csv_preflight_v0.py --live \
@@ -65,6 +70,11 @@ jobs:
             --original-xws-csv-dir "${{ runner.temp }}/xws-daria-original-csv" \
             --original-geocoded-nrw-oed-zip "${{ runner.temp }}/nrw-original-10k-verified-repacked.zip" \
             --out-derived-gust-zip "${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip"
+      - name: Invented direct-value wind impact for ONE physical Daria storm (not insurer CAT loss)
+        run: |
+          python research_runners/rva_nrw_xws_daria_invented_damage_v0.py \
+            --source-hazard-zip "${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip" \
+            --out-fictional-direct-impact-zip "${{ runner.temp }}/rva-nrw-Daria1990-INVENTED-direct-impact-NOT-CAT-LOSS.zip"
       - name: Remove original public CSV bytes before any source-derived research artifact
         run: |
           rm -rf -- "${{ runner.temp }}/xws-daria-original-csv"
@@ -75,6 +85,14 @@ jobs:
         with:
           name: rva-nrw-10k-physical-public-XWS-Daria-1990-historical-wind-gust-NOT-CAT-LOSS
           path: ${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
+      - name: Publish invented single-event direct-value sensitivity separately from original hazard
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rva-nrw-Daria1990-INVENTED-conditional-direct-value-NOT-CAT-LOSS
+          path: ${{ runner.temp }}/rva-nrw-Daria1990-INVENTED-direct-impact-NOT-CAT-LOSS.zip
           if-no-files-found: error
           retention-days: 14
           compression-level: 6
