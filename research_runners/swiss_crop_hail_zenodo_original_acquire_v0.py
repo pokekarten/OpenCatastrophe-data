@@ -65,7 +65,7 @@ def acquire_one(asset: str, target: Path, opener) -> int:
     require_original_host(url)
     maximum = ASSETS[asset][3]
     request = Request(
-        url, headers={"Accept": "application/octet-stream",
+        url, headers={"Accept": "*/*",
                       "Accept-Encoding": "identity",
                       "User-Agent": "OpenCatastrophe-data-source-research/0.1"})
     try:
