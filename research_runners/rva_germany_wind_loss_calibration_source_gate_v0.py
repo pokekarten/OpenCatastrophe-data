@@ -144,7 +144,7 @@ def validate_registry(doc: dict) -> dict:
                 or "2017 wildfire" not in src["period"]
                 or "Daria" in src["period"]
                 or src["denominator"] !=
-                    "35_EUROPEAN_GROUPS_PLUS_9_SOLO;59PCT_EEA_PROPERTY_GWP_AND_63PCT_DE_GWP_ONLY_NOT_INSURED_SITES"
+                    "35_EUROPEAN_GROUPS_PLUS_9_SOLO;59PCT_EEA_PROPERTY_GWP_AND_63P6PCT_DE_GWP_ONLY_NOT_INSURED_SITES"
                 or "NOT Daria January 1990" not in src["limitations"]
                 or "XLSX byte retrieval blocked" not in src["limitations"]
             ):
