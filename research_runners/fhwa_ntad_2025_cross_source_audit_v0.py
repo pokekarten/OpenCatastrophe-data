@@ -167,6 +167,7 @@ def compare_sources(
     max_challenger_distance = 0.0
     lat_component_over_25 = lon_component_over_25 = 0
     lat_only_over_25 = lon_only_over_25 = both_components_over_25 = 0
+    combined_over_25_below_axis_thresholds = 0
     max_lat_component = max_lon_component = 0.0
     attr_code_concordance = attr_code_discordance = attr_code_unknown = 0
     decimal_available = decimal_missing = 0
@@ -268,6 +269,9 @@ def compare_sources(
         lat_only_over_25 += int(north_flag and not east_flag)
         lon_only_over_25 += int(east_flag and not north_flag)
         both_components_over_25 += int(north_flag and east_flag)
+        combined_over_25_below_axis_thresholds += int(
+            approx_m > 25 and not north_flag and not east_flag
+        )
         max_lat_component = max(max_lat_component, delta_north)
         max_lon_component = max(max_lon_component, delta_east)
         comparisons += 1
@@ -287,7 +291,8 @@ def compare_sources(
             decimal_vs_geom_comparisons > decimal_available or
             lat_component_over_25 != lat_only_over_25 + both_components_over_25 or
             lon_component_over_25 != lon_only_over_25 + both_components_over_25 or
-            lat_only_over_25 + lon_only_over_25 + both_components_over_25 > comparisons):
+            (lat_only_over_25 + lon_only_over_25 + both_components_over_25 +
+             combined_over_25_below_axis_thresholds != within_250 + beyond_250)):
         raise Blocked("source join counts do not conserve")
     return {
         "schema": SCHEMA,
@@ -333,6 +338,8 @@ def compare_sources(
         "approx_only_north_component_over_25_m": lat_only_over_25,
         "approx_only_east_component_over_25_m": lon_only_over_25,
         "approx_both_components_over_25_m": both_components_over_25,
+        "approx_combined_over_25_m_with_each_component_at_most_25_m":
+            combined_over_25_below_axis_thresholds,
         "max_approx_north_component_m":
             round(max_lat_component, 2) if comparisons else None,
         "max_approx_east_component_m":

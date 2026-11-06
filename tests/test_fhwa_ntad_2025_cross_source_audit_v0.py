@@ -67,6 +67,8 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertEqual(report["approx_north_component_over_25_m"], 0)
         self.assertEqual(report["approx_east_component_over_25_m"], 0)
         self.assertEqual(report["approx_both_components_over_25_m"], 0)
+        self.assertEqual(
+            report["approx_combined_over_25_m_with_each_component_at_most_25_m"], 0)
         self.assertEqual(report["matched_source_year_built_equal"], 25)
         self.assertEqual(report["matched_nbi_coded_coordinate_strings_equal"], 25)
         self.assertEqual(report["ntad_decimal_LATDD_LONGDD_available"], 25)
@@ -238,6 +240,8 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertEqual(audited["approx_only_north_component_over_25_m"], 1)
         self.assertEqual(audited["approx_only_east_component_over_25_m"], 1)
         self.assertEqual(audited["approx_both_components_over_25_m"], 1)
+        self.assertEqual(
+            audited["approx_combined_over_25_m_with_each_component_at_most_25_m"], 0)
         self.assertGreater(audited["max_approx_north_component_m"], 25)
         self.assertGreater(audited["max_approx_east_component_m"], 25)
         self.assertFalse(audited["model_input_admitted"])
@@ -252,6 +256,22 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertEqual(row["approx_north_component_over_25_m"], 0)
         self.assertEqual(row["approx_east_component_over_25_m"], 0)
         self.assertEqual(row["approx_both_components_over_25_m"], 0)
+        self.assertEqual(
+            row["approx_combined_over_25_m_with_each_component_at_most_25_m"], 0)
+
+    def test_diagonal_vector_above_25_with_both_axes_below_threshold(self):
+        f = layer_features()
+        # ~21m north and ~20m east, but ~29m combined.
+        f[0]["geometry"]["y"] += 0.00019
+        f[0]["geometry"]["x"] -= 0.00021
+        result = proof.compare_sources(wire(source_rows()), wire(arcgis(f)))
+        self.assertEqual(result["approx_delta_over_25_up_to_250_m"], 1)
+        self.assertEqual(result["approx_only_north_component_over_25_m"], 0)
+        self.assertEqual(result["approx_only_east_component_over_25_m"], 0)
+        self.assertEqual(result["approx_both_components_over_25_m"], 0)
+        self.assertEqual(
+            result["approx_combined_over_25_m_with_each_component_at_most_25_m"], 1)
+        self.assertFalse(result["model_input_admitted"])
 
 if __name__ == "__main__":
     unittest.main()
