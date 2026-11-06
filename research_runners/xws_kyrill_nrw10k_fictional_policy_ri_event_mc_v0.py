@@ -251,7 +251,7 @@ def execute(winds:list[dict],values:dict[str,tuple[int,str]],*,trials:int=TRIALS
             "occurrence_cat_XL_limit_eur":OCC_XL_LIMIT_EUR,
             "scope":"one historic event, no hours aggregation, annual reinstatements or cross-event aggregate",
         },
-        "fixed_rng_seed_specific_to_this_toy_not_FFBK_RIM":seed,
+        "fixed_rng_seed_for_this_research_only":seed,
         "n_trials_per_dependence_scenario":trials,
         "shared_uniform_hypothesis_not_empirical_event_wind_or_damage_correlation":True,
         "no_site_or_insurer_address_or_original_provider_NetCDF_republished":True,
