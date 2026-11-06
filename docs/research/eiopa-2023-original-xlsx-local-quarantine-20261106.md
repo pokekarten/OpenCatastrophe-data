@@ -18,15 +18,30 @@ property/fire gross written premiums**, and separate publisher
 licence notice are pinned in
 [`eiopa_catastrophe_hub_2023_original_dossier_v0.toml`](../../research/observations/eiopa_catastrophe_hub_2023_original_dossier_v0.toml).
 
-**Retrieval attempt during this research:** the original historical-loss
-link returned **HTTP 429 Too Many Requests** in web extraction; the
-exposure XLSX is not supported by the web content extractor. A
-separate original-loss transfer also failed. No original workbook
-bytes have been acquired and therefore no original file SHA-256,
-sheet structures, claims totals, counts or coverage denominators
-have been verified from the actual workbook. Publisher file-size
-labels are *not* byte-verification receipts. Neither the repository
-nor the published research artifacts include the original workbooks.
+**Updated original binary source result (same day):** direct original
+historical-loss XLSX transfer by web tools initially failed (HTTP 429
+or unsupported XLSX). A different source-proxy original-byte
+retrieval then succeeded via the **exact official EIOPA download URL**.
+The original XLSX returned **28,209 complete bytes**, with SHA-256
+`201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6`,
+independently recalculated by two different SHA-256 JS
+implementations. The original ZIP central directory lists **29
+members and one worksheet file**. This is a legitimate
+original-linked **binary hash receipt**, not verification of
+all ZIP member CRC, workbook worksheet names/cells, policy data,
+publisher TLS chain independent of the retrieval proxy,
+workbook-specific rights, or insurer risk/loss models.
+
+The EIOPA **exposure XLSX** retrieval also reached source bytes,
+but the response was **truncated by the scraping proxy to roughly
+80 KB of base64**, so the full original file SHA/CRC/structure
+**cannot be calculated or asserted**. The published file size
+label (5.33 MB) is not a whole-file byte count.
+Both original workbooks remain absent from the GitHub repository
+and published research artifacts; no financial cells have been
+inspected. Exact receipt:
+`research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml`.
+
 
 ## Implemented bounded local import-quarantine gate
 
