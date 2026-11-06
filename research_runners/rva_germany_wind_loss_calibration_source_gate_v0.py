@@ -13,12 +13,13 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import json
+import tomllib
 from pathlib import Path
 import re
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT = ROOT / "research/observations/rva_germany_wind_loss_calibration_source_register_v0.json"
+DEFAULT = ROOT / "research/observations/rva_germany_wind_loss_calibration_source_register_v0.toml"
 SCHEMA = "RVA_GERMANY_WIND_LOSS_CALIBRATION_SOURCE_REGISTER_V0"
 EXPECTED = {
     "gdv_naturgefahrenreport_2026": (
@@ -167,11 +168,11 @@ def main() -> int:
     try:
         if p.source_register.is_symlink() or p.source_register.stat().st_size > 80_000:
             raise SourceRightsBlocked("source register path is untrusted")
-        doc = json.loads(p.source_register.read_text(encoding="utf-8"))
+        doc = tomllib.loads(p.source_register.read_text(encoding="utf-8"))
         report = validate_registry(doc)
         print(json.dumps(report, sort_keys=True))
         return 0
-    except (OSError, json.JSONDecodeError, SourceRightsBlocked, TypeError, KeyError, AttributeError) as exc:
+    except (OSError, tomllib.TOMLDecodeError, SourceRightsBlocked, TypeError, KeyError, AttributeError) as exc:
         parser.exit(2, "WIND_CALIBRATION_SOURCE_RIGHTS_BLOCKED: " + str(exc) + "\n")
 
 
