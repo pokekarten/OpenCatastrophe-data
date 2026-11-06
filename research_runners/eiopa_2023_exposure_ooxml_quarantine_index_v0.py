@@ -23,7 +23,7 @@ from eiopa_2023_ephemeral_official_xlsx_fetch_v0 import (
 from eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0 import (
     MAX_FILE_BYTES, MAX_MEMBERS, MAX_ONE_MEMBER, MAX_RATIO,
     MAX_TOTAL_UNCOMPRESSED, EIOPAQuarantineBlocked,
-    inspect_original_xlsx
+    inspect_original_xlsx, allow_source_pinned_printer_metadata_only
 )
 
 SOURCE_SHA256 = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
@@ -122,12 +122,41 @@ def inspect_zip_directory_without_cells(path: Path) -> dict:
     # previously exact-SHA-pinned 5,420-byte printer driver blob is ignored
     # as nonfinancial metadata. All other macro/ActiveX/externalLink/unsafe
     # ZIP classes remain fail-closed. Never publish returned sheet names.
+    # Exact, fixed-class messages only. Never emit untrusted original member
+    # paths or sheet names even in failures/artifacts.
+    blocker_code = "NONE"
+    safe_error_codes = {
+        "active, external or huge OOXML member": "UNSUPPORTED_BINARY_MEMBER",
+        "untrusted or unusual worksheet name; manual review": "SHEET_NAME_FIXED_ASCII_POLICY",
+        "bad original file CRC": "ZIP_CRC_INVALID",
+        "OOXML member count outside allowed bounds": "ZIP_MEMBER_COUNT",
+        "duplicate ZIP member names blocked": "DUPLICATE_MEMBER_NAMES",
+        "missing core XLSX workbook parts": "CORE_OOXML_PART_MISSING",
+        "encrypted/unsafe XLSX ZIP paths are blocked": "UNSAFE_ZIP_MEMBER",
+        "ZIP member compression metadata impossible": "IMPOSSIBLE_ZIP_COMPRESSION",
+        "ZIP decompression ratio exceeds bounds": "COMPRESSION_RATIO",
+        "uncompressed OOXML size exceeds limit": "ZIP_TOTAL_EXPANDED_LIMIT",
+        "workbook metadata XML too large": "WORKBOOK_METADATA_LIMIT",
+        "XML entities not accepted": "XML_ENTITY_PROHIBITION",
+        "missing/oversized original workbook sheet set": "WORKBOOK_SHEET_SET",
+        "duplicate workbook sheet names": "DUPLICATE_SHEET_NAME",
+        "missing workbook worksheet parts": "WORKBOOK_SHEET_PARTS_MISSING",
+        "original XLSX ZIP/XML malformed": "ZIP_OR_XML_MALFORMED",
+    }
     try:
         source_pinned = inspect_original_xlsx(path, "FLOOD_WIND_EXPOSURE")
-    except EIOPAQuarantineBlocked:
+    except EIOPAQuarantineBlocked as exc:
         source_pinned = None
+        blocker_code = safe_error_codes.get(str(exc), "OTHER_ORIGINAL_OOXML_QUARANTINE")
+    canonical_printer_part_matches_source_policy = sum(
+        1 for info in infos if allow_source_pinned_printer_metadata_only(
+            info, "FLOOD_WIND_EXPOSURE", SOURCE_SHA256, SOURCE_BYTES
+        )
+    )
     return {
         "source_pinned_original_workbook_metadata_CRC_quarantine_passed": source_pinned is not None,
+        "source_pinned_original_workbook_quarantine_blocker_code": blocker_code,
+        "source_pinned_nonfinancial_printer_parts_matching_exact_original_policy": canonical_printer_part_matches_source_policy,
         "source_pinned_original_workbook_sheet_count": (
             source_pinned["sheet_count"] if source_pinned is not None else None
         ),
