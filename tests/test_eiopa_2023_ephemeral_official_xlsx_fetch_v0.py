@@ -100,12 +100,12 @@ class SourceOriginalURLPreflightTests(unittest.TestCase):
         url=gate.URLS["HISTORICAL_INSURED_LOSSES"]
         class Midstream(Response):
             def __init__(self):
-                super().__init__(url,b"PK\\x03\\x04"+b"S"*1200,gate.MIME)
+                super().__init__(url,b"PK\x03\x04"+b"S"*1200,gate.MIME)
                 self.calls=0
             def read(self,n):
                 self.calls+=1
                 if self.calls==1:
-                    return b"PK\\x03\\x04"+b"S"*650
+                    return b"PK\x03\x04"+b"S"*650
                 raise OSError("synthetic transport interrupted")
         opener=Opener(lambda req:Midstream())
         with TemporaryDirectory() as tmp:
@@ -117,8 +117,8 @@ class SourceOriginalURLPreflightTests(unittest.TestCase):
 
     def test_original_eiopa_workflow_is_manual_only_and_never_uploads_xlsx(self):
         workflow=(ROOT/".github/workflows/eiopa-2023-original-xlsx-provenance-one-shot.yml").read_text()
-        trigger=workflow.split("\\non:\\n",1)[1].split("\\npermissions:",1)[0]
-        self.assertEqual(trigger,"  workflow_dispatch:\\n")
+        trigger=workflow.split("\non:\n",1)[1].split("\npermissions:",1)[0]
+        self.assertEqual(trigger,"  workflow_dispatch:\n")
         self.assertNotIn("pull_request:",trigger)
         self.assertIn("contents: read",workflow)
         self.assertIn("retention-days: 14",workflow)
