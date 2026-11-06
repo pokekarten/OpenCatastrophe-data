@@ -48,6 +48,7 @@ def inspect_original_metadata(raw: bytes, *, station: str) -> dict:
     out = []
     seen = set()
     count = Counter()
+    member_names = []
     try:
         with ZipFile(BytesIO(raw)) as z:
             files = z.infolist()
@@ -63,6 +64,7 @@ def inspect_original_metadata(raw: bytes, *, station: str) -> dict:
                         or (item.external_attr >> 16) & 0o170000 == 0o120000):
                     raise MetadataProbeBlocked("unsafe or duplicate metadata member")
                 seen.add(name)
+                member_names.append(name)
                 payload = z.read(item)  # checks member CRC
                 if len(payload) != item.file_size:
                     raise MetadataProbeBlocked("metadata member expanded size differs")
@@ -93,8 +95,7 @@ def inspect_original_metadata(raw: bytes, *, station: str) -> dict:
                 })
     except (BadZipFile, OSError, RuntimeError, EOFError) as e:
         raise MetadataProbeBlocked("metadata ZIP invalid or CRC failed") from e
-    if any(count[k] != 1 for k in ("geography", "instruments", "parameters")):
-        raise MetadataProbeBlocked("missing or ambiguous original geography/instrument/parameter metadata")
+    complete = all(count[k] == 1 for k in ("geography", "instruments", "parameters"))
     return {
         "contract": CONTRACT,
         "station_id": station,
@@ -103,6 +104,9 @@ def inspect_original_metadata(raw: bytes, *, station: str) -> dict:
         "original_zip_sha256": sha256(raw).hexdigest(),
         "original_zip_bytes": len(raw),
         "metadata_categories": dict(sorted(count.items())),
+        "original_zip_member_names": sorted(member_names),
+        "exactly_one_each_required_category_found": complete,
+        "original_metadata_schema_unambiguous": complete,
         "metadata_schemas_reproduced": out,
         "source_is_original_DWD_metadata_zip": True,
         "source_2007_instrument_validity_resolved": False,
