@@ -128,10 +128,13 @@ def validate_evidence(doc: dict) -> dict:
             item["original_url"] != expected_url
             or item["publisher_size_label"] != expected_size
             or type(item["page"]) is not int or item["page"] != page
-            or item["source_sha256"] != (
-                "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
-                if ident == "HISTORICAL_INSURED_LOSSES" else "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
-            )
+            or item["source_sha256"] != {
+                "TECHNICAL_NOTE": "NOT_ACQUIRED",
+                "HISTORICAL_INSURED_LOSSES":
+                    "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6",
+                "FLOOD_WIND_EXPOSURE":
+                    "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79",
+            }[ident]
             or not item["name"].endswith(".pdf" if page else ".xlsx")
             or urlparse(item["original_url"]).hostname != "www.eiopa.europa.eu"
         ):
