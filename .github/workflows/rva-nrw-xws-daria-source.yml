@@ -10,6 +10,9 @@ on:
       - "research_runners/rva_nrw_xws_daria_10k_original_gust_overlay_v0.py"
       - "research_runners/rva_nrw_xws_daria_invented_damage_v0.py"
       - "research_runners/rva_nrw_xws_daria_excess_cube_index_v0.py"
+      - "research_runners/rva_nrw_daria_climada61_source_challenger_v0.py"
+      - "tests/test_rva_nrw_daria_climada61_source_challenger_v0.py"
+      - "docs/research/rva-nrw-daria-climada61-source-challenger-20261106.md"
       - "tests/test_rva_nrw_xws_daria_excess_cube_index_v0.py"
       - "docs/research/rva-nrw-xws-daria-asset-sampled-excess-cubed-severity-20261106.md"
       - "tests/test_rva_nrw_xws_daria_invented_damage_v0.py"
@@ -42,6 +45,32 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_invented_damage_v0.py' -v
       - name: Independent fixed-threshold wind severity index and fail-closed tests
         run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_excess_cube_index_v0.py' -v
+      - name: Original-code-isolated CLIMADA 6.1.0 PAA MDD interpolation negative tests
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_daria_climada61_source_challenger_v0.py' -v
+      - name: Read exact original external GPL CLIMADA 6.1.0 source metadata (no redistribution)
+        run: |
+          set -eu
+          mkdir -p "${{ runner.temp }}/climada61-original-gpl"
+          base="https://raw.githubusercontent.com/CLIMADA-project/climada_python/v6.1.0"
+          curl -fsSL --retry 2 --max-time 45 "$base/climada/entity/impact_funcs/storm_europe.py" -o "${{ runner.temp }}/climada61-original-gpl/storm_europe.py"
+          curl -fsSL --retry 2 --max-time 45 "$base/climada/engine/calibration_opt.py" -o "${{ runner.temp }}/climada61-original-gpl/calibration_opt.py"
+          curl -fsSL --retry 2 --max-time 45 "$base/climada/entity/impact_funcs/base.py" -o "${{ runner.temp }}/climada61-original-gpl/base.py"
+          python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "climada61-original-gpl"
+          pinned = {
+              "storm_europe.py": "76973c3df21bc5dbb89f21a962846a01c0c9fce9",
+              "calibration_opt.py": "5f174b5f77cc55d690a7d962d735221928838029",
+              "base.py": "c51540d5738a6a6f1fa38fe8440f65ace8d9ccc4",
+          }
+          for name, expected in pinned.items():
+              raw = (root / name).read_bytes()
+              actual = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\\0" + raw).hexdigest()
+              assert actual == expected, (name, actual, expected)
+          print("Original CLIMADA v6.1.0 GPL source Git blob identities verified (3/3).")
+          PY
       - name: Source-original FULL CSV byte hashes and licence receipt (no raw upload)
         run: |
           python research_runners/xws_daria_1990_original_csv_preflight_v0.py --live \
@@ -86,9 +115,16 @@ jobs:
             --original-xws-csv-dir "${{ runner.temp }}/xws-daria-original-csv" \
             --original-geocoded-nrw-oed-zip "${{ runner.temp }}/nrw-original-10k-verified-repacked.zip" \
             --out-severity-index-zip "${{ runner.temp }}/rva-nrw-Daria1990-XWS-asset-sampled-cubic-index-NOT-LOSS.zip"
+      - name: Original CLIMADA 6.1 European published method challenger on historical Daria (NOT R+V loss)
+        run: |
+          python research_runners/rva_nrw_daria_climada61_source_challenger_v0.py \
+            --source-hazard-zip "${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip" \
+            --source-climada-dir "${{ runner.temp }}/climada61-original-gpl" \
+            --out-comparison-zip "${{ runner.temp }}/rva-nrw-Daria1990-CLIMADA61-EU-methods-NOT-INSURER-LOSS.zip"
       - name: Remove original public CSV bytes before any source-derived research artifact
         run: |
           rm -rf -- "${{ runner.temp }}/xws-daria-original-csv"
+          rm -rf -- "${{ runner.temp }}/climada61-original-gpl"
           rm -rf -- "${{ runner.temp }}/nrw-source-geocoded-10k"
           rm -f -- "${{ runner.temp }}/nrw-original-10k-verified-repacked.zip"
       - name: Publish only historical original XWS hazard assigned to fictional NRW buildings
@@ -112,6 +148,14 @@ jobs:
         with:
           name: rva-nrw-Daria1990-source-asset-sampled-cubic-SEVERITY-INDEX-NOT-LOSS
           path: ${{ runner.temp }}/rva-nrw-Daria1990-XWS-asset-sampled-cubic-index-NOT-LOSS.zip
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
+      - name: Publish source-interpreted European winterstorm impact methods (not calibrated German loss)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rva-nrw-Daria1990-CLIMADA61-source-bound-EU-methods-NOT-RV-LOSS
+          path: ${{ runner.temp }}/rva-nrw-Daria1990-CLIMADA61-EU-methods-NOT-INSURER-LOSS.zip
           if-no-files-found: error
           retention-days: 14
           compression-level: 6
