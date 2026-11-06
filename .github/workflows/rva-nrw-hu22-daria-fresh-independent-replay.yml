@@ -35,9 +35,10 @@ jobs:
       - name: Ephemeral disk capacity and pinned OED geometry/numeric libraries
         run: |
           df -h "${{ runner.temp }}"
+          # Match the already-successful original HU22 full-source workflow.
+          # In this phase pyarrow needs the preinstalled NumPy 2 API.
           python -m pip install --disable-pip-version-check --no-input \
-            -r requirements-eu-flood-spatial.txt ods-tools==5.0.8 \
-            numpy==1.26.4 scipy==1.14.1
+            -r requirements-eu-flood-spatial.txt ods-tools==5.0.8
           python -m pip check
       - name: Offline first full-official/HU geometry and XWS-CLIMADA negative tests
         run: |
@@ -119,6 +120,12 @@ jobs:
             --original-xws-csv-dir "${{ runner.temp }}/fresh-xws-source-csv" \
             --original-geocoded-nrw-oed-zip "${{ runner.temp }}/nrw-hu22-fresh-repacked.zip" \
             --out-derived-gust-zip "${{ runner.temp }}/fresh-Daria1990-hazard-only.zip"
+      - name: Switch to independently pinned NumPy SciPy only after original HU22 rebuild
+        run: |
+          # Keep the proven original HU22/pyarrow pipeline untouched.
+          # Numeric published-method parity follows in a distinct Python phase.
+          python -m pip install --disable-pip-version-check --no-input numpy==1.26.4 scipy==1.14.1
+          python -m pip check
       - name: Source-original CLIMADA v6.1.0 GPL methods fetched into isolated ephemeral directory
         run: |
           set -eu
