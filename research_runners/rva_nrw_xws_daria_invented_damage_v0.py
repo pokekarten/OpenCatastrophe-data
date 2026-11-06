@@ -122,6 +122,16 @@ def _rows_csv(rows: list[dict], fields: tuple[str, ...]) -> bytes:
     return stream.getvalue().encode("utf-8")
 
 
+def _unique_json_object(pairs):
+    """Reject ambiguous duplicated source receipt keys before validating hashes."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise InventedDamageBlocked("duplicate original source receipt JSON key: " + key)
+        result[key] = value
+    return result
+
+
 def calculate(
     hazard_zip: Path, *,
     expected_sites: int = 10_000,
@@ -149,9 +159,11 @@ def calculate(
             raise InventedDamageBlocked("unexpected or corrupted original hazard ZIP")
         files = {name: archive.read(name) for name in (SITE_NAME, COUNTY_NAME, MANIFEST_NAME)}
     try:
-        manifest = json.loads(files[MANIFEST_NAME])
+        manifest = json.loads(files[MANIFEST_NAME], object_pairs_hook=_unique_json_object)
     except (ValueError, UnicodeError) as exc:
         raise InventedDamageBlocked("source receipt JSON invalid") from exc
+    if not isinstance(manifest, dict):
+        raise InventedDamageBlocked("source receipt JSON root must be an object")
     if (
         manifest.get("schema") != HAZARD_SCHEMA
         or manifest.get("status") != HAZARD_STATUS
@@ -174,12 +186,14 @@ def calculate(
     for name in (SITE_NAME, COUNTY_NAME):
         if hashlib.sha256(files[name]).hexdigest() != got_files[name]:
             raise InventedDamageBlocked("original hazard-derived CSV content SHA mismatch")
-    source = manifest.get("provider_original_four_XWS_CSV_source_receipt", {})
-    source_files = source.get("original_files", {}) if isinstance(source, dict) else {}
+    source = manifest.get("provider_original_four_XWS_CSV_source_receipt")
+    source_files = source.get("original_files") if isinstance(source, dict) else None
     if (
-        source.get("status") != "OFFICIAL_ORIGINAL_XWS_CSV_BYTES_PARSED_NOT_MODEL_ADMITTED"
+        not isinstance(source_files, dict)
+        or source.get("status") != "OFFICIAL_ORIGINAL_XWS_CSV_BYTES_PARSED_NOT_MODEL_ADMITTED"
         or set(source_files) != set(original_hashes)
-        or any(source_files[k].get("full_sha256") != sha
+        or any(not isinstance(source_files[k], dict) or
+               source_files[k].get("full_sha256") != sha
                for k, sha in original_hashes.items())
     ):
         raise InventedDamageBlocked("original provider CSV SHA identity mismatch")
