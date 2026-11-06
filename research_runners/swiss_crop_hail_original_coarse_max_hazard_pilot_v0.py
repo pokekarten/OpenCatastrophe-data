@@ -137,7 +137,7 @@ def main() -> int:
                     ename = f"exposure_CH_{crop}_{km}km.h5"
                     dname = f"hail_damage_CH_{crop}_{km}km.h5"
                     with open_member(expzip, exnames[ename]) as exposure:
-                        with open_member(dmnames and dmzip, dmnames[dname]) as damage:
+                        with open_member(dmzip, dmnames[dname]) as damage:
                             coords, observed, missing_positives = exposure_and_observed(
                                 exposure, damage, meshs["dates"], allow_unmatched=True
                             )
