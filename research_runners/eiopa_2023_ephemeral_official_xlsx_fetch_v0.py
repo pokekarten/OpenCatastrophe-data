@@ -74,6 +74,7 @@ def bounded_single_request(url: str, destination: Path, family: str, opener=None
         },
     )
     size = 0
+    complete = False
     try:
         with opener.open(req, timeout=45) as response:
             final_url = response.geturl()
@@ -95,6 +96,7 @@ def bounded_single_request(url: str, destination: Path, family: str, opener=None
                     output.write(part)
         if size < 300:
             raise EIOPAOriginalDownloadBlocked("original source too small to be XLSX")
+        complete = True
     except HTTPError as exc:
         # No retries; respect publisher rate limiting, never log response body.
         raise EIOPAOriginalDownloadBlocked(
@@ -105,7 +107,9 @@ def bounded_single_request(url: str, destination: Path, family: str, opener=None
             "official original publisher transfer failed or was malformed"
         ) from exc
     finally:
-        if size < 300 or size > MAX_FILE_BYTES[family]:
+        # Even a midstream TLS failure after hundreds of bytes must never
+        # leave an ambiguously named partial source XLSX in the workspace.
+        if not complete:
             destination.unlink(missing_ok=True)
 
 
