@@ -13,7 +13,7 @@ on:
       - "research_runners/rva_nrw_daria_climada61_source_challenger_v0.py"
       - "research_runners/rva_nrw_daria_climada61_original_method_parity_v0.py"
       - "research_runners/rva_germany_wind_loss_calibration_source_gate_v0.py"
-      - "research/observations/rva_germany_wind_loss_calibration_source_register_v0.json"
+      - "research/observations/rva_germany_wind_loss_calibration_source_register_v0.toml"
       - "tests/test_rva_germany_wind_loss_calibration_source_gate_v0.py"
       - "tests/test_rva_nrw_daria_climada61_source_challenger_v0.py"
       - "docs/research/rva-nrw-daria-climada61-source-challenger-20261106.md"
