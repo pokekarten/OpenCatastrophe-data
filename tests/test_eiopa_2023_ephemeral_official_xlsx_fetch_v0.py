@@ -96,6 +96,35 @@ class SourceOriginalURLPreflightTests(unittest.TestCase):
                         gate.bounded_single_request(url,dest,"HISTORICAL_INSURED_LOSSES",opener)
                     self.assertFalse(dest.exists())
 
+    def test_midstream_original_read_failure_removes_partial_file(self):
+        url=gate.URLS["HISTORICAL_INSURED_LOSSES"]
+        class Midstream(Response):
+            def __init__(self):
+                super().__init__(url,b"PK\\x03\\x04"+b"S"*1200,gate.MIME)
+                self.calls=0
+            def read(self,n):
+                self.calls+=1
+                if self.calls==1:
+                    return b"PK\\x03\\x04"+b"S"*650
+                raise OSError("synthetic transport interrupted")
+        opener=Opener(lambda req:Midstream())
+        with TemporaryDirectory() as tmp:
+            dest=Path(tmp)/"partial.xlsx"
+            with self.assertRaises(gate.EIOPAOriginalDownloadBlocked):
+                gate.bounded_single_request(url,dest,"HISTORICAL_INSURED_LOSSES",opener)
+            self.assertFalse(dest.exists())
+            self.assertEqual(opener.calls,1)
+
+    def test_original_eiopa_workflow_is_manual_only_and_never_uploads_xlsx(self):
+        workflow=(ROOT/".github/workflows/eiopa-2023-original-xlsx-provenance-one-shot.yml").read_text()
+        trigger=workflow.split("\\non:\\n",1)[1].split("\\npermissions:",1)[0]
+        self.assertEqual(trigger,"  workflow_dispatch:\\n")
+        self.assertNotIn("pull_request:",trigger)
+        self.assertIn("contents: read",workflow)
+        self.assertIn("retention-days: 14",workflow)
+        self.assertIn("eiopa-official-two-original-workbooks-metadata-NOT-CLAIMS.json",workflow)
+        self.assertNotIn("path: *.xlsx",workflow)
+
     def test_oversized_original_response_fails_closed(self):
         url=gate.URLS["HISTORICAL_INSURED_LOSSES"]
         payload=b"PK\x03\x04"+b"A"*(gate.MAX_FILE_BYTES["HISTORICAL_INSURED_LOSSES"]+1)
