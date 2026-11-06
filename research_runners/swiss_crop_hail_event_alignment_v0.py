@@ -68,18 +68,20 @@ def coordinate_key_coverage(exposure_positions, damage_positions) -> dict[str, o
     damage_keys = [(round(float(lat), 5), round(float(lon), 5))
                    for lat, lon in damage_positions]
     source_set = set(source_keys)
+    damage_set = set(damage_keys)
     matches = sum(key in source_set for key in damage_keys)
     return {
         "source_unique_key_count": len(source_set),
         "source_duplicate_key_count": len(source_keys) - len(source_set),
-        "damage_unique_key_count": len(set(damage_keys)),
-        "damage_duplicate_key_count": len(damage_keys) - len(set(damage_keys)),
+        "damage_unique_key_count": len(damage_set),
+        "damage_duplicate_key_count": len(damage_keys) - len(damage_set),
         "damage_positions_matching_exposure_key": matches,
         "damage_positions_without_exposure_key": len(damage_keys) - matches,
         "coordinate_key_rounding_decimals": 5,
         "full_damage_coordinate_key_coverage": (matches == len(damage_keys) and
                                                   len(damage_keys) > 0 and
-                                                  len(source_keys) == len(source_set)),
+                                                  len(source_keys) == len(source_set) and
+                                                  len(damage_keys) == len(damage_set)),
     }
 
 
