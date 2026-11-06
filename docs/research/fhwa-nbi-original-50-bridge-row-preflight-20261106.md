@@ -71,3 +71,15 @@ The source response is not publisher-signed, the original rows are not saved in 
 The initial first 50 sorted 2025 records come from only one state; to avoid treating that convenience sample as a spatial validation, the research workflow now independently probes **25 rows each** for explicit 2025 original NBI state codes **6** and **36**, using separate `$where`-bounded fixed-field source requests. The Python adapter now independently rejects any original row that does not match the explicitly chosen year or state, even if the API returns HTTP 200. One new offline test challenges wrong-year, wrong-state, boolean and impossible selectors; the original 50-row gate remains unchanged. No sample is random or statistically representative, and these are source field/format diagnostics, not a US spatial/CAT model.
 
 At the time this change is authored, the exact provider original 25+25 live run and latest-head full CI have **not** yet been observed; a green older-head check does not prove this follow-up. Validate against the new GitHub Actions source run and record source SHA receipts before interpreting its results. Exact row-level identifiers and geocodes continue to stay in the ephemeral runner only.
+
+## Exact live original multi-state source result (2026-11-06)
+
+The new [public source workflow run #42257973013](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42257973013) completed **SUCCESS at commit `41c169fa9c203fe2d456899a64e9d8f8fcdfc26d`**. The single bounded source job executed all offline tests and read the independently requested real public API responses. This result is source-transport / format evidence only, not randomized sampling:
+
+| Explicit request | Source bytes | Original response SHA-256 | Audit result |
+|---|---:|---|---|
+| 50 sorted rows (2025, first source state) | 6,959 | `eb3391f675610bd10b97468f19ceee26f760ffbd3e5bf4f61eaac5a1419f1904` | 50 distinct bridge-year IDs, 50 DMS-format plausible, 50 year-built plausible |
+| 25 records with `year=2025 AND state_code_001=6` | 3,676 | `f20c98b58f3b34cb14d6370ce61d418ace0c90e734b392e763422b3f3b8a687f` | 25 distinct bridge-year IDs, 25 DMS-format plausible, 25 year-built plausible; all selector checks pass |
+| 25 records with `year=2025 AND state_code_001=36` | 3,676 | `895903b99f08b3c6c5878433cc53d01febd3af22a4245c0d5f588c31d87e9e73` | 25 distinct bridge-year IDs, 25 DMS-format plausible, 25 year-built plausible; all selector checks pass |
+
+Exactly **100 source-row observations across three nonrandom, potentially overlapping selection groups** were inspected; their aggregate numbers cannot be extrapolated into national counts, independent source-site geolocation, insured exposure or financial model admission. Original row responses and building identifiers remain only in ephemeral runner storage. Source hashes bind exact responses on that run but are **not independent signatures**. Latest-head repository CI must still be independently inspected after this documentation commit.
