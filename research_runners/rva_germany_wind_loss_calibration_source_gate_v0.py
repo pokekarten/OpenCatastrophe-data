@@ -114,7 +114,7 @@ def validate_registry(doc: dict) -> dict:
             src["observed_measure"] != measure
             or src["licence_review"] != rights
             or src["access"] != access
-            or src["approval_evidence"] not in ("NONE", "SOURCE_ONLY_CI_42246960507", "SOURCE_BINARY_PROXY_SHA_ONLY_NO_CELLS")
+            or src["approval_evidence"] not in ("NONE", "SOURCE_ONLY_CI_42246960507", "SOURCE_TWO_XLSX_SHA_EXPOSURE_CRC_METADATA_ONLY_NO_CELLS")
             or len(src["limitations"]) < 30
             or len(src["denominator"]) < 18
             or not src["granularity"]
@@ -146,7 +146,7 @@ def validate_registry(doc: dict) -> dict:
                 or src["denominator"] !=
                     "35_EUROPEAN_GROUPS_PLUS_9_SOLO;59PCT_EEA_PROPERTY_GWP_AND_63P6PCT_DE_GWP_ONLY_NOT_INSURED_SITES"
                 or "NOT Daria January 1990" not in src["limitations"]
-                or "XLSX byte retrieval blocked" not in src["limitations"]
+                or "original SHA-pinned special case later passed full ZIP CRC" not in src["limitations"]
             ):
                 raise SourceRightsBlocked(
                     "EIOPA Ciara-2020-only event, NUTS2 anonymity or insurer GWP-sample limits altered"
@@ -155,7 +155,7 @@ def validate_registry(doc: dict) -> dict:
             if (
                 src["source_file_sha256"] !=
                 "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
-                or src["approval_evidence"] != "SOURCE_BINARY_PROXY_SHA_ONLY_NO_CELLS"
+                or src["approval_evidence"] != "SOURCE_TWO_XLSX_SHA_EXPOSURE_CRC_METADATA_ONLY_NO_CELLS"
                 or "the exposure XLSX response was truncated by proxy" not in src["limitations"]
                 or "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79" not in src["limitations"]
                 or "OOXML security quarantine failed" not in src["limitations"]
@@ -190,7 +190,8 @@ def validate_registry(doc: dict) -> dict:
         "external_workbook_original_bytes_ingested": False,
         "EIOPA_original_loss_binary_retrieved_from_source_proxy": True,
         "EIOPA_original_exposure_binary_complete": True,
-        "EIOPA_original_exposure_OOXML_quarantine_passed": False,
+        "EIOPA_original_exposure_source_pinned_metadata_CRC_passed": True,
+        "EIOPA_original_exposure_claims_data_rights_or_cells_admitted": False,
         "licence_or_data_reuse_approval_inferred": False,
     }
 
