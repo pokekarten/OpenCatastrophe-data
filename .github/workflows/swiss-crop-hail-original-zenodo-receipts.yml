@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   original-data-receipt:
-    name: Exact eight Zenodo source files (non-admission)
+    name: Diagnose exact original Zenodo software artifact (non-admission)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -40,7 +40,7 @@ jobs:
           python -m unittest -v
           tests.test_swiss_crop_hail_asset_preflight_v0
           tests.test_swiss_crop_hail_zenodo_original_acquire_v0
-      - name: Re-fetch exact eight original Zenodo v1 files, receipt only
+      - name: Diagnose original software source without downloading prior seven again
         env:
           PYTHONDONTWRITEBYTECODE: "1"
-        run: python -m research_runners.swiss_crop_hail_zenodo_original_acquire_v0 --include-radar --include-archives --include-code
+        run: python -m research_runners.swiss_crop_hail_zenodo_original_acquire_v0 --code-only
