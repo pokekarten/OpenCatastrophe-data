@@ -2,13 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 name: NRW HU22 full original fresh reconstruction to Daria CLIMADA parity
 
-# This is a costly, opt-in 901 MB source read and 11.2m-feature stream.
-# PR trigger fires only when the replay workflow itself is changed;
-# regular R+V commits MUST NOT trigger the full original acquisition.
+# A costly, explicit 901 MB original-source GET and 11.2m-feature scan.
+# workflow_dispatch only: do not add pull_request paths filtering here.
+# GitHub evaluates PR paths across the complete PR diff and would repeatedly
+# re-download 901 MB on unrelated commits while this file is present in the PR.
+# This workflow is intended for manual dispatch AFTER review/merge to main.
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml"
   workflow_dispatch:
 
 permissions:
