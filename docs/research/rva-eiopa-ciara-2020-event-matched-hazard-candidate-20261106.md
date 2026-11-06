@@ -92,9 +92,17 @@ geocoding or the actual NRW 53-Kreis insured property TIV.
   This is **binary identity evidence only**: no worksheet names,
   financial cell values or claims were inspected, no original
   bytes stored in repo, and source-proxy delivery is not independently
-  TLS-attested. The exposure XLSX (publisher listed 5.33 MB)
-  response was truncated before whole-file receipt and still has
-  **NO verified original SHA-256**. Separate receipt:
+  TLS-attested. The exposure XLSX (publisher listed 5.33 MB) was
+  subsequently retrieved directly from EIOPA via GitHub Actions
+  [#42270505316](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42270505316):
+  **5,593,551 original bytes**, SHA-256
+  `f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79`.
+  The original OOXML security quarantine BLOCKED unsafe/complex
+  workbook content and is not relaxed. Neither actual insured-loss
+  worksheet cells nor workbook-specific licence have been
+  verified; a second exposure source-hash replay remains pending.
+  No original XLSX binary stored in public GitHub.
+  Separate receipt:
   `research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml`.
 - Preserve actual EIOPA observed **incurred insured building
   claims** separate from other claims, residential/commercial
