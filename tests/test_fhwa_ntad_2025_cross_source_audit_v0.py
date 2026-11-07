@@ -119,6 +119,23 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertEqual(report["ntad_feature_identifiers_not_requested"], 1)
         self.assertEqual(report["invalid_ntad_feature_identifiers"], 1)
 
+    def test_fractional_boolean_and_invalid_years_cannot_fake_concordance(self):
+        rows = source_rows()
+        features = layer_features(rows)
+        features[0]["attributes"]["YEAR_BUILT_027"] = 1970.9
+        features[1]["attributes"]["YEAR_BUILT_027"] = True
+        features[2]["attributes"]["YEAR_BUILT_027"] = 2026
+        rows[3]["year_built_027"] = 1970.7
+        rows[4]["year_built_027"] = "unknown"
+        features[5]["attributes"]["YEAR_BUILT_027"] = 1969
+        report = proof.compare_sources(wire(rows), wire(arcgis(features)))
+        self.assertEqual(report["matched_source_year_built_equal"], 19)
+        self.assertEqual(report["matched_source_year_built_different"], 1)
+        self.assertEqual(report["matched_source_year_built_unavailable"], 5)
+        self.assertEqual(report["matched_unique_bridge_state_ids"], 25)
+        self.assertFalse(report["model_input_admitted"])
+        self.assertNotIn("SRC2025", json.dumps(report))
+
     def test_coordinate_disagreement_reported_without_leaking_its_location(self):
         f = layer_features()
         f[0]["geometry"]["x"] = -80.0
