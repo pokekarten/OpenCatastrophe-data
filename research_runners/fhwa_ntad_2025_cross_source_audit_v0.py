@@ -21,7 +21,7 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 from research_runners.fhwa_nbi_socrata_metadata_gate_v0 import Blocked, _unique_object
 from research_runners.fhwa_nbi_socrata_original_rows_v0 import (
-    audit_rows, legacy_unsigned_degree_magnitude,
+    _nonnegative_int, audit_rows, legacy_unsigned_degree_magnitude,
 )
 
 SOCRATA_HOST = "https://data.transportation.gov"
@@ -180,14 +180,21 @@ def compare_sources(
         attr = feature["attributes"]
         year = attr.get("YEAR_BUILT_027")
         src_year = row.get("year_built_027")
-        if year is None or src_year is None:
+        # Do not truncate a fractional provider value via int(1970.9) or
+        # treat bool as an integer. Invalid or out-of-vintage values are
+        # *unverified*, never a false agreement between source views.
+        try:
+            native_year = _nonnegative_int(
+                year, "NTAD build year", low=1800, high=YEAR
+            )
+            original_year = _nonnegative_int(
+                src_year, "Socrata build year", low=1800, high=YEAR
+            )
+        except Blocked:
             ref_year_unknown += 1
         else:
-            try:
-                ref_year_agree += int(int(year) == int(src_year))
-                ref_year_disagree += int(int(year) != int(src_year))
-            except (TypeError, ValueError):
-                ref_year_unknown += 1
+            ref_year_agree += int(native_year == original_year)
+            ref_year_disagree += int(native_year != original_year)
         pair_matches = []
         for src, ref, width in (
             ("lat_016", "LAT_016", 8),
