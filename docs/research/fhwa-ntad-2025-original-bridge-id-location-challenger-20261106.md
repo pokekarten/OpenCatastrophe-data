@@ -106,6 +106,12 @@ The original provider source SHA256s remained unchanged under the same bounded q
 - California FHWA: `f20c98b58f3b34cb14d6370ce61d418ace0c90e734b392e763422b3f3b8a687f`; NTAD: `3cf70827384a2176ac736f3b99388a034e3e1476439fbea4edc0b82834aa5553`.
 - New York FHWA: `895903b99f08b3c6c5878433cc53d01febd3af22a4245c0d5f588c31d87e9e73`; NTAD: `6e3792dcc3f5c0088adbb3c460002126aa4b716bf2a19f134d3ee3a8a8d17b11`.
 
+## 2026-11-07 follow-up: signed native decimal/point conflict gate
+
+A source-only regression audit identified a false-green in the **internal NTAD LATDD/LONGDD versus NTAD FeatureServer point** diagnostic: the prior formula took absolute values on both signed native coordinates and could report zero discrepancy if an otherwise identical native point was reflected into the wrong hemisphere. The historical FHWA/NBI DDMMSSss and DDDMMSSss comparison remains deliberately **unsigned**: its sign cannot be reconstructed by this research fixture.
+
+The independent NTAD decimal-versus-geometry calculation now retains latitude and longitude signs. A synthetic two-feature red case flips longitude sign for one point and latitude sign for a different point; it must report two native decimal/point discrepancies even though their unsigned historical-code distance remains zero. No row-level coordinates or identifiers enter Git or logs. Existing 50 original source observations and their past recorded results are **historical receipts**, not proof that this new check has rerun on original bytes. Recheck newest-HEAD source job and full CI independently. This improves error visibility only: no surveyed geodetic truth, 2025 source-vintage equivalence, or model/insured-exposure admission is established.
+
 **Hard scientific boundary:** No independent geodetic survey, provider bridge-location editorial pipeline, accurate signed displacement or underlying source-version equality was established. The original per-bridge data remains ephemeral; neither raw identifiers nor coordinates were uploaded, printed or inserted into Neon. This is a conflict **diagnostic**, not a location promotion for CAT intensity footprints or an insured loss probability. Production admission stays **false**.
 
 The latest documentation-only commit following this source receipt requires a fresh exact-head CI result; green source checks from its predecessor must not be attributed to the newer commit without verification.
