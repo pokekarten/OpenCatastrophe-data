@@ -15,8 +15,9 @@ The public Zenodo record `https://zenodo.org/records/15305753` declares CC BY 4.
 |---|---:|---|---|
 | ERA5 | 6,792,278 | `92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102` | Previously verified footprint source; reused as the same-event control. |
 | CCLM_ERA5_EUR-11 | 13,898,709 | `4bd28d8bd4f2fd820ea7f844e243b1234a2e4c8fa81ea420ef558917729ba94` | Newly acquired, opened, coordinate arrays and gust units inspected; Kyrill identified by source name/date. |
+| CCLM_ERA5_CEU-3 | 80,330,992 | `2a8cd17e582280fece757b233d08cb580787172322c7bfd98f9d224c757c7077` | Acquired; provider MD5 verified; 423x415 Germany-focused rotated grid, geographic coordinates/gust units inspected; Kyrill mapped for Oasis. |
 
-CCLM EUR-11 contains 50 source-selected winter storms on its native rotated grid. Only this of the three other model products was obtained in this follow-up; COSMO-REA6 and CCLM_ERA5_CEU-3 were not downloaded. Event rankings/selections remain source-specific. The product does not supply a complete common event catalogue or complete unmasked hazard series.
+CCLM EUR-11 contains 50 source-selected winter storms on its native rotated grid. Both CCLM variants were obtained in this follow-up; COSMO-REA6 was not downloaded. Event rankings/selections remain source-specific. The product does not supply a complete common event catalogue or complete unmasked hazard series.
 
 ## XWS Kyrill
 
@@ -26,16 +27,17 @@ The XWS methodology describes maximum 3-second gust footprints over a 72-hour wi
 
 ## Native Oasis model challenge
 
-One reviewed native Oasis 2.5.9 execution evaluated four representations of the **same Kyrill event** over the same 7,998 fictional German building-value interests. The fixed scenario uses a 1,000 EUR individual deductible, full-value limits, transferred CLIMADA PAA/MDD reference and source-specific nearest grid cells. All selected source gusts were finite and in the configured supported range. Nearest-grid distances were at most 8.535 km for CCLM and 17.013 km for XWS; ERA5 retained the original mapping.
+One reviewed native Oasis 2.5.9 execution evaluated five representations of the **same Kyrill event** over the same 7,998 fictional German building-value interests. The fixed scenario uses a 1,000 EUR individual deductible, full-value limits, transferred CLIMADA PAA/MDD reference and source-specific nearest grid cells. All selected source gusts were finite and in the configured supported range. Nearest-grid distances were 8.535 km for CCLM EUR-11, 2.150 km for CCLM CEU-3 and 17.013 km for XWS; ERA5 retained the original mapping. One CEU-3 portfolio point has source gust zero and remains a selected-footprint omission, not evidence of physical calm.
 
 | Source | Expected footprint GUL EUR | Expected insured footprint contribution EUR |
 |---|---:|---:|
 | CLIMK ERA5 | 323,529.86 | 104,373.43 |
 | CLIMK CCLM EUR-11 | 64,597.72 | 21,844.27 |
+| CLIMK CCLM CEU-3 | 129,851.51 | 50,818.82 |
 | XWS raw | 5,499.96 | 5.81 |
 | XWS decontaminated | 5,492.89 | 5.81 |
 
-The engine's per-policy conditional losses were weighted with the same assumed PAA to obtain these contributions. Eight aggregate gross/insured comparisons and 63,984 conditional policy comparisons passed at pre-existing tolerances; the ERA5 result matched its earlier control. Three geographic-mapping tests passed.
+The engine's per-policy conditional losses were weighted with the same assumed PAA to obtain these contributions. Ten aggregate gross/insured comparisons and 79,980 conditional policy comparisons passed at pre-existing tolerances; the ERA5 result matched its earlier control. Three geographic-mapping tests passed.
 
 These outputs combine differences in model/source, grid, time window, wind definition, event mask and transferred vulnerability. They do not isolate resolution effects, choose a scientifically best source or estimate actual Kyrill insured damage. In particular, the low XWS payout is not evidence of low actual damage. The initial exploratory internal XWS labels were reversed; the reviewed run corrected the labels and was repeated. The earlier exploratory run is not counted as a separate source scenario.
 
