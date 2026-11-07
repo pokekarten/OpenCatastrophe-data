@@ -211,9 +211,10 @@ def compare_sources(
             coded_missing += 1
         else:
             coded_valid += 1
-        # The same official NTAD layer independently publishes LATDD/LONGDD.
-        # Compare their angular magnitudes to coded legacy fields and the
-        # published point geometry, keeping individual values in memory only.
+        # The same NTAD layer publishes LATDD/LONGDD with signed longitude.
+        # Compare unsigned magnitudes to historical DMS codes, but signed
+        # decimal values to native point geometry: a hemisphere flip must
+        # not be misclassified as internal geometric agreement.
         dd_lat, dd_lon = attr.get("LATDD"), attr.get("LONGDD")
         decimal_ok = (
             type(dd_lat) in (float, int) and type(dd_lon) in (float, int)
@@ -244,9 +245,9 @@ def compare_sources(
         geoms_valid += 1
         if decimal_ok:
             gap = hypot(
-                abs(abs(float(geom["y"])) - abs(dd_lat)) * 111_320,
-                abs(abs(float(geom["x"])) - abs(dd_lon)) * 111_320
-                * cos(radians(abs(dd_lat))),
+                (float(geom["y"]) - float(dd_lat)) * 111_320,
+                (float(geom["x"]) - float(dd_lon)) * 111_320
+                * cos(radians(float(dd_lat))),
             )
             decimal_vs_geom_comparisons += 1
             decimal_vs_geom_over_25 += int(gap > 25)
