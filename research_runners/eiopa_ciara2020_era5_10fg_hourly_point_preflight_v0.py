@@ -104,9 +104,12 @@ def cds_candidate_request(doc: dict) -> dict:
         "request": {
             "variable": [VAR],
             "date": [DATE_START, DATE_END],
+            # Only pinned, public illustrative coordinates reach stdout.
+            # validate_contract(doc) already rejects changed source fields;
+            # do not propagate TOML-originated values into a printed request.
             "location": {
-                "latitude": doc["requested_latitude_degrees"],
-                "longitude": doc["requested_longitude_degrees"],
+                "latitude": 51.0,
+                "longitude": 7.0,
             },
             "data_format": "csv",
         },
