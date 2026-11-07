@@ -60,6 +60,28 @@ class Ciara2020ERA5OnePointSafetyTests(unittest.TestCase):
         self.assertIs(req["CDS_terms_acceptance_required_by_user"], True)
         self.assertIs(req["data_obtained"], False)
 
+    def test_cds_preview_uses_only_pinned_public_fields_and_rejects_tainted_contract(self):
+        import inspect
+        import json
+        preview = pre.cds_candidate_request(self.doc)
+        self.assertEqual(preview["request"]["location"], {
+            "latitude": 51.0, "longitude": 7.0})
+        self.assertEqual(set(preview), {
+            "dataset", "request", "CDS_terms_acceptance_required_by_user",
+            "request_executed", "data_obtained"})
+        self.assertNotIn("token", json.dumps(preview).lower())
+        self.assertNotIn("api_key", json.dumps(preview).lower())
+        # Prevent reintroducing the previous parsed-TOML -> console flow.
+        function_source = inspect.getsource(pre.cds_candidate_request)
+        self.assertNotIn('doc["requested_latitude_degrees"]', function_source)
+        self.assertNotIn('doc["requested_longitude_degrees"]', function_source)
+        for name, value in (("requested_latitude_degrees", 50.75),
+                            ("requested_longitude_degrees", 7.25)):
+            changed = deepcopy(self.doc)
+            changed[name] = value
+            with self.subTest(field=name), self.assertRaises(pre.CiaraERA5PreflightBlocked):
+                pre.cds_candidate_request(changed)
+
     def test_synthetic_96h_intake_has_exact_36h_peak_but_no_claims(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp)/"synthetic.csv"
