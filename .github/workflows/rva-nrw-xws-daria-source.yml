@@ -18,6 +18,9 @@ on:
       - "research_runners/eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py"
       - "research_runners/eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0.py"
       - "research_runners/eiopa_2023_exposure_ooxml_quarantine_index_v0.py"
+      - "research_runners/eiopa_ciara2020_era5_10fg_hourly_point_preflight_v0.py"
+      - "research/observations/eiopa_ciara2020_era5_10fg_hourly_point_contract_v0.toml"
+      - "tests/test_eiopa_ciara2020_era5_10fg_hourly_point_preflight_v0.py"
       - "research_runners/eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py"
       - "research/observations/eiopa_2023_exposure_source_pinned_ooxml_metadata_receipt_20261106.toml"
       - "tests/test_eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py"
@@ -84,6 +87,10 @@ jobs:
         run: |
           python research_runners/eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py
           python -m unittest discover -s tests -p 'test_eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py' -v
+      - name: Ciara 2020 hourly ERA5 10fg exact 96h request and source no-insurer negative checks
+        run: |
+          python research_runners/eiopa_ciara2020_era5_10fg_hourly_point_preflight_v0.py --show-cds-request
+          python -m unittest discover -s tests -p 'test_eiopa_ciara2020_era5_10fg_hourly_point_preflight_v0.py' -v
       - name: Original XWS CSV source, geographic identity and no-model negative tests
         run: python -m unittest discover -s tests -p 'test_xws_daria_1990_original_csv_preflight_v0.py' -v
       - name: Entirely invented conditional impact arithmetic and negative tests
