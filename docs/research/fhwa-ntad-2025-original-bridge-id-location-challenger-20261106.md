@@ -112,6 +112,26 @@ A source-only regression audit identified a false-green in the **internal NTAD L
 
 The independent NTAD decimal-versus-geometry calculation now retains latitude and longitude signs. A synthetic two-feature red case flips longitude sign for one point and latitude sign for a different point; it must report two native decimal/point discrepancies even though their unsigned historical-code distance remains zero. No row-level coordinates or identifiers enter Git or logs. Existing 50 original source observations and their past recorded results are **historical receipts**, not proof that this new check has rerun on original bytes. Recheck newest-HEAD source job and full CI independently. This improves error visibility only: no surveyed geodetic truth, 2025 source-vintage equivalence, or model/insured-exposure admission is established.
 
+## 2026-11-07 follow-up: building-year type and vintage gate
+
+A further synthetic adversarial case uncovered a false agreement in the 2025
+source-view `YEAR_BUILT_027` comparison: `int(1970.9)` silently becomes
+`1970` and could be declared identical to a historical source value
+`1970`. The revised join reuses the original FHWA strict integer decoder
+(`int` or decimal integer text only), rejects booleans/fractional floats,
+and enforces the comparison's bounded 1800–2025 year-of-construction range.
+Noncanonical values are counted explicitly as **unknown/unverified**, rather
+than agreements or silently imputed years. A genuine different canonical
+integer year remains a **disagreement**. The negative regression checks five
+different invalid-value locations plus one real integer mismatch, with full
+25-row conservation.
+
+This does not alter the six original geographic source-view discrepancies or
+reclassify any bridge as a confirmed property, insurer exposure, vulnerability
+input or approved CAT model. Prior source receipts precede this code change:
+verify this exact commit's 2025 source replay and full repository CI before
+claiming completion.
+
 **Hard scientific boundary:** No independent geodetic survey, provider bridge-location editorial pipeline, accurate signed displacement or underlying source-version equality was established. The original per-bridge data remains ephemeral; neither raw identifiers nor coordinates were uploaded, printed or inserted into Neon. This is a conflict **diagnostic**, not a location promotion for CAT intensity footprints or an insured loss probability. Production admission stays **false**.
 
 The latest documentation-only commit following this source receipt requires a fresh exact-head CI result; green source checks from its predecessor must not be attributed to the newer commit without verification.
