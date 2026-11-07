@@ -76,7 +76,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://zenodo.org/records/15305753>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Four source-specific 50-storm selections are NOT assumed to form one aligned common event catalogue. Check event IDs, wind variables, averaging window, units, CRS, model selection bias and independence from C3S/ERA5 before benchmark claims. No original NetCDF inputs verified.
+**Note:** Follow-up verified provider bytes in Linux on 2026-11-07: ERA5 and CCLM_ERA5_EUR-11 NetCDFs were downloaded, inspected and hash-pinned outside Git; Kyrill (2007-01-18) from both was mapped to one 7,998-interest synthetic German building book and executed through Oasis as a cross-source challenge. CCLM is a regional-model alternative, not an unmasked field; one matched storm does not validate it. XWS rawFoot/rawFootUncon were separately downloaded for Kyrill and executed; XWS documentation confirms rawFootUncon is uncontaminated/decontaminated. The four CLIMK 50-storm selections remain source-specific and are not assumed aligned. COSMO-REA6 and CCLM_ERA5_CEU-3 were not acquired in this follow-up. Check event identities, wind windows, units, CRS, selection bias and independence from C3S/ERA5 before benchmark claims. Exact download/model receipts are summarized in docs/research/public-wind-source-followup-2026-11-07.md. Rights, scientific review and admission statuses remain not_reviewed/not_admitted.
 
 ## Global Fire Atlas v20260408
 
