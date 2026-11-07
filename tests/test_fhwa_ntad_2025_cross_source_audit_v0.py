@@ -190,6 +190,20 @@ class IndependentNBI2025CrossSourceTests(unittest.TestCase):
         self.assertEqual(report["approx_delta_over_250_m"], 0)
         self.assertFalse(report["independent_point_geometry_agreement_admitted"])
 
+    def test_ntad_signed_decimal_to_point_hemisphere_flip_is_visible(self):
+        features = layer_features()
+        # Two false positives under the prior unsigned decimal/geometry gate.
+        # Historical DMS remains unsigned and must not be reinterpreted.
+        features[0]["geometry"]["x"] *= -1
+        features[1]["geometry"]["y"] *= -1
+        report = proof.compare_sources(wire(source_rows()), wire(arcgis(features)))
+        self.assertEqual(report["ntad_decimal_vs_point_geometry_over_25_m"], 2)
+        self.assertEqual(report["ntad_decimal_vs_source_legacy_over_25_m"], 0)
+        self.assertEqual(report["approx_delta_up_to_25_m"], 25)
+        self.assertFalse(report["independent_point_geometry_agreement_admitted"])
+        self.assertFalse(report["model_input_admitted"])
+        self.assertNotIn("SRC2025", json.dumps(report))
+
     def test_missing_ntad_decimal_columns_do_not_invent_concordance(self):
         f = layer_features()
         f[0]["attributes"].pop("LATDD")
