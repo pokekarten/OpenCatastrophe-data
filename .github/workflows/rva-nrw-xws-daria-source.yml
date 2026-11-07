@@ -1,0 +1,210 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: NRW XWS Daria 1990 public source and CLIMADA method preflight (NO 10k)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-nrw-xws-daria-source.yml"
+      - ".github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml"
+      - "tests/test_rva_nrw_hu22_fresh_replay_dispatch_contract_v0.py"
+      - "research_runners/xws_daria_1990_original_csv_preflight_v0.py"
+      - "research_runners/rva_nrw_xws_daria_10k_original_gust_overlay_v0.py"
+      - "research_runners/rva_nrw_xws_daria_invented_damage_v0.py"
+      - "research_runners/rva_nrw_xws_daria_excess_cube_index_v0.py"
+      - "research_runners/rva_nrw_daria_climada61_source_challenger_v0.py"
+      - "research_runners/rva_nrw_daria_climada61_original_method_parity_v0.py"
+      - "research_runners/rva_germany_wind_loss_calibration_source_gate_v0.py"
+      - "research_runners/eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py"
+      - "research_runners/eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0.py"
+      - "research_runners/eiopa_2023_exposure_ooxml_quarantine_index_v0.py"
+      - "research_runners/eiopa_ciara2020_era5_10fg_hourly_point_preflight_v0.py"
+      - "research/observations/eiopa_ciara2020_era5_10fg_hourly_point_contract_v0.toml"
+      - "tests/test_eiopa_ciara2020_era5_10fg_hourly_point_preflight_v0.py"
+      - "research_runners/eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py"
+      - "research/observations/eiopa_2023_exposure_source_pinned_ooxml_metadata_receipt_20261106.toml"
+      - "tests/test_eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py"
+      - "tests/test_eiopa_2023_exposure_ooxml_quarantine_index_v0.py"
+      - "research_runners/eiopa_2023_original_xlsx_binary_receipt_gate_v0.py"
+      - "research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml"
+      - "tests/test_eiopa_2023_original_xlsx_binary_receipt_gate_v0.py"
+      - "tests/test_eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0.py"
+      - "research/observations/eiopa_catastrophe_hub_2023_original_dossier_v0.toml"
+      - "tests/test_eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py"
+      - "research/observations/rva_germany_wind_loss_calibration_source_register_v0.toml"
+      - "tests/test_rva_germany_wind_loss_calibration_source_gate_v0.py"
+      - "tests/test_rva_nrw_daria_climada61_source_challenger_v0.py"
+      - "docs/research/rva-nrw-daria-climada61-source-challenger-20261106.md"
+      - "tests/test_rva_nrw_xws_daria_excess_cube_index_v0.py"
+      - "docs/research/rva-nrw-xws-daria-asset-sampled-excess-cubed-severity-20261106.md"
+      - "tests/test_rva_nrw_xws_daria_invented_damage_v0.py"
+      - "docs/research/rva-nrw-xws-daria-invented-event-direct-value-20261106.md"
+      - "tests/test_rva_nrw_xws_daria_10k_original_gust_overlay_v0.py"
+      - "tests/test_xws_daria_1990_original_csv_preflight_v0.py"
+      - "tests/test_rva_nrw_xws_daria_source_only_ci_contract_v0.py"
+      - "docs/research/rva-nrw-xws-daria-original-wind-source-20261105.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-xws-daria-public-sources-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Source commit read-only checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Stable Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Source-only CI scope cannot masquerade as 10k or download expired artifact
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_source_only_ci_contract_v0.py' -v
+      - name: Protect expensive fresh full-replay workflow against automatic PR source downloads
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_hu22_fresh_replay_dispatch_contract_v0.py' -v
+      - name: Wind calibration original-loss sample and legal no-go register guards
+        run: |
+          python research_runners/rva_germany_wind_loss_calibration_source_gate_v0.py
+          python -m unittest discover -s tests -p 'test_rva_germany_wind_loss_calibration_source_gate_v0.py' -v
+      - name: Original 2023 EIOPA workbook-link and Ciara-only insurance-event negative tests
+        run: |
+          python research_runners/eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py
+          python -m unittest discover -s tests -p 'test_eiopa_catastrophe_hub_2023_original_dossier_gate_v0.py' -v
+      - name: Offline EIOPA original XLSX quarantine integrity and no-loss negative tests
+        run: |
+          python -m unittest discover -s tests -p 'test_eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0.py' -v
+      - name: EIOPA single verified XLSX SHA and incomplete exposure source evidence no-go
+        run: |
+          python research_runners/eiopa_2023_original_xlsx_binary_receipt_gate_v0.py
+          python -m unittest discover -s tests -p 'test_eiopa_2023_original_xlsx_binary_receipt_gate_v0.py' -v
+      - name: EIOPA original OOXML ZIP central-directory privacy and quarantine diagnostics
+        run: |
+          python -m unittest discover -s tests -p 'test_eiopa_2023_exposure_ooxml_quarantine_index_v0.py' -v
+      - name: EIOPA original exposure full CRC and sheet-count metadata-only receipt NO insurer losses
+        run: |
+          python research_runners/eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py
+          python -m unittest discover -s tests -p 'test_eiopa_2023_exposure_source_pinned_ooxml_receipt_gate_v0.py' -v
+      - name: Ciara 2020 hourly ERA5 10fg exact 96h request and source no-insurer negative checks
+        run: |
+          python research_runners/eiopa_ciara2020_era5_10fg_hourly_point_preflight_v0.py --show-cds-request
+          python -m unittest discover -s tests -p 'test_eiopa_ciara2020_era5_10fg_hourly_point_preflight_v0.py' -v
+      - name: Original XWS CSV source, geographic identity and no-model negative tests
+        run: python -m unittest discover -s tests -p 'test_xws_daria_1990_original_csv_preflight_v0.py' -v
+      - name: Entirely invented conditional impact arithmetic and negative tests
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_invented_damage_v0.py' -v
+      - name: Independent fixed-threshold wind severity index and fail-closed tests
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_excess_cube_index_v0.py' -v
+      - name: Original-code-isolated CLIMADA 6.1.0 PAA MDD interpolation negative tests
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_daria_climada61_source_challenger_v0.py' -v
+      - name: Read exact original external GPL CLIMADA 6.1.0 source metadata (no redistribution)
+        run: |
+          set -eu
+          mkdir -p "${{ runner.temp }}/climada61-original-gpl"
+          base="https://raw.githubusercontent.com/CLIMADA-project/climada_python/v6.1.0"
+          curl -fsSL --retry 2 --max-time 45 "$base/climada/entity/impact_funcs/storm_europe.py" -o "${{ runner.temp }}/climada61-original-gpl/storm_europe.py"
+          curl -fsSL --retry 2 --max-time 45 "$base/climada/engine/calibration_opt.py" -o "${{ runner.temp }}/climada61-original-gpl/calibration_opt.py"
+          curl -fsSL --retry 2 --max-time 45 "$base/climada/entity/impact_funcs/base.py" -o "${{ runner.temp }}/climada61-original-gpl/base.py"
+          python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "climada61-original-gpl"
+          pinned = {
+              "storm_europe.py": "76973c3df21bc5dbb89f21a962846a01c0c9fce9",
+              "calibration_opt.py": "5f174b5f77cc55d690a7d962d735221928838029",
+              "base.py": "c51540d5738a6a6f1fa38fe8440f65ace8d9ccc4",
+          }
+          for name, expected in pinned.items():
+              raw = (root / name).read_bytes()
+              actual = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+              assert actual == expected, (name, actual, expected)
+          print("Original CLIMADA v6.1.0 GPL source Git blob identities verified (3/3).")
+          PY
+      - name: Source-original FULL CSV byte hashes and licence receipt (no raw upload)
+        run: |
+          python research_runners/xws_daria_1990_original_csv_preflight_v0.py --live \
+            --out-receipt "${{ runner.temp }}/xws-daria-1990-original-metadata-receipt.json" \
+            --out-ephemeral-original-dir "${{ runner.temp }}/xws-daria-original-csv"
+      - name: Offline 1990 XWS 3-second original site overlay negative checks
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_10k_original_gust_overlay_v0.py' -v
+      - name: Validate original four Daria CSV SHA pins and original CLIMADA PAA/MDD method definitions ONLY
+        env:
+          PYTHONPATH: research_runners
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          from xws_daria_1990_original_csv_preflight_v0 import validate_original_bundle
+          from rva_nrw_xws_daria_10k_original_gust_overlay_v0 import NAMES,PINNED_SOURCE_FILES
+          from rva_nrw_daria_climada61_source_challenger_v0 import (
+              MODEL_NAMES,SOURCE_PINS,parse_pinned_public_curves,git_blob_sha1
+          )
+
+          root=Path(os.environ["RUNNER_TEMP"])
+          xwsdir=root/"xws-daria-original-csv"
+          cdir=root/"climada61-original-gpl"
+          raw={name:(xwsdir/filename).read_bytes() for name,filename in NAMES.items()}
+          source=validate_original_bundle(raw)
+          assert source["status"]=="OFFICIAL_ORIGINAL_XWS_CSV_BYTES_PARSED_NOT_MODEL_ADMITTED"
+          assert source["storm"]=="Daria / Burns Day storm, January 1990"
+          for name,(size,sha) in PINNED_SOURCE_FILES.items():
+              assert source["original_files"][name]["full_bytes"]==size
+              assert source["original_files"][name]["full_sha256"]==sha
+          climada={name:(cdir/name).read_bytes() for name in SOURCE_PINS}
+          curves=parse_pinned_public_curves(climada)
+          assert set(curves)==set(MODEL_NAMES)
+          assert len(curves[MODEL_NAMES[0]]["wind"])>=3
+          assert len(curves[MODEL_NAMES[1]]["wind"])>len(curves[MODEL_NAMES[0]]["wind"])
+          actual={name:git_blob_sha1(blob) for name,blob in climada.items()}
+          assert actual==SOURCE_PINS
+          scope={
+              "schema":"NRW_XWS_DARIA_CLIMADA61_SOURCE_ONLY_CI_EXPLICIT_NO_10K_V0",
+              "status":"VERIFIED_ORIGINAL_SOURCE_BYTES_AND_METHOD_DEFINITIONS_ONLY",
+              "original_physical_storm":"Daria 1990",
+              "original_XWS_full_source_sha256":{
+                  name:source["original_files"][name]["full_sha256"] for name in sorted(PINNED_SOURCE_FILES)
+              },
+              "original_CLIMADA_release":"CLIMADA-project/climada_python@v6.1.0",
+              "original_CLIMADA_git_blob_sha1":dict(sorted(actual.items())),
+              "checked_original_XWS_full_source_bytes":True,
+              "checked_original_CLIMADA_PAA_MDD_method_sources":True,
+              "checked_offline_negative_and_synthetic_method_fixtures":True,
+              "actual_2022_NRW_10k_site_overlay_executed_in_this_workflow":False,
+              "original_CLIMADA_source_method_body_parity_executed_in_this_workflow":False,
+              "actual_insurer_RV_geographies_or_loss_calculated":False,
+              "annual_frequency_or_OEP_AEP_calculated":False,
+              "full_replay_requires_separate_manually_dispatched_901MB_HU22_workflow":True,
+              "source_attribution":"(c) Met Office, University of Reading and University of Exeter; CC BY 4.0",
+              "original_third_party_bytes_uploaded":False,
+          }
+          target=root/"xws-daria-source-only-NOT-10k-NOT-CAT.json"
+          with target.open("x",encoding="utf-8") as f:
+              json.dump(scope,f,sort_keys=True,indent=2)
+              f.write("\n")
+          print(json.dumps({
+              "status":scope["status"],
+              "xws_source_files_verified":len(PINNED_SOURCE_FILES),
+              "climada_original_source_files_verified":len(SOURCE_PINS),
+              "full_10k_or_insurer_model_executed":False
+          },sort_keys=True))
+          PY
+      - name: Always remove original wind and GPL method source bytes
+        if: always()
+        run: |
+          rm -rf -- "${{ runner.temp }}/xws-daria-original-csv"
+          rm -rf -- "${{ runner.temp }}/climada61-original-gpl"
+      - name: Publish source-only SHA/method scope receipt (NO 10k site run)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: XWS-Daria-1990-CLIMADA61-four-source-SHA-only-NOT-10k-MODEL
+          path: |
+            ${{ runner.temp }}/xws-daria-source-only-NOT-10k-NOT-CAT.json
+            ${{ runner.temp }}/xws-daria-1990-original-metadata-receipt.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6

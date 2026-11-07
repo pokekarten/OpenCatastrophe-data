@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: R+V NRW full 2022 HU original 53-Kreis geocoded OED research one-shot
+
+# A complete ~901MB provider download + 11.23m source scan must never run
+# on every PR update. One-shot execution requires explicit workflow_dispatch.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rva-nrw-hu22-full-2022-original-one-shot
+  cancel-in-progress: false
+
+jobs:
+  original-full-source-53kreis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Read-only exact PR head, no repository token retention
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Pinned Python 3.11 runtime
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Verify writable ephemeral space and install pinned geometry / OED libraries
+        run: |
+          df -h "${{ runner.temp }}"
+          python -m pip install --disable-pip-version-check --no-input \
+            -r requirements-eu-flood-spatial.txt ods-tools==5.0.8
+          python -m pip check
+      - name: Offline fake-source guard tests BEFORE large original download
+        run: |
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_full_zip_stratified_reservoir_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu22_full_original_download_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_gfk_residential_candidate_v0.py' -v
+          python -m compileall -q research_runners/rva_nrw_hu_full_zip_stratified_reservoir_v0.py research_runners/rva_nrw_hu22_full_source_to_fictional_oed_v0.py research_runners/rva_nrw_hu22_full_original_download_v0.py
+      - name: Build exactly 10k source-pinned fictional 53-Kreis NRW OED contracts
+        run: |
+          python research_runners/export_rva_nrw_53kreis_oed_pilot_v0.py \
+            "${{ runner.temp }}/rva-nrw-fictional-10k-base" \
+            --pv-case no_pv_reweight --valuation-pattern age_archetype --sample-size 10000
+      - name: One-time complete 901 MB official NRW 2022 HU archive acquisition
+        run: |
+          python research_runners/rva_nrw_hu22_full_original_download_v0.py \
+            --output-original-zip "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip" --live
+      - name: SHA256 and all ZIP member CRC, full 11m source stream, 53-Kreis residential candidates
+        run: |
+          python research_runners/rva_nrw_hu22_full_source_to_fictional_oed_v0.py \
+            --original-2022-hu-zip "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip" \
+            --fictional-nrw-oed "${{ runner.temp }}/rva-nrw-fictional-10k-base" \
+            --output "${{ runner.temp }}/rva-nrw-hu22-10k-physical-candidate-geocoded-oed"
+      - name: Delete large ephemeral provider ZIP before publication
+        run: |
+          rm -- "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip"
+      - name: Publish ONLY fictional geocoded OED and provenance, NOT original provider ZIP
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rva-nrw-hu2022-10k-official-physical-candidates-fictional-insurance-NOT-CAT-model
+          path: ${{ runner.temp }}/rva-nrw-hu22-10k-physical-candidate-geocoded-oed/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6

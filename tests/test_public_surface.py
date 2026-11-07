@@ -128,7 +128,11 @@ class PublicSurfaceTests(unittest.TestCase):
         setup_python_v7_0 = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
         setup_python_v7_1 = "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0"
         dependency_review = "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
-        allowed = {checkout, setup_python_v7_0, setup_python_v7_1, dependency_review}
+        # Official actions/upload-artifact v7.0.2, verified immutable commit.
+        # Used only for bounded source-anchored but synthetic R+V research CSVs;
+        # no secrets, third-party input downloads, or repository write token.
+        artifact_upload = "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"
+        allowed = {checkout, setup_python_v7_0, setup_python_v7_1, dependency_review, artifact_upload}
 
         for workflow_path, item in uses:
             with self.subTest(workflow=workflow_path, uses=item):
