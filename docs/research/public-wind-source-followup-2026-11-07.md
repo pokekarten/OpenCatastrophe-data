@@ -16,8 +16,9 @@ The public Zenodo record `https://zenodo.org/records/15305753` declares CC BY 4.
 | ERA5 | 6,792,278 | `92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102` | Previously verified footprint source; reused as the same-event control. |
 | CCLM_ERA5_EUR-11 | 13,898,709 | `4bd28d8bd4f2fd820ea7f844e243b1234a2e4c8fa81ea420ef558917729ba94` | Newly acquired, opened, coordinate arrays and gust units inspected; Kyrill identified by source name/date. |
 | CCLM_ERA5_CEU-3 | 80,330,992 | `2a8cd17e582280fece757b233d08cb580787172322c7bfd98f9d224c757c7077` | Acquired; provider MD5 verified; 423x415 Germany-focused rotated grid, geographic coordinates/gust units inspected; Kyrill mapped for Oasis. |
+| COSMO-REA6 | 83,807,744 | `e0cb9fc238fd326a65b2ae31d093499d39b4cd8d707ce1b99798ca5c6cb09843` | Acquired in temporary memory-backed storage; provider MD5 `1a2f1f454d5672c8d8f499f237dff744` verified; 824x848 grid, Kyrill date, gust units and missingness checked. Bytes remain outside Git. |
 
-CCLM EUR-11 contains 50 source-selected winter storms on its native rotated grid. Both CCLM variants were obtained in this follow-up; COSMO-REA6 was not downloaded. Event rankings/selections remain source-specific. The product does not supply a complete common event catalogue or complete unmasked hazard series.
+The four CLIMK products contain 50 source-selected winter storms each. Event rankings/selections remain source-specific. They do not supply a complete common event catalogue or complete unmasked hazard series.
 
 ## XWS Kyrill
 
@@ -27,17 +28,18 @@ The XWS methodology describes maximum 3-second gust footprints over a 72-hour wi
 
 ## Native Oasis model challenge
 
-One reviewed native Oasis 2.5.9 execution evaluated five representations of the **same Kyrill event** over the same 7,998 fictional German building-value interests. The fixed scenario uses a 1,000 EUR individual deductible, full-value limits, transferred CLIMADA PAA/MDD reference and source-specific nearest grid cells. All selected source gusts were finite and in the configured supported range. Nearest-grid distances were 8.535 km for CCLM EUR-11, 2.150 km for CCLM CEU-3 and 17.013 km for XWS; ERA5 retained the original mapping. One CEU-3 portfolio point has source gust zero and remains a selected-footprint omission, not evidence of physical calm.
+One reviewed native Oasis 2.5.9 execution evaluated six representations of the **same Kyrill event** over the same 7,998 fictional German building-value interests. The fixed scenario uses a 1,000 EUR individual deductible, full-value limits, transferred CLIMADA PAA/MDD reference and source-specific nearest grid cells. All selected source gusts were finite and in the configured supported range. Nearest-grid distances were 8.535 km for CCLM EUR-11, 2.150 km for CCLM CEU-3, 4.289 km for COSMO-REA6 and 17.012 km for XWS; ERA5 retained the original mapping. One CEU-3 mapped point has source gust zero and remains a selected-footprint omission, not evidence of physical calm.
 
 | Source | Expected footprint GUL EUR | Expected insured footprint contribution EUR |
 |---|---:|---:|
 | CLIMK ERA5 | 323,529.86 | 104,373.43 |
 | CLIMK CCLM EUR-11 | 64,597.72 | 21,844.27 |
 | CLIMK CCLM CEU-3 | 129,851.51 | 50,818.82 |
+| CLIMK COSMO-REA6 | 81,900.45 | 21,099.80 |
 | XWS raw | 5,499.96 | 5.81 |
 | XWS decontaminated | 5,492.89 | 5.81 |
 
-The engine's per-policy conditional losses were weighted with the same assumed PAA to obtain these contributions. Ten aggregate gross/insured comparisons and 79,980 conditional policy comparisons passed at pre-existing tolerances; the ERA5 result matched its earlier control. Three geographic-mapping tests passed.
+The engine's per-policy conditional losses were weighted with the same assumed PAA to obtain these contributions. Twelve aggregate gross/insured comparisons and 95,976 conditional policy comparisons passed at pre-existing tolerances; the ERA5 result matched its earlier control. Three geographic-mapping tests passed. All six are alternate representations of one historical storm, not independent frequency observations.
 
 These outputs combine differences in model/source, grid, time window, wind definition, event mask and transferred vulnerability. They do not isolate resolution effects, choose a scientifically best source or estimate actual Kyrill insured damage. In particular, the low XWS payout is not evidence of low actual damage. The initial exploratory internal XWS labels were reversed; the reviewed run corrected the labels and was repeated. The earlier exploratory run is not counted as a separate source scenario.
 
