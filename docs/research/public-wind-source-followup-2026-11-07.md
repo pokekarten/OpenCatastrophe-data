@@ -41,6 +41,10 @@ One reviewed native Oasis 2.5.9 execution evaluated six representations of the *
 
 The engine's per-policy conditional losses were weighted with the same assumed PAA to obtain these contributions. Twelve aggregate gross/insured comparisons and 95,976 conditional policy comparisons passed at pre-existing tolerances; the ERA5 result matched its earlier control. Three geographic-mapping tests passed. All six are alternate representations of one historical storm, not independent frequency observations.
 
+## Matched CLIMK roster follow-up
+
+A separate roster audit found 28 storm names present in all four 50-storm CLIMK files, but only 19 with an exact storm-name **and** date match. Nine shared names have source-date disagreements and were excluded rather than joined by nearest date. Four separate native Oasis runs then evaluated those 19 exact matches on the same 7,998-interest fictional exposure. All runs had full key coverage; 152 aggregate and 1,215,696 conditional per-interest checks passed with zero failures. These remain selected conditional footprints under one transferred vulnerability, not four aligned annual catalogues. Source/date selection, masks, grids and gust definitions remain confounded. Detailed roster, aggregate evidence and descriptive ranges are in the [OpenCatastrophe v14 report](https://github.com/pokekarten/OpenCatastrophe/blob/research/synthetic-oasis-portfolio-20261104/docs/wind_source_roster_v14.md) and its linked evidence JSON.
+
 These outputs combine differences in model/source, grid, time window, wind definition, event mask and transferred vulnerability. They do not isolate resolution effects, choose a scientifically best source or estimate actual Kyrill insured damage. In particular, the low XWS payout is not evidence of low actual damage. The initial exploratory internal XWS labels were reversed; the reviewed run corrected the labels and was repeated. The earlier exploratory run is not counted as a separate source scenario.
 
 ## C3S access attempt
