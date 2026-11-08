@@ -55,3 +55,17 @@ metadata was validated. The subsequent workflow version emits an explicit
 `BLOCKED / NOT VERIFIED` gate in the run summary whenever the live probe
 fails, while preserving an independent green result for the synthetic tests.
 No alternative/unverified mirror is automatically followed.
+
+## Published-report sign convention: internally conflicting prose
+
+**Evidence checked 2026-11-08.** FEMA's November 2020 *Building Codes Save* main report has an inconsistent narrative statement: in the flood methodology discussion, page **4-17**, one sentence describes AALA in the reverse order (I-Code AAL less pre-I-Code AAL). **Do not use that isolated sentence as the authoritative sign rule.** The hurricane wind results discussion at page **5-23** and **Table 5-8** explicitly define/report AALA as **old/pre-I-Code AAL less new/I-Code AAL**. For example, Table 5-8's total row (in source units of **USD thousands**) lists modelled old-code AAL **2,503,785**, new-code AAL **1,646,961**, and AALA **+856,824**: 2,503,785 - 1,646,961 = 856,824. In the negative group, old-code AAL **115,084**, new-code AAL **141,140**, AALA **-26,056**. This is a check of sign conventions from a *published scientific report*, not ingestion of the unpublished exact FEMA-0173 Excel workbook.
+
+Evidence URLs: [official FEMA study](https://www.fema.gov/sites/default/files/2020-11/fema_building-codes-save_study.pdf); [public NAIC-hosted copy of original FEMA study](https://content.naic.org/sites/default/files/inline-files/fema_building-codes-save_study.pdf), pages 4-17 and 5-23.
+
+**Decision for synthetic tests:** `signed AALA = pre-I-Code AAL - I-Code AAL`. Positive indicates modelled savings; negative indicates a modelled increase in annual loss. Preserve negative values. Never scale such aggregate modeled differences into event-loss severities or reinterpret them as independent observed insurer claims. A hypothetical synthetic test explicitly checks positive, negative and zero cases but does **not** treat FEMA's published table data as admitted calibration/validation targets.
+
+## Official provider contact for inaccessible source XLSX
+
+[data.gov's FEMA-0173 catalogue](https://catalog.data.gov/dataset/aals-from-the-adoption-of-i-codes) lists **Open Data (MGMT), `edmo@hq.dhs.gov`** as the official contact. Data.gov's [contact page](https://data.gov/contact/) directs broken source-link requests to the publishing agency; the Data.gov catalogue itself does not serve source bytes. GitHub's `--official-live` original-file receipt returned HTTP **403**, recorded in [source canary workflow run 42526472232](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42526472232).
+
+A suitable narrowly scoped request to the data steward would ask for: (a) an authoritative public **accessible** download location for FEMA-0173's exact `fema_building-codes-save-study-results.xlsx`, (b) file release/version date and a published SHA-256 if available, (c) workbook-specific rights/attribution and underlying third-party restrictions, and (d) any archived data dictionary describing table keys, units and sign convention. **No email has been sent**. Until receipt of original bytes, all actual worksheet titles, headers, numeric cells and hashes remain **unverified**.
