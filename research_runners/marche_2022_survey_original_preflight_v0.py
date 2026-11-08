@@ -134,6 +134,7 @@ def _form_a_parent_count(raw: bytes, *, expected_count: int) -> int:
         if row_num < 3:
             continue
         cells: dict[str, str] = {}
+        other_populated = False
         for cell in row.findall(N + "c"):
             address = cell.get("r", "")
             match = re.fullmatch(r"([A-Z]+)([0-9]+)", address)
@@ -144,6 +145,8 @@ def _form_a_parent_count(raw: bytes, *, expected_count: int) -> int:
                 cells[match.group(1)] = _cell_text(cell, strings)
             elif row_num >= 4 and match.group(1) == "A":
                 cells["A"] = _cell_text(cell, strings)
+            elif row_num >= 4 and _cell_text(cell, strings).strip():
+                other_populated = True
         if row_num == 3:
             saw_header = (
                 cells.get("A") == "ID" and
@@ -153,6 +156,10 @@ def _form_a_parent_count(raw: bytes, *, expected_count: int) -> int:
             continue
         if row_num >= 4:
             identifier = cells.get("A", "").strip()
+            if not identifier and not other_populated:
+                # Source XLSX contains visually styled but completely empty rows.
+                # Do not convert them into missing-ID survey observations.
+                continue
             if not identifier or identifier in ids:
                 raise SourceStructureError("Blank or duplicate Form A parent identifier")
             ids.add(identifier)  # local only; identifiers are never output
