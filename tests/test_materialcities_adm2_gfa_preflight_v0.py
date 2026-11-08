@@ -1,119 +1,149 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Synthetic-only regressions for the non-admission MaterialCities archive gate."""
+"""Synthetic-only regressions for byte-pinned original MaterialCities 2026.9 ADM2."""
 from __future__ import annotations
 
 import csv
 import hashlib
 import io
-import math
 import unittest
 import zipfile
 
 from research_runners.materialcities_adm2_gfa_preflight_v0 import (
+    ADM2_MEMBER,
     GFA_FIELDS,
     MaterialCitiesPreflightError,
+    ORIGINAL_SHA256,
     inspect_archive,
 )
 
 
-def _archive(rows=None, *, member="MaterialCities_adm2.csv", fields=None) -> bytes:
-    names = fields or ["GID_0", "GID_2", "GFA", *GFA_FIELDS]
-    sample = rows if rows is not None else [
-        {"GID_0": "DEU", "GID_2": "DEU.1.1_1", "GFA": "150",
-         "GFA_NR_C": "100", "GFA_RS_M": "50"},
-        {"GID_0": "FRA", "GID_2": "FRA.1.1_1", "GFA": "200",
-         "GFA_RS_M": "200"},
+def _archive(rows=None, *, filename=ADM2_MEMBER, headers=None) -> bytes:
+    fields = headers or ["GID_0", "GID_2", *GFA_FIELDS]
+    data = rows if rows is not None else [
+        {"GID_0": "DEU", "GID_2": "DEU.1.1_1", "GFA_NR_C": "100", "GFA_RS_M": "50"},
+        {"GID_0": "FRA", "GID_2": "FRA.1.1_1", "GFA_RS_M": "200"},
     ]
-    out = io.StringIO(newline="")
-    writer = csv.DictWriter(out, fieldnames=names, extrasaction="ignore")
+    stream = io.StringIO(newline="")
+    writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
-    for row in sample:
-        writer.writerow({name: row.get(name, "0") for name in names})
-    zipped = io.BytesIO()
-    with zipfile.ZipFile(zipped, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(member, out.getvalue())
-    return zipped.getvalue()
+    for row in data:
+        writer.writerow({field: row.get(field, "0") for field in fields})
+    z = io.BytesIO()
+    with zipfile.ZipFile(z, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(filename, stream.getvalue())
+    return z.getvalue()
 
 
-def _inspect(blob: bytes, *, country=None) -> dict:
-    return inspect_archive(blob, expected_md5=hashlib.md5(blob).hexdigest(), country=country)
+def _inspect(blob, *, country=None):
+    return inspect_archive(blob, expected_md5=hashlib.md5(blob).hexdigest(),
+                           expected_sha256=hashlib.sha256(blob).hexdigest(), country=country)
 
 
-class MaterialCitiesPreflightTests(unittest.TestCase):
-    def test_valid_original_shaped_archive_is_explicitly_research_only(self):
-        receipt = _inspect(_archive())
-        self.assertEqual(receipt["adm2_regions"], 2)
-        self.assertEqual(receipt["gross_floor_area_m2"], 350)
-        self.assertEqual(receipt["regional_component_mismatch_count"], 0)
-        self.assertEqual(receipt["gfa_function_structure_m2"]["GFA_NR_C"], 100)
-        self.assertEqual(receipt["gfa_function_structure_m2"]["GFA_RS_M"], 250)
-        self.assertEqual(len(receipt["archive_sha256"]), 64)
-        self.assertTrue(receipt["research_only"])
-        for forbidden in ("source_rights_reviewed", "scientific_fitness_reviewed",
-                          "site_geolocation_verified", "insured_portfolio_inferred",
-                          "insured_tiv_inferred", "model_input_admitted"):
-            self.assertFalse(receipt[forbidden])
+class MaterialCitiesOriginalSchemaTests(unittest.TestCase):
+    def test_original_shaped_without_gfa_total_works(self):
+        report = _inspect(_archive())
+        self.assertEqual(report["source_adm2_rows_selected"], 2)
+        self.assertEqual(report["source_row_gross_floor_area_m2"], 350.0)
+        self.assertEqual(report["source_row_gfa_components_m2"]["GFA_NR_C"], 100.0)
+        self.assertEqual(report["source_row_gfa_components_m2"]["GFA_RS_M"], 250.0)
+        self.assertEqual(report["distinct_valid_adm2_keys"], 2)
+        self.assertTrue(report["complete_unique_region_keyset"])
+        self.assertFalse(report["independent_gfa_total_in_original_source"])
+        for key in ("rights_reviewed", "commercial_use_cleared", "scientific_model_admitted",
+                    "actual_insured_sites_proven", "insurer_tiv_inferred"):
+            self.assertFalse(report[key])
+        self.assertTrue(report["research_only"])
 
-    def test_country_filter_selects_only_matching_regions(self):
-        receipt = _inspect(_archive(), country="DEU")
-        self.assertEqual(receipt["adm2_regions"], 1)
-        self.assertEqual(receipt["gross_floor_area_m2"], 150)
-        self.assertEqual(receipt["country_filter"], "DEU")
+    def test_country_filter_keeps_only_source_deu_ids(self):
+        report = _inspect(_archive(), country="DEU")
+        self.assertEqual(report["csv_rows_scanned"], 2)
+        self.assertEqual(report["source_adm2_rows_selected"], 1)
+        self.assertEqual(report["source_row_gross_floor_area_m2"], 150.0)
 
-    def test_wrong_publisher_fingerprint_is_blocking(self):
-        with self.assertRaisesRegex(MaterialCitiesPreflightError, "MD5 mismatch"):
-            inspect_archive(_archive())
+    def test_stored_sha256_is_a_full_original_pinned_hash(self):
+        self.assertEqual(len(ORIGINAL_SHA256), 64)
+        data = _archive()
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "digest mismatch"):
+            inspect_archive(data)
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "digest mismatch"):
+            inspect_archive(data, expected_md5=hashlib.md5(data).hexdigest())
 
-    def test_duplicate_adm2_region_rejected(self):
-        rows = [
-            {"GID_0": "DEU", "GID_2": "DEU.1.1_1", "GFA": "1", "GFA_NR_C": "1"},
-            {"GID_0": "DEU", "GID_2": "DEU.1.1_1", "GFA": "1", "GFA_NR_C": "1"},
-        ]
-        with self.assertRaisesRegex(MaterialCitiesPreflightError, "duplicate ADM2"):
-            _inspect(_archive(rows))
+    def test_zero_gid2_is_not_a_unique_region(self):
+        report = _inspect(_archive([
+            {"GID_0": "ARM", "GID_2": "0", "GFA_NR_C": "20"},
+            {"GID_0": "DEU", "GID_2": "DEU.1.1_1", "GFA_NR_C": "30"},
+        ]))
+        self.assertEqual(report["source_adm2_rows_selected"], 2)
+        self.assertEqual(report["source_rows_without_unique_adm2_key"], 1)
+        self.assertEqual(report["distinct_valid_adm2_keys"], 1)
+        self.assertFalse(report["complete_unique_region_keyset"])
+        self.assertEqual(report["source_row_gross_floor_area_m2"], 50)
+        self.assertEqual(report["keyed_row_gross_floor_area_m2"], 30)
 
-    def test_negative_nonfinite_and_non_numeric_rejected(self):
-        for bad in ("-1", "NaN", "Infinity", "abc", ""):
-            with self.subTest(value=bad):
-                b = _archive([{"GID_0": "DEU", "GID_2": "DEU.1.1_1",
-                               "GFA": bad, "GFA_NR_C": "1"}])
-                with self.assertRaises(MaterialCitiesPreflightError):
-                    _inspect(b)
+    def test_original_style_duplicate_gid_is_not_deduplicated(self):
+        report = _inspect(_archive([
+            {"GID_0": "ALA", "GID_2": "ALA.1.1_2", "GFA_NR_C": "10"},
+            {"GID_0": "ALA", "GID_2": "ALA.1.1_2", "GFA_NR_C": "20"},
+            {"GID_0": "ALA", "GID_2": "ALA.1.1_2", "GFA_NR_C": "30"},
+        ]))
+        self.assertEqual(report["duplicate_key_occurrences"], 2)
+        self.assertEqual(report["distinct_collided_region_keys"], 1)
+        self.assertEqual(report["source_adm2_rows_selected"], 3)
+        self.assertEqual(report["source_row_gross_floor_area_m2"], 60.0)
+        self.assertFalse(report["complete_unique_region_keyset"])
 
-    def test_unbalanced_regional_gfa_is_flagged_not_admitted(self):
-        b = _archive([{"GID_0": "DEU", "GID_2": "DEU.1.1_1",
-                       "GFA": "150", "GFA_NR_C": "100"}])
-        receipt = _inspect(b)
-        self.assertEqual(receipt["regional_component_mismatch_count"], 1)
-        self.assertFalse(receipt["model_input_admitted"])
+    def test_noncanonical_ghana_original_gid_is_quarantined(self):
+        report = _inspect(_archive([{"GID_0": "GHA", "GID_2": "GHA1.1_2", "GFA_NR_C": "25"}]))
+        self.assertEqual(report["source_rows_without_unique_adm2_key"], 1)
+        self.assertFalse(report["complete_unique_region_keyset"])
 
-    def test_missing_function_structure_column_is_blocking(self):
-        fields = ["GID_0", "GID_2", "GFA", *GFA_FIELDS[:-1]]
-        with self.assertRaisesRegex(MaterialCitiesPreflightError, "missing expected"):
-            _inspect(_archive(fields=fields))
+    def test_gadm_special_z_territories_cannot_be_equated_to_iso3(self):
+        report = _inspect(_archive([{"GID_0": "Z01", "GID_2": "Z01.14.1_1",
+                                    "GFA_NR_C": "25"}]))
+        self.assertEqual(report["non_iso_source_country_rows"], 1)
+        self.assertEqual(report["distinct_valid_adm2_keys"], 1)
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "uppercase ISO3"):
+            _inspect(_archive(), country="Z01")
 
-    def test_missing_country_identity_is_blocking_for_filter(self):
-        fields = ["GID_2", "GFA", *GFA_FIELDS]
-        with self.assertRaisesRegex(MaterialCitiesPreflightError, "country filter"):
-            _inspect(_archive(fields=fields), country="DEU")
+    def test_reject_explicit_unreviewed_gfa_total_column(self):
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "total GFA column"):
+            _inspect(_archive(headers=["GID_0", "GID_2", "GFA", *GFA_FIELDS]))
 
-    def test_zip_traversal_is_blocking(self):
-        with self.assertRaisesRegex(MaterialCitiesPreflightError, "unsafe ZIP"):
-            _inspect(_archive(member="../malicious.csv"))
-
-    def test_country_filter_cannot_silently_return_no_records(self):
-        with self.assertRaisesRegex(MaterialCitiesPreflightError, "no ADM2"):
+    def test_no_automatic_country_coercion_or_empty_scope(self):
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "uppercase ISO3"):
+            _inspect(_archive(), country="deu")
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "no ADM2 records"):
             _inspect(_archive(), country="NZL")
 
-    def test_unexpected_source_headers_and_no_csv_rejected(self):
-        with self.assertRaisesRegex(MaterialCitiesPreflightError, "no ADM2"):
-            _inspect(_archive(fields=["GFA", "GID_0"]))
-        zipped = io.BytesIO()
-        with zipfile.ZipFile(zipped, "w") as archive:
-            archive.writestr("README.txt", "not a source CSV")
-        with self.assertRaisesRegex(MaterialCitiesPreflightError, "CSV member"):
-            _inspect(zipped.getvalue())
+    def test_missing_function_structure_field_rejected(self):
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "schema"):
+            _inspect(_archive(headers=["GID_0", "GID_2", *GFA_FIELDS[:-1]]))
+
+    def test_unsafe_zip_member_rejected(self):
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "unsafe ZIP"):
+            _inspect(_archive(filename="../" + ADM2_MEMBER))
+
+    def test_exact_member_identity_required(self):
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "ADM2 CSV member absent"):
+            _inspect(_archive(filename="adm2.csv"))
+
+    def test_bad_numeric_cells_block(self):
+        for bad in ("-1", "nan", "inf", "1e309", "abc", ""):
+            with self.subTest(value=bad):
+                blob = _archive([{"GID_0": "DEU", "GID_2": "DEU.1.1_1",
+                                  "GFA_NR_C": bad}])
+                with self.assertRaises(MaterialCitiesPreflightError):
+                    _inspect(blob)
+
+    def test_invalid_country_code_rejected(self):
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "country code"):
+            _inspect(_archive([{"GID_0": "???", "GID_2": "???", "GFA_NR_C": "1"}]))
+
+    def test_row_component_overflow_rejected(self):
+        with self.assertRaisesRegex(MaterialCitiesPreflightError, "unrepresentable"):
+            _inspect(_archive([{"GID_0": "DEU", "GID_2": "DEU.1.1_1",
+                                "GFA_NR_C": "1e308", "GFA_RS_C": "1e308"}]))
 
 
 if __name__ == "__main__":
