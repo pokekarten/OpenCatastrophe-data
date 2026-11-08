@@ -56,6 +56,31 @@ The downloaded JSON body is **not in Git**. A tool-mediated metadata fetch does
 not validate feature availability, completeness, geometry correctness, licensing
 of API automation or insurance-model use.
 
+## Official queryables schema discovery (2026-11-08; metadata only)
+
+A separate read-only original-JSON metadata fetch found the provider's
+[queryables schema](https://ogc-api.nrw.de/3dg/v1/collections/building/queryables?f=json),
+content type `application/schema+json` (JSON Schema draft 2020-12).
+It advertises **15 queryable property names**, but no building features were downloaded:
+
+| Field(s) | Provider schema type | CAT exposure interpretation / caveat |
+| --- | --- | --- |
+| `gml_id`, `name` | string | Technical record identifier and optional building name, **not** insured account or policy ID |
+| `bbox` | geometry-polygon | Indexed spatial envelope, **not** verified roof footprint or a policy location |
+| `measuredHeight` | number | Building height difference in meters between provider-defined high and low reference points; not number of floors |
+| `storeysAboveGround` | integer | Above-ground storey count; availability/accuracy per feature untested |
+| `roofType` | string | Encoded AdV roof-form class, with [official value list](https://repository.gdi-de.org/schemas/adv/citygml/Codelisten/RoofTypeTypeAdV.xml); **not** roof covering/material or damage resistance |
+| `creationDate` | date string | Record creation date; **not** construction year without independent definition and crosswalk |
+| `function` | string | Encoded AdV building-function class via [official value list](https://repository.gdi-de.org/schemas/adv/citygml/Codelisten/BuildingFunctionTypeAdV.xml); not guaranteed insurance occupancy |
+| `address.ThoroughfareName`, `address.ThoroughfareNumber`, `address.PostalCode`, `address.LocalityName` | arrays | Public building-address fields; not source of insurer holdings, not necessary for a first synthetic location experiment |
+| `consistsOfBuildingPart.measuredHeight`, `consistsOfBuildingPart.storeysAboveGround`, `consistsOfBuildingPart.roofType` | arrays | Building-part properties; multiple values do **not** imply a uniform whole-building attribute |
+
+A separate original [sortables schema](https://ogc-api.nrw.de/3dg/v1/collections/building/sortables?f=json)
+has `additionalProperties=false` and **does not list named sortable fields**:
+do not build deterministic pagination or deduplication on an assumed provider sort key.
+
+**Scientific outcome:** a small legally reviewed pilot may test roof-form and building-height *attribute coverage* and crosswalks, separately from structural building identity, construction age, roof material, replacement value, insurer geography and historical event-time exposures. Schema availability is not proof of field completeness, distribution, physical accuracy or scientific model readiness.
+
 ## Bounded executable metadata proof
 
 Run offline synthetic regression tests, requiring no network or credentials:
