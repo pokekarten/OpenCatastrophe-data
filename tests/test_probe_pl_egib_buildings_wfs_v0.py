@@ -101,6 +101,28 @@ class PlEgibNativeWfsTests(unittest.TestCase):
             with self.subTest(raw=raw[:60]), self.assertRaises(ProviderMetadataError):
                 inspect_original_xml(CAPS, raw, HITS)
 
+    def test_reject_duplicate_building_schema_fields(self):
+        duplicated = SCHEMA.replace(
+            b'<element name="ID_BUDYNKU" type="string" minOccurs="0"/>',
+            b'<element name="ID_BUDYNKU" type="string" minOccurs="0"/>'
+            b'<element name="ID_BUDYNKU" type="string" minOccurs="0"/>',
+        )
+        with self.assertRaisesRegex(ProviderMetadataError, "duplicated building field"):
+            inspect_original_xml(CAPS, duplicated, HITS)
+
+    def test_reject_wfs_and_gml_members_even_if_number_returned_zero(self):
+        for raw in (
+            HITS.replace(b' />', b'><wfs:member/></wfs:FeatureCollection>'),
+            HITS.replace(
+                b' />',
+                b' xmlns:gml="http://www.opengis.net/gml/3.2">'
+                b'<gml:featureMember/></wfs:FeatureCollection>',
+            ),
+        ):
+            with self.subTest(raw=raw[-100:]), self.assertRaisesRegex(
+                    ProviderMetadataError, "feature records"):
+                inspect_original_xml(CAPS, SCHEMA, raw)
+
     def test_reject_fetched_feature_or_exception_report(self):
         for raw in [
             HITS.replace(b'numberReturned="0"', b'numberReturned="1"'),
