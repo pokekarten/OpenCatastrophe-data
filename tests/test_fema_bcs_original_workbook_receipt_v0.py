@@ -119,6 +119,13 @@ class OriginalFemaReceiptTests(unittest.TestCase):
         with self.assertRaises(m.OriginalFEMASourceError):
             m._validated_zip(archive)
 
+    def test_unreviewed_redirect_is_blocked_before_request(self):
+        import urllib.request
+        request = urllib.request.Request(m.SOURCE_URL)
+        with self.assertRaisesRegex(m.OriginalFEMASourceError, "redirect outside FEMA"):
+            m.FEMAOnlyRedirect().redirect_request(request, None, 302, "Found", {},
+                                                  "https://evil.example/download.xlsx")
+
     def test_official_fetch_rejects_unreviewed_redirect(self):
         class Response:
             headers = {"Content-Length": "1500"}
