@@ -37,6 +37,8 @@ def _github_manifests(rows):
         path = row.get("path")
         if not isinstance(path, str) or not path.startswith("manifests/"):
             continue
+        if not path.endswith(".json"):
+            continue  # generated Markdown source reviews are not canonical JSON
         if MANIFEST.fullmatch(path) is None:
             raise ValueError(f"noncanonical manifest path: {path}")
         if path in found or row.get("type") != "file" or not _sha(row.get("sha")):
