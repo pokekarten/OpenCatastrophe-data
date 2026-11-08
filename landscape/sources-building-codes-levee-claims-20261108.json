@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "purpose": "Non-admission discovery of three differentiated sources for building-code vulnerability priors, global flood-defence inventory context and observed insured catastrophe event benchmarks. This registry records public source-page evidence only; it does not admit any external bytes, authorize commercial use or imply model fitness.",
+  "purpose": "Non-admission discovery of four differentiated sources for jurisdictional building-code adoption, modeled code-related annual losses avoided, global flood-defence inventory context and observed insured catastrophe event benchmarks. This registry records public source-page evidence only; it does not admit external bytes, authorize commercial use or imply model fitness.",
   "review_date": "2026-11-08",
   "entries": [
     {
@@ -30,6 +30,35 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "us.fema.building-codes-save.aala.2024",
+      "name": "FEMA Building Codes Save AALs from the adoption of I-Codes (FEMA-0173)",
+      "provider": "U.S. Federal Emergency Management Agency (FEMA), Resilience / Risk Management Directorate",
+      "categories": [
+        "vulnerability",
+        "building_codes",
+        "annualized_losses_avoided",
+        "hazard_mitigation",
+        "united_states",
+        "model_benchmark"
+      ],
+      "spatial_scope": "United States; FEMA catalogue describes local, state, regional and national aggregate outputs",
+      "temporal_scope": "Nationwide Building Codes Save analysis reports modeled building-code risk reduction for post-2000 construction; data.gov entry FEMA-0173 updated 2024-07, not an annual year-by-year observed claims time series",
+      "resolution_or_granularity": "Official FEMA XLSX `fema_building-codes-save-study-results.xlsx` linked by US catalog.data.gov record FEMA-0173; specific workbook sheets, keys, versions, currency base and hazard breakdown unverified without original file examination",
+      "potential_roles": [
+        "building_code_aal_reduction_sanity_check",
+        "hazus_damage_function_comparison",
+        "flood_wind_earthquake_code_sensitivity",
+        "model_dependence_and_validation_leakage_check"
+      ],
+      "authoritative_url": "https://catalog.data.gov/dataset/aals-from-the-adoption-of-i-codes",
+      "access_class_hint": "official_fema_public_xlsx_government_works_catalogue_exact_workbook_license_and_sha256_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The official government catalogue identifies publication FEMA-0173, public access, FEMA publisher, links a government-works licence guidance page and supplies an XLSX resource at https://www.fema.gov/sites/default/files/documents/fema_building-codes-save-study-results.xlsx. These are MODELLED average annual losses avoided (AALA), not historical insured claims, claims frequency, independently observed loss reductions, a carrier TIV book or a vulnerability curve. They depend on Hazus and underlying modeled exposure and hazard assumptions; do not use as both training target and independent validation of a related Hazus-derived model. AALA is a scenario difference in AAL, not AAL or AEP/OEP itself. Verify source workbook table grain, dollar year, historical building stock and peril coverage, potential underlying third-party rights and selected file SHA-256 before model-use/licensing decisions. No XLSX or original source bytes acquired."
     },
     {
       "candidate_id": "global.gldi.levee-database-inventory.2025",
