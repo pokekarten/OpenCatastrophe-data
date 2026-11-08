@@ -33,8 +33,8 @@ Original publisher assets (checked against SHA-256/MD5 from [previous original-s
 
 The code [\`research_runners/marche_2022_water_surface_elevation_probe_v0.py\`](../../research_runners/marche_2022_water_surface_elevation_probe_v0.py) first executes the existing frozen original ZIP integrity/structure gate, then verifies the publisher's *original dictionary definition and units* for \`hw\` and the explicitly **derived** \`Water surface elevation\`, and returns **only sector-level type counts**.
 
-| Original Form A property population | Numeric \`hw\` observations, metres | Non-numeric/no-data \`hw\` | Numeric derived water-surface elevation | Non-numeric/no-data derived elevation |
-| --- | ---: | ---: | ---: | ---: |
+| Sector | Form A properties | Numeric \`hw\` measurements (m) | Non-numeric \`hw\` / no data | Numeric derived water-surface elevation | Non-numeric derived elevation |
+| --- | ---: | ---: | ---: | ---: | ---: |
 | Industrial/commercial | 133 | **126** | **7** | 76 | 57 |
 | Residential | 123 | **121** | **2** | 102 | 21 |
 | **Total** | **256** | **247** | **9** | **178** | **78** |
