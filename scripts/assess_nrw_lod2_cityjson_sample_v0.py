@@ -70,13 +70,32 @@ def _iter_indices(value: Any):
         raise SampleError("invalid CityJSON geometry boundary index type")
 
 
-def _intersects(minx: float, miny: float, maxx: float, maxy: float) -> bool:
-    west, south, east, north = BBOX
+def _intersects(
+    minx: float, miny: float, maxx: float, maxy: float, *,
+    bbox: tuple[float, float, float, float] = BBOX,
+) -> bool:
+    west, south, east, north = bbox
     return minx <= east and maxx >= west and miny <= north and maxy >= south
 
 
-def assess(raw: bytes, *, media_type: str = "application/city+json") -> dict[str, Any]:
+def assess(
+    raw: bytes, *, media_type: str = "application/city+json",
+    bbox: tuple[float, float, float, float] = BBOX,
+    source_url: str = SAMPLE_URL,
+) -> dict[str, Any]:
     """Validate a tiny original CityJSON sample and emit aggregate-only evidence."""
+    if not (isinstance(bbox, tuple) and len(bbox) == 4
+            and all(_finite_number(v) for v in bbox)
+            and -180 <= bbox[0] < bbox[2] <= 180
+            and -90 <= bbox[1] < bbox[3] <= 90):
+        raise SampleError("invalid study-area bbox")
+    expected_url = (
+        "https://ogc-api.nrw.de/3dg/v1/collections/building/items?"
+        "f=cityjson&limit=5&bbox="
+        + ",".join(f"{value:.4f}" for value in bbox)
+    )
+    if source_url != expected_url:
+        raise SampleError("source URL must match exact declared bbox and format")
     if not isinstance(raw, bytes) or not 0 < len(raw) <= MAX_BYTES:
         raise SampleError("empty, non-bytes or oversized provider response")
     if media_type.split(";", 1)[0].strip().lower() != "application/city+json":
@@ -155,13 +174,13 @@ def assess(raw: bytes, *, media_type: str = "application/city+json") -> dict[str
             raise SampleError("building has no geometry or attached BuildingPart geometry")
         xs = [coordinates[i][0] for i in indexes]
         ys = [coordinates[i][1] for i in indexes]
-        if not _intersects(min(xs), min(ys), max(xs), max(ys)):
+        if not _intersects(min(xs), min(ys), max(xs), max(ys), bbox=bbox):
             raise SampleError("a returned Building is outside the requested bbox")
     extent = meta.get("geographicalExtent")
     if not (isinstance(extent, list) and len(extent) == 6
             and all(_finite_number(v) for v in extent)
             and extent[0] <= extent[3] and extent[1] <= extent[4]
-            and _intersects(extent[0], extent[1], extent[3], extent[4])):
+            and _intersects(extent[0], extent[1], extent[3], extent[4], bbox=bbox)):
         raise SampleError("invalid or out-of-AOI provider geographical extent")
     root_attributes = {}
     part_attributes = {}
@@ -176,10 +195,23 @@ def assess(raw: bytes, *, media_type: str = "application/city+json") -> dict[str
             if isinstance(o.get("attributes"), dict)
             and o["attributes"].get(field) not in (None, "", [])
         )
+    root_missing_with_part_value: dict[str, int] = {}
+    for field in ROOF_FIELDS:
+        root_missing_with_part_value[field] = sum(
+            1 for root_id, root_obj in roots.items()
+            if not (isinstance(root_obj.get("attributes"), dict)
+                    and root_obj["attributes"].get(field) not in (None, "", []))
+            and any(
+                root_id in part_obj.get("parents", [])
+                and isinstance(part_obj.get("attributes"), dict)
+                and part_obj["attributes"].get(field) not in (None, "", [])
+                for part_obj in parts.values()
+            )
+        )
     return {
         "profile": "oc-nrw-lod2-bounded-cityjson-sample-v0",
         "source_id": SOURCE_ID,
-        "fixed_request_url": SAMPLE_URL,
+        "fixed_request_url": source_url,
         "crs": CRS,
         "content_type": "application/city+json",
         "source_sha256": hashlib.sha256(raw).hexdigest(),
@@ -190,6 +222,7 @@ def assess(raw: bytes, *, media_type: str = "application/city+json") -> dict[str
         "geometry_types": dict(sorted(geometry_kinds.items())),
         "root_attribute_present": root_attributes,
         "part_attribute_present": part_attributes,
+        "root_missing_with_part_attribute": root_missing_with_part_value,
         "all_roots_intersect_request_bbox": True,
         "original_ids_or_addresses_emitted": False,
         "raw_geometry_emitted": False,
