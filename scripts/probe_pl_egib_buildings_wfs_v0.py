@@ -100,10 +100,12 @@ def _parse_schema(raw: bytes) -> dict:
     ]
     if len(complex_types) != 1:
         raise ProviderMetadataError("expected budynkiType missing or duplicated")
-    fields = {
-        item.get("name"): item.get("type")
-        for item in complex_types[0].findall(".//" + XS + "element")
-    }
+    declarations = complex_types[0].findall(".//" + XS + "element")
+    names = [item.get("name") for item in declarations]
+    if (not declarations or any(not isinstance(name, str) or not name for name in names)
+            or len(names) != len(set(names))):
+        raise ProviderMetadataError("missing or duplicated building field declaration")
+    fields = {item.get("name"): item.get("type") for item in declarations}
     if any(field not in fields for field in EXPECTED_FIELDS):
         raise ProviderMetadataError("original building field contract changed")
     if fields["geom"] not in ("gml:SurfacePropertyType", "gml:MultiSurfacePropertyType"):
@@ -120,8 +122,13 @@ def _parse_hits(raw: bytes) -> dict:
     root = _xml(raw, WFS + "FeatureCollection")
     if root.get("numberReturned") != "0":
         raise ProviderMetadataError("metadata-only hits returned feature records")
-    if root.findall(".//{http://mapserver.gis.umn.edu/mapserver}budynki"):
-        raise ProviderMetadataError("building records returned in hits response")
+    # A claimed numberReturned=0 is insufficient when the provider sends
+    # unexpected feature payloads in WFS/GML member wrappers anyway.
+    if (root.findall(".//" + WFS + "member")
+            or root.findall(".//{http://www.opengis.net/gml/3.2}featureMember")
+            or root.findall(".//{http://www.opengis.net/gml}featureMember")
+            or root.findall(".//{http://mapserver.gis.umn.edu/mapserver}budynki")):
+        raise ProviderMetadataError("feature records returned in metadata-only hits response")
     # COUNT=1 deliberately constrains the provider operation. numberMatched is
     # NOT used as a national total; different servers apply COUNT differently.
     return {
