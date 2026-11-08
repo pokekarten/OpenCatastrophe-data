@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-05`  
 **Purpose:** Non-admission source-checked second pass of Oasis-relevant native model projects, synthetic storm catalogues, reusable exposure and vulnerability transformation leads, independent loss benchmarks, and licensed vendor discovery, deduplicated against the main OpenCatastrophe-data landscape. Metadata only: no model/data admission, rights grant, asset upload, successful external model execution or insurer-specific EP approval.
 
-**Entries:** 8
+**Entries:** 9
 
 ## Community LA earthquake Oasis model and reproducible pipeline
 
@@ -137,3 +137,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Original publisher item and peer-reviewed descriptions establish methodology; source implementation and full fine-grained country exposure access, exact rights and source-vintage reproducibility not independently verified. ESRM20 original exposure v1.0 (CC BY 4.0) is ALREADY registered/admitted only for a bounded existing artefact; that approval does not carry over to EHRE derivatives, OSM ODbL footprints or a full source dataset. No observed insurer sites, real contracts or model-ready OED claimed.
+
+## ElcoK/WISC: European windstorm building loss and risk modelling code
+
+**Candidate ID:** `research.elcok.wisc.european-wind-damage`  
+**Provider:** Elco Koks / Vrije Universiteit Amsterdam, Institute for Environmental Studies  
+**Categories:** `windstorm`, `building_exposure`, `damage_functions`, `academic_loss_model`, `open_source_software`  
+**Spatial scope:** Pan-European national and NUTS-region building exposure methods; real site and hazard inputs external  
+**Temporal scope:** Academic model work developed 2018-2020; original WISC source event/footprint vintages separate  
+**Resolution / granularity:** Python research code includes scripts/functions.py (region_exposure, region_losses, loss_calculation, load_max_dam, load_curves, source-storm list helpers) and scripts/analyze.py orchestration. Uses geopandas, rasterio, OSM and external model inputs. No original C3S WISC NetCDF footprints or complete damage-curve/financial portfolio assets are provided in this software repository.  
+**Potential roles:** `independent_wind_damage_curve_research`, `european_building_exposure_valuation_method_challenger`, `wisc_model_loss_calculation_crosscheck`, `oasis_vulnerability_translation_candidate`  
+**Access hint:** `mit_public_research_code_external_wisc_data_and_curves_licences_separate_not_oasis_model`  
+**Authoritative source:** <https://github.com/ElcoK/WISC>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Direct GitHub source review 2026-11-05: README states MIT software, repository LICENSE Git blob 638dd62ec2a1b317979f283a533cee683dbdb447; scripts/functions.py blob da6278d5dc61fb05dd89018fa854d77b36f16f2b and scripts/analyze.py blob 79b311c58354bb478088ec547dc53b23c625f483. Reusable code methods are distinct from original data, non-bundled building geographies, external WISC simulated footprints and construction-cost/damage curves, which require independent rights/provenance reviews. It is NOT an OasisLMF native model package; no prebuilt event/hazard/occurrence/OED/RI files, no successful current 2026 runtime, independent calibration, annual OEP/AEP, source weights or insurer losses have been established. Treat as method and potential wind vulnerability adapter only, not a second independent WISC hazard catalogue.
