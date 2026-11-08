@@ -21,10 +21,12 @@ if __package__:
     from .assess_nrw_lod2_cityjson_sample_v0 import (
         MAX_BYTES, ROOF_FIELDS, SampleError, _NoRedirects, assess,
     )
+    from .nrw_lod2_roof_code_gate_v0 import RoofCodeError, audit_cityjson_roof_codes
 else:
     from assess_nrw_lod2_cityjson_sample_v0 import (
         MAX_BYTES, ROOF_FIELDS, SampleError, _NoRedirects, assess,
     )
+    from nrw_lod2_roof_code_gate_v0 import RoofCodeError, audit_cityjson_roof_codes
 
 
 @dataclass(frozen=True)
@@ -98,6 +100,13 @@ def summarize(
         # Each sample's geometry must intersect its *own* declared bbox,
         # not the Cologne bbox used by the original single-area checker.
         receipt = assess(raw, bbox=area.bbox, source_url=area.url, media_type=media)
+        try:
+            roof = audit_cityjson_roof_codes(raw)
+        except RoofCodeError as exc:
+            raise SampleError(f"official roof code audit blocked: {area.code}: {exc}") from exc
+        if roof["root_buildings"] != receipt["buildings"] or roof["building_parts"] != receipt["building_parts"]:
+            raise SampleError("inconsistent building/part counting across independent gates")
+        receipt["roof_code_audit"] = roof
         by_area[area.code] = receipt
     ordered = [
         {"area_code": area.code, "description": area.description, **by_area[area.code]}
@@ -107,12 +116,24 @@ def summarize(
     total_parts = sum(r["building_parts"] for r in ordered)
     if not total_buildings:
         raise SampleError("no original Buildings found")
+    root_roof_codes: Counter[str] = Counter()
+    part_roof_codes: Counter[str] = Counter()
+    for item in ordered:
+        audit = item["roof_code_audit"]
+        root_roof_codes.update(audit["root_roof_code_counts"])
+        part_roof_codes.update(audit["part_roof_code_counts"])
     return {
         "profile": "oc-nrw-lod2-five-convenience-area-audit-v0",
         "sample_selection": "fixed_nonprobability_convenience_windows_not_statewide_representative",
         "areas_attempted": len(AREAS),
         "total_root_buildings": total_buildings,
         "total_building_parts": total_parts,
+        "root_roof_code_counts": dict(sorted(root_roof_codes.items())),
+        "part_roof_code_counts": dict(sorted(part_roof_codes.items())),
+        "root_specific_roof_form": sum(item["roof_code_audit"]["root_specific_roof_form"] for item in ordered),
+        "root_mixed_or_other_roof_form": sum(item["roof_code_audit"]["root_mixed_or_other_roof_form"] for item in ordered),
+        "root_missing_roof_form": sum(item["roof_code_audit"]["root_missing_roof_form"] for item in ordered),
+        "roots_with_multiple_part_roof_codes": sum(item["roof_code_audit"]["roots_with_multiple_part_roof_codes"] for item in ordered),
         "total_vertices": sum(r["vertices"] for r in ordered),
         "root_attribute_present": {
             field: sum(r["root_attribute_present"][field] for r in ordered)
