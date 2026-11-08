@@ -115,7 +115,7 @@ class PlEgibNativeWfsTests(unittest.TestCase):
 
     def test_reject_dtd_entity_and_broken_xml(self):
         for raw in [
-            b'<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>' + HITS,
+            b'<!DOCTYPE foo [<!ENTITY xxe SYSTEM "https://invalid.example/private">]>' + HITS,
             b'<!ENTITY sneaky "X">' + HITS,
             b'<wfs:FeatureCollection',
             b"",
