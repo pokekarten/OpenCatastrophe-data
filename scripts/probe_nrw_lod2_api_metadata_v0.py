@@ -65,7 +65,12 @@ def assess(raw: bytes, *, media_type: str = "application/json") -> dict[str, Any
         raise MetadataProbeError("feature payload is outside metadata-only scope")
     if "links" not in document or not isinstance(document["links"], list):
         raise MetadataProbeError("collection metadata has no OGC links")
-    if not document["links"] or not all(isinstance(link, dict) for link in document["links"]):
+    if not document["links"] or not all(
+        isinstance(link, dict)
+        and isinstance(link.get("rel"), str) and bool(link["rel"].strip())
+        and isinstance(link.get("href"), str) and bool(link["href"].strip())
+        for link in document["links"]
+    ):
         raise MetadataProbeError("invalid collection links")
     # Persist only booleans and exact byte identity, never response body or links.
     matches = []
