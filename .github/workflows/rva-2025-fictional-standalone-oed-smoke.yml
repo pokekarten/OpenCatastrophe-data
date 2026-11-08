@@ -8,6 +8,7 @@ on:
       - ".github/workflows/rva-2025-fictional-standalone-oed-smoke.yml"
       - "research_runners/rva_2025_oed_staging_v0.py"
       - "tests/test_rva_2025_oed_staging_v0.py"
+      - "docs/research/rva-2025-oed-staging-v0.md"
   workflow_dispatch:
 
 permissions:
