@@ -90,7 +90,7 @@ def _calendar_check(row: dict[str, str], event_id: str) -> bool:
         raise PreflightError("CFDID source year outside 1994-2023")
     try:
         # The lower bound is for chronology checks only, not an imputed date.
-        first_possible_start = date(year, month, start_day or 1)
+        first_possible_start = date(year, month, 1 if start_day is None else start_day)
         if end_month is not None and end_year is None:
             raise PreflightError("End month provided without End year")
         if end_day is not None and end_month is None:
@@ -98,9 +98,10 @@ def _calendar_check(row: dict[str, str], event_id: str) -> bool:
         if end_year is not None:
             if not (1994 <= end_year <= 2023):
                 raise PreflightError("End year outside 1994-2023")
-            final_month = end_month or 12
-            final_day = end_day or (date(end_year + (final_month == 12),
-                                           final_month % 12 + 1, 1) - timedelta(days=1)).day
+            final_month = 12 if end_month is None else end_month
+            final_day = (date(end_year + (final_month == 12),
+                              final_month % 12 + 1, 1) - timedelta(days=1)).day \
+                if end_day is None else end_day
             final_possible_end = date(end_year, final_month, final_day)
             if final_possible_end < first_possible_start:
                 raise PreflightError("End date interval precedes start date interval")
