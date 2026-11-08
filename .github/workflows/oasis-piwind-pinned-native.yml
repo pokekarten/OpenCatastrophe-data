@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Pinned native Oasis PiWind research smoke
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/oasis-piwind-pinned-native.yml"
+      - "research_runners/oasis_piwind_native_smoke_v0.py"
+      - "tests/test_oasis_piwind_native_smoke_v0.py"
+      - "docs/research/oasis-piwind-native-smoke-v0.md"
+  pull_request:
+    paths:
+      - ".github/workflows/oasis-piwind-pinned-native.yml"
+      - "research_runners/oasis_piwind_native_smoke_v0.py"
+      - "tests/test_oasis_piwind_native_smoke_v0.py"
+      - "docs/research/oasis-piwind-native-smoke-v0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: piwind-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  piwind-native:
+    name: Oasis PiWind 2.5.8 GUL/IL/RI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout research-only repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Verify synthetic-only receipt tests
+        run: python -m unittest discover -s tests -p 'test_oasis_piwind_native_smoke_v0.py' -v
+
+      - name: Install public Oasis engine prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends -y libspatialindex-dev
+          python -m pip install --disable-pip-version-check --no-input 'oasislmf[extra]==2.5.8'
+          python -m pip check
+
+      - name: Clone and pin public toy PiWind model
+        run: |
+          git clone --filter=blob:none https://github.com/OasisLMF/OasisPiWind.git "$RUNNER_TEMP/OasisPiWind"
+          git -C "$RUNNER_TEMP/OasisPiWind" checkout --detach 94820c59f169b222d4c1a72256ff0a8f86a9e5bf
+          test "$(git -C "$RUNNER_TEMP/OasisPiWind" rev-parse HEAD)" = "94820c59f169b222d4c1a72256ff0a8f86a9e5bf"
+
+      - name: Execute native Oasis engine and attest demo ORD streams
+        run: |
+          python research_runners/oasis_piwind_native_smoke_v0.py \
+            "$RUNNER_TEMP/OasisPiWind" --timeout-seconds 900 \
+            --receipt "$RUNNER_TEMP/piwind-research-receipt.json"
+
+      - name: Publish non-sensitive engine receipt summary
+        if: success()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          receipt = json.loads((Path(os.environ["RUNNER_TEMP"]) / "piwind-research-receipt.json").read_text())
+          report = [
+              "## Pinned native OasisPiWind research-only run",
+              "",
+              f"- Engine: oasislmf {receipt['oasislmf_version']}",
+              f"- Source commit: `{receipt['model_commit']}`",
+              f"- Verified output families: {', '.join(receipt['result_loss_streams'])}",
+              f"- Hashed ORD CSV outputs: {len(receipt['ord_csv'])}",
+              "- No real insurer portfolio, original site geographies, scientific hazard calibration or approved net EP.",
+              "",
+          ]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write("\n".join(report))
+          PY

@@ -10,13 +10,43 @@ on:
       - "research_runners/ted_berlin_insurance_daily_xml_preflight_v0.py"
       - "research_runners/ted_berlin_insurance_search_api_preflight_v0.py"
       - "research_runners/ted_wbm_eforms_winner_role_v0.py"
+      - "research_runners/ted_wbm_contract_search_index_candidates_v0.py"
+      - "research_runners/ted_wbm_original_award_graph_receipt_v0.py"
+      - "research_runners/ted_wbm_original_contract_identifier_labels_v0.py"
+      - "research_runners/ted_wbm_2026_competition_original_preflight_v0.py"
+      - "research_runners/ted_wbm_2026_procedure_lineage_v0.py"
+      - "research_runners/ted_wbm_2026_procedure_search_index_v0.py"
+      - "research_runners/ted_wbm_2026_procedure_family_discovery_v0.py"
+      - "research_runners/wbm_rib_205349_public_documents_preflight_v0.py"
+      - "research/observations/ted_wbm_2026_original_contract_share_labels_v0.toml"
+      - "research/observations/ted_wbm_2026_original_eforms_award_graph_receipt_v0.toml"
       - "tests/test_ted_berlin_insurance_original_xml_preflight_v0.py"
       - "tests/test_ted_berlin_insurance_original_http202_retry_v0.py"
       - "tests/test_ted_berlin_insurance_daily_xml_preflight_v0.py"
       - "tests/test_ted_berlin_insurance_search_api_preflight_v0.py"
       - "tests/test_ted_wbm_eforms_winner_role_v0.py"
+      - "tests/test_ted_wbm_contract_search_index_candidates_v0.py"
+      - "tests/test_ted_wbm_original_award_graph_receipt_v0.py"
+      - "tests/test_ted_wbm_original_contract_identifier_labels_v0.py"
+      - "tests/test_ted_wbm_2026_competition_original_preflight_v0.py"
+      - "tests/test_ted_wbm_2026_procedure_lineage_v0.py"
+      - "tests/test_ted_wbm_2026_procedure_search_index_v0.py"
+      - "tests/test_ted_wbm_2026_procedure_family_discovery_v0.py"
+      - "tests/test_ted_wbm_2026_procedure_family_observation_v0.py"
+      - "tests/test_wbm_rib_205349_public_documents_preflight_v0.py"
+      - "tests/test_wbm_rib_205349_public_access_observation_v0.py"
+      - "research/observations/wbm_2026_rib_205349_public_access_v0.toml"
+      - "research/observations/ted_wbm_2026_bt04_procedure_family_members_v0.toml"
+      - "tests/test_ted_wbm_2026_procedure_index_observation_v0.py"
+      - "research/observations/ted_wbm_2026_search_bt04_lineage_observation_v0.toml"
+      - "tests/test_ted_wbm_original_contract_quota_label_register_v0.py"
       - "docs/research/berlin-insurer-ted-original-xml-preflight-20261105.md"
       - "docs/research/berlin-wbm-2026-ted-eforms-winner-role-v0.md"
+      - "docs/research/berlin-wbm-2026-ted-search-index-contract-candidates.md"
+      - "docs/research/berlin-wbm-2026-contract-bt150-share-labels-and-tender-minimum.md"
+      - "docs/research/berlin-wbm-2026-ted-bt04-procedure-lineage.md"
+      - "docs/research/berlin-wbm-2026-ted-procedure-family-discovery.md"
+      - "docs/research/berlin-wbm-2026-rib-205349-document-access-and-request.md"
   workflow_dispatch:
 
 permissions:
@@ -56,6 +86,54 @@ jobs:
       - name: Query TED primary publication metadata as separate fallback
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_berlin_insurance_search_api_preflight_v0
+      - name: Offline WBM official TED index contract candidate safeguard tests
+        run: python -m unittest discover -s tests -p "test_ted_wbm_contract_search_index_candidates_v0.py" -v
+      - name: Query official WBM award index candidate and contract fields separately
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_contract_search_index_candidates_v0
+      - name: Offline WBM original awarded-contract graph receipt tamper tests
+        run: python -m unittest discover -s tests -p "test_ted_wbm_original_award_graph_receipt_v0.py" -v
+      - name: Re-verify three saved official WBM contract-to-company edges
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_original_award_graph_receipt_v0
+      - name: Offline original WBM BT-150 contract percent-label regression
+        run: python -m unittest discover -s tests -p "test_ted_wbm_original_contract_identifier_labels_v0.py" -v
+      - name: Check exact original WBM contract identifiers without policy share admission
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_original_contract_identifier_labels_v0
+      - name: Offline official WBM 2026 original competition provenance checks
+        run: python -m unittest discover -s tests -p "test_ted_wbm_2026_competition_original_preflight_v0.py" -v
+      - name: Retrieve official WBM 2026 original competition and quote minima separately
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_2026_competition_original_preflight_v0
+      - name: Offline immutable original source quota-label register and no CAT admission tests
+        run: python -m unittest discover -s tests -p "test_ted_wbm_original_contract_quota_label_register_v0.py" -v
+      - name: Offline WBM official BT-04 procedure linkage and BT-701 notice UUID guards
+        run: python -m unittest discover -s tests -p "test_ted_wbm_2026_procedure_lineage_v0.py" -v
+      - name: Cross-check exact original WBM competition and award BT-04 procedure IDs
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_2026_procedure_lineage_v0
+      - name: Offline official TED Search API BT-04 procedure index source distinction
+        run: python -m unittest discover -s tests -p "test_ted_wbm_2026_procedure_search_index_v0.py" -v
+      - name: Query WBM 2026 April and September BT-04 official Search index candidates
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_2026_procedure_search_index_v0
+      - name: Offline source-receipt guard for indexed BT-04 disagreement and policy nonadmission
+        run: python -m unittest discover -s tests -p "test_ted_wbm_2026_procedure_index_observation_v0.py" -v
+      - name: Offline official procedure UUID family cross-publication discovery guards
+        run: python -m unittest discover -s tests -p "test_ted_wbm_2026_procedure_family_discovery_v0.py" -v
+      - name: Query all official indexed sibling notices for both WBM 2026 BT04 families
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_2026_procedure_family_discovery_v0
+      - name: Offline dated official WBM single-notice procedure family observation guards
+        run: python -m unittest discover -s tests -p "test_ted_wbm_2026_procedure_family_observation_v0.py" -v
+      - name: Offline RIB WBM tender 205349 public landing availability classification tests
+        run: python -m unittest discover -s tests -p "test_wbm_rib_205349_public_documents_preflight_v0.py" -v
+      - name: Offline RIB WBM 205349 source receipt and no actual insured exposure guards
+        run: python -m unittest discover -s tests -p "test_wbm_rib_205349_public_access_observation_v0.py" -v
+      - name: Check exact public RIB 205349 notice accessibility without credential escalation
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.wbm_rib_205349_public_documents_preflight_v0
       - name: Try official TED daily OJ S archive fallback for 202 Accepted
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_berlin_insurance_daily_xml_preflight_v0
