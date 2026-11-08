@@ -19,7 +19,40 @@ from scripts.assess_nrw_lod2_cityjson_sample_v0 import (
 from scripts.assess_nrw_lod2_five_area_v0 import (
     AREAS, StudyArea, fetch_fixed_area, main, summarize,
 )
-from tests.test_assess_nrw_lod2_cityjson_sample_v0 import encoded, sample
+def sample() -> dict:
+    return {
+        "type": "CityJSON",
+        "version": "1.1",
+        "metadata": {
+            "referenceSystem": "http://www.opengis.net/def/crs/OGC/0/CRS84h",
+            "geographicalExtent": [6.95, 50.93, 5, 6.9502, 50.9302, 8],
+        },
+        "transform": {"scale": [0.0001, 0.0001, 1], "translate": [6.95, 50.93, 0]},
+        "vertices": [[0, 0, 5], [1, 0, 5], [1, 1, 5], [0, 1, 5], [2, 2, 8]],
+        "CityObjects": {
+            "fictional-building": {
+                "type": "Building",
+                "attributes": {
+                    "measuredHeight": 9.5,
+                    "roofType": "synthetic-roof",
+                    "creationDate": "2025-01-01",
+                },
+                "geometry": [{"type": "Solid", "boundaries": [[[[0, 1, 2, 3]]]]}],
+                "children": ["fictional-part"],
+            },
+            "fictional-part": {
+                "type": "BuildingPart",
+                "parents": ["fictional-building"],
+                "attributes": {"roofType": "synthetic-part-roof"},
+                "geometry": [{"type": "Solid", "boundaries": [[[[1, 2, 4]]]]}],
+            },
+        },
+    }
+
+
+def encoded(value: dict) -> bytes:
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
 
 
 def invented_fixture(area: StudyArea) -> bytes:
