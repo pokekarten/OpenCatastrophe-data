@@ -20,15 +20,15 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Existing linked source families — do NOT re-register
 
-- USGS GFID: \`landscape/sources-independent-event-impacts-2026.json\` includes original contributed-file product and aggregated geocoded/deduplication products. It is derived partly from HANZE, DFO, EM-DAT and DesInventar. The 30-day/25-km possible-duplicate screen **does not prove same physical event**.
-- COMPASS D1.4 tropical cyclone-affected areas: already in \`landscape/sources-observed-event-validation-2026.json\`; inherits IBTrACS/ERA5-based modelling and should not be an independent storm-frequency holdout.
+- USGS GFID: `landscape/sources-independent-event-impacts-2026.json` includes original contributed-file product and aggregated geocoded/deduplication products. It is derived partly from HANZE, DFO, EM-DAT and DesInventar. The 30-day/25-km possible-duplicate screen **does not prove same physical event**.
+- COMPASS D1.4 tropical cyclone-affected areas: already in `landscape/sources-observed-event-validation-2026.json`; inherits IBTrACS/ERA5-based modelling and should not be an independent storm-frequency holdout.
 - HOWAS21: already in existing flood loss research source landscape; FLEMOflash adds literature/method linkage, not a second data population.
 - GEM exposure and vulnerability, CLIMK-WINDS, MeteoSwiss, JRC flood depth-damage, and BRIGHT: already catalogued or researched elsewhere. Add per-paper lineage when useful, not duplicate original providers.
 
 ## Proposed bounded execution (all source admissions remain false)
 
 1. **Marche:** verify Zenodo immutable record, exact file listing/rights, authors' data dictionary, allowed geographic precision and the 133+123 parent form-A IDs. Inspect metadata/dictionary before any confidential/georeferenced microdata processing.
-2. **FLEMOflash:** map each source year/geography and HOWAS21 record population; reproduce definitions of \`rloss\`, content/building/equipment/stock labels and warning/adaptation variables in *synthetic-only* tests. Restrict comparisons to disjoint locations/events.
+2. **FLEMOflash:** map each source year/geography and HOWAS21 record population; reproduce definitions of `rloss`, content/building/equipment/stock labels and warning/adaptation variables in *synthetic-only* tests. Restrict comparisons to disjoint locations/events.
 3. **Randall:** verify upstream licenses including FABDEM noncommercial restriction before any model training. For a tiny separate event, preflight only metadata, CEMS label semantics (non-AOI is not dry land) and file hash from publisher; do not download 19 GB by default.
 4. **EO4FLOOD:** use v2, metadata-only pilot on **Rhine** first (2.6 GB archive, not downloaded); inspect notebooks (6.1 MB) and hydrological variables with immutable checksums. Keep v1 vs v2 distinct.
 5. **DELUGE:** first verify original Zenodo record/files/rights independently (publisher endpoint was not accessible in this pass); then one basin/event metadata-only join with ERA5-Land, WorldFloods/UNOSAT provenance and CARAVAN gauge type, without assuming independence.
