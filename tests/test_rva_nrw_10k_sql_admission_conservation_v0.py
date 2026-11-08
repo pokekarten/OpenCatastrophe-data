@@ -59,6 +59,25 @@ class NRWGeocodedCohortGateTests(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.sql)
 
+    def test_global_cross_kreis_identity_and_geometry_gates_not_weakened(self):
+        # Local per-Kreis uniqueness alone cannot reject identical site IDs
+        # or physical points reused in different Kreise: canonical main SQL
+        # must also enforce version-global distinctness at 10k rows.
+        section = self.sql.split("nrw_complete_10k AS (", 1)[1]
+        section = section.split("audit AS (", 1)[0]
+        for marker in (
+            "count(*) FROM exposure.exposure_unit AS all_u",
+            "count(DISTINCT all_u.external_unit_id)",
+            "count(DISTINCT ST_AsBinary(all_u.location))",
+            "all_u.portfolio_version_id=c.portfolio_version_id",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, section)
+        self.assertEqual(
+            section.count("all_u.portfolio_version_id=c.portfolio_version_id"),
+            3,
+        )
+
     def test_original_license_and_gfk_knowledge_stay_research_only(self):
         self.assertEqual(
             self.receipt["original_data_license"],
