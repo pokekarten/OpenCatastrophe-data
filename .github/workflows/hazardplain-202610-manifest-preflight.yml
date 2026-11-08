@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hazard Plain 2026-10 source-manifest metadata canary
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/hazardplain-202610-manifest-preflight.yml"
+      - "research_runners/hazardplain_202610_manifest_preflight_v0.py"
+      - "tests/test_hazardplain_202610_manifest_preflight_v0.py"
+      - "landscape/sources-us-hazardplain-nri-outlier-nfip-20261108.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hazardplain-202610-manifest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  metadata-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout without persistent credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Synthetic-only negative and metadata tests
+        run: python -m unittest tests.test_hazardplain_202610_manifest_preflight_v0 -v
+      - name: Check provider original manifest JSON only (no CSV/Parquet)
+        id: provider
+        continue-on-error: true
+        run: python research_runners/hazardplain_202610_manifest_preflight_v0.py --official-live
+      - name: Label provider receipt outcome explicitly
+        if: always()
+        env:
+          PROVIDER_STATUS: ${{ steps.provider.outcome }}
+        run: |
+          if [ "$PROVIDER_STATUS" = "success" ]; then
+            echo "PROVIDER_MANIFEST_METADATA_ONLY: original manifest received and release schema checked; dataset hashes remain publisher claims, not rehashed source bytes." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "BLOCKED_PROVIDER_MANIFEST: original provider manifest not verified; do not interpret a green nonblocking job as source admission." >> "$GITHUB_STEP_SUMMARY"
+          fi
