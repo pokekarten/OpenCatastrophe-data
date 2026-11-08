@@ -20,8 +20,11 @@ from scripts.probe_nrw_lod2_api_metadata_v0 import (
 def fixture() -> bytes:
     return json.dumps({
         "id": "building", "title": "Synthetic example collection", "itemType": "feature",
-        "extent": {"spatial": {"bbox": [[5.7, 50.1, 9.6, 52.7]]}},
-        "links": [{"rel": "self", "href": "https://example.invalid/not-a-real-source"}],
+        "collectionType": "3d-container", "storageCrs": "http://www.opengis.net/def/crs/EPSG/0/5555",
+        "extent": {"spatial": {"crs": "http://www.opengis.net/def/crs/OGC/0/CRS84h",
+                               "bbox": [[5.7, 50.1, -4.7, 9.6, 52.7, 874.3]]}},
+        "links": [{"rel": "self", "href": "https://example.invalid/not-a-real-source"},
+                  {"rel": "items", "type": "application/city+json", "href": "https://example.invalid/items"}],
         "numberMatched": 10,
     }).encode()
 
@@ -35,6 +38,10 @@ class MetadataProbeTests(unittest.TestCase):
         self.assertFalse(receipt["source_feature_bytes_acquired"])
         self.assertFalse(receipt["cat_model_input_approved"])
         self.assertFalse(receipt["rights_review_complete"])
+        self.assertTrue(receipt["native_3d_collection"])
+        self.assertTrue(receipt["cityjson_items_advertised"])
+        self.assertFalse(receipt["geojson_items_advertised"])
+        self.assertEqual(receipt["storage_crs"], "http://www.opengis.net/def/crs/EPSG/0/5555")
         self.assertNotIn("example.invalid", json.dumps(receipt))
 
     def test_fail_closed_bad_payload(self):
@@ -99,6 +106,42 @@ class MetadataProbeTests(unittest.TestCase):
             raw, media = fetch_fixed_metadata()
         self.assertEqual(raw, fixture())
         self.assertEqual(media, "application/json")
+
+    def test_3d_crs_and_item_semantic_drift_fails_closed(self):
+        base = json.loads(fixture())
+        mutations = (
+            ("collectionType", "feature-collection"),
+            ("itemType", "raster"),
+            ("storageCrs", "http://www.opengis.net/def/crs/EPSG/0/4326"),
+        )
+        for key, value in mutations:
+            with self.subTest(key=key):
+                changed = json.loads(json.dumps(base))
+                changed[key] = value
+                with self.assertRaises(MetadataProbeError):
+                    assess(json.dumps(changed).encode())
+        for spatial in (
+            {"crs": "http://www.opengis.net/def/crs/EPSG/0/4326", "bbox": [[5.7, 50.1, -4.7, 9.6, 52.7, 874.3]]},
+            {"crs": "http://www.opengis.net/def/crs/OGC/0/CRS84h", "bbox": [[5.7, 50.1, 9.6, 52.7]]},
+            {"crs": "http://www.opengis.net/def/crs/OGC/0/CRS84h", "bbox": [[9.6, 50.1, -4.7, 5.7, 52.7, 874.3]]},
+        ):
+            changed = json.loads(json.dumps(base))
+            changed["extent"]["spatial"] = spatial
+            with self.assertRaises(MetadataProbeError):
+                assess(json.dumps(changed).encode())
+        changed = json.loads(json.dumps(base))
+        changed["links"] = [{"rel": "items", "type": "application/geo+json", "href": "https://example.invalid/items"}]
+        with self.assertRaises(MetadataProbeError):
+            assess(json.dumps(changed).encode())
+
+    def test_citygml_alternative_is_accepted_but_not_geographic_validation(self):
+        changed = json.loads(fixture())
+        changed["links"][1]["type"] = "application/gml+xml"
+        receipt = assess(json.dumps(changed).encode())
+        self.assertTrue(receipt["citygml_items_advertised"])
+        self.assertFalse(receipt["cityjson_items_advertised"])
+        self.assertFalse(receipt["scientific_fitness_verified"])
+        self.assertFalse(receipt["cat_model_input_approved"])
 
     def test_offline_oversize_rejected_before_parse(self):
         with tempfile.TemporaryDirectory() as directory:
