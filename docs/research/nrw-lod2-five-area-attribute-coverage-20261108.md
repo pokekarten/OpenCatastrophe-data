@@ -29,6 +29,49 @@ All **24/24** `BuildingPart` objects had their own `roofType` and `measuredHeigh
 
 The API returned one `Building` with any number of associated `BuildingPart` objects. **Do not sum 24 parts into 25 root buildings to claim 49 insurable buildings.** The root `creationDate` field is an object-record date and is **not demonstrated as construction year**. The selected 2025 building catalogue is not a 2021 historical event snapshot. This study has no R+V policy or insurer holding identification.
 
+### Verified AdV roof-form code taxonomy and observed five-area codes
+
+The authoritative [AdV GML roof-form code dictionary](https://repository.gdi-de.org/schemas/adv/citygml/Codelisten/RoofTypeTypeAdV.xml)
+contains 15 official 4-digit roof-form codes (verified against the publisher's
+[AdV LoD1/LoD2 QA plan, check 2240](https://sgx.geodatenzentrum.de/public/gdz/dokumentation/deu/lod2-de_pruefplan_fuer_gebaeudemodelle.pdf)).
+The dictionary is **source data kept at the provider**, not an original XML asset
+copied into the repository. A compact, reviewed mapping of its 15 functional
+codes is implemented in `scripts/nrw_lod2_roof_code_gate_v0.py`, with a
+fail-closed byte-bounded official-XML drift check and synthetic offline tests.
+
+An additional **read-only, bounded reinspection** of the same five original
+CityJSON endpoints on 2026-11-08 found this distribution of source-form codes.
+These are **counts of observed coded objects**, not population or insured
+property estimates:
+
+| AdV code | Official Dachform | Main Building (25) | BuildingPart (24) | CAT readiness |
+| --- | --- | ---: | ---: | --- |
+| `1000` | Flachdach | 7 | 9 | Shape only; no material or fragility |
+| `2100` | Pultdach | 3 | 2 | Shape only |
+| `3100` | Satteldach | 2 | 5 | Shape only |
+| `3200` | Walmdach | 0 | 1 | Shape only |
+| `5000` | Mischform | 5 | 7 | **Ambiguous**; do not map to a specific roof |
+| *no root code* | not recorded on main Building | **8** | — | Part-level values cannot silently replace it |
+| **Total objects** | | **25** | **24** | **not model admitted** |
+
+- **12/25** main Buildings have one unambiguous source roof-form code; **5/25** have `5000` (mixed form), and **8/25** no direct main-Building code. All eight lacking root codes have at least one part-level code.
+- **5/25** main Buildings have **more than one distinct official roof code across their BuildingParts** (three Münster, two Meschede). This does not mean a single insurance coverage or roof-vulnerability class.
+- `9999` means *Sonstiges*, not a named roof form; there were **zero** observed `9999` roof codes in this pilot. The full dictionary also specifies less common roof forms, even though they were not observed in this convenience sample.
+- A roof shape does **not** identify covering material, structural attachment, wind resistance, construction year, use, insured replacement value or insurer ownership. No roof-based CAT vulnerability factors have been fitted or applied.
+- Historical, alternative and stale code lists may use different identifiers. Unknown values are **blocked for explicit review**, never coerced to `1000` or to a generic hazard class.
+
+Execute the pinned-code verification without original bytes in Git:
+
+```sh
+python -m unittest discover -s tests -p 'test_nrw_lod2_roof_code_gate_v0.py' -v
+# One optional original provider codebook GET (not part of offline CI):
+python scripts/nrw_lod2_roof_code_gate_v0.py --verify-official
+```
+
+The extended five-area diagnostic returns code histograms separately for
+main Buildings and parts, and counts multi-code-part roots and unresolved
+form values without embedding original geometries, addresses or building IDs.
+
 ### Reproducible bounded QA
 
 Source-free dry-run of five hardcoded URLs:
