@@ -91,6 +91,35 @@ class PolishBuildingWindowTests(unittest.TestCase):
         with self.assertRaisesRegex(BuildingWindowError, "does not intersect"):
             inspect_original_geojson(encoded(bad))
 
+    def test_reject_polygon_bbox_false_overlap_and_window_inside_hole(self):
+        # An L-shaped footprint's bounding rectangle covers Warsaw but
+        # the actual polygon lies only south and west of the target.
+        l_shape = [[636480, 486480], [637520, 486480],
+                   [637520, 486490], [636490, 486490],
+                   [636490, 487520], [636480, 487520],
+                   [636480, 486480]]
+        all_hole = [
+            [[636480, 486480], [637520, 486480],
+             [637520, 487520], [636480, 487520], [636480, 486480]],
+            [[636495, 486495], [637505, 486495],
+             [637505, 487505], [636495, 487505], [636495, 486495]],
+        ]
+        for rings in ([l_shape], all_hole):
+            sample = fake_collection()
+            sample["features"][0]["geometry"]["coordinates"] = rings
+            with self.subTest(case=len(rings)), self.assertRaisesRegex(
+                    BuildingWindowError, "does not intersect"):
+                inspect_original_geojson(encoded(sample))
+        # Polygon with all vertices outside the box but two intersecting
+        # edges must be accepted. A vertex-only check would reject it.
+        positive = fake_collection()
+        positive["features"][0]["geometry"]["coordinates"] = [[
+            [636900, 486480], [636910, 486480],
+            [636910, 487520], [636900, 487520], [636900, 486480]
+        ]]
+        self.assertEqual(inspect_original_geojson(encoded(positive))[
+                         "verified_intersection_count"], 2)
+
     def test_reject_bad_crs_wrong_layer_or_missing_id(self):
         for key in ("crs", "layer", "id"):
             sample = fake_collection()
