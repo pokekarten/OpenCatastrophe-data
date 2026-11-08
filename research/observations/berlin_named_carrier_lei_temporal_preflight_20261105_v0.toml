@@ -1,0 +1,106 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Source-scoped LEI/legal-entity preflight; NOT company-insured exposure, 2026 carrier confirmation, or GLEIF original-byte ingestion.
+schema_version = "BERLIN_NAMED_CARRIER_LEI_TEMPORAL_PREFLIGHT_V0"
+research_review_date = "2026-11-05"
+source_senate_document = "Drucksache 19/22033"
+source_senate_issuer_date = "2025-04-01"
+source_senate_original_url = "https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-22033.pdf"
+source_observation_path = "research/observations/rva_berlin_senate_housing_insurer_relations_2025_v0.toml"
+original_regulator_or_gleif_http_json_hashed_in_this_preflight = false
+current_2026_carrier_contracts_proven = false
+all_carrier_labels_resolution_complete = false
+real_insured_site_locations_admitted = false
+corporate_stock_equal_insured_assets = false
+carrier_group_consolidation_permitted = false
+source_scope = "Four observed company-source dates and regulator names may differ; this research only checks whether an issuer-reported name can be identified with a legal entity LEI. Not a business/claims/portfolio ownership join."
+
+[[source_carriers]]
+reported_label = "R+V Allgemeine Versicherung AG"
+resolution = "regulator_identity_correspondence"
+resolved_lei = "5299009UN4CBXZ336M65"
+resolved_legal_name = "R+V Allgemeine Versicherung Aktiengesellschaft"
+resolved_jurisdiction = "DE"
+regulator_identity_source_url = "https://acpr.banque-france.fr/fr/fiche-detaillee/rv-allgemeine-versicherung-aktiengesellschaft-0"
+regulator_identity_evidence = "French ACPR public registry entry ID 225615 identifies this German Wiesbaden company and LEI; this is not BaFin underwriting authority or proof that a particular Berlin contract continued in 2026."
+unassigned_similarly_named_lei = "815600FA8F92119B8D12"
+unassigned_similarly_named_lei_source_url = "https://lei.bloomberg.com/leis/view/815600FA8F92119B8D12"
+unassigned_similarly_named_lei_reason = "Italian branch registration with Milan legal address and branch entity category. Not the German Wiesbaden legal-entity record and never a second independent German underwriting carrier."
+possible_successor_legal_name = ""
+successor_source_url = ""
+historical_change_effective_date = ""
+contracts_in_2026_independently_verified = false
+real_insured_buildings_observed = false
+co_insurance_fraction_verified = false
+
+[[source_carriers]]
+reported_label = "Allianz AG"
+resolution = "unresolved_issuer_short_name"
+resolved_lei = ""
+resolved_legal_name = ""
+resolved_jurisdiction = ""
+regulator_identity_source_url = ""
+regulator_identity_evidence = "Allianz AG in Senate source is not an unambiguous complete modern registered legal name. French ACPR names Allianz Versicherungs-Aktiengesellschaft, LEI 529900X5FHSYN4P5R285, but this does not prove it is the Senate's exact named obligor."
+unassigned_similarly_named_lei = "529900X5FHSYN4P5R285"
+unassigned_similarly_named_lei_source_url = "https://acpr.banque-france.fr/fr/fiche-detaillee/allianz-versicherungs-aktiengesellschaft"
+unassigned_similarly_named_lei_reason = "Candidate German property insurer LEI, NOT automatically assigned to short source label Allianz AG; Allianz SE is a distinct holding company and other Allianz companies exist."
+possible_successor_legal_name = ""
+successor_source_url = ""
+historical_change_effective_date = ""
+contracts_in_2026_independently_verified = false
+real_insured_buildings_observed = false
+co_insurance_fraction_verified = false
+
+[[source_carriers]]
+reported_label = "ERGO"
+resolution = "unresolved_brand_label"
+resolved_lei = ""
+resolved_legal_name = ""
+resolved_jurisdiction = ""
+regulator_identity_source_url = ""
+regulator_identity_evidence = "One-word brand label in the Senate answer; no specific underwriting company registration/LEI or company-to-customer contract counterparty verified."
+unassigned_similarly_named_lei = ""
+unassigned_similarly_named_lei_source_url = ""
+unassigned_similarly_named_lei_reason = ""
+possible_successor_legal_name = ""
+successor_source_url = ""
+historical_change_effective_date = ""
+contracts_in_2026_independently_verified = false
+real_insured_buildings_observed = false
+co_insurance_fraction_verified = false
+
+[[source_carriers]]
+reported_label = "Generali"
+resolution = "unresolved_brand_label"
+resolved_lei = ""
+resolved_legal_name = ""
+resolved_jurisdiction = ""
+regulator_identity_source_url = ""
+regulator_identity_evidence = "One-word brand label in the Senate answer; the regulator lists the distinct company Generali Deutschland Versicherung AG with LEI 5493007JO8UEQ68NG776, but this does not demonstrate the Berlin contract's exact legal obligor."
+unassigned_similarly_named_lei = "5493007JO8UEQ68NG776"
+unassigned_similarly_named_lei_source_url = "https://acpr.banque-france.fr/fr/fiche-detaillee/generali-deutschland-versicherung-ag-0"
+unassigned_similarly_named_lei_reason = "Plausible insurer identity candidate, not a Senate-verified carrier/legal-entity mapping; not a group-level or property-specific contract observation."
+possible_successor_legal_name = ""
+successor_source_url = ""
+historical_change_effective_date = ""
+contracts_in_2026_independently_verified = false
+real_insured_buildings_observed = false
+co_insurance_fraction_verified = false
+
+[[source_carriers]]
+reported_label = "Westfälische Provinzial Versicherung AG"
+resolution = "historical_merged_entity_label"
+resolved_lei = ""
+resolved_legal_name = ""
+resolved_jurisdiction = ""
+regulator_identity_source_url = ""
+regulator_identity_evidence = "The 2025 Senate text uses a legacy legal company name after an officially documented 2021 merger. Do not silently treat the legacy name as an active independent insurer, or infer the 2025 HOWOGE policy's legal obligor."
+unassigned_similarly_named_lei = ""
+unassigned_similarly_named_lei_source_url = ""
+unassigned_similarly_named_lei_reason = ""
+possible_successor_legal_name = "Provinzial Versicherung AG"
+successor_source_url = "https://www.fma.gv.at/bestanduebertragung-von-der-westfaelische-provinzial-versicherung-aktiengesellschaft-auf-die-provinzial-versicherung-ag-ehemals-provinzial-rheinland-versicherung-ag/"
+historical_change_effective_date = "2021-01-01"
+contracts_in_2026_independently_verified = false
+real_insured_buildings_observed = false
+co_insurance_fraction_verified = false
