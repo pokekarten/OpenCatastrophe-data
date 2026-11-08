@@ -158,6 +158,7 @@ def summarize_scores(scores: dict[str, dict], *, exact_original: bool = True) ->
         "intersection_over_union_maximum": vals[-1],
         "count_iou_at_least_0_95": sum(v >= MANUAL_REVIEW_IOU_THRESHOLD for v in vals),
         "count_manual_review_iou_below_0_95": len(low),
+        "manual_review_AGS_source_keys": low,
         "worst_ags": worst,
         "worst_iou": scores[worst]["iou"],
         "source_identity_exceptions_focus": highlights,
@@ -311,6 +312,7 @@ def inspect_original_geometry(
         "previous_all_surfaces_baseline": {
             "count_iou_at_least_0_95": all_summary["count_iou_at_least_0_95"],
             "count_manual_review_iou_below_0_95": all_summary["count_manual_review_iou_below_0_95"],
+            "manual_review_AGS_source_keys": all_summary["manual_review_AGS_source_keys"],
             "intersection_over_union_median": all_summary["intersection_over_union_median"],
             "intersection_over_union_minimum": all_summary["intersection_over_union_minimum"],
         },
