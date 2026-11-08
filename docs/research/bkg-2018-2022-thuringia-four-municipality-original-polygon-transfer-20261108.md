@@ -113,8 +113,10 @@ under **Datenlizenz Deutschland – Namensnennung 2.0**:
 https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-250-000-stand-31-12-vg250-31-12.html .
 
 **Attribution if reproduced, distributed or displayed:**
-© BKG (2018 and 2022), dl-de/by-2-0;
+© BKG (2018 und 2022) dl-de/by-2-0 (Daten verändert);
 https://www.bkg.bund.de and https://www.govdata.de/dl-de/by-2-0 ;
+use the BKG-specific changes label as directed at
+https://gdz.bkg.bund.de/index.php/default/hinweise-zu-nutzungsbedingungen-und-quellenvermerken/ .
 data providers see the product's original Quellenvermerk.
 The exact BKG 2018/2022 edition, relevant upstream data providers and
 change notices must be preserved in any independent BKG-only product.
