@@ -1,0 +1,319 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Research-only exact receipt for public HU22 physical source -> fictional OED.
+schema_version = "RVA_NRW_HU22_2025_10K_53KREIS_ORIGINAL_GEO_RESEARCH_V0"
+review_date = "2026-11-05"
+original_data_publisher = "Geobasis NRW"
+original_data_license = "Datenlizenz Deutschland - Zero - Version 2.0"
+original_license_page = "https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/"
+source_full_original_url = "https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/2022_hu_EPSG4647_Shape.zip"
+source_original_crs = "EPSG:4647"
+fictional_oed_output_crs = "EPSG:4326"
+full_original_source_zip_bytes = 901092946
+full_original_source_zip_sha256 = "10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da"
+original_four_member_CRCs_verified = true
+source_full_original_features_scanned = 11232755
+selected_original_physical_candidate_count = 10000
+distinct_NRW_Kreis_2022 = 53
+fictional_2025_OED_contracts = 10000
+fictional_sample_tiv_eur = 4826029500
+fictional_sample_tiv_is_real_RV_insurance = false
+2022_physical_source_is_2025_insurer_portfolio = false
+real_RV_policy_geocodes_or_county_shares_observed = false
+selected_GFK_residential_function_proves_real_residential_occupancy = false
+2022_original_GFK_codebook_exact_vintage_reconciled = false
+original_full_ZIP_independently_redownloaded_outside_GitHub = false
+original_provider_ZIP_committed_or_redistributed = false
+OED_5_0_8_schema_check_in_workflow = true
+source_original_per_building_roof_build_year_observed = false
+original_source_SHA_verified_by_GitHub_one_shot = true
+independent_artifact_ZIP_CSV_SHA_recheck_completed = true
+NEON_prod_import_performed = false
+NEON_test_branch_stores_only_53_county_aggregates = true
+native_German_CAT_GUL_IL_RI_OEP_AEP_verified = false
+science_CAT_model_input_admitted = false
+original_workflow_run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42097472463"
+original_workflow_head_sha = "80d1a0fff82cd08ab1ee01ea35e66cf5e801119b"
+original_oed_artifact_id = 13447603258
+original_oed_artifact_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42097472463/artifacts/13447603258"
+original_oed_artifact_zip_sha256 = "5b0055ce71314f7d7baf4f67008cd4abba3df28a4bce0690bbe9521a3cc35757"
+oed_manifest_json_sha256 = "b4713a9a09a55193d39b64550bc1408ba588303d8a4e658f05536b3dbe14b416"
+oed_location_csv_sha256 = "c3ebcba4ab7279e4275cbb867c20271109935d0e8ba1063dbf67231a2547df3c"
+oed_account_csv_sha256 = "fe5f7fc20bc2fbd4001c79a169d7cac5a925f71b83059737c29632658c9e20a0"
+physical_candidate_evidence_csv_sha256 = "360ed86bd5ebda1346132951755ba8507c5eac97a7716b8b2e7291f8d41df207"
+sample_location_unique_ids_verified = true
+sample_account_unique_ids_verified = true
+sample_physical_source_OI_sha_unique_verified = true
+sample_source_OI_raw_ids_stored_in_receipt = false
+sample_latitude_min = 50.3640454
+sample_latitude_max = 52.4478738
+sample_longitude_min = 5.8978614
+sample_longitude_max = 9.4096531
+sample_csv_manifest_SHA_receipts_conserved = true
+sample_counties_one_to_one_with_original_Kreis_weights = true
+sample_source_research_only = true
+
+[[kreis]]
+ags = "05111"
+fictional_contracts = 185
+fictional_tiv_eur = 92884500
+
+[[kreis]]
+ags = "05112"
+fictional_contracts = 205
+fictional_tiv_eur = 101220750
+
+[[kreis]]
+ags = "05113"
+fictional_contracts = 226
+fictional_tiv_eur = 109130625
+
+[[kreis]]
+ags = "05114"
+fictional_contracts = 117
+fictional_tiv_eur = 55606500
+
+[[kreis]]
+ags = "05116"
+fictional_contracts = 142
+fictional_tiv_eur = 67405500
+
+[[kreis]]
+ags = "05117"
+fictional_contracts = 79
+fictional_tiv_eur = 37510875
+
+[[kreis]]
+ags = "05119"
+fictional_contracts = 97
+fictional_tiv_eur = 52506000
+
+[[kreis]]
+ags = "05120"
+fictional_contracts = 52
+fictional_tiv_eur = 26133750
+
+[[kreis]]
+ags = "05122"
+fictional_contracts = 83
+fictional_tiv_eur = 45099000
+
+[[kreis]]
+ags = "05124"
+fictional_contracts = 138
+fictional_tiv_eur = 65847375
+
+[[kreis]]
+ags = "05154"
+fictional_contracts = 241
+fictional_tiv_eur = 115018875
+
+[[kreis]]
+ags = "05158"
+fictional_contracts = 248
+fictional_tiv_eur = 120524625
+
+[[kreis]]
+ags = "05162"
+fictional_contracts = 275
+fictional_tiv_eur = 132349500
+
+[[kreis]]
+ags = "05166"
+fictional_contracts = 217
+fictional_tiv_eur = 104153625
+
+[[kreis]]
+ags = "05170"
+fictional_contracts = 293
+fictional_tiv_eur = 143683875
+
+[[kreis]]
+ags = "05314"
+fictional_contracts = 143
+fictional_tiv_eur = 73444500
+
+[[kreis]]
+ags = "05315"
+fictional_contracts = 353
+fictional_tiv_eur = 174494250
+
+[[kreis]]
+ags = "05316"
+fictional_contracts = 77
+fictional_tiv_eur = 34192125
+
+[[kreis]]
+ags = "05334"
+fictional_contracts = 313
+fictional_tiv_eur = 150845625
+
+[[kreis]]
+ags = "05358"
+fictional_contracts = 197
+fictional_tiv_eur = 99380250
+
+[[kreis]]
+ags = "05362"
+fictional_contracts = 307
+fictional_tiv_eur = 140512500
+
+[[kreis]]
+ags = "05366"
+fictional_contracts = 162
+fictional_tiv_eur = 74072250
+
+[[kreis]]
+ags = "05370"
+fictional_contracts = 213
+fictional_tiv_eur = 102984750
+
+[[kreis]]
+ags = "05374"
+fictional_contracts = 192
+fictional_tiv_eur = 90501750
+
+[[kreis]]
+ags = "05378"
+fictional_contracts = 187
+fictional_tiv_eur = 87214500
+
+[[kreis]]
+ags = "05382"
+fictional_contracts = 424
+fictional_tiv_eur = 198514125
+
+[[kreis]]
+ags = "05512"
+fictional_contracts = 61
+fictional_tiv_eur = 34288875
+
+[[kreis]]
+ags = "05513"
+fictional_contracts = 99
+fictional_tiv_eur = 52561125
+
+[[kreis]]
+ags = "05515"
+fictional_contracts = 142
+fictional_tiv_eur = 76605750
+
+[[kreis]]
+ags = "05554"
+fictional_contracts = 268
+fictional_tiv_eur = 117115875
+
+[[kreis]]
+ags = "05558"
+fictional_contracts = 159
+fictional_tiv_eur = 67692375
+
+[[kreis]]
+ags = "05562"
+fictional_contracts = 348
+fictional_tiv_eur = 166096125
+
+[[kreis]]
+ags = "05566"
+fictional_contracts = 322
+fictional_tiv_eur = 146227500
+
+[[kreis]]
+ags = "05570"
+fictional_contracts = 192
+fictional_tiv_eur = 88887375
+
+[[kreis]]
+ags = "05711"
+fictional_contracts = 158
+fictional_tiv_eur = 79711875
+
+[[kreis]]
+ags = "05754"
+fictional_contracts = 232
+fictional_tiv_eur = 108396000
+
+[[kreis]]
+ags = "05758"
+fictional_contracts = 170
+fictional_tiv_eur = 86716125
+
+[[kreis]]
+ags = "05762"
+fictional_contracts = 106
+fictional_tiv_eur = 58761000
+
+[[kreis]]
+ags = "05766"
+fictional_contracts = 235
+fictional_tiv_eur = 108837000
+
+[[kreis]]
+ags = "05770"
+fictional_contracts = 216
+fictional_tiv_eur = 112494375
+
+[[kreis]]
+ags = "05774"
+fictional_contracts = 188
+fictional_tiv_eur = 88160625
+
+[[kreis]]
+ags = "05911"
+fictional_contracts = 147
+fictional_tiv_eur = 65457000
+
+[[kreis]]
+ags = "05913"
+fictional_contracts = 241
+fictional_tiv_eur = 120695625
+
+[[kreis]]
+ags = "05914"
+fictional_contracts = 76
+fictional_tiv_eur = 36999000
+
+[[kreis]]
+ags = "05915"
+fictional_contracts = 99
+fictional_tiv_eur = 45155250
+
+[[kreis]]
+ags = "05916"
+fictional_contracts = 61
+fictional_tiv_eur = 31880250
+
+[[kreis]]
+ags = "05954"
+fictional_contracts = 164
+fictional_tiv_eur = 82911375
+
+[[kreis]]
+ags = "05958"
+fictional_contracts = 185
+fictional_tiv_eur = 95747625
+
+[[kreis]]
+ags = "05962"
+fictional_contracts = 237
+fictional_tiv_eur = 115250625
+
+[[kreis]]
+ags = "05966"
+fictional_contracts = 93
+fictional_tiv_eur = 46023750
+
+[[kreis]]
+ags = "05970"
+fictional_contracts = 191
+fictional_tiv_eur = 96501375
+
+[[kreis]]
+ags = "05974"
+fictional_contracts = 208
+fictional_tiv_eur = 89546625
+
+[[kreis]]
+ags = "05978"
+fictional_contracts = 236
+fictional_tiv_eur = 112077000
