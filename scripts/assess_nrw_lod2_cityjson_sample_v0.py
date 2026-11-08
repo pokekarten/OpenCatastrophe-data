@@ -89,10 +89,13 @@ def assess(
             and -180 <= bbox[0] < bbox[2] <= 180
             and -90 <= bbox[1] < bbox[3] <= 90):
         raise SampleError("invalid study-area bbox")
-    if not isinstance(source_url, str) or not source_url.startswith(
+    expected_url = (
         "https://ogc-api.nrw.de/3dg/v1/collections/building/items?"
-    ):
-        raise SampleError("unexpected source URL")
+        "f=cityjson&limit=5&bbox="
+        + ",".join(f"{value:.4f}" for value in bbox)
+    )
+    if source_url != expected_url:
+        raise SampleError("source URL must match exact declared bbox and format")
     if not isinstance(raw, bytes) or not 0 < len(raw) <= MAX_BYTES:
         raise SampleError("empty, non-bytes or oversized provider response")
     if media_type.split(";", 1)[0].strip().lower() != "application/city+json":
