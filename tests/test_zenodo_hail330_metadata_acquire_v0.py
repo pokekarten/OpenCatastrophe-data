@@ -39,7 +39,8 @@ class TestZenodoMetadataAcquisition(unittest.TestCase):
         _check_url("https://zenodo.org/records/17860440/files/metadata.csv?download=1")
         for url in (
             "http://zenodo.org/f", "https://evil.com/f", "https://zenodo.org.evil.com/f",
-            "https://zenodo.org:444/f", "https://user:pass@zenodo.org/f", "file:///etc/passwd",
+            "https://zenodo.org:444/f", "https://user:pass@zenodo.org/f",
+            "ftp://zenodo.org/f", "data:text/plain,not-authorized",
         ):
             with self.subTest(url=url), self.assertRaises(AcquisitionError):
                 _check_url(url)
