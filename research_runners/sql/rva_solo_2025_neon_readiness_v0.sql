@@ -222,6 +222,17 @@ nrw_complete_10k AS (
      AND sum(c.n)=10000
      AND sum(c.unique_ids)=10000
      AND sum(c.unique_points)=10000
+     -- Each Kreis has a distinct roster, but local uniqueness alone cannot
+     -- reject the SAME location/policy ID repeated in two different Kreise.
+     -- Require exact global identity of all 10,000 version-owned rows.
+     AND (SELECT count(*) FROM exposure.exposure_unit AS all_u
+          WHERE all_u.portfolio_version_id=c.portfolio_version_id)=10000
+     AND (SELECT count(DISTINCT all_u.external_unit_id)
+          FROM exposure.exposure_unit AS all_u
+          WHERE all_u.portfolio_version_id=c.portfolio_version_id)=10000
+     AND (SELECT count(DISTINCT ST_AsBinary(all_u.location))
+          FROM exposure.exposure_unit AS all_u
+          WHERE all_u.portfolio_version_id=c.portfolio_version_id)=10000
      AND sum(c.admitted)=10000
      AND sum(c.tiv)=4826029500::numeric
      AND count(*) FILTER (WHERE e.ags IS NOT NULL AND c.n=e.n AND c.tiv=e.tiv)=53
