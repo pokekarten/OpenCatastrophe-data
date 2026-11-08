@@ -161,20 +161,17 @@ def inspect_original_xml(capabilities: bytes, schema: bytes, hits: bytes) -> dic
     }
 
 
-class _SameHostRedirect(urllib.request.HTTPRedirectHandler):
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        parsed = urllib.parse.urlsplit(newurl)
-        original = urllib.parse.urlsplit(PROVIDER_URL)
-        if (parsed.scheme != "https" or parsed.netloc != original.netloc
-                or parsed.path != original.path):
-            raise ProviderMetadataError("off-provider or unexpected redirect refused")
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
+        # Even a same-origin redirect could silently remove RESULTTYPE=hits
+        # or change the requested feature type. Never follow redirects.
+        raise ProviderMetadataError("provider metadata redirect refused")
 
 
 def _fetch_bounded(url: str) -> bytes:
     if url not in provider_requests().values():
         raise ProviderMetadataError("unapproved metadata URL")
-    opener = urllib.request.build_opener(_SameHostRedirect())
+    opener = urllib.request.build_opener(_NoRedirect())
     request = urllib.request.Request(
         url, headers={"Accept": "application/xml, text/xml"}, method="GET")
     try:
