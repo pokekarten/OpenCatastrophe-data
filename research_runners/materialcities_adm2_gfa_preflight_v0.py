@@ -98,8 +98,9 @@ def inspect_archive(blob: bytes, *, expected_md5: str = PUBLISHER_MD5,
             selected_rows = 0
             mismatches = 0
             seen_regions: set[str] = set()
-            totals = {field: [] for field in GFA_FIELDS}
-            gfa_totals = []
+            # Bounded-memory accumulation; do not retain external source rows.
+            totals = {field: 0.0 for field in GFA_FIELDS}
+            gfa_sum = 0.0
             for info in members:
                 with archive.open(info) as binary:
                     with io.TextIOWrapper(binary, encoding="utf-8-sig", newline="") as stream:
@@ -136,9 +137,9 @@ def inspect_archive(blob: bytes, *, expected_md5: str = PUBLISHER_MD5,
                             component_sum = math.fsum(components)
                             if not math.isclose(total, component_sum, rel_tol=0.0001, abs_tol=1.0):
                                 mismatches += 1
-                            gfa_totals.append(total)
+                            gfa_sum += total
                             for field, value in zip(GFA_FIELDS, components):
-                                totals[field].append(value)
+                                totals[field] += value
                             selected_rows += 1
                             file_regions += 1
                         csv_files.append({"member": info.filename, "adm2_rows": file_regions})
@@ -146,8 +147,7 @@ def inspect_archive(blob: bytes, *, expected_md5: str = PUBLISHER_MD5,
         raise MaterialCitiesPreflightError("unreadable original ZIP or CSV") from exc
     if selected_rows == 0:
         raise MaterialCitiesPreflightError("no ADM2 records meet the source scope")
-    gfa_sum = math.fsum(gfa_totals)
-    breakdown = {field: math.fsum(values) for field, values in totals.items()}
+    breakdown = totals
     return {
         "source_candidate_id": SOURCE_ID,
         "publisher_record": SOURCE_URL,
