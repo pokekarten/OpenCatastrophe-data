@@ -46,6 +46,8 @@ Both Form A headers independently contain a specific row 3 key declaration: \`A3
 
 The paper reports measured/reconstructed floodwater depth at **247 out of 256** buildings; the current structural preflight does **not** independently validate numeric water-depth accuracy, asset valuation, denominator TIV, engineering cost, damage ratios, or damaged-vs-undamaged site selection. Do not claim otherwise.
 
+A separate metadata-only Form A probe found a column labelled **`Water surface elevation`** in both sectors (`AZ` for industrial, `AH` for residential), but it is **not an immediately usable numeric flood-depth target**: a basic numeric parsing attempt yielded numeric values for only 76 of 133 industrial records and 102 of 123 residential records, with the remainder carrying non-numeric content. These counts are solely a **typing/cleaning warning**, not a claim about whether any particular water depth exists or is missing. Do **not** equate this ambiguous field to the article's 247 depth-observation claim or use it as a modeled water-depth/TIV ratio without the source dictionary's unit, datatype and missing-code semantics. No original field values were logged.
+
 ## Reproduction: non-mutating original ZIP source check
 
 Source code: [\`research_runners/marche_2022_survey_original_preflight_v0.py\`](../../research_runners/marche_2022_survey_original_preflight_v0.py).
