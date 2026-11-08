@@ -26,7 +26,7 @@ def scan(raw, *, rows=2, columns=None, size=None, sha=None):
         expected_bytes=len(raw) if size is None else size,
         expected_sha256=hashlib.sha256(raw).hexdigest() if sha is None else sha,
         expected_rows=rows,
-        expected_columns=columns or ["stcofips", "hazard", "eal_total"],
+        expected_columns=["stcofips", "hazard", "eal_total"] if columns is None else columns,
     )
 
 
