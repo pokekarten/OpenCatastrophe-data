@@ -86,7 +86,9 @@ def polygon_transfer_summary(
         raise BKGTransferError("non-finite or nonnumeric official area")
     if any(v <= 0 for v in (former_area_m2, recipient_new_area_m2, donor_lost_area_m2)):
         raise BKGTransferError("empty original BKG geometry or no transfer region")
-    if any(v < 0 for v in vals[2::2]):
+    if any(v < 0 for v in (former_intersection_recipient_new_m2,
+                            former_intersection_donor_lost_m2,
+                            former_intersection_recipient_2022_m2)):
         raise BKGTransferError("negative original source intersection")
     checks = (
         (former_intersection_recipient_new_m2, former_area_m2),
