@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission source discovery for the official NRW LoD2 3D-building OGC API Features product, differentiated from restricted nationwide LoD2-DE and from NRW bulk CityGML delivery. Research-only technical access and source-vintage assessment for an explicitly fictional German exposure pilot.",
+  "review_date": "2026-11-08",
+  "entries": [
+    {
+      "candidate_id": "de.nrw.geobasis-lod2-ogc-features.2026",
+      "name": "North Rhine-Westphalia official LoD2 3D buildings OGC API Features (2026)",
+      "provider": "Geobasis NRW / Bezirksregierung Köln",
+      "categories": [
+        "buildings",
+        "building_geometry",
+        "roof_geometry",
+        "3d_city_models",
+        "germany",
+        "exposure",
+        "ogc_api"
+      ],
+      "spatial_scope": "North Rhine-Westphalia, Germany; coverage and geometry at exact API feature/query level still require a bounded source probe",
+      "temporal_scope": "Official OGC API Features metadata revision 2026-09-08; LoD2 source metadata references ALS and DGM1 2019-2025, ALKIS building footprints dated 2025-07-01, and ATKIS geometry dated 2025-10-01. Not a 2021 or any other historical event-year snapshot.",
+      "resolution_or_granularity": "Individual modelled buildings and structures with standardized LoD2 roof forms; official OGC API Features delivery lists CityJSON, CityGML, glTF and 3D Tiles. Separate bulk CityGML downloads exist; format/field support and entity counts for any selected collection require live schema inspection.",
+      "potential_roles": [
+        "fictional_nrwestphalia_building_geometry_pilot",
+        "building_roof_and_height_exposure_prior",
+        "source_vintage_geometry_validation",
+        "county_to_building_spatial_support_research"
+      ],
+      "authoritative_url": "https://www.govdata.de/suche/daten/3d-gebaudemodell-nw-lod28b9df",
+      "access_class_hint": "Publisher metadata: public OGC API Features https://ogc-api.nrw.de/3dg/v1 with no dataset access restrictions, source licence Datenlizenz Deutschland Zero 2.0; exact live API query behavior, rate/automation policy and selected asset identity not yet reviewed",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Provider/AdV catalogue describes OGC API Features and data origin; original CityGML and SLPK are separate delivery products. See official metadata https://www.distributions.informationgrid.eu/trefferanzeige?docuuid=bde30228-a718-45a8-9518-1e17e47c0187. Before any acquisition, pin exact collection, request, response version, CRS, feature identifiers, authoritative terms and any API-service conditions, then sample a very small original feature window outside Git with SHA-256 evidence. Roof geometry or ALKIS location does not identify an R+V-insured building, construction quality, 2021 event-time exposure, replacement cost, contract terms, damage or loss. Do not equate a fictional NRW policy cohort with actual NRW insurer locations or publish data bytes merely because publisher metadata cites DL-DE/Zero-2.0."
+    }
+  ]
+}
