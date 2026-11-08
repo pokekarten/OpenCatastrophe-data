@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission scientific source-lineage candidates for European hail modelled swaths, control/future simulations and restricted independent radar-based benchmarks.",
+  "review_date": "2026-11-08",
+  "entries": [
+    {
+      "candidate_id": "ethz.brennan.hail-swaths.v2025",
+      "name": "European model-derived hailstorm swaths and storm tracks for present and +3 K climates",
+      "provider": "ETH Zurich / Killian Brennan, Iris Thurnherr, Michael Sprenger and Heini Wernli",
+      "categories": [
+        "hail",
+        "synthetic_hazard",
+        "event_footprints",
+        "climate_scenarios"
+      ],
+      "spatial_scope": "Europe covered by 2.2 km regional COSMO simulations; spatial domain and exact mask to confirm",
+      "temporal_scope": "Present-day 2011-2021 forcing and future +3 K pseudo-global-warming case; research publication 2025",
+      "resolution_or_granularity": "39,594 present-climate and 37,746 future-climate modelled hail swaths; compressed linked release approximately 0.7 GB; per-storm HAILCAST maximum hail sizes and tracks",
+      "potential_roles": [
+        "hail_hazard_footprint_resampling",
+        "hail_event_family_analysis",
+        "climate_scenario_comparison"
+      ],
+      "authoritative_url": "https://doi.org/10.3929/ethz-b-000745185",
+      "access_class_hint": "public_research_archive_exact_asset_rights_checksum_and_format_not_yet_reviewed",
+      "note": "Brennan et al. (2025), NHESS 25, 3693-3720, DOI 10.5194/nhess-25-3693-2025; tracking code DOI 10.5281/zenodo.12685276. NOT historical measured hail, insurer damage, an IID storm population, or 39,594 independently simulated years. Child tracks depend on the same COSMO simulations as ETH 701925 and 747355 below: not independent model validation. Check exact asset files, stated rights, model calendar, storm/year grouping, masks, climatological frequency, CRS, units and geographic coverage before model use.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "ethz.thurnherr.cosmo-hail.2011-2021",
+      "name": "COSMO 2.2 km hail and lightning present-day simulation selected fields",
+      "provider": "ETH Zurich / Iris Thurnherr, Ruoyi Cui, Patricio Velasquez and Christoph Schär",
+      "categories": [
+        "hail",
+        "synthetic_hazard",
+        "weather_simulation",
+        "lightning"
+      ],
+      "spatial_scope": "Western to central Europe, rotated model grid; paper describes broader European analysis",
+      "temporal_scope": "2011-2021 historical forcing from ERA5; linked Cui et al. 2025 publication",
+      "resolution_or_granularity": "Selected high-frequency COSMO v6 + CAM-HAILCAST output; simulated maximum hail diameter every 5 min, hourly fields including LPI, rainfall, thermodynamic diagnostics",
+      "potential_roles": [
+        "hail_hazard_intensity_research",
+        "multi_peril_hail_rain_correlation",
+        "hail_model_sensitivity"
+      ],
+      "authoritative_url": "https://doi.org/10.3929/ethz-b-000701925",
+      "access_class_hint": "eth_research_collection_data_published_license_file_list_and_original_bytes_not_yet_audited",
+      "note": "Cui et al. (2025) DOI 10.1029/2024JD042828. Model output (not observed ground hail), driven by ERA5. Spurious hail activation needs published post-processing; LPI is lightning potential, not uncalibrated stroke counts. ETH EURADHAIL DOI 10.3929/ethz-b-000701924 is a separate OPERA-derived observational proxy used for evaluation, not independent of itself. These selected fields are parent data for Brennan modelled swaths, never count the two as separate independent event populations.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "ethz.thurnherr.cosmo-hail.2085-2095",
+      "name": "COSMO +3 °C pseudo-global-warming European hail simulation selected fields",
+      "provider": "ETH Zurich / Iris Thurnherr, Ruoyi Cui, Patricio Velasquez and Christoph Schär",
+      "categories": [
+        "hail",
+        "synthetic_hazard",
+        "climate_scenario"
+      ],
+      "spatial_scope": "Western and central Europe under the 2.2 km COSMO simulation grid",
+      "temporal_scope": "2085-2095 model years, constructed via +3 °C pseudo-global-warming delta applied to ERA5 2011-2021 forcing",
+      "resolution_or_granularity": "Selected 5-minute and hourly COSMO model output including maximum hail diameter, precipitation, LPI and meteorological predictors",
+      "potential_roles": [
+        "scenario_hail_footprint_stress_test",
+        "climate_sensitivity",
+        "cross_peril_scenario_dependence"
+      ],
+      "authoritative_url": "https://doi.org/10.3929/ethz-b-000747355",
+      "access_class_hint": "eth_research_collection_data_published_license_file_list_and_original_bytes_not_yet_audited",
+      "note": "Thurnherr et al. (2025), DOI 10.1029/2025GL114811. Scenario is not a directly observed future forecast nor baseline annual event rate. Same physics/model lineage as 2011-2021 control and Brennan swaths. Preserve time, region, climate scenario and simulation ensembles; do not mix current and future event populations for return-period calibration.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "kit.fluck.hail-tracks.2005-2014",
+      "name": "Observed-radar-derived hailstorm tracks for Germany France Belgium and Luxembourg",
+      "provider": "Karlsruhe Institute of Technology / Elody Fluck and Michael Kunz",
+      "categories": [
+        "hail",
+        "radar",
+        "historical_events",
+        "validation"
+      ],
+      "spatial_scope": "Germany, France, Belgium and Luxembourg; not all Europe",
+      "temporal_scope": "Summer half-years April-September 2005-2014",
+      "resolution_or_granularity": "2D weather radar and lightning composite, 1 km hail potential, convective cell tracks; derived tracks available upon author request",
+      "potential_roles": [
+        "independent_hail_frequency_benchmark",
+        "historical_hail_track_validation"
+      ],
+      "authoritative_url": "https://doi.org/10.5194/nhess-21-683-2021",
+      "access_class_hint": "paper_open_cc_by_data_tracks_on_request_rights_and_access_unknown",
+      "note": "Fluck et al. (2021) explicitly say track series require contacting Michael Kunz and French radar composites Météo-France. Open paper under CC BY 4.0 does not license unpublished tracks or original French radar data. German DWD radar upstream available via DWD separately. No source bytes acquired, no commercial-use permission, no insurer claims. Verify acquisition, rights and independence before calibration.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    }
+  ]
+}
