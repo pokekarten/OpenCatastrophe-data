@@ -73,6 +73,16 @@ class CFDIDHierarchyTests(unittest.TestCase):
             with self.subTest(case=case), self.assertRaises(PreflightError):
                 audit_csv_text(HEADER + case)
 
+    def test_explicit_zero_dates_never_equal_missing_values(self) -> None:
+        # 0 is an observed invalid date value, not an omitted calendar part.
+        for change in (
+            {"day": "0"},
+            {"end_year": "2011", "end_month": "6", "end_day": "0"},
+            {"end_year": "2011", "end_month": "0"},
+        ):
+            with self.subTest(change=change), self.assertRaises(PreflightError):
+                audit_csv_text(HEADER + line("L1", "2011-043", "1", **change))
+
     def test_partial_end_date_allowed_when_valid(self) -> None:
         out = audit_csv_text(HEADER + line("L1", "2011-043", "1", end_year="2011", end_month="6"))
         self.assertEqual(out["rows"], 1)
