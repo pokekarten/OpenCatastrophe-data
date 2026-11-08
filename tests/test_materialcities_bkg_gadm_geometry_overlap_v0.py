@@ -75,6 +75,7 @@ class SourceGeometryResearchGateTests(unittest.TestCase):
         r = summarize_scores(example_scores(), exact_original=False)
         self.assertEqual(r["unique_2022_ags_with_geometry_compared"], 5)
         self.assertEqual(r["count_manual_review_iou_below_0_95"], 1)
+        self.assertEqual(r["manual_review_AGS_source_keys"], ["16054"])
         self.assertEqual(r["count_iou_at_least_0_95"], 4)
         self.assertEqual(r["worst_ags"], "16054")
         self.assertIn("03159", r["source_identity_exceptions_focus"])
