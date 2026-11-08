@@ -13,6 +13,9 @@ from research_runners.materialcities_bkg_gadm_geometry_overlap_v0 import (
     summarize_scores,
     validate_bkg_geofactors,
     compare_land_water_scores,
+    audit_manual_case_inventory,
+    directed_neighbor_support,
+    ORIGINAL_GF4_REVIEW_AGS,
 )
 
 
@@ -175,6 +178,122 @@ class BKGExactLandMarineSemanticsTests(unittest.TestCase):
         all_surfaces = {"01001": {"iou": 0.5}}
         with self.assertRaisesRegex(GeometryOverlapError, "invalid land/water"):
             compare_land_water_scores(land, all_surfaces)
+
+
+class NineOriginalSourceCaseReviews(unittest.TestCase):
+    def _synthetic_two_counties(self):
+        land = {
+            "01054": overlap_metrics(100, 100, 90),
+            "16054": overlap_metrics(200, 160, 140),
+        }
+        all_shapes = {
+            "01054": overlap_metrics(130, 100, 97),
+            "16054": land["16054"],
+        }
+        gf = {"01054": [4, 2], "16054": [4]}
+        water = {"01054": 30.0}
+        return land, all_shapes, gf, water
+
+    def test_nine_original_ags_are_version_pinned(self):
+        self.assertEqual(ORIGINAL_GF4_REVIEW_AGS, (
+            "01054", "03405", "04012", "08335", "13003", "13075",
+            "16054", "16070", "16072"))
+
+    def test_only_manual_review_cases_and_rights_no_go(self):
+        land, all_shapes, gf, water = self._synthetic_two_counties()
+        result = audit_manual_case_inventory(
+            land, all_shapes, gf, water, exact_original=False)
+        self.assertEqual(result["review_case_count"], 2)
+        self.assertEqual(result["review_case_AGS"], ["01054", "16054"])
+        self.assertFalse(result["full_400_AGS_source_geometry_table_exported"])
+        self.assertTrue(result["scientific_vintage_and_rights_review_pending"])
+        coast = result["manual_review_case_diagnostics"]["01054"]
+        thuringia = result["manual_review_case_diagnostics"]["16054"]
+        self.assertEqual(coast["bkg_GF2_water_shape_count"], 1)
+        self.assertAlmostEqual(coast["bkg_GF2_water_area_km2"], 0.00003)
+        self.assertEqual(coast["research_bucket_not_a_causal_conclusion"],
+                         "coastal_boundary_or_water_semantics_unresolved")
+        self.assertEqual(thuringia["research_bucket_not_a_causal_conclusion"],
+                         "thuringia_2019_boundary_vintage_hypothesis")
+        self.assertTrue(coast["manual_review_required"])
+        self.assertFalse(coast["land_or_insurer_model_admission"])
+        self.assertFalse(thuringia["land_or_insurer_model_admission"])
+
+    def test_no_whole_400_region_geometry_table(self):
+        land, all_shapes, gf, water = self._synthetic_two_counties()
+        land["01001"] = overlap_metrics(100, 100, 100)
+        all_shapes["01001"] = land["01001"]
+        gf["01001"] = [4]
+        result = audit_manual_case_inventory(
+            land, all_shapes, gf, water, exact_original=False)
+        self.assertEqual(result["review_case_AGS"], ["01054", "16054"])
+        self.assertNotIn("01001", result["manual_review_case_diagnostics"])
+
+    def test_exact_source_nine_case_inventory_refuses_synthetic(self):
+        with self.assertRaisesRegex(GeometryOverlapError, "nine-case"):
+            audit_manual_case_inventory(*self._synthetic_two_counties())
+
+    def test_different_geo_source_keysets_refused(self):
+        land, all_shapes, gf, water = self._synthetic_two_counties()
+        gf.pop("16054")
+        with self.assertRaisesRegex(GeometryOverlapError, "cohorts"):
+            audit_manual_case_inventory(
+                land, all_shapes, gf, water, exact_original=False)
+
+    def test_GF2_marine_area_value_and_record_count_must_agree(self):
+        land, all_shapes, gf, water = self._synthetic_two_counties()
+        water["01054"] = 0.0
+        with self.assertRaisesRegex(GeometryOverlapError, "area/count mismatch"):
+            audit_manual_case_inventory(
+                land, all_shapes, gf, water, exact_original=False)
+
+    def test_invalid_GF2_source_record_and_wrong_marker(self):
+        land, all_shapes, gf, water = self._synthetic_two_counties()
+        gf["01054"] = [4, 3]
+        with self.assertRaisesRegex(GeometryOverlapError, "source record"):
+            audit_manual_case_inventory(
+                land, all_shapes, gf, water, exact_original=False)
+
+    def test_nonfinite_or_negative_GF2_area_rejected(self):
+        for value in (float("nan"), float("inf"), -1):
+            land, all_shapes, gf, water = self._synthetic_two_counties()
+            water["01054"] = value
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(GeometryOverlapError, "source-marine"):
+                    audit_manual_case_inventory(
+                        land, all_shapes, gf, water, exact_original=False)
+
+    def test_independent_thuringia_neighbor_overlap_fraction(self):
+        r = directed_neighbor_support(40_000_000.0, 38_000_000.0)
+        self.assertEqual(r["source_exclusive_area_km2"], 40.0)
+        self.assertEqual(r["other_source_neighbor_cover_km2"], 38.0)
+        self.assertAlmostEqual(r["neighbor_covers_source_exclusive_fraction"], .95)
+        for key in ("historical_vintage_transfer_proven",
+                    "municipality_geometry_identity_proven",
+                    "building_area_transfer_authorized"):
+            self.assertFalse(r[key])
+
+    def test_neighbor_fraction_never_accepts_impossible_support(self):
+        for a,b in ((0,0), (1,2), (-1,0), (1,-1),
+                    (float("nan"),0), (float("inf"),0)):
+            with self.subTest(a=a,b=b):
+                with self.assertRaisesRegex(GeometryOverlapError, "invalid source-exclusive"):
+                    directed_neighbor_support(a,b)
+
+    def test_original_nine_case_ids_cannot_be_replaced_silently(self):
+        land, all_shapes, gf, water = self._synthetic_two_counties()
+        for code in ORIGINAL_GF4_REVIEW_AGS:
+            if code in land:
+                continue
+            land[code] = overlap_metrics(100, 95, 90)
+            all_shapes[code] = overlap_metrics(100, 95, 90)
+            gf[code] = [4] if code.startswith("16") else [4,2]
+            if not code.startswith("16"):
+                water[code] = 10.0
+        result = audit_manual_case_inventory(
+            land, all_shapes, gf, water, exact_original=True)
+        self.assertEqual(result["review_case_AGS"], list(ORIGINAL_GF4_REVIEW_AGS))
+        self.assertEqual(result["review_case_count"], 9)
 
 
 if __name__ == "__main__":
