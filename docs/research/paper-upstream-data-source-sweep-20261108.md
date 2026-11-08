@@ -47,6 +47,24 @@ Five deduplicated research candidate records are now in [`landscape/sources-pape
 | *Global coastal wind hazard maps from CHAZ*, Scientific Data 2026, https://doi.org/10.1038/s41597-025-06452-0 | Dryad spatial exceedance return-period maps https://doi.org/10.5061/dryad.qfttdz0vz ; CHAZ open-source model https://github.com/cl3225/CHAZ ; raw original CHAZ track set is **not** in a permanent public release per paper. | Already registered as `global.chaz.tc-coastal-wind-exceedance-maps.2025`; no duplicate. Verify **dataset-level** Dryad license: upstream registry note reports CC0 while article describes CC BY 4.0, so commercial rights for each original file remain under review. Spatial EP map != frequency-preserving raw event set. |
 | Portmann et al. 2024, *Modelling crop hail damage footprints*, https://doi.org/10.5194/nhess-24-2541-2024 | Three linked originals: exposure https://doi.org/10.5281/zenodo.11064756 , observed crop damage grids https://doi.org/10.5281/zenodo.11064767 , hail hazard https://doi.org/10.5281/zenodo.11064781 , code https://doi.org/10.5281/zenodo.12784190 . | These linked assets are **already registered** and under separate research PR #1396. Preserve 12-event common parent identities; never treat crop damage versus its generating source as independent loss validations. |
 
+
+## Executable CFDID hierarchy preflight — synthetic-only verified
+
+- Module: [`research_runners/cfdid_hierarchy_preflight_v0.py`](../../research_runners/cfdid_hierarchy_preflight_v0.py).
+- Synthetic regression tests: [`tests/test_cfdid_hierarchy_preflight_v0.py`](../../tests/test_cfdid_hierarchy_preflight_v0.py), 8/8 passed in an isolated Python stdlib replay on 2026-11-08, with source root import. **This does not represent a run against original CFDID v1.1 bytes or GitHub CI.**
+- Guards: exact three-level original event ID shape (`YYYY-NNN[-NN[-NN]]`), unique IDs, parent row presence, required source CSV headings, finite nonnegative nominal CNY loss, missing observed loss != zero, **L1-only** aggregation, strict full-source counts 1391/300/25. It prints aggregates only.
+- Original-source gate: the CLI requires `--expected-sha256` for the exact independently acquired UTF-8 CSV. The hash has not been obtained here, so original execution remains **blocked**; it explicitly does not reach Zenodo itself or download third-party bytes.
+- Run synthetic regressions from the repository root: `python -m unittest discover -v -s tests -p 'test_cfdid_hierarchy_preflight_v0.py'`.
+- Run original source only **after** independently pinning the publisher's exact CSV bytes: `python research_runners/cfdid_hierarchy_preflight_v0.py --csv /path/outside/git/original.csv --expected-sha256 <verified-64-hex-hash>`. No original bytes or claims in Git. This only checks format/hierarchy, not full scientific, license, or financial suitability.
+
+## Newly discovered Swiss hail hazard research original (separate source family)
+
+- Published dataset [Aregger, Swiss Storm-Object Dataset v1](https://zenodo.org/records/18128983), 2026-01-02, **CC BY 4.0 stated for derived package**. One `radar_predictors.zip`, ~3.7 GB, publisher MD5 `d461e6dd7a606a1cd1933da49f774d3a`; no independent SHA-256/full ZIP integrity check performed.
+- Research article: [Hail Detection and Sizing for Storm Objects (2026)](https://journals.ametsoc.org/view/journals/aies/5/3/AIES-D-26-0001.1.xml). Reproduction code: https://github.com/MartinAregger/HailForest_publication .
+- **New non-admission canonical candidate**: [`landscape/sources-hail-stormobject-research-20261108.json`](../../landscape/sources-hail-stormobject-research-20261108.json) and [generated view](../../landscape/sources-hail-stormobject-research-20261108.md).
+- Training/validation role: 2020–2024 Swiss/50 km buffered tracked C-band convective cells, polarimetric radar-derived predictors and matched crowdsourced hail occurrence/size labels. Do not mistake crowdsourced size labels for exhaustive ground measurements; preserve event/day/storm-object grouping across splits to avoid leakage.
+- License boundary: raw MeteoSwiss radar and original crowd reports remain separate rights-protected upstream inputs; record-level CC BY 4.0 does not automatically grant commercial redistribution rights to those original feeds. Not insurer claims, insured losses, building vulnerability, full hail climatology, or insured event catalogues.
+
 ## Existing linked source families — do NOT re-register
 
 - USGS GFID: `landscape/sources-independent-event-impacts-2026.json` includes original contributed-file product and aggregated geocoded/deduplication products. It is derived partly from HANZE, DFO, EM-DAT and DesInventar. The 30-day/25-km possible-duplicate screen **does not prove same physical event**.
