@@ -67,6 +67,15 @@ The 402 German source ADM2 rows are valid **as source-row identities**,
 not geocoded buildings, policies, insured locations, carrier exposure or
 CAT loss model observations. The source is a modelled building stock.
 
+The original **German three-level internal reconciliation** was also tested
+from the exact same byte-pinned ZIP: one ADM0 record, 16 ADM1 records and
+402 ADM2 records, with the sum of all 15 GFA components approximately
+12,143,344,605.93 square metres at **each** level (rounding differences
+below 0.01 square metres). This proves arithmetic aggregation consistency
+within one published source snapshot only. It is **not independent evidence**
+that this is the real German built floor area, replacement value or insurer TIV.
+
+
 ## Running the corrected offline preflight
 
 After separately confirming lawful source access for your specific use,
