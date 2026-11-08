@@ -17,9 +17,14 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener
 
-from scripts.assess_nrw_lod2_cityjson_sample_v0 import (
-    MAX_BYTES, ROOF_FIELDS, SampleError, _NoRedirects, assess,
-)
+if __package__:
+    from .assess_nrw_lod2_cityjson_sample_v0 import (
+        MAX_BYTES, ROOF_FIELDS, SampleError, _NoRedirects, assess,
+    )
+else:
+    from assess_nrw_lod2_cityjson_sample_v0 import (
+        MAX_BYTES, ROOF_FIELDS, SampleError, _NoRedirects, assess,
+    )
 
 
 @dataclass(frozen=True)
