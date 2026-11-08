@@ -19,7 +19,7 @@ S1, S2, S3, S4 = (str(i)*40 for i in range(1, 5))
 
 def github():
     return [{"type": "file", "path": p, "sha": s}
-            for p, s in ((L, S1), (A, S2), (M, S3))]
+            for p, s in ((L, S1), (A, S2), (M, S3), ("manifests/provider.one.md", S4))]
 
 
 def record(path, sha):
@@ -77,11 +77,11 @@ class SourceRegistryTwoWayTests(unittest.TestCase):
 
     def test_duplicate_path_and_noncanonical_rejected(self):
         with self.assertRaises(ValueError):
-            compare(github() + [github()[-1]], neon())
+            compare(github() + [github()[2]], neon())
         with self.assertRaises(ValueError):
             compare(github(), neon() + [neon()[-1]])
         bad = deepcopy(github())
-        bad[-1]["path"] = "manifests/../bad.json"
+        bad[2]["path"] = "manifests/../bad.json"
         with self.assertRaises(ValueError):
             compare(bad, neon())
 
