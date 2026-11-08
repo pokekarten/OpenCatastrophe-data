@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+schema_version = "TED_WBM_2026_OFFICIAL_EFORMS_AWARDED_CONTRACT_GRAPH_RECEIPT_V0"
+publisher = "Publications Office of the European Union / TED"
+official_original_xml_url = "https://ted.europa.eu/en/notice/668506-2026/xml"
+notice_publication_number = "668506-2026"
+source_original_xml_sha256 = "7650720183d0c26430e0433858bf2e8b854ea68bb93fbf679e96ee696ee8fc78"
+source_original_xml_bytes = 21837
+source_recheck_observed_date = "2026-11-05"
+source_ci_workflow_run_id = 42091432185
+source_notice_type = "ContractAwardNotice"
+buyer_xml_organization_id = "ORG-0001"
+buyer_source_name = "WBM Wohnungsbaugesellschaft Berlin-Mitte mbH"
+all_awards_share_technical_lot_id = "LOT-0000"
+verified_contract_result_tender_role_edges_count = 3
+verified_distinct_settled_contracts_count = 3
+verified_distinct_winning_party_organizations_count = 3
+source_is_official_original_xml_immutable_sha_and_length_replayed = true
+winner_links_proved_from_settled_contract_not_search_index = true
+search_index_winner_name_only_is_insufficient_to_verify_a_winner = true
+original_xml_bytes_committed_or_redistributed = false
+real_insured_building_identifiers_or_coordinates_observed = false
+per_company_coinsurance_percentage_observed = false
+premium_policy_limit_deductible_or_reinstatement_tiv_observed = false
+current_signed_policy_coverage_and_effective_dates_verified = false
+real_carrier_location_CAT_exposure_admitted = false
+
+[[contract_awards]]
+lot_result_id = "RES-0001"
+lot_id = "LOT-0000"
+settled_contract_id = "CON-0001"
+winning_tender_id = "TEN-0001"
+winning_party_id = "TPA-0001"
+winning_organization_id = "ORG-9000"
+winning_organization_source_name = "HDI Global SE"
+
+[[contract_awards]]
+lot_result_id = "RES-0002"
+lot_id = "LOT-0000"
+settled_contract_id = "CON-0002"
+winning_tender_id = "TEN-0002"
+winning_party_id = "TPA-0002"
+winning_organization_id = "ORG-9001"
+winning_organization_source_name = "Helvetia Schweizerische Versicherungsgesellschaft AG"
+
+[[contract_awards]]
+lot_result_id = "RES-0003"
+lot_id = "LOT-0000"
+settled_contract_id = "CON-0003"
+winning_tender_id = "TEN-0003"
+winning_party_id = "TPA-0003"
+winning_organization_id = "ORG-9002"
+winning_organization_source_name = "R+V Allgemeine Versicherung AG"

@@ -1,0 +1,97 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: CLIMK original ERA5 to native Oasis hazard tile proof
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/climk-original-oasis-footprint-v0.yml"
+      - "research_runners/climk_era5_original_oasis_tile_v0.py"
+      - "tests/test_climk_era5_original_oasis_tile_v0.py"
+      - "docs/research/climk-original-oasis-hazard-tile-v0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: climk-original-oasis-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-source:
+    name: Exact Zenodo 6.8MB ERA5 source to native Oasis footprint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - name: Checkout clean research-only source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned original-source and Oasis CLI dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            "netCDF4==1.7.3" "oasislmf==2.5.8"
+          python -m pip check
+          command -v csvtobin
+
+      - name: Run fictional checks and hash-proof guard tests
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_climk_era5_original_oasis_tile_v0.py' -v
+
+      - name: Obtain exact original Zenodo ERA5 and convert single historical storm
+        run: |
+          python research_runners/climk_era5_original_oasis_tile_v0.py \
+            --fetch-original --storm-index 0 \
+            --row-start 90 --col-start 130 --height 2 --width 3 \
+            --out "$RUNNER_TEMP/climk-original-hazard-tile"
+
+      - name: Validate real-original hazard footprint with native Oasis converter
+        run: |
+          csvtobin footprint \
+            -i "$RUNNER_TEMP/climk-original-hazard-tile/footprint.csv" \
+            -o "$RUNNER_TEMP/climk-original-hazard-tile/footprint.bin" \
+            -x "$RUNNER_TEMP/climk-original-hazard-tile/footprint.idx" \
+            -m 9
+          test -s "$RUNNER_TEMP/climk-original-hazard-tile/footprint.bin"
+          test -s "$RUNNER_TEMP/climk-original-hazard-tile/footprint.idx"
+
+      - name: Produce exact original source and native footprint proof summary
+        if: success()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          base=Path(os.environ["RUNNER_TEMP"])/"climk-original-hazard-tile"
+          r=json.loads((base/"research_receipt.json").read_text())
+          assert r["original_sha256_verified"]=="92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102"
+          assert r["annual_oep_aep_authorized"] is False
+          assert r["native_oasis_full_model_run_verified"] is False
+          import hashlib
+          for name,ident in r["output_files"].items():
+              content=(base/name).read_bytes()
+              assert len(content)==ident["bytes"]
+              assert hashlib.sha256(content).hexdigest()==ident["sha256"]
+          lines=[
+              "## Exact original CLIMK ERA5 to native Oasis hazard-bin proof",
+              "",
+              "- Original provider: Zenodo v2 record 15305753, CC BY 4.0.",
+              f"- Original source SHA-256: `{r['original_sha256_verified']}`.",
+              f"- Source storm ID: {r['storm_index_zero_based']} (zero-based), original label: {r['original_storm_name']}.",
+              f"- Source gust tile: {r['valid_gust_cells']} valid; {r['unknown_weather_cells']} missing cells.",
+              "- Engine: native OasisLMF 2.5.8 csvtobin footprint binary and index success.",
+              "- No occurrence periods, calibrated annual event frequencies, vulnerability, financial losses or real insurer portfolio.",
+          ]
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as stream:
+              stream.write("\n".join(lines)+"\n")
+          PY
