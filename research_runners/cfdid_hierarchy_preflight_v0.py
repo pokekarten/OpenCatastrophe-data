@@ -7,8 +7,8 @@ The published CFDID v1.1 event IDs encode parent/sub-event relationships:
 YYYY-NNN, YYYY-NNN-NN, YYYY-NNN-NN-NN. For parent-level aggregate loss
 statistics use L1 rows only, never add L2/L3 rows to their parents.
 
-The original 2026 Zenodo bytes have *not* been independently SHA-256 pinned.
-Original-mode execution requires the operator's separately verified SHA-256.
+The original 2026 Zenodo CSV SHA-256 was pinned in a separate research receipt.
+Original-mode execution requires the operator's exact verified SHA-256.
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ import io
 import json
 import re
 import stat
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
@@ -31,6 +32,14 @@ ID_PATTERNS = {
 COLUMN_LEVEL = "Event level"
 COLUMN_ID = "Event ID"
 COLUMN_LOSS = "Direct economic losses (million CNY)"
+COLUMN_START_YEAR = "Start year"
+COLUMN_START_MONTH = "Start month"
+COLUMN_START_DAY = "Start day"
+COLUMN_END_YEAR = "End year"
+COLUMN_END_MONTH = "End month"
+COLUMN_END_DAY = "End day"
+DATE_COLUMNS = {COLUMN_START_YEAR, COLUMN_START_MONTH, COLUMN_START_DAY,
+                COLUMN_END_YEAR, COLUMN_END_MONTH, COLUMN_END_DAY}
 EXPECTED_ORIGINAL_COUNTS = {"L1": 1391, "L2": 300, "L3": 25}
 MAX_CSV_BYTES = 20 * 1024 * 1024
 
@@ -52,11 +61,60 @@ def _amount(text: str) -> Decimal | None:
     return value
 
 
+def _date_component(value: str, column: str, *, required: bool = False) -> int | None:
+    raw = value.strip()
+    if not raw:
+        if required:
+            raise PreflightError(f"Missing required {column}")
+        return None
+    if not re.fullmatch(r"[0-9]+", raw):
+        raise PreflightError(f"Invalid integer {column}")
+    return int(raw)
+
+
+def _calendar_check(row: dict[str, str], event_id: str) -> bool:
+    """Check dates without inventing exact dates for partially reported periods.
+
+    Returns True when the start day is unknown; callers may count this quality
+    flag but must not turn it into the first day of the month as an observation.
+    """
+    year = _date_component(row[COLUMN_START_YEAR], COLUMN_START_YEAR, required=True)
+    month = _date_component(row[COLUMN_START_MONTH], COLUMN_START_MONTH, required=True)
+    start_day = _date_component(row[COLUMN_START_DAY], COLUMN_START_DAY)
+    end_year = _date_component(row[COLUMN_END_YEAR], COLUMN_END_YEAR)
+    end_month = _date_component(row[COLUMN_END_MONTH], COLUMN_END_MONTH)
+    end_day = _date_component(row[COLUMN_END_DAY], COLUMN_END_DAY)
+    if year is None or month is None or year != int(event_id[:4]):
+        raise PreflightError("Event ID year differs from the reported Start year")
+    if not (1994 <= year <= 2023):
+        raise PreflightError("CFDID source year outside 1994-2023")
+    try:
+        # The lower bound is for chronology checks only, not an imputed date.
+        first_possible_start = date(year, month, 1 if start_day is None else start_day)
+        if end_month is not None and end_year is None:
+            raise PreflightError("End month provided without End year")
+        if end_day is not None and end_month is None:
+            raise PreflightError("End day provided without End month")
+        if end_year is not None:
+            if not (1994 <= end_year <= 2023):
+                raise PreflightError("End year outside 1994-2023")
+            final_month = 12 if end_month is None else end_month
+            final_day = (date(end_year + (final_month == 12),
+                              final_month % 12 + 1, 1) - timedelta(days=1)).day \
+                if end_day is None else end_day
+            final_possible_end = date(end_year, final_month, final_day)
+            if final_possible_end < first_possible_start:
+                raise PreflightError("End date interval precedes start date interval")
+    except ValueError as exc:
+        raise PreflightError("Invalid reported CFDID calendar date") from exc
+    return start_day is None
+
+
 def audit_csv_text(source: str, *, strict_original: bool = False) -> dict[str, object]:
     reader = csv.DictReader(io.StringIO(source, newline=""))
     if not reader.fieldnames or len(reader.fieldnames) != len(set(reader.fieldnames)):
         raise PreflightError("Missing or duplicate CSV headings")
-    if not {COLUMN_LEVEL, COLUMN_ID, COLUMN_LOSS}.issubset(reader.fieldnames):
+    if not ({COLUMN_LEVEL, COLUMN_ID, COLUMN_LOSS} | DATE_COLUMNS).issubset(reader.fieldnames):
         raise PreflightError("Required original CFDID headings absent")
 
     counts = {level: 0 for level in ID_PATTERNS}
@@ -66,6 +124,7 @@ def audit_csv_text(source: str, *, strict_original: bool = False) -> dict[str, o
     l1_loss_records = 0
     l1_loss_total = Decimal("0")
     rows = 0
+    rows_missing_start_day = 0
     for row in reader:
         rows += 1
         if None in row or any(v is None for v in row.values()):
@@ -77,6 +136,7 @@ def audit_csv_text(source: str, *, strict_original: bool = False) -> dict[str, o
         if event_id in row_ids:
             raise PreflightError("Duplicate event ID")
         row_ids.add(event_id)
+        rows_missing_start_day += int(_calendar_check(row, event_id))
         counts[level] += 1
         if level != "L1":
             required_parents.add(event_id.rsplit("-", 1)[0])
@@ -94,6 +154,7 @@ def audit_csv_text(source: str, *, strict_original: bool = False) -> dict[str, o
     # Do not publish exact event IDs, coordinates, or original row-level records.
     return {
         "rows": rows,
+        "rows_missing_reported_start_day": rows_missing_start_day,
         "by_event_level": counts,
         "parent_links_present": True,
         "reported_l1_loss_records": l1_loss_records,
