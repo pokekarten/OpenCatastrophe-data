@@ -293,7 +293,7 @@ def inspect_original_bkg_municipal_transfers(
         output[case_name] = metrics
     return {
         "source": "BKG VG250 2018/2022 official GK3 shapefile",
-        "source_attribution": "© BKG (2018 and 2022), dl-de/by-2-0; Datenquellen: BKG VG250",
+        "source_attribution": "© BKG (2018 und 2022) dl-de/by-2-0 (Daten verändert); Datenquellen: BKG VG250",
         "original_zip_sha256_2018": hashlib.sha256(zip2018).hexdigest(),
         "original_zip_sha256_2022": hashlib.sha256(zip2022).hexdigest(),
         "bkg_2018_edition": BKG_2018_DATE,
