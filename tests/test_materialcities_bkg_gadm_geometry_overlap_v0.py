@@ -11,6 +11,8 @@ from research_runners.materialcities_bkg_gadm_geometry_overlap_v0 import (
     MANUAL_REVIEW_IOU_THRESHOLD,
     overlap_metrics,
     summarize_scores,
+    validate_bkg_geofactors,
+    compare_land_water_scores,
 )
 
 
@@ -114,6 +116,64 @@ class SourceGeometryResearchGateTests(unittest.TestCase):
     def test_precision_tolerance_keeps_iou_in_unit_interval(self):
         x = overlap_metrics(100, 100, 100 + 1e-7)
         self.assertLessEqual(x["iou"], 1.0)
+
+
+class BKGExactLandMarineSemanticsTests(unittest.TestCase):
+    def test_only_gf4_is_land_and_gf2_is_separate_marine(self):
+        inventory = {"01001": [4, 2], "01002": [4, 2, 2], "16054": [4]}
+        result = validate_bkg_geofactors(inventory, exact_original=False)
+        self.assertEqual(result["source_GF4_land_shape_records"], 3)
+        self.assertEqual(result["source_GF2_coastal_or_lake_shape_records"], 3)
+        self.assertEqual(result["official_AGS_with_GF2_marine_parts"], 2)
+        self.assertTrue(result["each_official_AGS_has_one_GF4_land_geometry"])
+        self.assertTrue(result["GF2_marine_excluded_from_building_land_comparison"])
+
+    def test_two_land_geometries_for_one_ags_block(self):
+        with self.assertRaisesRegex(GeometryOverlapError, "exactly one GF=4"):
+            validate_bkg_geofactors({"01001": [4, 4]}, exact_original=False)
+
+    def test_marine_only_without_land_never_substitutes_for_building_land(self):
+        with self.assertRaisesRegex(GeometryOverlapError, "exactly one GF=4"):
+            validate_bkg_geofactors({"01001": [2]}, exact_original=False)
+
+    def test_unknown_GF_and_implicit_bool_are_blocked(self):
+        for value in (3, 1, 9, True, "4"):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(GeometryOverlapError, "documented 2/4"):
+                    validate_bkg_geofactors({"01001": [4, value]}, exact_original=False)
+
+    def test_wrong_original_GFs_are_blocked_even_when_all_AGSes_exist(self):
+        fake = {f"{i:05d}": [4] for i in range(400)}
+        with self.assertRaisesRegex(GeometryOverlapError, "land/marine profile changed"):
+            validate_bkg_geofactors(fake)
+
+    def test_land_water_threshold_change_and_non_admission(self):
+        # Wholly fabricated polygon areas; the official GF distinction is the
+        # research purpose, not a claim about actual Flensburg or Suhl shapes.
+        land = {
+            "01001": overlap_metrics(100.0, 100.0, 99.0),
+            "16054": overlap_metrics(100.0, 100.0, 75.0),
+        }
+        all_surfaces = {
+            "01001": overlap_metrics(110.0, 100.0, 98.0),
+            "16054": overlap_metrics(100.0, 100.0, 75.0),
+        }
+        diagnostic = compare_land_water_scores(land, all_surfaces)
+        self.assertEqual(diagnostic["previous_all_BKG_pieces_to_GF4_land_only_passes"], 1)
+        self.assertEqual(diagnostic["previous_all_BKG_pieces_to_GF4_land_only_fails"], 0)
+        self.assertTrue(diagnostic["neither_mode_establishes_spatial_exposure_admission"])
+
+    def test_mismatched_mode_source_rosters_block(self):
+        with self.assertRaisesRegex(GeometryOverlapError, "geographic cohorts"):
+            compare_land_water_scores(
+                {"16054": overlap_metrics(100.0, 100.0, 90.0)},
+                {"01001": overlap_metrics(100.0, 100.0, 90.0)})
+
+    def test_invalid_diagnostic_score_is_never_allowed(self):
+        land = {"01001": {"iou": float("nan")}}
+        all_surfaces = {"01001": {"iou": 0.5}}
+        with self.assertRaisesRegex(GeometryOverlapError, "invalid land/water"):
+            compare_land_water_scores(land, all_surfaces)
 
 
 if __name__ == "__main__":
