@@ -32,6 +32,51 @@ The 2026-11-08 isolated Linux runtime could display original Zenodo catalogue/CS
 
 The publisher website exposed a generic Rights section without a machine-verifiable file-license statement in the inspected text. **Do not infer CC BY from the open-access paper**: model source remains `rights_review_status=not_reviewed`, `scientific_review_status=not_reviewed`, and `admission_status=not_admitted`.
 
+## Opt-in exact-original acquisition and Luxembourg byte receipt (2026-11-08)
+
+The original Zenodo metadata URL is publicly viewable in a browser, but direct
+network acquisition from the isolated Linux container has failed with DNS
+resolution. The scripts below provide executable paths for an authorized
+network-capable machine; no original data is shipped with this repository.
+
+1. Create an empty **external** directory and explicitly invoke the fixed-source,
+   16 KiB-capped, HTTPS/redirect-allowlisted downloader:
+
+   ```sh
+   mkdir -p /tmp/hail330-original-v2
+   python research_runners/zenodo_hail330_metadata_acquire_v0.py \
+     --out /tmp/hail330-original-v2/metadata.csv
+   ```
+
+   This does not overwrite existing files or accept custom source URLs. Only
+   the original publisher-MD5-matching and 56-row-valid CSV can be written. An
+   independently computed SHA-256 is reported only for bytes actually obtained.
+
+2. After the **exact source-file rights review** and operator acquisition of
+   `hail_LUX_ref.h5` and `hail_LUX_PGW.h5` outside Git, run:
+
+   ```sh
+   python research_runners/zenodo_hail330_lux_hdf5_receipt_v0.py \
+     --ref /tmp/hail330-original-v2/hail_LUX_ref.h5 \
+     --pgw /tmp/hail330-original-v2/hail_LUX_PGW.h5
+   ```
+
+   The runner validates the fixed publisher MD5s, HDF5 signature, filenames,
+   exact binary content and a strict 20 MiB per-file ceiling; it outputs
+   observed SHA-256s, not fictional hashes. No arbitrary country or filename
+   overrides are exposed by the CLI.
+
+3. **This is still not an HDF5 semantic or probabilistic model admission.**
+   Independently inspect HDF5 datasets, centroids, hail-size units, missing
+   values, event IDs, frequencies, annual grouping and spatial dependence.
+   The signature alone does not establish that an HDF5 file can be read by
+   CLIMADA. Cross-border events and reference/PGW climate scenarios must
+   not be counted as independent observations. Do not create OEP/AEP before
+   these scientific checks and insurer exposure/coverage validation.
+
+Offline unit tests use only fabricated bytes (never downloaded originals):
+`python -m unittest tests.test_zenodo_hail330_metadata_acquire_v0 tests.test_zenodo_hail330_lux_hdf5_receipt_v0 -v`.
+
 ## What the metadata preflight does not prove
 
 It does not prove that the 56 listed HDF5 files were retrieved, that their MD5s match, that they encode 330 annual years consistently, or that damage/vulnerability/insured exposure data are valid. All negative source gates remain blocking. The author's source MD5 is a file-integrity comparator, not a cryptographic signature or an approved licence.
