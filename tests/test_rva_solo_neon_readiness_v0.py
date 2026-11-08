@@ -145,5 +145,24 @@ class RvaSoloNeonReadinessTests(unittest.TestCase):
                 self.assertIsNone(re.search(r"\b" + verb + r"\b", code, flags=re.I))
 
 
+    def test_nrw_10k_all_site_identity_is_global_not_only_per_kreis(self) -> None:
+        # The older SUM(count(DISTINCT ...)) only proved per-Kreis uniqueness.
+        # Repeated ID/coordinate in different Kreise must fail the full-version
+        # gate even when each of the 53 individual county counts stays exact.
+        scope = self.sql.split("nrw_complete_10k AS (", 1)[1].split("audit AS (", 1)[0]
+        self.assertIn("sum(c.n)=10000", scope)
+        self.assertIn("sum(c.unique_ids)=10000", scope)
+        self.assertIn("sum(c.unique_points)=10000", scope)
+        for expression in (
+            "count(*) FROM exposure.exposure_unit AS all_u",
+            "count(DISTINCT all_u.external_unit_id)",
+            "count(DISTINCT ST_AsBinary(all_u.location))",
+        ):
+            with self.subTest(expression=expression):
+                self.assertIn(expression, scope)
+        self.assertEqual(scope.count("all_u.portfolio_version_id=c.portfolio_version_id"), 3)
+        self.assertIn("complete_source_admitted_10k_nrw_oed_versions", scope)
+
+
 if __name__ == "__main__":
     unittest.main()
