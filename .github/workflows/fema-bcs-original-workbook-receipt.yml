@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: FEMA-0173 original XLSX structural source receipt
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/fema-bcs-original-workbook-receipt.yml"
+      - "research_runners/fema_bcs_original_workbook_receipt_v0.py"
+      - "tests/test_fema_bcs_original_workbook_receipt_v0.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fema-0173-original-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-source-structure-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout without persistent Git credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Hermetic synthetic OOXML tests
+        run: python -m unittest tests.test_fema_bcs_original_workbook_receipt_v0 -v
+      - name: Inspect original FEMA workbook in memory with no raw-file artifacts
+        id: original_probe
+        # Original source access is external. Keep tests green while explicitly
+        # reporting BLOCKED (not an original-source receipt) on HTTP 403/outage.
+        continue-on-error: true
+        run: python research_runners/fema_bcs_original_workbook_receipt_v0.py --official-live
+      - name: Publish source-evidence gate separately from test status
+        if: always()
+        env:
+          ORIGINAL_PROBE_OUTCOME: ${{ steps.original_probe.outcome }}
+        shell: bash
+        run: |
+          if [ "$ORIGINAL_PROBE_OUTCOME" = "success" ]; then
+            echo "Original FEMA XLSX structure: verified live response (source rights and scientific admission remain OPEN)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Original FEMA XLSX structure: BLOCKED / NOT VERIFIED (live retrieval or source validation failed)." >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Original FEMA XLSX source evidence not verified; synthetic tests alone do not establish source admission"
+          fi

@@ -27,3 +27,31 @@ Before any operational use, in an explicitly rights-authorized external processi
 ## Narrow synthetic regression improvement
 
 `research_runners/fema_bcs_aala_semantic_guard_v0.py` intentionally accepts *synthetic data only*, with paired risk baseline, annualized code scenario, perils, integer cents, and no event-loss/model claims. Its historical construction-cohort bounds now match **2000-2016** (inclusive), rejecting 2017/2018 whose source-building records were incomplete. This is a reproducible research constraint, not empirical validation. The guard cannot parse FEMA workbooks or claim AEP/OEP outputs.
+
+## Executable read-only original workbook receipt
+
+The implementation in `research_runners/fema_bcs_original_workbook_receipt_v0.py` is a bounded, standard-library-only OOXML/ZIP inspector. It records original byte size, full SHA-256, ZIP/relationship safety, sheet names, visibility, row-element counts, first-row **cell coordinates only**, and formula counts. It never emits original source cell values, computes AALA, loads external assets or claims scientific approval.
+
+Run in a rights-authorized external processing environment:
+
+```bash
+python research_runners/fema_bcs_original_workbook_receipt_v0.py --official-live
+python research_runners/fema_bcs_original_workbook_receipt_v0.py --original-xlsx /secure/external/input.xlsx
+```
+
+After an independently approved hash is known, append `--expected-sha256` with the full lowercase SHA-256. The workflow `.github/workflows/fema-bcs-original-workbook-receipt.yml` runs a read-only original-source canary on changes to its tightly scoped PR paths and also supports manual `workflow_dispatch`. The live source step is **nonblocking** because an external provider/network outage is not a scientific-contract regression. No raw XLSX file is uploaded as a GitHub artifact. The regular repository tests use synthetic fixtures and remain offline; the separate source canary explicitly needs network access.
+
+A successful structure receipt does **not** verify real column labels, FEMA study numeric totals, data rights, independent claims, model fitness, or permission for commercial insurance calibration. These require later scientifically and legally reviewed evidence. Direct original XLSX retrieval was unavailable in the model research environment on 2026-11-08; that does not establish global unavailability.
+
+### Exact-head live probe observation (2026-11-08)
+
+GitHub workflow `FEMA-0173 original XLSX structural source receipt`, run
+`42526472232`, executed 14 synthetic OOXML tests successfully, but its live
+`--official-live` step exited **2** with `BLOCKED: HTTP Error 403: Forbidden`.
+The overall workflow showed *success* only because this third-party source
+probe is explicitly nonblocking; it is **not** evidence that the official
+FEMA workbook was acquired, that its SHA-256 is known, or that any sheet
+metadata was validated. The subsequent workflow version emits an explicit
+`BLOCKED / NOT VERIFIED` gate in the run summary whenever the live probe
+fails, while preserving an independent green result for the synthetic tests.
+No alternative/unverified mirror is automatically followed.
