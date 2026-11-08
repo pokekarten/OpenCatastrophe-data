@@ -38,6 +38,23 @@ ORIGINAL_BKG_MARINE_RECORDS = 30
 ORIGINAL_TARGET_AGS = 400
 ORIGINAL_GADM_FEATURES = 403
 HIGHLIGHT_AGS = ("03159", "16063", "16054", "01001", "09162")
+# Measured from the exact published 2022/4.1 originals, after GF4 filtering.
+ORIGINAL_GF4_REVIEW_AGS = (
+    "01054", "03405", "04012", "08335", "13003", "13075",
+    "16054", "16070", "16072",
+)
+ORIGINAL_GF4_COASTAL_AGS = frozenset((
+    "01054", "03405", "04012", "08335", "13003", "13075",
+))
+ORIGINAL_GF4_TERRITORY_REFORM_AGS = frozenset(("16054", "16070", "16072"))
+# Official Thuringian statistics 2019-01-01: Gehlberg and Schmiedefeld
+# moved Ilm-Kreis -> Suhl, Lichte and Piesau moved Saalfeld-Rudolstadt
+# -> Sonneberg. These are research spatial-neighbor hypotheses ONLY.
+ORIGINAL_TRANSFER_CHALLENGES = (
+    ("16054", "16070", "BKG_2022_only_against_previous_GADM_neighbor"),
+    ("16070", "16054", "GADM_only_against_current_BKG_neighbor"),
+    ("16072", "16073", "BKG_2022_only_against_previous_GADM_neighbor"),
+)
 
 
 class GeometryOverlapError(ValueError):
@@ -102,6 +119,93 @@ def compare_land_water_scores(land_scores: dict[str, dict],
         "previous_all_BKG_pieces_to_GF4_land_only_fails": changed_to_fail,
         "comparable_original_AGS": len(land_scores),
         "neither_mode_establishes_spatial_exposure_admission": True,
+    }
+
+
+def directed_neighbor_support(exclusive_area_m2: float, neighbor_overlap_m2: float) -> dict:
+    """How much source-exclusive polygon area another county covers.
+
+    This does not identify individual municipalities, ownership or source
+    version. Testing a neighbor hypothesis is *not* assigning that area.
+    """
+    if (any(type(x) not in (int, float) or not isfinite(x)
+            for x in (exclusive_area_m2, neighbor_overlap_m2))
+            or exclusive_area_m2 <= 0 or neighbor_overlap_m2 < 0
+            or neighbor_overlap_m2 > exclusive_area_m2 * (1 + 1e-8)):
+        raise GeometryOverlapError("invalid source-exclusive neighbor support areas")
+    return {
+        "source_exclusive_area_km2": exclusive_area_m2 / 1e6,
+        "other_source_neighbor_cover_km2": neighbor_overlap_m2 / 1e6,
+        "neighbor_covers_source_exclusive_fraction":
+            min(neighbor_overlap_m2 / exclusive_area_m2, 1.0),
+        "historical_vintage_transfer_proven": False,
+        "municipality_geometry_identity_proven": False,
+        "building_area_transfer_authorized": False,
+    }
+
+
+def audit_manual_case_inventory(
+    land_scores: dict[str, dict], all_scores: dict[str, dict],
+    bkg_geofactors: dict[str, list[int]], marine_areas_m2: dict[str, float],
+    *, exact_original: bool = True,
+) -> dict:
+    """Review only nine flagged keys; no wholesale source crosswalk export."""
+    if (not land_scores or set(land_scores) != set(all_scores)
+            or set(land_scores) != set(bkg_geofactors)):
+        raise GeometryOverlapError("incompatible source cohorts for case review")
+    flagged = tuple(sorted(k for k, v in land_scores.items()
+                           if v["iou"] < MANUAL_REVIEW_IOU_THRESHOLD))
+    if exact_original and flagged != ORIGINAL_GF4_REVIEW_AGS:
+        raise GeometryOverlapError("original nine-case GF4 source roster drift")
+    cases = {}
+    for ags in flagged:
+        land = land_scores[ags]
+        all_mode = all_scores[ags]
+        for row in (land, all_mode):
+            if (not isinstance(row, dict)
+                    or type(row.get("iou")) is not float
+                    or not isfinite(row["iou"]) or not 0 <= row["iou"] <= 1):
+                raise GeometryOverlapError("invalid source-only case comparison")
+        flags = bkg_geofactors[ags]
+        if not isinstance(flags, list) or flags.count(4) != 1 or any(
+                type(x) is not int or x not in (2, 4) for x in flags):
+            raise GeometryOverlapError("invalid BKG GF4/GF2 source record for case")
+        marine = marine_areas_m2.get(ags, 0.0)
+        if type(marine) not in (int, float) or not isfinite(marine) or marine < 0:
+            raise GeometryOverlapError("invalid GF2 source-marine area")
+        if (flags.count(2) == 0) != (marine == 0):
+            raise GeometryOverlapError("GF2 source-marine area/count mismatch")
+        if exact_original and (
+                (ags in ORIGINAL_GF4_COASTAL_AGS and flags.count(2) == 0)
+                or (ags in ORIGINAL_GF4_TERRITORY_REFORM_AGS and flags.count(2) != 0)):
+            raise GeometryOverlapError("version-pinned GF2 land-water case drift")
+        if ags in ORIGINAL_GF4_TERRITORY_REFORM_AGS:
+            research_bucket = "thuringia_2019_boundary_vintage_hypothesis"
+        elif ags == "08335":
+            research_bucket = "bodensee_boundary_or_water_semantics_unresolved"
+        elif ags in ORIGINAL_GF4_COASTAL_AGS:
+            research_bucket = "coastal_boundary_or_water_semantics_unresolved"
+        else:
+            research_bucket = "unclassified_source_geometry_difference"
+        cases[ags] = {
+            "research_bucket_not_a_causal_conclusion": research_bucket,
+            "bkg_GF2_water_shape_count": flags.count(2),
+            "bkg_GF2_water_area_km2": marine / 1e6,
+            "land_only_iou": land["iou"],
+            "all_geofactors_iou": all_mode["iou"],
+            "bkg_GF4_land_area_km2": land["bkg_area_km2"],
+            "gadm_area_km2": land["gadm_area_km2"],
+            "bkg_GF4_covered_fraction": land["official_bkg_covered_fraction"],
+            "gadm_covered_fraction": land["gadm_covered_fraction"],
+            "manual_review_required": True,
+            "land_or_insurer_model_admission": False,
+        }
+    return {
+        "review_case_count": len(cases),
+        "review_case_AGS": list(flagged),
+        "manual_review_case_diagnostics": cases,
+        "full_400_AGS_source_geometry_table_exported": False,
+        "scientific_vintage_and_rights_review_pending": True,
     }
 
 
@@ -278,6 +382,8 @@ def inspect_original_geometry(
 
     scores_land = {}
     scores_all_surfaces = {}
+    focus_land_geometries = {}
+    focus_gadm_geometries = {}
     for ags in sorted(bkg_groups):
         # The former study included BKG GF2 marine polygons and counted
         # spurious coastal mismatches. Preserve that view only for comparison.
@@ -296,11 +402,49 @@ def inspect_original_geometry(
             bkg_land_geom.area, gadm_geom.area, land_intersection)
         scores_all_surfaces[ags] = overlap_metrics(
             bkg_all_geom.area, gadm_geom.area, all_intersection)
+        if ags.startswith("16"):
+            focus_land_geometries[ags] = bkg_land_geom
+            focus_gadm_geometries[ags] = gadm_geom
     # Corrected primary metric is the 400 source GF4 LAND polygons.
     report = summarize_scores(scores_land)
     all_summary = summarize_scores(scores_all_surfaces)
     delta = compare_land_water_scores(scores_land, scores_all_surfaces)
+    marine_areas_m2 = {
+        ags: sum(geom.area for geom in shapes)
+        for ags, shapes in bkg_marine_groups.items()
+    }
+    case_report = audit_manual_case_inventory(
+        scores_land, scores_all_surfaces, bkg_gf, marine_areas_m2)
+    # Three independent historical transfer hypotheses, quantified on
+    # source-exclusive polygons against the other source's neighboring
+    # county. Source provenance is pinned; no rights or causality inference.
+    neighbor_challenges = {}
+    for focus, neighbor, direction in ORIGINAL_TRANSFER_CHALLENGES:
+        if (focus not in focus_land_geometries or
+                focus not in focus_gadm_geometries or
+                neighbor not in focus_land_geometries or
+                neighbor not in focus_gadm_geometries):
+            raise GeometryOverlapError("incomplete Thuringian original polygon neighbor")
+        if direction == "GADM_only_against_current_BKG_neighbor":
+            exclusive = focus_gadm_geometries[focus].difference(
+                focus_land_geometries[focus])
+            neighbor_shape = focus_land_geometries[neighbor]
+        else:
+            exclusive = focus_land_geometries[focus].difference(
+                focus_gadm_geometries[focus])
+            neighbor_shape = focus_gadm_geometries[neighbor]
+        if exclusive.is_empty or not exclusive.is_valid or exclusive.area <= 0:
+            raise GeometryOverlapError("empty or invalid original neighbor challenge")
+        overlap = exclusive.intersection(neighbor_shape).area
+        neighbor_challenges[focus + ":" + direction] = {
+            "target_AGS": focus,
+            "neighbor_AGS": neighbor,
+            "direction": direction,
+            **directed_neighbor_support(exclusive.area, overlap),
+        }
+    report.update(case_report)
     report.update({
+        "thuringia_2019_source_exclusive_neighbor_hypotheses": neighbor_challenges,
         "source_original_sha256": {
             "BKG_VG250_2022_12_31": BKG_SHA256,
             "GADM_v4_1_DEU_ADM2": GADM_SHA256,
