@@ -78,17 +78,17 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Note:** ESSD 2026 peer-review preprint https://doi.org/10.5194/essd-2026-577, not yet a final accepted paper. Parent EM-DAT records and already registered event datasets are not independent loss observations. MODIS inundation estimates depend on clouds/detection method; administrative polygon and calendar-month labels are NOT observed exact flood footprints or dates. Dataset ZIP contains reference CSVs and only example floodmaps according to provider release. Recheck license of EM-DAT-derived data, satellite and gridded population inputs before redistribution or commercial use.
 
-## Marche 2022 surveyed residential and business flood damage
+## Marche 2022 surveyed residential and industrial flood damage – fixed Zenodo v1.0.1
 
 **Candidate ID:** `it.marche.surveyed-flood-building-damage.2022.v1`  
 **Provider:** Rrokaj et al. / University of Florence / Zenodo  
 **Categories:** `flood`, `field_survey`, `building_damage`, `business_interruption`, `residential`, `italy`  
 **Spatial scope:** Italian Marche region: Ostra, Senigallia, Trecastelli; Misa River basin  
 **Temporal scope:** 2022-09-15 flood, field observations collected 2022-10 through 2022-12; paper published 2025-11-25  
-**Resolution / granularity:** 256 building-level surveys: 133 business premises, 123 residential buildings; five linked xlsx workbooks/forms per population, data dictionaries and survey questions; mixed building, contents, business and indirect damage fields  
+**Resolution / granularity:** 256 UNIQUE primary surveyed properties by original Form A: industrial/commercial 133, residential 123; source has 2 independently SHA-256-verified ZIPs (929330 and 891047 bytes), 5 workbooks A-E plus 7/9-sheet data dictionaries, 3 header rows, multiple secondary sheets and privacy-sensitive coordinates  
 **Potential roles:** `flood_damage_ratio_observed_challenge`, `commercial_property_contents_loss_method`, `building_typology_flood_vulnerability`  
-**Access hint:** `public_author_survey_workbooks_original_coordinates_privacy_rights_not_reviewed`  
-**Authoritative source:** <https://zenodo.org/records/15591850>  
+**Access hint:** `publisher_cc_by_4_dataset_metadata_v1_0_1_original_bytes_verified_privacy_and_secondary_rights_pending`  
+**Authoritative source:** <https://zenodo.org/records/17457884>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Peer reviewed https://doi.org/10.5194/essd-17-6487-2025. Recorded site coordinates and property/business details require source-specific privacy and processing/redistribution scrutiny; NO raw survey rows or coordinates into Git. Keep residential and business populations disjoint and preserve form-A parent keys and one-to-many subforms. These are self-reported/field-survey physical/economic impacts, not verified insurer claims, not a national building census, not annual model frequency. Research-only scientific/rights checks remain open.
+**Note:** Peer-reviewed paper https://doi.org/10.5194/essd-17-6487-2025 references concept/all-version DOI 10.5281/zenodo.15591850; exact latest inspected original Zenodo release is v1.0.1 DOI 10.5281/zenodo.17457884, published 2025-10-27. Original industrial ZIP SHA-256 a4e5a142450e3a9c63e0dcb964b674a55ca180a7c44ec852ecd8e48638d29847; residential ZIP SHA-256 4785f5eae8940e5c8033758aac11d1b2d8b7e5f75fe19efab497dfd5453802cd. Both original publisher MD5 values matched exactly. Real privacy-safe Form-A structural QA and 11 synthetic tests: docs/research/marche-2022-original-zip-privacy-gate-20261108.md. Original source has individual geocoordinates, business/property details and 1-to-many form relationships; no redistributable microdata, coordinates, names or addresses in Git. The publication's 247/256 water-depth availability is not independently validated for depth accuracy or model feasibility by this structural audit. Copernicus EMSR634 informed survey site selection and is not independent from that sample. Rights review and scientific model admission remain not_reviewed/not_admitted; no observed insured claim data, independent national census or stochastic event frequency.
