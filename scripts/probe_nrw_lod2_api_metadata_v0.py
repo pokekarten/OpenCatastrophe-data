@@ -21,6 +21,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 SOURCE_ID = "de.nrw.geobasis-lod2-ogc-features.2026"
 METADATA_URL = "https://ogc-api.nrw.de/3dg/v1/collections/building?f=json"
 MAX_BYTES = 131072
+EXPECTED_STORAGE_CRS = "http://www.opengis.net/def/crs/EPSG/0/5555"
+EXPECTED_BBOX_CRS = "http://www.opengis.net/def/crs/OGC/0/CRS84h"
 
 
 class MetadataProbeError(ValueError):
@@ -63,6 +65,10 @@ def assess(raw: bytes, *, media_type: str = "application/json") -> dict[str, Any
     # Reject a feature/item payload, even if it happens to contain an id field.
     if "features" in document or "geometry" in document or document.get("type") in ("Feature", "FeatureCollection"):
         raise MetadataProbeError("feature payload is outside metadata-only scope")
+    if document.get("collectionType") != "3d-container" or document.get("itemType") != "feature":
+        raise MetadataProbeError("unexpected collection/item semantics; requires explicit re-review")
+    if document.get("storageCrs") != EXPECTED_STORAGE_CRS:
+        raise MetadataProbeError("unexpected storage CRS; requires explicit CRS re-review")
     if "links" not in document or not isinstance(document["links"], list):
         raise MetadataProbeError("collection metadata has no OGC links")
     if not document["links"] or not all(
@@ -72,7 +78,14 @@ def assess(raw: bytes, *, media_type: str = "application/json") -> dict[str, Any
         for link in document["links"]
     ):
         raise MetadataProbeError("invalid collection links")
-    # Persist only booleans and exact byte identity, never response body or links.
+    item_types = {
+        link.get("type")
+        for link in document["links"]
+        if link.get("rel") == "items" and isinstance(link.get("type"), str)
+    }
+    if not {"application/city+json", "application/gml+xml"}.intersection(item_types):
+        raise MetadataProbeError("no advertised CityJSON/CityGML items representation")
+    # Persist only bounded booleans/literals and byte identity, not raw links or rows.
     matches = []
     for field in ("numberMatched", "itemCount"):
         value = document.get(field)
@@ -83,8 +96,19 @@ def assess(raw: bytes, *, media_type: str = "application/json") -> dict[str, Any
     if len(matches) == 2 and matches[0] != matches[1]:
         raise MetadataProbeError("conflicting count metadata")
     extent = document.get("extent")
-    if extent is not None and not isinstance(extent, dict):
-        raise MetadataProbeError("invalid collection extent")
+    if not isinstance(extent, dict):
+        raise MetadataProbeError("missing/invalid collection extent")
+    spatial = extent.get("spatial")
+    if not isinstance(spatial, dict) or spatial.get("crs") != EXPECTED_BBOX_CRS:
+        raise MetadataProbeError("unexpected spatial envelope CRS")
+    boxes = spatial.get("bbox")
+    if not isinstance(boxes, list) or not boxes or not all(
+        isinstance(box, list) and len(box) == 6
+        and all(type(number) in (int, float) and abs(number) < 1e10 for number in box)
+        and all(box[i] < box[i + 3] for i in range(3))
+        for box in boxes
+    ):
+        raise MetadataProbeError("expected valid 3D bbox in CRS84h")
     return {
         "profile": "oc-nrw-lod2-collection-metadata-v0",
         "source_id": SOURCE_ID,
@@ -94,6 +118,12 @@ def assess(raw: bytes, *, media_type: str = "application/json") -> dict[str, Any
         "original_metadata_bytes": len(raw),
         "collection_id_verified": True,
         "collection_links_present": True,
+        "native_3d_collection": True,
+        "storage_crs": EXPECTED_STORAGE_CRS,
+        "bbox_crs": EXPECTED_BBOX_CRS,
+        "cityjson_items_advertised": "application/city+json" in item_types,
+        "citygml_items_advertised": "application/gml+xml" in item_types,
+        "geojson_items_advertised": "application/geo+json" in item_types,
         "advertised_feature_count": matches[0] if matches else None,
         "extent_object_present": extent is not None,
         "source_feature_bytes_acquired": False,
