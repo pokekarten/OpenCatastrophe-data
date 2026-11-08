@@ -90,6 +90,58 @@ def _rings(geometry: dict) -> list[list[list]]:
     return rings
 
 
+def _segment_intersects_window(a: list, b: list) -> bool:
+    """Liang–Barsky segment/axis-aligned rectangle contact, not bbox only."""
+    x0, y0, x1, y1 = WARSAW_XY
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    lower, upper = 0.0, 1.0
+    for p, q in ((-dx, a[0] - x0), (dx, x1 - a[0]),
+                 (-dy, a[1] - y0), (dy, y1 - a[1])):
+        if p == 0:
+            if q < 0:
+                return False
+        else:
+            t = q / p
+            if p < 0:
+                lower = max(lower, t)
+            else:
+                upper = min(upper, t)
+            if lower > upper:
+                return False
+    return True
+
+
+def _inside_ring(point: tuple[float, float], ring: list[list]) -> bool:
+    """Even-odd test; source topology remains unverified independently."""
+    x, y = point
+    inside = False
+    for a, b in zip(ring, ring[1:]):
+        ax, ay = a
+        bx, by = b
+        if (ay > y) != (by > y) and x < ax + (bx - ax) * (y - ay) / (by - ay):
+            inside = not inside
+    return inside
+
+
+def _polygon_intersects_window(geometry: dict) -> bool:
+    # Check actual polygon segments / interior, not merely bbox overlap.
+    # The first ring is exterior; subsequent rings are holes. If the entire
+    # target window lies inside a hole, the building DOES NOT intersect it.
+    polygons = ([geometry["coordinates"]] if geometry["type"] == "Polygon"
+                else geometry["coordinates"])
+    x0, y0, x1, y1 = WARSAW_XY
+    corners = ((x0, y0), (x0, y1), (x1, y0), (x1, y1))
+    for polygon in polygons:
+        if any(_segment_intersects_window(a, b) for ring in polygon
+               for a, b in zip(ring, ring[1:])):
+            return True
+        if any(_inside_ring(corner, polygon[0])
+               and not any(_inside_ring(corner, hole) for hole in polygon[1:])
+               for corner in corners):
+            return True
+    return False
+
+
 def inspect_original_geojson(raw: bytes) -> dict:
     if not isinstance(raw, bytes) or not 0 < len(raw) <= MAX_BYTES:
         raise BuildingWindowError("missing or oversized original GeoJSON")
@@ -141,7 +193,8 @@ def inspect_original_geojson(raw: bytes) -> dict:
                 box[3] = max(box[3], y)
         if box[2] <= box[0] or box[3] <= box[1]:
             raise BuildingWindowError("degenerate building footprint")
-        if not (box[0] <= x1 and box[2] >= x0 and box[1] <= y1 and box[3] >= y0):
+        if (not (box[0] <= x1 and box[2] >= x0 and box[1] <= y1 and box[3] >= y0)
+                or not _polygon_intersects_window(feature["geometry"])):
             raise BuildingWindowError("geometry does not intersect declared XY target window")
         geometries.append(feature["geometry"]["type"])
     return {
