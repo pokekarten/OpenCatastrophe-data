@@ -42,3 +42,16 @@ python research_runners/fema_bcs_original_workbook_receipt_v0.py --original-xlsx
 After an independently approved hash is known, append `--expected-sha256` with the full lowercase SHA-256. The workflow `.github/workflows/fema-bcs-original-workbook-receipt.yml` runs a read-only original-source canary on changes to its tightly scoped PR paths and also supports manual `workflow_dispatch`. The live source step is **nonblocking** because an external provider/network outage is not a scientific-contract regression. No raw XLSX file is uploaded as a GitHub artifact. The regular repository tests use synthetic fixtures and remain offline; the separate source canary explicitly needs network access.
 
 A successful structure receipt does **not** verify real column labels, FEMA study numeric totals, data rights, independent claims, model fitness, or permission for commercial insurance calibration. These require later scientifically and legally reviewed evidence. Direct original XLSX retrieval was unavailable in the model research environment on 2026-11-08; that does not establish global unavailability.
+
+### Exact-head live probe observation (2026-11-08)
+
+GitHub workflow `FEMA-0173 original XLSX structural source receipt`, run
+`42526472232`, executed 14 synthetic OOXML tests successfully, but its live
+`--official-live` step exited **2** with `BLOCKED: HTTP Error 403: Forbidden`.
+The overall workflow showed *success* only because this third-party source
+probe is explicitly nonblocking; it is **not** evidence that the official
+FEMA workbook was acquired, that its SHA-256 is known, or that any sheet
+metadata was validated. The subsequent workflow version emits an explicit
+`BLOCKED / NOT VERIFIED` gate in the run summary whenever the live probe
+fails, while preserving an independent green result for the synthetic tests.
+No alternative/unverified mirror is automatically followed.
