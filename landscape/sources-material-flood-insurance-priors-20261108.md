@@ -18,7 +18,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Entries:** 3
 
-
 ## MaterialCities 2026.9 global floor area and construction material stocks
 
 **Candidate ID:** `leiden.materialcities.global-floor-material-stock.2026-9`  
@@ -34,7 +33,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Note:** The original publisher describes floor area and modelled material stocks for 1.8 million settlements; this is not an inventory of individually insured buildings. ADM labels use GADM 4.1 and floor-area modelling draws on WSF3D and GHSL; upstream lineage, geographical vintage, release-specific rights, adaptation/commercial permissions and the limits of class imputation must be verified. Use ADM2 and structural-type shares as uncertain regional priors, not building-level occupancy, exact TIV or insurer market share. No data bytes downloaded or admitted in this source-landscape entry.
 
-
 ## Korean Financial Services Commission corporate property insurance subscriptions API
 
 **Candidate ID:** `kr.fsc.corporate-property-insurance-subscription.api`  
@@ -49,7 +47,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Publisher lists free use and a broad permission scope, but API operation needs an issued serviceKey and applicable portal/service terms still require product-specific review. No authorized key was used, and response rows, availability for 2025/2026 or field-level semantics have not been independently tested. Contract and premium aggregates are not insured sums, catastrophe premium, insured building coordinates, claims, insurer market shares or TIV; do not derive TIV from premiums without explicit sensitivity assumptions. Keep source research-only and do not put credentials or retrieved records in Git.
-
 
 ## Kawakami 2026 v2 spatially and temporally refined CONUS pluvial NFIP claims
 
