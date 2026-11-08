@@ -15,6 +15,8 @@ from scripts.probe_pl_egib_buildings_wfs_v0 import (
     EXPECTED_CRS,
     EXPECTED_FIELDS,
     ProviderMetadataError,
+    _NoRedirect,
+    _fetch_bounded,
     inspect_original_xml,
     provider_requests,
 )
@@ -120,6 +122,15 @@ class PlEgibNativeWfsTests(unittest.TestCase):
         ]:
             with self.subTest(raw=raw[:80]), self.assertRaises(ProviderMetadataError):
                 inspect_original_xml(CAPS, SCHEMA, raw)
+
+    def test_reject_redirect_and_unapproved_network_target(self):
+        with self.assertRaisesRegex(ProviderMetadataError, "redirect refused"):
+            _NoRedirect().redirect_request(
+                None, None, 302, "Moved", {},
+                "https://mapy.geoportal.gov.pl/wss/service/PZGIK/EGIB/WFS/UslugaZbiorcza"
+                "?SERVICE=WFS&REQUEST=GetFeature&TYPENAMES=ms:budynki")
+        with self.assertRaisesRegex(ProviderMetadataError, "unapproved metadata URL"):
+            _fetch_bounded("https://example.org/other?REQUEST=GetFeature")
 
     def test_offline_cli_and_no_feature_identity(self):
         with TemporaryDirectory() as tmp:
