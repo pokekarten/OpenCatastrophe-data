@@ -18,7 +18,7 @@ def example_scores():
     source = {
         "01001": overlap_metrics(100.0, 98.0, 97.0),
         "03159": overlap_metrics(100.0, 100.0, 99.9),
-        "16063": overlap_metrics(100.0, 103.0, 98.0),
+        "16063": overlap_metrics(100.0, 101.0, 99.0),
         "16054": overlap_metrics(100.0, 70.0, 69.8),
         "09162": overlap_metrics(100.0, 100.0, 99.7),
     }
