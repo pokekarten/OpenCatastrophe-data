@@ -42,6 +42,23 @@ class SemanticGuardTests(unittest.TestCase):
         self.assertFalse(result["elt_ylt_aep_oep_generated"])
         self.assertFalse(result["fema_workbook_or_bcat_data_read"])
 
+    def test_fema_table_convention_pre_minus_code_for_synthetic_cases(self):
+        # Synthetic amounts only. The FEMA 2020 report Table 5-8 describes
+        # AALA as old-code AAL less new-code AAL. A sentence in the flood
+        # section reverses that order; never flip this proven convention.
+        scenarios = ((3000, 1500, 1500), (1500, 3000, -1500),
+                     (2000, 2000, 0))
+        for baseline, code_case, expected in scenarios:
+            payload = fixture()
+            payload["cases"][0]["pre_icode_aal_usd_cents"] = baseline
+            payload["cases"][0]["with_icode_aal_usd_cents"] = code_case
+            result = check_synthetic_aala(payload)["cases"][0]
+            with self.subTest(baseline=baseline, code_case=code_case):
+                self.assertEqual(result["aala_usd_cents_signed"], expected)
+                self.assertEqual(
+                    code_case + result["aala_usd_cents_signed"], baseline
+                )
+
     def test_negative_avoided_loss_is_not_clipped(self):
         payload = fixture()
         payload["cases"][0]["with_icode_aal_usd_cents"] = 11000

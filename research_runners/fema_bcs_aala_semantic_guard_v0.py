@@ -48,8 +48,11 @@ def _identifier(value: object, field: str) -> str:
 def check_synthetic_aala(payload: object) -> dict:
     """Return no-loss-model synthetic AALA comparisons (not summed across regions).
 
-    FEMA BCS describes AALA = modelled pre-code AAL - modelled code AAL.
-    It does not establish a change to an individual insured event-loss curve.
+    AALA = modelled pre-code AAL - modelled I-Code AAL (signed).
+    This orientation follows FEMA BCS Table 5-8 and its explanation.
+    FEMA BCS Section 4.3 contains an opposite-order narrative sentence;
+    do not silently reverse the sign based on that sentence.
+    It does not establish an individual insured event-loss curve.
     """
     if type(payload) is not dict or set(payload) != ROOT_KEYS:
         raise SyntheticAALAError("expected only schema_version, evidence_class and cases")
