@@ -33,6 +33,8 @@ SOURCE_CRS_EPSG = 31467  # Read from original BKG GK3 PRJ; never assume its coor
 AREA_CRS_EPSG = 3035  # Equal-area European LAEA, square metres.
 MANUAL_REVIEW_IOU_THRESHOLD = 0.95
 ORIGINAL_BKG_SHAPES = 430
+ORIGINAL_BKG_LAND_RECORDS = 400
+ORIGINAL_BKG_MARINE_RECORDS = 30
 ORIGINAL_TARGET_AGS = 400
 ORIGINAL_GADM_FEATURES = 403
 HIGHLIGHT_AGS = ("03159", "16063", "16054", "01001", "09162")
@@ -40,6 +42,67 @@ HIGHLIGHT_AGS = ("03159", "16063", "16054", "01001", "09162")
 
 class GeometryOverlapError(ValueError):
     """Independent geometry evidence cannot be trusted or is incomplete."""
+
+
+def validate_bkg_geofactors(geofactors: dict[str, list[int]], *,
+                            exact_original: bool = True) -> dict:
+    """BKG VG250 specification: exactly one GF=4 land polygon per Kreis.
+
+    GF=2 is a separate coastal/Bodensee water polygon, never an extra Kreis
+    or a stand-in for land. Do not silently ignore unknown GF values.
+    """
+    if not geofactors:
+        raise GeometryOverlapError("BKG source land/water geofactors are absent")
+    land = 0
+    water = 0
+    with_marine = 0
+    for ags, flags in geofactors.items():
+        if (not isinstance(ags, str) or len(ags) != 5 or not ags.isdigit()
+                or not isinstance(flags, list) or
+                any(type(gf) is not int or gf not in (2, 4) for gf in flags)):
+            raise GeometryOverlapError("BKG source GF must be the documented 2/4 codes")
+        if flags.count(4) != 1:
+            raise GeometryOverlapError("each official AGS must have exactly one GF=4 land geometry")
+        land += 1
+        water += flags.count(2)
+        with_marine += int(2 in flags)
+    if exact_original and (land != ORIGINAL_BKG_LAND_RECORDS or
+                           water != ORIGINAL_BKG_MARINE_RECORDS or
+                           land + water != ORIGINAL_BKG_SHAPES):
+        raise GeometryOverlapError("original BKG 2022 GF=4/2 land/marine profile changed")
+    return {
+        "source_GF4_land_shape_records": land,
+        "source_GF2_coastal_or_lake_shape_records": water,
+        "official_AGS_with_GF2_marine_parts": with_marine,
+        "each_official_AGS_has_one_GF4_land_geometry": True,
+        "GF2_marine_excluded_from_building_land_comparison": True,
+    }
+
+
+def compare_land_water_scores(land_scores: dict[str, dict],
+                              all_scores: dict[str, dict]) -> dict:
+    """Contrast land-only with earlier all-pieces scores without admitting a join."""
+    if not land_scores or set(land_scores) != set(all_scores):
+        raise GeometryOverlapError("land/all BKG geographic cohorts cannot differ")
+    for scores in (land_scores, all_scores):
+        for row in scores.values():
+            if (not isinstance(row, dict) or type(row.get("iou")) is not float or
+                    not isfinite(row["iou"]) or not 0 <= row["iou"] <= 1):
+                raise GeometryOverlapError("invalid land/water original IoU score")
+    changed_to_pass = sum(
+        all_scores[key]["iou"] < MANUAL_REVIEW_IOU_THRESHOLD <= land_scores[key]["iou"]
+        for key in land_scores
+    )
+    changed_to_fail = sum(
+        land_scores[key]["iou"] < MANUAL_REVIEW_IOU_THRESHOLD <= all_scores[key]["iou"]
+        for key in land_scores
+    )
+    return {
+        "previous_all_BKG_pieces_to_GF4_land_only_passes": changed_to_pass,
+        "previous_all_BKG_pieces_to_GF4_land_only_fails": changed_to_fail,
+        "comparable_original_AGS": len(land_scores),
+        "neither_mode_establishes_spatial_exposure_admission": True,
+    }
 
 
 def overlap_metrics(a_m2: float, b_m2: float, intersection_m2: float) -> dict:
@@ -162,18 +225,30 @@ def inspect_original_geometry(
                               dbf=io.BytesIO(z.read(root + ".dbf")),
                               encoding="utf-8") as reader:
             bkg_groups: dict[str, list] = defaultdict(list)
+            bkg_land_groups: dict[str, list] = defaultdict(list)
+            bkg_marine_groups: dict[str, list] = defaultdict(list)
+            bkg_gf: dict[str, list[int]] = defaultdict(list)
             bkg_rows = 0
             for entry in reader.iterShapeRecords():
                 bkg_rows += 1
-                ags = entry.record.as_dict().get("AGS")
+                properties = entry.record.as_dict()
+                ags = properties.get("AGS")
+                gf = properties.get("GF")
                 if not isinstance(ags, str) or len(ags) != 5 or not ags.isdigit():
                     raise GeometryOverlapError("unrecognised official geometry AGS")
+                if type(gf) is not int or gf not in (2, 4):
+                    raise GeometryOverlapError("original BKG land/water GF source value invalid")
                 geom = transform(source_projection, shape(entry.shape.__geo_interface__))
                 if not geom.is_valid or geom.is_empty or geom.area <= 0:
                     raise GeometryOverlapError("invalid projected BKG original geometry")
                 bkg_groups[ags].append(geom)
+                bkg_gf[ags].append(gf)
+                (bkg_land_groups if gf == 4 else bkg_marine_groups)[ags].append(geom)
     if bkg_rows != ORIGINAL_BKG_SHAPES or len(bkg_groups) != ORIGINAL_TARGET_AGS:
         raise GeometryOverlapError("BKG projected original geometry roster drift")
+    gf_receipt = validate_bkg_geofactors(bkg_gf)
+    if set(bkg_land_groups) != set(bkg_groups):
+        raise GeometryOverlapError("BKG source GF4 land does not cover all 400 Kreise")
 
     with zipfile.ZipFile(io.BytesIO(gadm_zip_bytes)) as z:
         features = json.loads(z.read("gadm41_DEU_2.json"))["features"]
@@ -200,18 +275,30 @@ def inspect_original_geometry(
     if excluded_non_ags != 1 or set(gadm_groups) != set(bkg_groups):
         raise GeometryOverlapError("incomplete countrywide original GADM geography")
 
-    scores = {}
+    scores_land = {}
+    scores_all_surfaces = {}
     for ags in sorted(bkg_groups):
-        # Source multipart polygons are grouped by the identical official AGS.
-        # Historic GADM sources are combined ONLY as a geometric hypothesis.
-        bkg_geom = unary_union(bkg_groups[ags])
+        # The former study included BKG GF2 marine polygons and counted
+        # spurious coastal mismatches. Preserve that view only for comparison.
+        # Official GF4 means LAND; no GF2 sea/Bodensee surface is allocated
+        # to buildings, irrespective of whether GADM includes similar water.
+        bkg_all_geom = unary_union(bkg_groups[ags])
+        bkg_land_geom = unary_union(bkg_land_groups[ags])
         gadm_geom = unary_union(gadm_groups[ags])
-        if (not bkg_geom.is_valid or not gadm_geom.is_valid or
-                bkg_geom.is_empty or gadm_geom.is_empty):
-            raise GeometryOverlapError("invalid repaired/united source region")
-        overlap = bkg_geom.intersection(gadm_geom).area
-        scores[ags] = overlap_metrics(bkg_geom.area, gadm_geom.area, overlap)
-    report = summarize_scores(scores)
+        if (not bkg_all_geom.is_valid or not bkg_land_geom.is_valid or
+                not gadm_geom.is_valid or bkg_land_geom.is_empty or
+                bkg_all_geom.is_empty or gadm_geom.is_empty):
+            raise GeometryOverlapError("invalid projected original land/water region")
+        land_intersection = bkg_land_geom.intersection(gadm_geom).area
+        all_intersection = bkg_all_geom.intersection(gadm_geom).area
+        scores_land[ags] = overlap_metrics(
+            bkg_land_geom.area, gadm_geom.area, land_intersection)
+        scores_all_surfaces[ags] = overlap_metrics(
+            bkg_all_geom.area, gadm_geom.area, all_intersection)
+    # Corrected primary metric is the 400 source GF4 LAND polygons.
+    report = summarize_scores(scores_land)
+    all_summary = summarize_scores(scores_all_surfaces)
+    delta = compare_land_water_scores(scores_land, scores_all_surfaces)
     report.update({
         "source_original_sha256": {
             "BKG_VG250_2022_12_31": BKG_SHA256,
@@ -219,6 +306,15 @@ def inspect_original_geometry(
             "MaterialCities_2026_9": MATERIALCITIES_SHA256,
         },
         "source_original_bkg_shape_pieces": bkg_rows,
+        "BKG_GF4_GF2_source_profile": gf_receipt,
+        "original_GADM_BKG_GF4_land_only_primary_metric": True,
+        "previous_all_surfaces_baseline": {
+            "count_iou_at_least_0_95": all_summary["count_iou_at_least_0_95"],
+            "count_manual_review_iou_below_0_95": all_summary["count_manual_review_iou_below_0_95"],
+            "intersection_over_union_median": all_summary["intersection_over_union_median"],
+            "intersection_over_union_minimum": all_summary["intersection_over_union_minimum"],
+        },
+        "land_only_vs_all_surfaces_95pct_comparison": delta,
         "source_original_gadm_level2_features": len(features),
         "source_original_non_AGS_gadm_excluded": excluded_non_ags,
         "source_original_historical_gadm_2022_ags_groups": {
