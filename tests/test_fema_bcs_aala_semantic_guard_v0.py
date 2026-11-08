@@ -110,9 +110,17 @@ class SemanticGuardTests(unittest.TestCase):
                 with self.assertRaises(SyntheticAALAError):
                     check_synthetic_aala(payload)
 
+    def test_documented_cohort_endpoints_accepted(self):
+        for year in (2000, 2016):
+            payload = fixture()
+            payload["cases"][0]["construction_year"] = year
+            self.assertEqual(check_synthetic_aala(payload)["cases"][0]["construction_year"], year)
+
     def test_unbounded_year_and_unknown_peril_rejected(self):
         for key, value in (
             ("construction_year", 1999),
+            ("construction_year", 2017),
+            ("construction_year", 2018),
             ("construction_year", 2019),
             ("construction_year", 2010.0),
             ("currency_year", True),

@@ -77,7 +77,9 @@ def check_synthetic_aala(payload: object) -> dict:
         peril = case["peril"]
         if type(peril) is not str or peril not in PERILS:
             raise SyntheticAALAError("unsupported code-study peril")
-        year = _bounded_int(case["construction_year"], "construction_year", 2000, 2018)
+        # FEMA BCS 2020 modeled the 2000-2016 construction cohort;
+        # do not silently include 2017/2018 incomplete source years.
+        year = _bounded_int(case["construction_year"], "construction_year", 2000, 2016)
         currency_year = _bounded_int(case["currency_year"], "currency_year", 1900, 2100)
         if case["comparison_basis"] != BASIS or case["source_identity"] != EXPOSURE_CLASS:
             raise SyntheticAALAError("baseline/code scenarios need matched synthetic basis and source")
