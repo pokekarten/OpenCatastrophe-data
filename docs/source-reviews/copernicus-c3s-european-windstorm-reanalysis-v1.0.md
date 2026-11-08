@@ -131,3 +131,14 @@ Until then, no C3S raw or derived bytes belong in this repository.
 - Dataset: `https://cds.climate.copernicus.eu/datasets/sis-european-wind-storm-reanalysis`
 - Dataset licence: `https://cds.climate.copernicus.eu/licences/cc-by`
 - CDS terms: `https://cds.climate.copernicus.eu/licences/terms-of-use-cds`
+
+
+## Follow-up public acquisition probe (2026-11-07)
+
+The metadata-only status above is unchanged. A separate anonymous access probe was performed after the original review:
+
+- The current CDS process schema, catalogue record, request form, constraints and layout were retrieved successfully (HTTP 200). They confirm configurable full-domain/original-grid and statistically downscaled footprint products, as well as the 72-hour event window.
+- A real anonymous POST to the published execution endpoint returned HTTP 401, `authentication required`. No C3S data asset was returned or downloaded. The request was an exploratory February 2014 selection; it is not evidence that the request was accepted, that it identifies a particular storm, or that a product retrieval would succeed after registration.
+- The exploratory selection used 14 February. The current CLIMK list dates TINI-ULLA on 13 February. Event matching must be resolved before any cross-source comparison; the current probe does not establish a match.
+
+The schema/form/constraints and response are retained outside this public repository; public URLs and SHA-256 receipts are summarized in OpenCatastrophe's [data-use findings](https://github.com/pokekarten/OpenCatastrophe/blob/5d0c8eb/docs/data_findings.md) and v13 source challenge. No credentials, private endpoints, raw meteorological arrays or response trace identifiers are copied here. This probe does not change the manifest, admission state, licensing decision, or scientific review. It refines the access finding: anonymous data execution is blocked by registration/authentication.
