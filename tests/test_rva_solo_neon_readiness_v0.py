@@ -145,5 +145,46 @@ class RvaSoloNeonReadinessTests(unittest.TestCase):
                 self.assertIsNone(re.search(r"\b" + verb + r"\b", code, flags=re.I))
 
 
+    def test_nrw_10k_all_site_identity_is_global_not_only_per_kreis(self) -> None:
+        # The older SUM(count(DISTINCT ...)) only proved per-Kreis uniqueness.
+        # Repeated ID/coordinate in different Kreise must fail the full-version
+        # gate even when each of the 53 individual county counts stays exact.
+        scope = self.sql.split("nrw_complete_10k AS (", 1)[1].split("audit AS (", 1)[0]
+        self.assertIn("sum(c.n)=10000", scope)
+        self.assertIn("sum(c.unique_ids)=10000", scope)
+        self.assertIn("sum(c.unique_points)=10000", scope)
+        for expression in (
+            "count(*) FROM exposure.exposure_unit AS all_u",
+            "count(DISTINCT all_u.external_unit_id)",
+            "count(DISTINCT ST_AsBinary(all_u.location))",
+        ):
+            with self.subTest(expression=expression):
+                self.assertIn(expression, scope)
+        self.assertEqual(scope.count("all_u.portfolio_version_id=c.portfolio_version_id"), 3)
+        self.assertIn("complete_source_admitted_10k_nrw_oed_versions", scope)
+
+
+    def test_fictional_53_kreise_cross_county_duplicate_counterexample(self) -> None:
+        # This is an independent all-integer synthetic witness, not source
+        # material or real insured location data. It mirrors the read-only
+        # PostgreSQL generate_series 10k challenge run on Neon main.
+        rows = []
+        for i in range(1, 10001):
+            county = 2 if i == 10000 else ((i - 1) % 53) + 1
+            identity = 1 if i == 10000 else i
+            rows.append((county, identity, identity))
+        self.assertEqual(len({r[0] for r in rows}), 53)
+        self.assertEqual(len(rows), 10000)
+        local_id_total = sum(len({r[1] for r in rows if r[0] == county})
+                             for county in range(1, 54))
+        local_point_total = sum(len({r[2] for r in rows if r[0] == county})
+                                for county in range(1, 54))
+        self.assertEqual(local_id_total, 10000)
+        self.assertEqual(local_point_total, 10000)
+        # Both old local-only sums pass despite the cross-Kreis reuse.
+        self.assertEqual(len({r[1] for r in rows}), 9999)
+        self.assertEqual(len({r[2] for r in rows}), 9999)
+
+
 if __name__ == "__main__":
     unittest.main()

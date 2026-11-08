@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+schema_version = "WBM_2025_OFFICIAL_GROUP_COMMERCIAL_CONTEXT_NO_INSURANCE_ALLOCATION_V0"
+source_publisher = "WBM Wohnungsbaugesellschaft Berlin-Mitte mbH"
+source_original_url = "https://www.wbm.de/presse/pressemitteilung/detail/wbm-setzt-strategischen-wachstumskurs-erfolgreich-fort/"
+source_title = "WBM setzt strategischen Wachstumskurs erfolgreich fort"
+source_publication_date = "2026-06-03"
+source_reporting_period = "2025"
+source_level = "entire_WBM_group"
+source_evidence_type = "official_company_press_release_with_2025_annual_metrics"
+raw_publisher_source_bytes_sha256_pinned = false
+individually_insured_objects_identified = false
+is_the_nine_pure_commercial_2026_policy_object_list = false
+source_values_are_building_replacement_TIV = false
+source_values_are_actual_2027_insurance_policy_values = false
+can_allocate_numbers_to_the_nine_TED_objects = false
+actual_RV_HDI_Helvetia_exposure_or_contract_coverage_established = false
+real_insurer_CAT_exposure_admitted = false
+
+[commercial_group]
+managed_rental_commercial_floor_area_sqm_approx = 314000
+average_net_cold_rent_eur_per_sqm = "15.62"
+tenant_turnover_percent = "4.6"
+vacancy_percent = "1.4"
+geographic_description = "Predominantly Berlin S-Bahn ring, districts Mitte and Friedrichshain-Kreuzberg; also Spandau"
+actual_insured_site_coordinates_available = false
+area_sqm_is_not_nine_selected_buildings = true
+average_rent_does_not_imply_risk_limit_or_insured_business_interruption = true
+
+[all_asset_classes_group]
+market_portfolio_value_eur_approx = 5900000000
+includes_residential_commercial_and_other_group_real_estate = true
+this_is_not_replacement_cost_or_insurance_TIV = true
+number_of_apartments_approx = 35000
+apartment_count_is_not_insured_commercial_building_count = true
+
+[award_2026_separate_source]
+ted_publication_number = "668506-2026"
+published_described_pure_commercial_object_count = 9
+source_procedure_BT04_index_id = "0988b2e4-9489-4b3b-9487-cd3a2a624cf5"
+approved_group_to_award_value_allocation = false
+
+[completely_fictional_oed_5_demo]
+location_count = 9
+invented_building_tiv_total_eur = 108000000
+fictional_coords_not_actual_WBM_sites = true
+invented_amount_does_not_derive_from_2025_group_market_value = true
+invented_amount_does_not_derive_from_314000_sqm = true
+invented_amount_does_not_derive_from_15_62_eur_rent = true
+source_observation_used_only_for_nonquantitative_context = true
