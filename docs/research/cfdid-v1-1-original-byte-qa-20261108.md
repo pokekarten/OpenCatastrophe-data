@@ -68,3 +68,12 @@ The input path in this example is illustrative; this repository does **not** con
 - Unknown days and dates are incomplete observation intervals, not zero-day floods; event matches require matching at supported spatial/temporal precision.
 
 **Next bounded scientific gate:** compare year-specific L1 losses (with units and price year) against the released \`Official national annual totals_1994-2023.xlsx\` and the already registered independent flood event sources. The original Excel benchmark has publisher MD5 \`c2b7ae971efa5c4f886d824424141ad4\`; it has **not** been independently byte-verified in this run.
+
+
+## Follow-up runner/date precision gate
+
+The source runner was strengthened on this same branch with **original-field calendar checks** and an extra diagnostic \`rows_missing_reported_start_day\`. Invalid dates, end-month without end-year, end-day without end-month, missing/invalid start-year/month, and mismatched event-ID year fail closed. Unknown start days remain null/blank; no date is silently imputed.
+
+**Independent verification of updated branch code:** retrieved exact upstream 337,549 bytes and checked the SHA-256 shown above, retrieved the modified source and tests from this PR branch, then ran the complete CLI in an isolated temporary directory. Original-run **exit 0** and **12/12 focused unittest cases passed**. A deliberately wrong SHA-256 again gave **exit 2** with expected SHA mismatch. Updated script SHA-256: \`673bd942f2d9ce8bac5870ad2bd9807acb6425b79cbe54ea938605f2a23f102b\`.
+
+The original-run JSON reports \`rows_missing_reported_start_day: 192\`, \`reported_l1_loss_records: 1197\`, \`rows: 1716\` and \`by_event_level: {L1:1391, L2:300, L3:25}\`. No original data bytes are tracked, stored in Git or published here. This is **not** a full-repository CI run.
