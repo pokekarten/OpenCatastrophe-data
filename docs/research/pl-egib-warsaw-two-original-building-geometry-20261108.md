@@ -64,3 +64,23 @@ python scripts/check_all.py
 3. Validate building polygon topology, storey null rates, access rights, actual insurable asset meaning and duplication with EUBUCCO/Overture before any OpenCatastrophe exposure or TIV value is admitted.
 
 The two observed polygons are evidence of **one working bounded original provider request**, not nationwide exposure readiness.
+
+
+## Geometry intersection hardening on PR head (2026-11-08)
+
+The initial bounded GeoJSON probe counted a footprint as intersecting Warsaw
+when **only its bounding box** overlapped the study rectangle. This is a
+false-positive for concave L-shaped buildings or a whole study rectangle
+inside a polygon's courtyard/hole. The current code now checks polygon
+segment/rectangle contact and tests the rectangle's corners against the
+polygon exterior **excluding holes**. It includes synthetic negative tests
+for both false-overlap geometries and a positive crossing-edge control,
+without a third-party geometry package.
+
+**Proof boundary:** nine focused synthetic methods are authored at the current
+PR head. The earlier green CI run and first-hand two-provider-feature
+observation predate this geometry change; the **new exact-head CI and original
+provider response have not been rechecked** as of this note. Full topology
+(self-intersection/ring validity), original data release/polygon provenance,
+statewide geometry coverage, rights and insurer/model admission are unchanged
+and remain outside this bounding spatial pilot.
