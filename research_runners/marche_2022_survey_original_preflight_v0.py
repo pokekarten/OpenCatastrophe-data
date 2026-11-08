@@ -84,6 +84,9 @@ def _zip_checked(data: bytes, *, max_entries: int, max_total: int) -> zipfile.Zi
         if archive.testzip() is not None:
             raise SourceStructureError("ZIP CRC mismatch")
         return archive
+    except SourceStructureError:
+        # Do not obscure an intentional fail-closed rejection as a generic ZIP parse error.
+        raise
     except (zipfile.BadZipFile, OSError, ValueError, RuntimeError) as exc:
         raise SourceStructureError("Malformed or corrupted ZIP archive") from exc
 
