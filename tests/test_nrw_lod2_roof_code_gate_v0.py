@@ -76,7 +76,7 @@ class AdVRoofCodeContractTests(unittest.TestCase):
             good.replace(b"Flachdach", b"Flachdech"),
             good.replace(b"1000", b"1001"),
             good.replace(b"gml", b"foo"),
-            b"<!DOCTYPE evil [ <!ENTITY x SYSTEM 'file:///etc/passwd'> ]>" + good,
+            b'<!DOCTYPE evil [ <!ENTITY x "invented"> ]>' + good,
             b"not xml",
             b" " * (MAX_CODELIST_BYTES + 1),
         ):
