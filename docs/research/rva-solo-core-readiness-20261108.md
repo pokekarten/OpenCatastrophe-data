@@ -38,3 +38,20 @@ python scripts/check_all.py
 ```
 
 For live readiness, use the exact SQL file **read-only** against the explicitly selected Neon `insurance` database and main branch; do not confuse the test branch with main or mutate any source/organization/portfolio tables. The original source/rights approval, official 53-Kreis GFK semantics, full 10k OED artifact custody, portfolio-to-carrier legal binding, German vulnerability calibration, actual annual stochastic catalogue and treaty terms remain independent **no-go** gates. The correct final green state of this report is still **RESEARCH_ONLY_NEEDS_HAZARD_VULNERABILITY_RIGHTS_AND_TREATY_REVIEW**, never production certification.
+
+## Independently executed 10k negative counterexample (read-only, 2026-11-08)
+
+A second PostgreSQL `WITH fictional AS (SELECT ... FROM generate_series(1,10000))` query used 53 **invented** Kreis labels and 10,000 artificial rows, with the last row repeating the first row's fictional ID and coordinate in a **different** Kreis. This is a purely synthetic SQL logic experiment: no original R+V or land-register rows, zero database mutations.
+
+| Independent diagnostic | PostgreSQL result |
+| --- | ---: |
+| Distinct Kreis labels | 53 |
+| Total fictional rows | 10,000 |
+| Sum of per-Kreis distinct IDs | 10,000 |
+| Sum of per-Kreis distinct coordinates | 10,000 |
+| Globally distinct IDs | 9,999 |
+| Globally distinct coordinates | 9,999 |
+| Previous local-only rule | **Incorrectly passes** |
+| New version-global rule | **Correctly blocks** |
+
+The equivalent 10k/53-Kreis independent integer negative test is now included in `tests/test_rva_solo_neon_readiness_v0.py` and checks both the old false positive and the new correct global contract. This **does not** demonstrate the full original-source populated 10k geometry/model gate is accepted: that still requires licensed source bytes, separate research-branch/geometry data, source identity and a controlled explicit populated trial.
