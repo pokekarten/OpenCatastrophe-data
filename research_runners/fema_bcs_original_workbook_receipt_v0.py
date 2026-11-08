@@ -159,11 +159,25 @@ def inspect_original(original: bytes, *, expected_sha256: str | None = None) -> 
         raise OriginalFEMASourceError("original XLSX structure unreadable") from exc
 
 
-def fetch_official(*, opener=urllib.request.urlopen) -> bytes:
+class FEMAOnlyRedirect(urllib.request.HTTPRedirectHandler):
+    """Never issue a redirected request to an unreviewed download host."""
+
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        parsed = urlsplit(newurl)
+        if parsed.scheme != "https" or parsed.hostname not in {"www.fema.gov", "fema.gov"}:
+            raise OriginalFEMASourceError("official original redirect outside FEMA host")
+        return super().redirect_request(request, fp, code, msg, headers, newurl)
+
+
+def fetch_official(*, opener=None) -> bytes:
     request = urllib.request.Request(SOURCE_URL, headers={
         "User-Agent": "OpenCatastrophe-FEMA-0173-original-metadata-check/0.1",
         "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*;q=0.1",
     })
+    # urlopen follows redirects before the caller sees the response.
+    # Intercept before any request reaches another download host.
+    if opener is None:
+        opener = urllib.request.build_opener(FEMAOnlyRedirect()).open
     with opener(request, timeout=35) as response:
         parsed = urlsplit(response.geturl())
         if parsed.scheme != "https" or parsed.hostname not in {"www.fema.gov", "fema.gov"}:
