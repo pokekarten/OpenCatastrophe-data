@@ -36,8 +36,9 @@ MAX_ROWS = 500_000
 FUNCTIONS = ("NR", "RS", "RM")
 STRUCTURES = ("C", "M", "S", "T", "U")
 GFA_FIELDS = tuple(f"GFA_{function}_{structure}" for function in FUNCTIONS for structure in STRUCTURES)
-GID_PATTERN = re.compile(r"[A-Z]{3}\.\d+\.\d+_\d+\Z")
+GID_PATTERN = re.compile(r"(?:[A-Z]{3}|Z\d{2})\.\d+\.\d+_\d+\Z")
 COUNTRY_PATTERN = re.compile(r"[A-Z]{3}\Z")
+SOURCE_COUNTRY_PATTERN = re.compile(r"(?:[A-Z]{3}|Z\d{2})\Z")
 
 
 class MaterialCitiesPreflightError(ValueError):
@@ -111,6 +112,7 @@ def inspect_archive(blob: bytes, *, expected_md5: str = PUBLISHER_MD5,
                     row_count = 0
                     selected_count = 0
                     unidentified_count = 0
+                    non_iso_country_count = 0
                     collision_count = 0
                     collided_ids = set()
                     seen_region_ids = set()
@@ -122,11 +124,13 @@ def inspect_archive(blob: bytes, *, expected_md5: str = PUBLISHER_MD5,
                         if row_count > MAX_ROWS or None in row:
                             raise MaterialCitiesPreflightError("malformed or unbounded original CSV")
                         row_country = (row.get("GID_0") or "").strip()
-                        if not COUNTRY_PATTERN.fullmatch(row_country):
+                        if not SOURCE_COUNTRY_PATTERN.fullmatch(row_country):
                             raise MaterialCitiesPreflightError("missing/invalid original country code")
                         if country is not None and row_country != country:
                             continue
                         selected_count += 1
+                        if not COUNTRY_PATTERN.fullmatch(row_country):
+                            non_iso_country_count += 1
                         try:
                             components = [_number(row.get(field), field) for field in GFA_FIELDS]
                             total = math.fsum(components)
@@ -164,6 +168,7 @@ def inspect_archive(blob: bytes, *, expected_md5: str = PUBLISHER_MD5,
         "csv_rows_scanned": row_count,
         "source_adm2_rows_selected": selected_count,
         "source_rows_without_unique_adm2_key": unidentified_count,
+        "non_iso_source_country_rows": non_iso_country_count,
         "duplicate_key_occurrences": collision_count,
         "distinct_collided_region_keys": len(collided_ids),
         "distinct_valid_adm2_keys": len(seen_region_ids),
