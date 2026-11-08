@@ -54,3 +54,26 @@ available and the remote Mac worker was not accessible at this checkpoint.
 repository CI and separately reviewed native integration evidence exist.
 No automatic Neon write, model admission, provider-rights approval, asset
 download or CI bypass is authorized by this research receipt.
+
+## Independent current-branch replay, 2026-11-08 (read-only, no mutations)
+
+The same **exact original Git SQL blobs** were retrieved from original research Draft #1081 and separately executed against only the existing `insurance-risk-core / insurance / validation-schema-20261031` branch `br-summer-sky-bawujqu8`. **Not** the production/main Neon database; no SQL writes or source-row imports.
+
+| Invariant / deterministic toy output | Observed 2026-11-08 |
+| --- | ---: |
+| Invented asset count / invented proxy value | 12 / EUR 3,150,000 |
+| Artificial independent Bernoulli years | 10,000 |
+| Fictional wind/flood events | 1,008 / 533 |
+| Total invented GUL | EUR 285,494,000 |
+| Invented AAL | EUR 28,549.40 |
+| Artificial annual AEP 99% / 99.5% | EUR 342,500 / EUR 366,250 |
+| Artificial one-event OEP 99% / 99.5% | EUR 333,750 / EUR 351,250 |
+| Year rows / event rows / event-asset rows | 10,000 / 1,541 / 18,492 |
+
+The second source-SQL query repeated **all four** exact row-series receipts:
+- annual: `6aebdda0c542f06a882ec16a4fcaa667`
+- event: `e0b6b2414c0a12459c47785a7de53777`
+- event-asset: `8cba885a6e1aab7d43e2fe1087fe0d95`
+- event-intensity: `2f11da6a6e1fb752cc410f50bfeffbc6`.
+
+All four MD5 values above match the pinned historic research receipts exactly. This second independent replay proves exact read-only **SQL research fixture reproducibility**, **not** a native OpenCatastrophe/NextGen/Oasis run, insurer TIV, hazard, vulnerability, ceded treaty, source rights, annual physical CAT frequency calibration or any observed portfolio loss. The source model remains entirely fictional, fixed 12-unit, two-peril independent event smoke.
