@@ -146,10 +146,15 @@ def inspect_original_geometry(
             raise GeometryOverlapError("BKG original KRS geometries incomplete")
         root = roots[0]
         try:
-            prj = CRS.from_wkt(z.read(root + ".prj").decode("utf-8-sig"))
+            original_prj_wkt = z.read(root + ".prj").decode("utf-8-sig")
+            prj = CRS.from_wkt(original_prj_wkt)
         except (UnicodeError, ValueError) as exc:
             raise GeometryOverlapError("unreviewed BKG source projection WKT") from exc
-        if prj.to_epsg() != SOURCE_CRS_EPSG:
+        # The original ESRI WKT explicitly identifies EPSG:31467; PROJ 3.7
+        # normalizes this easting/northing-axis variant to EPSG:5677.
+        # Both represent the exact original, hash-pinned Gauss-Kruger zone 3.
+        if ('AUTHORITY["EPSG",31467]' not in original_prj_wkt or
+                prj.to_epsg() not in (SOURCE_CRS_EPSG, 5677)):
             raise GeometryOverlapError("BKG source GK3 CRS drift")
         source_projection = Transformer.from_crs(prj, target, always_xy=True).transform
         with shapefile.Reader(shp=io.BytesIO(z.read(root + ".shp")),
