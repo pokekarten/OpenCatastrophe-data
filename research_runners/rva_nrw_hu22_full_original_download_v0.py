@@ -17,13 +17,12 @@ import sys
 from urllib.request import Request,urlopen
 
 from rva_nrw_hu_full_zip_stratified_reservoir_v0 import (
-    EXPECTED_ZIP_BYTES, SourceBlocked
+    EXPECTED_ZIP_BYTES, EXPECTED_ORIGINAL_SHA256, SourceBlocked
 )
 
 ORIGINAL_URL=("https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/"
               "hist_hu_shp/2022_hu_EPSG4647_Shape.zip")
 MAX_BYTES=EXPECTED_ZIP_BYTES
-EXPECTED_ORIGINAL_SHA256="10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da"
 CHUNK=4*1024*1024
 
 
