@@ -67,8 +67,8 @@ class TestOriginalHU22OnDemandGovernance(unittest.TestCase):
         # The earlier explicit 901 MB workflow must not strand original
         # provider bytes if conversion fails after a successful download.
         legacy=(ROOT / ".github/workflows/rva-nrw-hu22-full-one-shot.yml").read_text(encoding="utf-8")
-        trigger=legacy.split("\\non:\\n", 1)[1].split("\\npermissions:", 1)[0]
-        self.assertEqual(trigger, "  workflow_dispatch:\\n")
+        trigger=legacy.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
+        self.assertEqual(trigger, "  workflow_dispatch:\n")
         cleanup=legacy.index("Always delete large ephemeral provider ZIP")
         publication=legacy.index("Publish ONLY fictional geocoded OED")
         self.assertLess(cleanup, publication)
