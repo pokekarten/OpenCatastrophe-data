@@ -113,6 +113,31 @@ class ComponentFrequencyTests(unittest.TestCase):
         with self.assertRaisesRegex(SourceStructureError, "coding"):
             _dictionary_outcome_contract(make_dict("industrial", valid=False), "industrial")
 
+    def test_summary_rejects_malformed_direct_research_inputs(self) -> None:
+        # Do not rely on an upstream source parser when this aggregator is
+        # imported directly; otherwise invalid binary values could make a
+        # published sample fraction exceed one or throw a math domain error.
+        invalid = [
+            ([(Decimal("NaN"), 1)], "outside-depth"),
+            ([(Decimal("-0.1"), 0)], "outside-depth"),
+            ([(Decimal("10.1"), 0)], "outside-depth"),
+            ([("0.3", 1)], "outside-depth"),
+            ([(Decimal("0.3"), True)], "binary"),
+            ([(Decimal("0.3"), 2)], "binary"),
+            ([(Decimal("0.3"), -1)], "binary"),
+            ([(Decimal("0.3"), 1, 0)], "structure"),
+            ([["0.3", 1]], "structure"),
+        ]
+        for sample, expected in invalid:
+            with self.subTest(sample=sample), self.assertRaisesRegex(
+                    SourceStructureError, expected):
+                _summarize(sample, sector="residential")
+        with self.assertRaisesRegex(SourceStructureError, "sector"):
+            _summarize([(Decimal("0.5"), 1)], sector="unverified")
+        valid = [(Decimal("0.2"), 1)] * 10 + [(Decimal("0.2"), 0)] * 10
+        self.assertEqual(_summarize(valid, sector="industrial")[
+                         "published_depth_bins"][0]["observed_sample_fraction"], 0.5)
+
     def test_bin_values_not_monotonicity_forced(self) -> None:
         pairs = ([(Decimal("0.3"), 1)] * 15 + [(Decimal("0.3"), 0)] * 5
                + [(Decimal("0.8"), 1)] * 5 + [(Decimal("0.8"), 0)] * 15)
