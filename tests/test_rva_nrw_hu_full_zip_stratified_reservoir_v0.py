@@ -9,6 +9,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import types
 import struct
 import tempfile
 import unittest
@@ -21,7 +22,7 @@ from rva_nrw_hu_full_zip_stratified_reservoir_v0 import (
     sample_hu_stream, sample_full_official_zip, SourceBlocked,sha256_regular_file
 )
 from rva_nrw_hu22_full_source_to_fictional_oed_v0 import (
-    build_geocoded_oed
+    build_geocoded_oed, _check_fresh_output_ods_or_erase
 )
 
 
@@ -173,6 +174,55 @@ class TestOriginalFullSourceReservoir(unittest.TestCase):
             with self.assertRaisesRegex(SourceBlocked, "SHA256 identity drift"):
                 sample_full_official_zip(Path("not-opened.zip"), {"05362": 1})
             opening.assert_not_called()
+
+    def test_failed_final_oed_validation_erases_fresh_source_geocodes(self):
+        # The selected public-geometry OED has not passed ODS until the
+        # final schema/version gate returns; a failed attempt must not persist.
+        with tempfile.TemporaryDirectory() as t:
+            parent=Path(t)
+            for reason in ("wrong_version", "oed_validation_error"):
+                output=parent/reason
+                output.mkdir()
+                (output/"location.csv").write_text("SYNTHETIC-NOT-INSURER",encoding="utf8")
+                (output/"account.csv").write_text("SYNTHETIC-NOT-INSURER",encoding="utf8")
+                pkg=types.ModuleType("ods_tools")
+                pkg.__path__=[]
+                pkg.__version__="0.0.0" if reason=="wrong_version" else "5.0.8"
+                sub=types.ModuleType("ods_tools.oed")
+                calls=[]
+                def checker(*, location, account, check_oed):
+                    calls.append((location,account,check_oed))
+                    raise ValueError("synthetic OED parser rejection")
+                sub.OedExposure=checker
+                with patch.dict(sys.modules,{"ods_tools":pkg,"ods_tools.oed":sub}):
+                    if reason=="wrong_version":
+                        with self.assertRaisesRegex(SourceBlocked,"pinned official ODS"):
+                            _check_fresh_output_ods_or_erase(output)
+                        self.assertEqual(calls,[])
+                    else:
+                        with self.assertRaisesRegex(ValueError,"synthetic OED parser rejection"):
+                            _check_fresh_output_ods_or_erase(output)
+                        self.assertEqual(len(calls),1)
+                        self.assertTrue(calls[0][2])
+                self.assertFalse(output.exists())
+
+    def test_valid_final_oed_check_preserves_fresh_source_output(self):
+        with tempfile.TemporaryDirectory() as t:
+            output=Path(t)/"synthetic"
+            output.mkdir()
+            pkg=types.ModuleType("ods_tools")
+            pkg.__path__=[]
+            pkg.__version__="5.0.8"
+            sub=types.ModuleType("ods_tools.oed")
+            calls=[]
+            def checker(*, location, account, check_oed):
+                calls.append((location,account,check_oed))
+            sub.OedExposure=checker
+            with patch.dict(sys.modules,{"ods_tools":pkg,"ods_tools.oed":sub}):
+                _check_fresh_output_ods_or_erase(output)
+            self.assertTrue(output.is_dir())
+            self.assertEqual(calls,[(
+                str(output/"location.csv"),str(output/"account.csv"),True)])
 
     def test_original_zip_regular_file_expected_full_size(self):
         with tempfile.TemporaryDirectory() as d:
