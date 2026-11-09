@@ -132,6 +132,20 @@ class PolishBuildingWindowTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(BuildingWindowError):
                 inspect_original_geojson(encoded(sample))
 
+    def test_reject_nonmapping_crs_properties_fail_closed(self):
+        # A syntactically valid but malformed WFS GeoJSON CRS must be blocked
+        # with a controlled BuildingWindowError, not an AttributeError crash.
+        for bad_properties in (None, [], "EPSG:2180", 42, True):
+            sample = fake_collection()
+            sample["crs"]["properties"] = bad_properties
+            with self.subTest(properties=bad_properties), self.assertRaisesRegex(
+                    BuildingWindowError, "CRS mismatch"):
+                inspect_original_geojson(encoded(sample))
+        sample = fake_collection()
+        del sample["crs"]["properties"]
+        with self.assertRaisesRegex(BuildingWindowError, "CRS mismatch"):
+            inspect_original_geojson(encoded(sample))
+
     def test_reject_missing_zero_excessive_rows_and_malformed_geometry(self):
         cases = []
         empty = fake_collection()
