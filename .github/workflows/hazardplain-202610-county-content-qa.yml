@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hazard Plain 2026-10 county original-content aggregate QA
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/hazardplain-202610-county-content-qa.yml"
+      - "research_runners/hazardplain_202610_county_content_qa_v0.py"
+      - "tests/test_hazardplain_202610_county_content_qa_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hazardplain-content-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  county-original-quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source without credentials persistence
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Hermetic synthetic county quality contract tests
+        run: python -m unittest tests.test_hazardplain_202610_county_content_qa_v0 -v
+      - name: Inspect only aggregated original content after exact-byte source validation
+        id: original
+        continue-on-error: true
+        run: python -m research_runners.hazardplain_202610_county_content_qa_v0 --official-live
+      - name: Write unambiguous source canary result
+        if: always()
+        env:
+          ORIGINAL_STATUS: ${{ steps.original.outcome }}
+        run: |
+          if [ "$ORIGINAL_STATUS" = "success" ]; then
+            echo "ORIGINAL_CONTENT_AGGREGATES_OBSERVED: exact-verified original data scanned for FIPS keys, null/negative/nonnumeric model values and county overlap. Raw rows not stored; this is not source admission." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "BLOCKED_ORIGINAL_CONTENT_QA: do not treat green synthetic tests or nonblocking provider probe as real source-content verification." >> "$GITHUB_STEP_SUMMARY"
+          fi
