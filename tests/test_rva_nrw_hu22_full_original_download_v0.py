@@ -66,6 +66,50 @@ class TestOneShotHUDownload(unittest.TestCase):
                     m.download_original_once(out,urlopen_=lambda request,timeout:value)
                 self.assertFalse(out.exists())
 
+    def test_dangling_target_symlink_is_rejected_without_deletion(self):
+        with tempfile.TemporaryDirectory() as t:
+            d=Path(t)
+            target=d/"missing-original.zip"
+            out=d/"dangling.zip"
+            out.symlink_to(target)
+            self.assertFalse(out.exists())
+            self.assertTrue(out.is_symlink())
+            def forbidden(request,timeout):
+                self.fail("The official 901 MB GET must not start for a symlink")
+            with self.assertRaisesRegex(SourceBlocked,"not symlinked"):
+                m.download_original_once(out,urlopen_=forbidden)
+            self.assertTrue(out.is_symlink())
+            self.assertFalse(target.exists())
+
+    def test_symlinked_output_parent_is_rejected_before_fetch(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t)
+            actual=root/"real"
+            actual.mkdir()
+            linked=root/"linked"
+            linked.symlink_to(actual,target_is_directory=True)
+            def forbidden(request,timeout):
+                self.fail("No original provider request for a linked parent")
+            with self.assertRaisesRegex(SourceBlocked,"not symlinked"):
+                m.download_original_once(linked/"archive.zip",urlopen_=forbidden)
+            self.assertTrue(linked.is_symlink())
+            self.assertFalse((actual/"archive.zip").exists())
+
+    def test_concurrent_exclusive_open_failure_keeps_foreign_symlink(self):
+        with patch.object(m,"MAX_BYTES",6),tempfile.TemporaryDirectory() as t:
+            d=Path(t)
+            out=d/"race.zip"
+            target=d/"other.zip"
+            def concurrent_source(request,timeout):
+                # Simulate a path appearing after the initial existence gate
+                # but before the exclusive open. It must remain untouched.
+                out.symlink_to(target)
+                return Fake(b"ABCDEF",6)
+            with self.assertRaises(FileExistsError):
+                m.download_original_once(out,urlopen_=concurrent_source)
+            self.assertTrue(out.is_symlink())
+            self.assertFalse(target.exists())
+
     def test_same_size_wrong_sha_fails_before_archive_is_consumed(self):
         good_digest=hashlib.sha256(b"ABCDEF").hexdigest()
         with patch.object(m,"MAX_BYTES",6), \
