@@ -49,7 +49,7 @@ EXPECTED = {
     ),
     "nrw_hu22_2022_building_footprints": (
         "www.opengeodata.nrw.de", "ACTUAL_PUBLIC_GEOMETRY_ONLY_NO_OBSERVED_INSURANCE_LOSS",
-        "PRODUCT_YEAR_SPECIFIC_NRW_HU2022_REUSE_METADATA_STILL_TO_CONFIRM",
+        "NRW_HU2022_OFFICIAL_PRODUCT_PAGE_DL_DE_ZERO_2_0_METADATA_ONLY",
         "SOURCE_REPLAY_ONLY_NOT_AS_LOSS_CALIBRATION",
     ),
 }
@@ -86,7 +86,7 @@ def validate_registry(doc: dict) -> dict:
     if not isinstance(doc, dict) or set(doc) != ROOT_FIELDS:
         raise SourceRightsBlocked("source register top-level schema incomplete/unknown")
     if (
-        doc["schema"] != SCHEMA or doc["as_of"] != "2026-11-06"
+        doc["schema"] != SCHEMA or doc["as_of"] != "2026-11-09"
         or doc["all_sources_reference_only_or_source_replay"] is not True
         or doc["independent_German_wind_damage_calibration_completed"] is not False
         or doc["actual_RV_policy_geography_or_claims_observed"] is not False
@@ -169,6 +169,9 @@ def validate_registry(doc: dict) -> dict:
                 src["source_file_sha256"] !=
                 "10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da"
                 or src["approval_evidence"] != "SOURCE_ONLY_CI_42246960507"
+                or src["landing_url"] !=
+                "https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/2022_hu_EPSG4647_Shape.zip"
+                or src["rights_url"] != "https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/"
             ):
                 raise SourceRightsBlocked("authentic original HU22 source/rights receipt drift")
         elif sid != "eiopa_catastrophe_data_hub_2023" and (
