@@ -3,12 +3,14 @@
 name: NRW HU22 full original fresh reconstruction to Daria CLIMADA parity
 
 # A costly, explicit 901 MB original-source GET and 11.2m-feature scan.
-# workflow_dispatch only: do not add pull_request paths filtering here.
-# GitHub evaluates PR paths across the complete PR diff and would repeatedly
-# re-download 901 MB on unrelated commits while this file is present in the PR.
-# This workflow is intended for manual dispatch AFTER review/merge to main.
+# Explicit invocation only: manual dispatch or an exact-SHA pinned
+# reusable workflow call from an independently reviewed default-branch
+# manual launcher. Never add automatic push, PR or schedule triggers:
+# GitHub evaluates PR paths across the complete PR diff and would repeat
+# the 901 MB acquisition on unrelated research changes.
 on:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
