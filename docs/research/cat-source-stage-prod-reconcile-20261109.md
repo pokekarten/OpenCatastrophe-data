@@ -20,8 +20,10 @@ comparator against new pinned receipts before acting.
 - Independent historical research stage `access-contract-revision-proof-20261103`
   (`br-steep-lab-baeo8bmc`). Stage is **not** a substitute for a new
   production-cloned rehearsal branch.
-- Read-only `registry.source_record` metadata SELECTs; no original
-  provider data, database DML or model operation was performed.
+- Initial read-only `registry.source_record` metadata SELECTs established the
+  baseline. A subsequent **append-only rehearsal on a nonproduction branch**
+  is documented below. No original provider bytes, model operation, or
+  production database mutation occurred.
 
 | Layer | Pinned GitHub files | Production matching path | Stage matching path |
 | --- | ---: | ---: | ---: |
@@ -61,26 +63,76 @@ Historical stage has one additional version discrepancy:
 `landscape/sources-peer-cat-repositories-20261102.json`. Never silently
 overwrite old version rows in stage or production just to reduce drift counts.
 
-## Branch-capacity blocker and bounded next action
+## Branch capacity and completed isolated append rehearsal
 
-Creating another isolated Neon branch named
+A request for a **new** isolated Neon branch
 `source-registry-stage-20261109-pinned-a5af7add`, parented on the historical
-isolated stage, returned **HTTP 422: branches limit exceeded**. No branches
-were deleted; no existing stage or production data was modified to make room.
+stage, returned **HTTP 422: branches limit exceeded**. No branch was
+deleted. The historical stage `br-steep-lab-baeo8bmc` was **not** mutated.
 
-The companion offline tool
-`scripts/build_cat_source_stage_append_review_v0.py` now prepares a
-**manual, source-byte-checked candidate list** using the pinned GitHub
-inventory, separate stage/prod exports and canonical JSON checked out at
-the pinned version. It validates Git blob SHA-1, also records SHA-256,
-enforces source-access and landscape contract state and refuses to append
-manifest admissions or identities already present in production. The
-program produces **no SQL** and does not authorize a database write.
+Instead, an existing *purpose-built* append rehearsal branch,
+`source-registry-production-append-rehearsal-20261103`
+(`br-solitary-truth-ba46euvb`), was checked against actual production.
+Both held **114** identical source-record rows, no raw admission flags,
+and the **same complete-row fingerprint**
+`3785c2f4e842ce5a1c8457f29d07d924`
+(MD5 over sorted `to_jsonb(row)::text`, including original timestamps).
+The branch is not `main`.
 
-When an **independent isolated Neon branch is explicitly available**, the
-next safe experiment is to re-run the pinned comparison and separately
-rehearse an append-only metadata transaction with original-row fingerprint
-parity, duplicate-ID/path rejection, and exact post-write readback. The
-eight/nine version drifts require their own immutable revision evidence
-and separate scientific/rights review. Do **not** run this against
-`main` or infer model readiness from source-register coverage.
+After checking the exact pinned GitHub canonical JSON file SHA against
+the corresponding pinned GitHub directory listing and checking
+fail-closed discovery/access statuses, **81 missing metadata records**
+were appended to this rehearsal branch in bounded inserts:
+
+- **65** new non-admission `landscape/sources*.json` shard receipts;
+  `review_status=non_admission_discovery_only`, `rights_status=not_reviewed`.
+- **16** new `access/*.json` reviewed interface receipts, preserving their
+  original contract status and rights, including the Slovakia GKÚ Buildings
+  `documented_only` route. No contract was promoted to executable/model-ready.
+- **0** new manifest identities; existing 15 matched pinned GitHub exactly.
+- **0** existing rows replaced, updated or deleted, and **0** raw admissions.
+  Full public canonical JSON metadata were retained as JSONB; provider asset
+  bytes and customer/claims/insured location data remain outside this proof.
+
+### Verified post-transaction readback
+
+| Metric | Production (unchanged) | Isolated append rehearsal |
+| --- | ---: | ---: |
+| Entire `registry.source_record` rows | 114 | **195** |
+| Canonical GitHub JSON paths present | 108 / 189 | **189 / 189** |
+| Exact current Git blob matches | 100 | **181** |
+| Missing canonical paths | 81 | **0** |
+| Existing blob/version conflicts | 8 | **8** |
+| `admissible_for_raw=true` | 0 | **0** |
+
+- Pinned GitHub source commit for all 81 inserts:
+  `a5af7add12f295e7334b78a333740c5d07847581`.
+- Original **114** baseline rows preserved with identical full-row MD5
+  `3785c2f4e842ce5a1c8457f29d07d924`, verified again in both
+  production and rehearsal after the inserts.
+- **81** newly tagged metadata records; their sorted
+  `source_key|git_blob_sha|review_status|rights_status` MD5 fingerprint:
+  `4bd8b5e3e3596aed0cd261682aa18498`.
+- Post-write checks: 0 changed or promoted landscape rights labels,
+  0 inconsistent new access JSON vs recorded status, 0 raw admission flags.
+- The eight original production/rehearsal SHA differences are *still*
+  present and have **not** been silently rewritten.
+
+The companion offline code
+`scripts/build_cat_source_stage_append_review_v0.py`
+produces a separate **manual**, source-byte-checked review queue from an
+original checkout and independently exported inventories. That script
+does **not** access SQL or perform the above insert operation; the rehearsal
+was performed separately against the specifically selected nonproduction
+Neon branch. No automatic production synchronization is authorised.
+
+## Remaining release boundary
+
+Source registration is **not** licensing, scientific/model suitability,
+provider asset download or an insured exposure portfolio. The eight
+version differences require independently reviewed old/new receipts
+before either stage or production is updated. Promotion of the 81
+rehearsal-only registrations into production needs an **explicitly
+reviewed migration**, production precondition checks and a separate
+post-write verification. Do **not** run unreviewed migrations on
+`main` or infer CAT/Oasis/NextGen readiness from metadata coverage.
