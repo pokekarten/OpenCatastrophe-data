@@ -11,6 +11,11 @@ name: NRW HU22 full original fresh reconstruction to Daria CLIMADA parity
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      source_ref:
+        description: Immutable forty-character Git commit SHA of the approved research replay
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -29,6 +34,21 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+          # Reusable workflows otherwise check out the caller's main SHA.
+          ref: ${{ inputs.source_ref || github.sha }}
+      - name: Verify an immutable research commit was actually checked out
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.source_ref || github.sha }}
+        run: |
+          set -eu
+          if ! [[ "$EXPECTED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "BLOCKED: explicit full 40-hex commit SHA required" >&2
+            exit 1
+          fi
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+          test -f research_runners/rva_nrw_hu22_full_source_to_fictional_oed_v0.py
+          test -f research_runners/rva_nrw_hu22_full_original_download_v0.py
+          echo "Pinned research source commit verified; no automatic full original download"
       - name: Stable Python 3.11
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
