@@ -23,6 +23,7 @@ from rva_nrw_hu_full_zip_stratified_reservoir_v0 import (
 ORIGINAL_URL=("https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/"
               "hist_hu_shp/2022_hu_EPSG4647_Shape.zip")
 MAX_BYTES=EXPECTED_ZIP_BYTES
+EXPECTED_ORIGINAL_SHA256="10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da"
 CHUNK=4*1024*1024
 
 
@@ -54,6 +55,8 @@ def download_original_once(path:Path,*,urlopen_=urlopen)->dict:
                     stream.write(chunk)
         if total!=MAX_BYTES or path.stat().st_size!=MAX_BYTES:
             raise SourceBlocked("original provider archived 2022 ZIP truncated")
+        if digest.hexdigest()!=EXPECTED_ORIGINAL_SHA256:
+            raise SourceBlocked("original provider 2022 archive SHA256 identity drift")
         return {
             "schema":"NRW_HU_2022_SINGLE_FULL_ORIGINAL_PROVIDER_DOWNLOAD_V0",
             "provider_original_archive_url":ORIGINAL_URL,
