@@ -63,6 +63,9 @@ class HazardPlainContentQATests(TestCase):
         self.assertEqual(report["numeric_field_counts"]["eal_total"]["positive"], 1)
         self.assertEqual(report["numeric_field_counts"]["exp_b"]["nonnumeric"], 1)
         self.assertEqual(report["categorical_flag_counts"]["nri_applicable_true"], 2)
+        self.assertEqual(report["nri_applicability_vs_eal_status"]["applicable_true__eal_positive"], 1)
+        self.assertEqual(report["nri_applicability_vs_eal_status"]["applicable_true__eal_negative"], 1)
+        self.assertEqual(report["nri_applicability_vs_eal_status"]["applicable_false__eal_blank"], 1)
         self.assertFalse(report["data_values_or_county_identifiers_emitted"])
         self.assertEqual(len(private["pairs"]), 3)
 
