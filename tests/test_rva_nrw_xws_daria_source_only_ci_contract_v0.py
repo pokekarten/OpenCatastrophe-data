@@ -73,7 +73,19 @@ class SourceOnlyCISeparation(unittest.TestCase):
 
     def test_full_rebuild_is_manual_and_already_original_source_independent(self):
         on=self.full.split("\non:\n",1)[1].split("\npermissions:",1)[0]
-        self.assertEqual(on, "  workflow_dispatch:\n")
+        self.assertEqual(on, (
+            "  workflow_dispatch:\n"
+            "  workflow_call:\n"
+            "    inputs:\n"
+            "      source_ref:\n"
+            "        description: Immutable forty-character Git commit SHA of the approved research replay\n"
+            "        type: string\n"
+            "        required: true\n"
+        ))
+        self.assertIn("ref: ${{ inputs.source_ref || github.sha }}", self.full)
+        self.assertIn('test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"', self.full)
+        for forbidden in ("push:", "schedule:", "repository_dispatch:"):
+            self.assertNotIn(forbidden, on)
         for term in (
             "rva_nrw_hu22_full_original_download_v0.py",
             "rva_nrw_hu22_full_source_to_fictional_oed_v0.py",
