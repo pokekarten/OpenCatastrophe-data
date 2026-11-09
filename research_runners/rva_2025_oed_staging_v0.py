@@ -110,10 +110,42 @@ def rows_from_validated_sources(inputs: list[dict], case: str) -> list[dict]:
     return cells
 
 
+def validate_export_cells(cells: list[dict]) -> None:
+    """Protect fictional OED IDs and exact cohort conservation at the export boundary.
+
+    The upstream Zensus/HGB provenance gate is still required; these guards
+    reject malformed direct API calls before any output directory is created.
+    """
+    if not isinstance(cells, list) or len(cells) != 4000:
+        raise StagingError('expected exactly 4000 county/age cells')
+    ages_per_county: dict[str, set[int]] = {}
+    previous: tuple[str, int] | None = None
+    for cell in cells:
+        if not isinstance(cell, dict):
+            raise StagingError('malformed county/age cell')
+        ags, age = cell.get('ags'), cell.get('age')
+        if (not isinstance(ags, str) or len(ags) != 5
+                or not ags.isascii() or not ags.isdecimal()
+                or type(age) is not int or not 0 <= age < 10
+                or type(cell.get('count')) is not int or cell['count'] < 0
+                or type(cell.get('published_2022')) is not int
+                or cell['published_2022'] < 0):
+            raise StagingError('invalid county/age cohort source identity or count')
+        key = (ags, age)
+        if previous is not None and key <= previous:
+            raise StagingError('duplicate or non-canonical county/age identity')
+        previous = key
+        ages_per_county.setdefault(ags, set()).add(age)
+    if (len(ages_per_county) != 400
+            or any(ages != set(range(10)) for ages in ages_per_county.values())):
+        raise StagingError('incomplete 400-county / ten-age cohort identity')
+
+
 def export(cells: list[dict], out: Path, case: str, valuation: str,
            requested_sample_size: int, input_hashes: dict[str,str], valuation_pattern: str = 'flat') -> dict:
     if case not in CASES or valuation not in VALUES or valuation_pattern not in VALUATION_PATTERNS:
         raise StagingError('unapproved fictional scenario')
+    validate_export_cells(cells)
     selected = allocate_sample(cells,requested_sample_size)
     nrows = sum(selected)
     total_tiv = 0

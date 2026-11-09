@@ -83,6 +83,41 @@ class TestStage(unittest.TestCase):
             self.assertNotEqual(tiv,4500000000)
             self.assertFalse(receipt['germany_peril_model_lookup_allowed'])
 
+    def test_export_rejects_ambiguous_county_age_cells_before_writing(self):
+        cells = fixture()
+        invalid_values = (
+            ('csv_formula_ags', {'ags': '=SUM(1+1)'}),
+            ('newline_ags', {'ags': '01001' + chr(10) + 'invalid'}),
+            ('numeric_ags', {'ags': 10101}),
+            ('unicode_digits_ags', {'ags': '０１００１'}),
+            ('invalid_age', {'age': 10}),
+            ('boolean_age', {'age': True}),
+            ('boolean_contract_count', {'count': True}),
+            ('negative_published_stock', {'published_2022': -1}),
+            ('boolean_published_stock', {'published_2022': True}),
+        )
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for label, replacement in invalid_values:
+                bad = list(cells)
+                bad[0] = dict(bad[0], **replacement)
+                target = root / label
+                with self.subTest(label=label), self.assertRaises(StagingError):
+                    export(bad, target, 'PHYSICAL_BUILDINGS_UNIFORM_AGE_AFFINITY',
+                           'central', 10000, {'test': '00' * 32})
+                self.assertFalse(target.exists())
+            variants = (
+                ('missing_cohort', cells[:-1]),
+                ('reverse_cohorts', list(reversed(cells))),
+                ('duplicate_key', [cells[0], cells[0], *cells[2:]]),
+            )
+            for label, bad in variants:
+                target = root / label
+                with self.subTest(label=label), self.assertRaises(StagingError):
+                    export(bad, target, 'PHYSICAL_BUILDINGS_UNIFORM_AGE_AFFINITY',
+                           'central', 10000, {'test': '00' * 32})
+                self.assertFalse(target.exists())
+
     def test_fail_closed(self):
         cells=fixture()
         for size in (-1,NATIONAL+1):
