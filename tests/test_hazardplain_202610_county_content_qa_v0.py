@@ -185,7 +185,7 @@ class HazardPlainContentQATests(TestCase):
         self.assertEqual(m._boolean_class("unknown"), "other")
 
     def test_failure_not_masked_by_nonadmission(self):
-        with self.assertRaises(m.CountyQualityError):
+        with self.assertRaises(m.OriginalCSVError):
             m.inspect_county_table(m.NFIP, b"no data", expected_columns=COLUMNS[m.NFIP],
                                    expected_rows=1, expected_bytes=7,
                                    expected_sha256="0"*64)
