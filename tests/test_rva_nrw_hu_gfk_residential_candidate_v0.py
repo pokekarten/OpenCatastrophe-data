@@ -35,6 +35,17 @@ class TestHistoricalHUFunction(unittest.TestCase):
             self.assertEqual(classify_gfk(value)[0],"malformed")
         self.assertEqual(classify_gfk(None)[0],"malformed")
 
+    def test_audit_nontext_source_keys_fail_closed(self):
+        # Original GFK distributions use text identifiers. Mixed Python
+        # key types must not crash in sorted() or be mistaken for source data.
+        for invalid in ({1010: 1},
+                        {"31001_1010": 2, None: 1},
+                        {("31001", "1010"): 1},
+                        {True: 1}):
+            with self.subTest(keys=list(invalid)), self.assertRaisesRegex(
+                    ValueError, "GFK code must be a string"):
+                audit_gfk_counts(invalid)
+
     def test_count_receipt_no_invented_residential_classification(self):
         source={"31001_1010":8,"31001_1100":2,"31001_2460":5,
                 "31002_1010":1,"31001_3100":10,"":2}
