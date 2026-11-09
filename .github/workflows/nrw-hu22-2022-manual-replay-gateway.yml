@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: P0 NRW HU2022 full original-source research replay (manual pinned SHA)
+
+# Reviewable default-branch launcher. Never re-download 901 MB on push/PR.
+# The immutable called research commit contains its complete replay recipe,
+# original ZIP/GFK checks, 10k fictional OED and source-method parity.
+# Its source code is NOT admitted into main through this launcher.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-hu22-replay:
+    # Calls the exact separately reviewed historical research workflow.
+    # The called workflow checks out source_ref, not this default-branch SHA.
+    uses: pokekarten/OpenCatastrophe-data/.github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml@7df2bd716998eead99c5e4e114c8fa1d9a36cc95
+    with:
+      source_ref: 7df2bd716998eead99c5e4e114c8fa1d9a36cc95
+    permissions:
+      contents: read
