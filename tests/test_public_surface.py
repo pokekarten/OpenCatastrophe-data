@@ -128,7 +128,15 @@ class PublicSurfaceTests(unittest.TestCase):
         setup_python_v7_0 = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
         setup_python_v7_1 = "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0"
         dependency_review = "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
-        allowed = {checkout, setup_python_v7_0, setup_python_v7_1, dependency_review}
+        # One reviewed in-repository reusable workflow, immutable source SHA.
+        # Do not admit branch/tag references or generalize this allowlist.
+        nrw_hu22_manual_replay = (
+            "pokekarten/OpenCatastrophe-data/.github/workflows/"
+            "rva-nrw-hu22-daria-fresh-independent-replay.yml@"
+            "75dba089478927003d201032cb41303ebf587952"
+        )
+        allowed = {checkout, setup_python_v7_0, setup_python_v7_1, dependency_review,
+                   nrw_hu22_manual_replay}
 
         # Narrow, immutable same-repository replay approval for this gateway
         # only; third-party Actions and arbitrary reusable SHAs remain blocked.
