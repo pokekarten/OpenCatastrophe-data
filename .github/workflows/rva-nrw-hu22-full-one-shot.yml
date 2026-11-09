@@ -55,9 +55,10 @@ jobs:
             --original-2022-hu-zip "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip" \
             --fictional-nrw-oed "${{ runner.temp }}/rva-nrw-fictional-10k-base" \
             --output "${{ runner.temp }}/rva-nrw-hu22-10k-physical-candidate-geocoded-oed"
-      - name: Delete large ephemeral provider ZIP before publication
+      - name: Always delete large ephemeral provider ZIP before publication
+        if: always()
         run: |
-          rm -- "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip"
+          rm -f -- "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip"
       - name: Publish ONLY fictional geocoded OED and provenance, NOT original provider ZIP
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
