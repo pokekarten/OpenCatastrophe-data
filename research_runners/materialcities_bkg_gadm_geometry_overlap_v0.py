@@ -46,6 +46,9 @@ ORIGINAL_GF4_REVIEW_AGS = (
 ORIGINAL_GF4_COASTAL_AGS = frozenset((
     "01054", "03405", "04012", "08335", "13003", "13075",
 ))
+# Only the six originally sub-95%-IoU coastal/Lake Constance cases are
+# challenged here. Do not interpret county-scale GADM water as BKG GF2.
+ORIGINAL_GF4_COASTAL_REVIEW_AGS = tuple(sorted(ORIGINAL_GF4_COASTAL_AGS))
 ORIGINAL_GF4_TERRITORY_REFORM_AGS = frozenset(("16054", "16070", "16072"))
 # Official Thuringian statistics 2019-01-01: Gehlberg and Schmiedefeld
 # moved Ilm-Kreis -> Suhl, Lichte and Piesau moved Saalfeld-Rudolstadt
@@ -141,6 +144,47 @@ def directed_neighbor_support(exclusive_area_m2: float, neighbor_overlap_m2: flo
         "historical_vintage_transfer_proven": False,
         "municipality_geometry_identity_proven": False,
         "building_area_transfer_authorized": False,
+    }
+
+
+def coastal_gadm_exclusive_gf2_support(
+    gadm_only_m2: float, bkg_land_only_m2: float,
+    own_bkg_gf2_water_m2: float, gadm_only_in_own_gf2_m2: float,
+) -> dict:
+    """Partition *GADM outside BKG GF4 land* using the official BKG GF2 area.
+
+    These geometry overlaps merely measure independent *source semantics*.
+    They do not prove ocean/water category in GADM or explain vintage,
+    wetland/shoreline, ownership, exposure, TIV, building coordinates.
+    """
+    vals = (gadm_only_m2, bkg_land_only_m2,
+            own_bkg_gf2_water_m2, gadm_only_in_own_gf2_m2)
+    if any(type(x) not in (int, float) or not isfinite(x) for x in vals):
+        raise GeometryOverlapError("non-finite coastal source area")
+    if (gadm_only_m2 <= 0 or bkg_land_only_m2 < 0
+            or own_bkg_gf2_water_m2 <= 0 or gadm_only_in_own_gf2_m2 < 0):
+        raise GeometryOverlapError("empty or negative original coastal source geometry")
+    if (gadm_only_in_own_gf2_m2 > gadm_only_m2 * (1 + 1e-8)
+            or gadm_only_in_own_gf2_m2 > own_bkg_gf2_water_m2 * (1 + 1e-8)):
+        raise GeometryOverlapError("GADM-exclusive intersection exceeds source water/extra area")
+    remaining = gadm_only_m2 - gadm_only_in_own_gf2_m2
+    if remaining < -1e-8 * gadm_only_m2:
+        raise GeometryOverlapError("negative non-GF2 remaining source area")
+    return {
+        "gadm_outside_official_GF4_land_km2": gadm_only_m2 / 1e6,
+        "official_GF4_land_outside_gadm_km2": bkg_land_only_m2 / 1e6,
+        "own_official_BKG_GF2_water_km2": own_bkg_gf2_water_m2 / 1e6,
+        "gadm_only_area_intersecting_own_official_GF2_km2":
+            gadm_only_in_own_gf2_m2 / 1e6,
+        "fraction_gadm_only_intersecting_own_official_GF2":
+            min(gadm_only_in_own_gf2_m2 / gadm_only_m2, 1.0),
+        "gadm_only_not_intersecting_own_official_GF2_km2":
+            max(remaining, 0.0) / 1e6,
+        "county_boundary_vintage_equivalence_proven": False,
+        "gadm_water_classification_proven": False,
+        "building_area_or_insurer_exposure_admitted": False,
+        "source_license_scope_cleared": False,
+        "research_only": True,
     }
 
 
@@ -415,6 +459,35 @@ def inspect_original_geometry(
     }
     case_report = audit_manual_case_inventory(
         scores_land, scores_all_surfaces, bkg_gf, marine_areas_m2)
+    # Six separate original BKG GF2 coastal/Bodensee polygons are compared
+    # with the GADM-only region outside BKG GF4 land. This is observational
+    # boundary metadata, NOT GADM water classification or site allocation.
+    if set(ORIGINAL_GF4_COASTAL_REVIEW_AGS) != (
+            set(case_report["review_case_AGS"]) & ORIGINAL_GF4_COASTAL_AGS):
+        raise GeometryOverlapError("version-pinned six coastal case set drift")
+    coastal_challenges = {}
+    for coastal_ags in ORIGINAL_GF4_COASTAL_REVIEW_AGS:
+        parts = bkg_marine_groups.get(coastal_ags)
+        if not isinstance(parts, list) or len(parts) != 1:
+            raise GeometryOverlapError("original GF2 coast/lake source part absent")
+        own_sea = parts[0]
+        land_geom = unary_union(bkg_land_groups[coastal_ags])
+        gadm_geom = unary_union(gadm_groups[coastal_ags])
+        gadm_exclusive = gadm_geom.difference(land_geom)
+        official_land_exclusive = land_geom.difference(gadm_geom)
+        if (not gadm_exclusive.is_valid or gadm_exclusive.is_empty
+                or not official_land_exclusive.is_valid):
+            raise GeometryOverlapError("invalid source coastal exclusive area")
+        shared_source_marine = gadm_exclusive.intersection(own_sea)
+        coastal_challenges[coastal_ags] = coastal_gadm_exclusive_gf2_support(
+            gadm_exclusive.area, official_land_exclusive.area,
+            own_sea.area, shared_source_marine.area)
+        # Preserve the two original comparison metrics for each low-IoU
+        # coastal case; never convert these areas to 400-row exposure data.
+        coastal_challenges[coastal_ags]["source_GF4_land_iou"] = (
+            scores_land[coastal_ags]["iou"])
+        coastal_challenges[coastal_ags]["all_BKG_geofactors_iou"] = (
+            scores_all_surfaces[coastal_ags]["iou"])
     # Three independent historical transfer hypotheses, quantified on
     # source-exclusive polygons against the other source's neighboring
     # county. Source provenance is pinned; no rights or causality inference.
@@ -445,6 +518,9 @@ def inspect_original_geometry(
     report.update(case_report)
     report.update({
         "thuringia_2019_source_exclusive_neighbor_hypotheses": neighbor_challenges,
+        "six_coastal_bodensee_source_GF2_exclusive_challenges": coastal_challenges,
+        "six_coastal_bodensee_source_GF2_cases_compared": len(coastal_challenges),
+        "six_coastal_water_or_vintage_causes_independently_proven": False,
         "source_original_sha256": {
             "BKG_VG250_2022_12_31": BKG_SHA256,
             "GADM_v4_1_DEU_ADM2": GADM_SHA256,
