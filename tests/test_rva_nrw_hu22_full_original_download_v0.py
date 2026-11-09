@@ -34,7 +34,9 @@ class Fake:
 
 class TestOneShotHUDownload(unittest.TestCase):
     def test_one_bounded_get_and_source_byte_sha(self):
-        with patch.object(m,"MAX_BYTES",6),tempfile.TemporaryDirectory() as t:
+        with patch.object(m,"MAX_BYTES",6), \
+             patch.object(m,"EXPECTED_ORIGINAL_SHA256",hashlib.sha256(b"ABCDEF").hexdigest()), \
+             tempfile.TemporaryDirectory() as t:
             calls=[]
             def fake(req,timeout):
                 calls.append((req.full_url,req.get_method(),timeout))
@@ -47,11 +49,14 @@ class TestOneShotHUDownload(unittest.TestCase):
             self.assertEqual(calls,[(m.ORIGINAL_URL,"GET",70)])
 
     def test_fail_closed_and_remove_unusable_partial_archive(self):
-        with patch.object(m,"MAX_BYTES",6),tempfile.TemporaryDirectory() as t:
+        with patch.object(m,"MAX_BYTES",6), \
+             patch.object(m,"EXPECTED_ORIGINAL_SHA256",hashlib.sha256(b"ABCDEF").hexdigest()), \
+             tempfile.TemporaryDirectory() as t:
             d=Path(t)
             for value in (
                 Fake(b"AB",6),
                 Fake(b"ABCDEFG",6),
+                Fake(b"ABXDEF",6),  # exact six-byte payload, wrong SHA256
                 Fake(b"ABCDEF",5),
                 Fake(b"ABCDEF",6,status=206),
                 Fake(b"ABCDEF",6,url="https://example.net/not-original"),
@@ -60,6 +65,16 @@ class TestOneShotHUDownload(unittest.TestCase):
                 with self.assertRaises(SourceBlocked):
                     m.download_original_once(out,urlopen_=lambda request,timeout:value)
                 self.assertFalse(out.exists())
+
+    def test_same_size_wrong_sha_fails_before_archive_is_consumed(self):
+        good_digest=hashlib.sha256(b"ABCDEF").hexdigest()
+        with patch.object(m,"MAX_BYTES",6), \
+             patch.object(m,"EXPECTED_ORIGINAL_SHA256",good_digest), \
+             tempfile.TemporaryDirectory() as t:
+            output=Path(t)/"original.zip"
+            with self.assertRaisesRegex(SourceBlocked,"SHA256 identity drift"):
+                m.download_original_once(output,urlopen_=lambda req,timeout:Fake(b"XXXXXX",6))
+            self.assertFalse(output.exists())
 
     def test_refuse_to_overwrite_existing_source_or_missing_parent(self):
         with patch.object(m,"MAX_BYTES",6),tempfile.TemporaryDirectory() as t:
