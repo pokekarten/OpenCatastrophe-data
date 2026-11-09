@@ -95,7 +95,8 @@ def _wilson(pos: int, n: int) -> tuple[float, float]:
     z2 = Z * Z
     center = (phat + z2 / (2 * n)) / (1 + z2 / n)
     half = Z * math.sqrt(phat * (1 - phat) / n + z2 / (4 * n * n)) / (1 + z2 / n)
-    return center - half, center + half
+    # Avoid float round-off yielding a tiny negative lower bound at p=0.
+    return max(0.0, center - half), min(1.0, center + half)
 
 
 def _dictionary_outcome_contract(book: bytes, sector: str) -> None:
