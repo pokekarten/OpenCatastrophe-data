@@ -93,6 +93,8 @@ def audit_gfk_counts(observed_counts: dict[str,int]) -> dict:
     category={}
     code_count={}
     for raw,count in observed_counts.items():
+        if not isinstance(raw, str):
+            raise ValueError("original source GFK code must be a string")
         if type(count) is not int or count<0:
             raise ValueError("invalid source GFK frequency")
         label,_=classify_gfk(raw)
