@@ -153,10 +153,12 @@ def inspect_original_geojson(raw: bytes) -> dict:
         raise BuildingWindowError("original source not a FeatureCollection")
     if src.get("name") != "budynki":
         raise BuildingWindowError("wrong original layer (buildings required)")
-    if not isinstance(src.get("crs"), dict) or (
-        src["crs"].get("type") != "name"
-        or src["crs"].get("properties", {}).get("name") != CRS
-    ):
+    source_crs = src.get("crs")
+    crs_properties = source_crs.get("properties") if isinstance(source_crs, dict) else None
+    if (not isinstance(source_crs, dict)
+            or source_crs.get("type") != "name"
+            or not isinstance(crs_properties, dict)
+            or crs_properties.get("name") != CRS):
         raise BuildingWindowError("GeoJSON CRS mismatch; stop axis conversion")
     items = src.get("features")
     if not isinstance(items, list) or not 1 <= len(items) <= MAX_RETURNED:
