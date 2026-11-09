@@ -108,6 +108,31 @@ class SourceRightsAndCalibrationNoGoTests(unittest.TestCase):
                 with self.assertRaises(gate.SourceRightsBlocked):
                     gate.validate_registry(doc)
 
+    def test_hu22_exact_original_product_rights_and_no_insurer_promotion(self):
+        hu = self.record(self.register, "nrw_hu22_2022_building_footprints")
+        self.assertEqual(
+            hu["rights_url"],
+            "https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/",
+        )
+        self.assertEqual(
+            hu["licence_review"],
+            "NRW_HU2022_OFFICIAL_PRODUCT_PAGE_DL_DE_ZERO_2_0_METADATA_ONLY",
+        )
+        self.assertIn("2022_hu_EPSG4647_Shape.zip", hu["landing_url"])
+        for field, false_value in (
+            ("rights_url", "https://www.im.nrw/themen/vermessung/open-data"),
+            ("landing_url", "https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/2021_hu_EPSG4647_Shape.zip"),
+            ("licence_review", "ALL_REAL_RV_INSURED_SITES_ADMITTED"),
+            ("access", "GERMAN_INSURER_WIND_LOSS_CALIBRATED"),
+        ):
+            altered = self.altered()
+            self.record(altered, "nrw_hu22_2022_building_footprints")[field] = false_value
+            with self.subTest(field=field), self.assertRaises(gate.SourceRightsBlocked):
+                gate.validate_registry(altered)
+        report = gate.validate_registry(self.register)
+        self.assertFalse(report["German_site_specific_GUL_vulnerability_fit_approved"])
+        self.assertFalse(report["licence_or_data_reuse_approval_inferred"])
+
     def test_hu22_physical_source_cannot_turn_into_claim_or_loss_calibration(self):
         doc = self.altered()
         hu = self.record(doc, "nrw_hu22_2022_building_footprints")
