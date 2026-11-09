@@ -19,11 +19,23 @@ class TestOriginalHU22OnDemandGovernance(unittest.TestCase):
         # An exact-SHA caller on main may invoke this versioned heavy job.
         # GitHub matches PR paths against the ENTIRE PR diff; never auto-run.
         trigger = self.data.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
-        self.assertEqual(trigger, "  workflow_dispatch:\n  workflow_call:\n")
+        self.assertEqual(trigger, (
+            "  workflow_dispatch:\n"
+            "  workflow_call:\n"
+            "    inputs:\n"
+            "      source_ref:\n"
+            "        description: Immutable forty-character Git commit SHA of the approved research replay\n"
+            "        type: string\n"
+            "        required: true\n"
+        ))
         for unsupported in ("pull_request:", "push:", "schedule:", "repository_dispatch:"):
             with self.subTest(forbidden=unsupported):
                 self.assertNotIn(unsupported, trigger)
         self.assertIn("cancel-in-progress: false", self.data)
+        self.assertIn("ref: ${{ inputs.source_ref || github.sha }}", self.data)
+        self.assertIn("EXPECTED_SOURCE_SHA: ${{ inputs.source_ref || github.sha }}", self.data)
+        self.assertIn('test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"', self.data)
+        self.assertIn("^[0-9a-f]{40}$", self.data)
 
     def test_fresh_original_source_replay_never_uses_expiring_previous_artifact(self):
         for absent in ("gh run download", "42097472463", "13447603258",
