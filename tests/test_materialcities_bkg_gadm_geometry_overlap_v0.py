@@ -16,6 +16,8 @@ from research_runners.materialcities_bkg_gadm_geometry_overlap_v0 import (
     audit_manual_case_inventory,
     directed_neighbor_support,
     ORIGINAL_GF4_REVIEW_AGS,
+    ORIGINAL_GF4_COASTAL_REVIEW_AGS,
+    coastal_gadm_exclusive_gf2_support,
 )
 
 
@@ -294,6 +296,77 @@ class NineOriginalSourceCaseReviews(unittest.TestCase):
             land, all_shapes, gf, water, exact_original=True)
         self.assertEqual(result["review_case_AGS"], list(ORIGINAL_GF4_REVIEW_AGS))
         self.assertEqual(result["review_case_count"], 9)
+
+
+class SixCoastalOriginalWaterExclusiveSemanticsTests(unittest.TestCase):
+    def test_six_original_review_keys_are_not_every_coastal_GADM_polygon(self):
+        self.assertEqual(
+            ORIGINAL_GF4_COASTAL_REVIEW_AGS,
+            ("01054", "03405", "04012", "08335", "13003", "13075"))
+
+    def test_exact_zero_official_marine_overlap_is_not_automatically_coastline_match(self):
+        r = coastal_gadm_exclusive_gf2_support(100_000_000, 10_000_000,
+                                              40_000_000, 0)
+        self.assertEqual(r["fraction_gadm_only_intersecting_own_official_GF2"], 0.0)
+        self.assertEqual(r["gadm_only_not_intersecting_own_official_GF2_km2"], 100.0)
+        self.assertFalse(r["gadm_water_classification_proven"])
+
+    def test_source_marine_overlap_is_a_fraction_of_gadm_only_area(self):
+        r = coastal_gadm_exclusive_gf2_support(10_000_000, 2_000_000,
+                                              12_000_000, 8_000_000)
+        self.assertEqual(r["gadm_outside_official_GF4_land_km2"], 10.0)
+        self.assertEqual(r["official_GF4_land_outside_gadm_km2"], 2.0)
+        self.assertEqual(r["own_official_BKG_GF2_water_km2"], 12.0)
+        self.assertEqual(r["gadm_only_area_intersecting_own_official_GF2_km2"], 8.0)
+        self.assertAlmostEqual(r["fraction_gadm_only_intersecting_own_official_GF2"], 0.8)
+        self.assertEqual(r["gadm_only_not_intersecting_own_official_GF2_km2"], 2.0)
+        self.assertFalse(r["county_boundary_vintage_equivalence_proven"])
+        self.assertFalse(r["building_area_or_insurer_exposure_admitted"])
+        self.assertFalse(r["source_license_scope_cleared"])
+
+    def test_full_marine_overlap_does_not_license_buildings(self):
+        r = coastal_gadm_exclusive_gf2_support(1_000_000, 0,
+                                              1_000_000, 1_000_000)
+        self.assertEqual(r["fraction_gadm_only_intersecting_own_official_GF2"], 1.0)
+        self.assertEqual(r["gadm_only_not_intersecting_own_official_GF2_km2"], 0)
+        self.assertTrue(r["research_only"])
+        self.assertFalse(r["building_area_or_insurer_exposure_admitted"])
+
+    def test_intersection_cannot_exceed_gadm_exclusive_or_BKG_GF2(self):
+        for args in ((1, 0, 10, 2), (10, 0, 1, 2)):
+            with self.subTest(args=args), self.assertRaisesRegex(
+                    GeometryOverlapError, "intersection exceeds"):
+                coastal_gadm_exclusive_gf2_support(*args)
+
+    def test_source_nonfinite_rejected_in_every_position(self):
+        for i in range(4):
+            for invalid in (float("nan"), float("inf"), -float("inf"), True, None, "3"):
+                arr = [10.0, 1.0, 9.0, 3.0]
+                arr[i] = invalid
+                with self.subTest(i=i, value=str(invalid)):
+                    with self.assertRaisesRegex(GeometryOverlapError, "non-finite"):
+                        coastal_gadm_exclusive_gf2_support(*arr)
+
+    def test_missing_marine_OR_no_GADM_extra_blocked(self):
+        for args in ((10, 0, 0, 0), (0, 0, 5, 0), (-1, 1, 5, 1), (10, -1, 5, 1)):
+            with self.subTest(args=args), self.assertRaisesRegex(
+                    GeometryOverlapError, "empty or negative"):
+                coastal_gadm_exclusive_gf2_support(*args)
+
+    def test_no_fabricated_source_area_mass_balance(self):
+        r = coastal_gadm_exclusive_gf2_support(15_500_000, 0, 15_000_000, 9_500_000)
+        self.assertAlmostEqual(
+            r["gadm_only_area_intersecting_own_official_GF2_km2"] +
+            r["gadm_only_not_intersecting_own_official_GF2_km2"],
+            r["gadm_outside_official_GF4_land_km2"])
+        self.assertEqual(r["gadm_only_not_intersecting_own_official_GF2_km2"], 6.0)
+
+    def test_does_not_claim_geo_water_inference_from_spatial_overlay(self):
+        r = coastal_gadm_exclusive_gf2_support(303_916_000, 9_534_000,
+                                              157_955_000, 154_056_000)
+        self.assertGreater(r["fraction_gadm_only_intersecting_own_official_GF2"], 0.5)
+        self.assertFalse(r["gadm_water_classification_proven"])
+        self.assertFalse(r["source_license_scope_cleared"])
 
 
 if __name__ == "__main__":
