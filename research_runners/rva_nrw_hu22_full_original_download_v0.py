@@ -27,8 +27,13 @@ CHUNK=4*1024*1024
 
 
 def download_original_once(path:Path,*,urlopen_=urlopen)->dict:
-    if path.exists() or not path.parent.is_dir():
-        raise SourceBlocked("temporary original archive path must be new")
+    # Path.exists() returns False for a dangling symlink. Reject it (and
+    # symlinked directory ancestors) *before* the expensive provider GET.
+    # Do not remove any pre-existing path when open("xb") fails.
+    if (path.is_symlink() or path.exists() or not path.parent.is_dir()
+            or any(ancestor.is_symlink() for ancestor in path.absolute().parents)):
+        raise SourceBlocked("temporary original archive path must be new and not symlinked")
+    created_here=False
     req=Request(ORIGINAL_URL,headers={
         "User-Agent":"OpenCatastrophe-official-NRW-source-integrity-research/0.1",
         "Accept":"application/zip,application/octet-stream"
@@ -43,6 +48,7 @@ def download_original_once(path:Path,*,urlopen_=urlopen)->dict:
             if claimed!=str(MAX_BYTES):
                 raise SourceBlocked("official original full archive Content-Length changed")
             with path.open("xb") as stream:
+                created_here=True
                 while True:
                     chunk=response.read(CHUNK)
                     if not chunk:
@@ -67,7 +73,10 @@ def download_original_once(path:Path,*,urlopen_=urlopen)->dict:
             "native_cat_run":False,
         }
     except Exception:
-        path.unlink(missing_ok=True)
+        # A failed exclusive open is not ours to clean up. Otherwise a
+        # concurrently installed or dangling source-path symlink gets deleted.
+        if created_here:
+            path.unlink(missing_ok=True)
         raise
 
 
