@@ -63,6 +63,19 @@ class TestOriginalHU22OnDemandGovernance(unittest.TestCase):
         self.assertIn("python -m pip check", self.data)
         self.assertNotIn("numpy==1.26.4 scipy==1.14.1\n          python -m pip check", self.data)
 
+    def test_legacy_one_shot_also_cleans_original_on_failure(self):
+        # The earlier explicit 901 MB workflow must not strand original
+        # provider bytes if conversion fails after a successful download.
+        legacy=(ROOT / ".github/workflows/rva-nrw-hu22-full-one-shot.yml").read_text(encoding="utf-8")
+        trigger=legacy.split("\\non:\\n", 1)[1].split("\\npermissions:", 1)[0]
+        self.assertEqual(trigger, "  workflow_dispatch:\\n")
+        cleanup=legacy.index("Always delete large ephemeral provider ZIP")
+        publication=legacy.index("Publish ONLY fictional geocoded OED")
+        self.assertLess(cleanup, publication)
+        self.assertIn("if: always()", legacy[cleanup:publication])
+        self.assertIn('rm -f -- "${{ runner.temp }}/2022_hu_EPSG4647_Shape.original.zip"',legacy[cleanup:publication])
+        self.assertNotIn("gh run download",legacy)
+
     def test_source_originals_removed_before_receipt_publication(self):
         cleanup = self.data.index("Always erase provider raw geocodes")
         publish = self.data.index("Publish only source-bound method parity")
