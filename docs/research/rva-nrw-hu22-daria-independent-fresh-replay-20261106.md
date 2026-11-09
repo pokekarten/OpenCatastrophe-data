@@ -194,3 +194,44 @@ persistence over the earlier artifact's expiry. The exact historical
 HU2022 product-level licence is now documented above; separate
 multi-source scientific/privacy/publication gates remain in force. Do not treat passing source-only
 CI as passing the 10,000-site full CAT model.
+
+
+## 2026-11-09 operational handoff for Issue #1400 (no implicit 901 MB run)
+
+The original historical 2022 HU archive SHA/CRC and deterministic sample
+identities are unchanged. The research branch provides an independent
+`.github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml`
+with **manual `workflow_dispatch` only** (or an explicitly SHA-pinned
+reusable call). Its normal PR/source-only checks do **not** download the
+901,092,946-byte original archive and must not be cited as a full 10k replay.
+The separate legacy `rva-nrw-hu22-full-one-shot.yml` remains manual as
+well; its original ZIP cleanup now uses `if: always()` and `rm -f` after
+conversion failure. The downloader cleans the output file that it created
+if a Python interruption occurs and rejects pre-existing/symlinked paths.
+
+**Owner/reviewer decision required before a costly rerun:**
+
+1. Review the 87-file R+V research PR #1373 for source rights,
+   privacy, model-science labels and full test receipts. Review a
+   default-branch merge/cutover route for the independent replay workflow;
+   manual GitHub dispatch requires an eligible workflow file on `main`.
+   A green draft PR alone cannot make a future manual run available.
+2. Confirm permission to fetch roughly 901 MB of original historical
+   Geobasis NRW source for a one-shot reproduction. Keep the immutable
+   official archive identity `10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da`
+   and the source-approved/ephemeral processing boundaries unchanged.
+3. Once an approved default-branch workflow exists, explicitly dispatch
+   `rva-nrw-hu22-daria-fresh-independent-replay.yml` at the reviewed
+   commit and retain the resulting source-only, method-parity artifact
+   checksum/logs. Require 10,000 original source candidates, 53 Kreise,
+   unchanged *fictional* 4,826,029,500 EUR TIV, and six original CLIMADA
+   source-method totals with zero cent-differences.
+4. **After 2026-11-19T19:52:57Z**, rerun the same approved fresh-source
+   route and independently verify that it no longer depends on ephemeral
+   artifact #13447603258 / run #42097472463. Only then can the
+   artifact-expiry part of Issue #1400 be marked complete.
+
+No automated hourly/daily 901 MB downloads, no transfer of original site
+geometries or raw survey data into Git, and no assertion of actual R+V
+insured-site exposure, German physical wind vulnerability, policy loss,
+or native Gross/Net OEP/AEP is authorized by this operational procedure.
