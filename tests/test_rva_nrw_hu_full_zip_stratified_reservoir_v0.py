@@ -18,7 +18,7 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"research_runners"))
 from rva_nrw_hu_full_zip_stratified_reservoir_v0 import (
-    sample_hu_stream, SourceBlocked,sha256_regular_file
+    sample_hu_stream, sample_full_official_zip, SourceBlocked,sha256_regular_file
 )
 from rva_nrw_hu22_full_source_to_fictional_oed_v0 import (
     build_geocoded_oed
@@ -163,6 +163,16 @@ class TestOriginalFullSourceReservoir(unittest.TestCase):
                 self.assertEqual(hashlib.sha256((output/filename).read_bytes()).hexdigest(),sha)
             with self.assertRaises(SourceBlocked):
                 build_geocoded_oed(base,selected,audit,output,expected_count=2)
+
+    def test_source_sha_mismatch_blocks_before_any_zip_parse(self):
+        # The local-original replay path must defend itself even if a caller
+        # bypasses the guarded HTTP download and supplies a same-size archive.
+        with patch("rva_nrw_hu_full_zip_stratified_reservoir_v0.sha256_regular_file",
+                   return_value="0"*64), \
+             patch("rva_nrw_hu_full_zip_stratified_reservoir_v0.zipfile.ZipFile") as opening:
+            with self.assertRaisesRegex(SourceBlocked, "SHA256 identity drift"):
+                sample_full_official_zip(Path("not-opened.zip"), {"05362": 1})
+            opening.assert_not_called()
 
     def test_original_zip_regular_file_expected_full_size(self):
         with tempfile.TemporaryDirectory() as d:
