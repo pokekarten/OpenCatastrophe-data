@@ -96,6 +96,7 @@ def inspect_county_table(path: str, raw: bytes, *,
     hazard_per_fips = defaultdict(set)
     problems = Counter()
     flags = Counter()
+    applicability_eal_joint = Counter()
     ages = set()
     reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig"), newline=""), strict=True)
     for record in reader:
@@ -125,7 +126,14 @@ def inspect_county_table(path: str, raw: bytes, *,
             kind = _numeric_class(record[name], integer=name in COUNT_FIELDS)
             numeric_counts[name][kind] += 1
         if path == NRI and "applicable" in header:
-            flags["nri_applicable_" + _boolean_class(record["applicable"])] += 1
+            applicable = _boolean_class(record["applicable"])
+            flags["nri_applicable_" + applicable] += 1
+            # Cross-tab blanks with applicability before interpreting a
+            # missing modeled EAL as zero or as an actionable data defect.
+            applicability_eal_joint[
+                "applicable_" + applicable + "__eal_" +
+                _numeric_class(record["eal_total"], integer=False)
+            ] += 1
         if path == EAL and "outlier" in header:
             flags["eal_outlier_" + _boolean_class(record["outlier"])] += 1
         if path == NFIP and "as_of_date" in header:
@@ -145,6 +153,9 @@ def inspect_county_table(path: str, raw: bytes, *,
         "numeric_field_counts": {name: dict(sorted(c.items()))
                                  for name, c in sorted(numeric_counts.items())},
         "categorical_flag_counts": dict(sorted(flags.items())),
+        "nri_applicability_vs_eal_status": (
+            dict(sorted(applicability_eal_joint.items())) if path == NRI else None
+        ),
         "distinct_hazard_categories": len(hazard_categories) if path != NFIP else None,
         "county_hazard_pairs": len(pairs) if path != NFIP else None,
         "counties_with_exactly_18_distinct_hazards": (
