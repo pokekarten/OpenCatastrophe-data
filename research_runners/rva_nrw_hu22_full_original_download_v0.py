@@ -72,9 +72,10 @@ def download_original_once(path:Path,*,urlopen_=urlopen)->dict:
             "source_derived_insured_locations":False,
             "native_cat_run":False,
         }
-    except Exception:
-        # A failed exclusive open is not ours to clean up. Otherwise a
-        # concurrently installed or dangling source-path symlink gets deleted.
+    except BaseException:
+        # Interrupted 901 MB reads (including KeyboardInterrupt) must not
+        # leave a partial provider archive behind. Only remove a file that
+        # this exact invocation successfully created via exclusive open.
         if created_here:
             path.unlink(missing_ok=True)
         raise
