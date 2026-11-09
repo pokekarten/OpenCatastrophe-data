@@ -142,19 +142,35 @@ when the reviewed workflow is on the default branch; until then,
 the successful previous PR-run attests to correct computation but
 does not imply a currently runnable manual dispatch entry.
 
-The official open Geobasis NRW data are described under open data
-licence terms. There are differing general authority summaries,
-including **DL-DE Zero 2.0** and a newer ministry page indicating
-**DL-DE BY 2.0**. Relevant official references:
-[Geobasis NRW general licence terms](https://www.bezreg-koeln.nrw.de/system/files/media/document/file/lizenzbedingungen_geobasis_nrw.pdf),
-[NRW Interior Ministry general open-data page](https://www.im.nrw/themen/vermessung/open-data),
-[GovData historical HU catalogue](https://data.gov.de/suche/daten/historische-hausumringe-nw).
-Before any *persistent publication of derived 10k site-level
-geocodes* outside the temporary runner, check the **exact historical
-HU 2022 product record's dataset-specific metadata**, distinguish
-this from BKG **HU-DE** (which has different licensing), and record
-applicable source-credit conditions. The successful full replay
-**did not require** public redistribution of those source bytes.
+## Official 2022 historical HU product licence evidence (verified 2026-11-09)
+
+The [original Geobasis NRW *Historische Hausumringe* product directory](https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/)
+explicitly lists **`2022_hu_EPSG4647_Shape.zip`** under **Datenlizenz Deutschland –
+Zero – Version 2.0** and describes unrestricted use of *this product*.
+This is stronger and more product-specific evidence than either the
+[generic NRW ministerial open-data page](https://www.im.nrw/themen/vermessung/open-data),
+which currently references DL-DE BY 2.0, or the older
+[NRW Interior Ministry zero-licence announcement](https://www.im.nrw/amtliche-geobasisdaten-koennen-ohne-einschraenkungen-genutzt-werden).
+The product directory also specifies CRS **EPSG:4647** and the original
+2022 Shape archive; the previously independently verified full 2022
+archive identity remains **901,092,946 bytes** and SHA-256
+`10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da`.
+
+**Precisely resolved:** the official product-level *source-licence label*
+and 2022 archive listing are now identified. The source registry points
+to this exact original directory, not a generic GovData search page.
+This is not a separate claim that all inputs to a mixed insurer model,
+BKG nationwide HU-DE, the original third-party XWS/CLIMADA sources or
+any future merged dataset share that licence.
+
+**Still held:** no raw 2022 source ZIP, individual 10k building geometry,
+R+V insured-site identity, fictitious TIV-to-real exposure join or observed
+insurer loss is committed to this public repository or admitted to a
+CAT model. The replay remains ephemeral and rights-aware despite the
+identified licence. For any future persistent derived release, record
+the exact constituent datasets, output content, privacy/security review
+and required source provenance independently. Scientific acceptance and
+an executable default-branch full-replay workflow are separate gates.
 
 Finally, this model is not insurer-calibrated. Original 1990 hazard,
 public 2022 building geometry and hypothetical 2025 valuation cannot
@@ -172,9 +188,9 @@ and **normal low-cost source-only CI dependency cutover** each
 have successful actual GitHub Actions runs. Keep
 [Issue #1400](https://github.com/pokekarten/OpenCatastrophe-data/issues/1400)
 open until the full costly replay workflow has a reviewed and
-available default-branch `workflow_dispatch`/merge route, any
-applicable official HU 2022 product-specific reuse/attribution terms
-are documented, and an independent *post-2026-11-19*
-full original-provider rebuild verifies persistence over the
-earlier artifact's expiry. Do not treat passing source-only
+available default-branch `workflow_dispatch`/merge route and an
+independent *post-2026-11-19* full original-provider rebuild verifies
+persistence over the earlier artifact's expiry. The exact historical
+HU2022 product-level licence is now documented above; separate
+multi-source scientific/privacy/publication gates remain in force. Do not treat passing source-only
 CI as passing the 10,000-site full CAT model.
