@@ -164,6 +164,24 @@ def run(original_zip:Path,oed_input:Path,output:Path)->dict:
     return build_geocoded_oed(oed_input,selected,audit,output)
 
 
+def _check_fresh_output_ods_or_erase(output:Path)->None:
+    """Reject invalid OED and erase only this freshly generated export.
+
+    This helper is called exclusively after run() created a new destination:
+    do not leave physical candidate geocodes on local disk if ODS fails.
+    """
+    try:
+        from ods_tools.oed import OedExposure
+        from ods_tools import __version__
+        if __version__!="5.0.8":
+            raise SourceBlocked("pinned official ODS 5.0.8 version required")
+        OedExposure(location=str(output/"location.csv"),
+                    account=str(output/"account.csv"),check_oed=True)
+    except Exception:
+        shutil.rmtree(output)
+        raise
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--original-2022-hu-zip",required=True,type=Path,
@@ -174,12 +192,7 @@ def main():
     args=parser.parse_args()
     try:
         m=run(args.original_2022_hu_zip,args.fictional_nrw_oed,args.output)
-        from ods_tools.oed import OedExposure
-        from ods_tools import __version__
-        if __version__!="5.0.8":
-            raise SourceBlocked("pinned official ODS 5.0.8 version required")
-        OedExposure(location=str(args.output/"location.csv"),
-                    account=str(args.output/"account.csv"),check_oed=True)
+        _check_fresh_output_ods_or_erase(args.output)
         print(json.dumps({
             "status":m["status"],
             "source_original_full_zip_SHA256":m["source_original_2022_HU_complete_archive_SHA256"],
