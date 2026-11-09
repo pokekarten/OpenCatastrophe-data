@@ -26,6 +26,7 @@ import zipfile
 from rva_nrw_hu_gfk_residential_candidate_v0 import classify_gfk
 
 EXPECTED_ZIP_BYTES = 901_092_946
+EXPECTED_ORIGINAL_SHA256 = "10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da"
 EXPECTED_FEATURES = 11_232_755
 MEMBERS = {
     "2022_hu_shp.shp":(2_089_262_804,0x385d573b),
@@ -214,6 +215,8 @@ def sample_hu_stream(shp,dbf,*,expected_count:int,shx_length:int,
 
 def sample_full_official_zip(path:Path, county_targets:dict[str,int])->tuple[dict,dict]:
     sha=sha256_regular_file(path)
+    if sha != EXPECTED_ORIGINAL_SHA256:
+        raise SourceBlocked("original provider 2022 archive SHA256 identity drift")
     with zipfile.ZipFile(path) as archive:
         members=validate_official_zip_metadata(archive)
         shpinfo=archive.getinfo("2022_hu_shp.shp")
