@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Prevent accidental automatic 901MB NRW original-source CI acquisition."""
+"""Only manually dispatched or exact-SHA explicitly called 901MB NRW source replay."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,14 +15,14 @@ class TestOriginalHU22OnDemandGovernance(unittest.TestCase):
     def setUpClass(cls):
         cls.data = WORKFLOW.read_text(encoding="utf-8")
 
-    def test_manual_dispatch_only_never_full_PR_path_filter(self):
-        # GitHub matches pull_request paths against the ENTIRE PR diff.
-        # A heavy source job on PR paths would repeat on subsequent commits.
+    def test_explicit_dispatch_or_pinned_reusable_call_only(self):
+        # An exact-SHA caller on main may invoke this versioned heavy job.
+        # GitHub matches PR paths against the ENTIRE PR diff; never auto-run.
         trigger = self.data.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
-        self.assertEqual(trigger, "  workflow_dispatch:\n")
-        self.assertNotIn("pull_request:", trigger)
-        self.assertNotIn("push:", trigger)
-        self.assertNotIn("schedule:", trigger)
+        self.assertEqual(trigger, "  workflow_dispatch:\n  workflow_call:\n")
+        for unsupported in ("pull_request:", "push:", "schedule:", "repository_dispatch:"):
+            with self.subTest(forbidden=unsupported):
+                self.assertNotIn(unsupported, trigger)
         self.assertIn("cancel-in-progress: false", self.data)
 
     def test_fresh_original_source_replay_never_uses_expiring_previous_artifact(self):
