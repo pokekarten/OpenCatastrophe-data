@@ -87,7 +87,7 @@ class TestStage(unittest.TestCase):
         cells = fixture()
         invalid_values = (
             ('csv_formula_ags', {'ags': '=SUM(1+1)'}),
-            ('newline_ags', {'ags': '01001\\ninvalid'}),
+            ('newline_ags', {'ags': '01001' + chr(10) + 'invalid'}),
             ('numeric_ags', {'ags': 10101}),
             ('unicode_digits_ags', {'ags': '０１００１'}),
             ('invalid_age', {'age': 10}),
