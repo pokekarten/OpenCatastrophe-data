@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 schema = "RVA_GERMANY_WIND_LOSS_CALIBRATION_SOURCE_REGISTER_V0"
-as_of = "2026-11-06"
+as_of = "2026-11-09"
 purpose = "Copyright/licensing and scientific target admissibility for original NRW pilot; no external loss values or data sources vendored."
 all_sources_reference_only_or_source_replay = true
 independent_German_wind_damage_calibration_completed = false
@@ -106,15 +106,15 @@ id = "nrw_hu22_2022_building_footprints"
 publisher = "Geobasis NRW"
 label = "Historische Hausumringe NRW 2022 original complete Shape archive"
 landing_url = "https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/2022_hu_EPSG4647_Shape.zip"
-rights_url = "https://data.gov.de/suche/daten/historische-hausumringe-nw"
+rights_url = "https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/"
 period = "2022 building geometry vintage, 2026-11-06 source replay"
 observed_measure = "ACTUAL_PUBLIC_GEOMETRY_ONLY_NO_OBSERVED_INSURANCE_LOSS"
 hazard_specificity = "NOT_A_HAZARD_OR_INSURER_LOSS_SOURCE"
 granularity = "PUBLIC_BUILDING_FOOTPRINTS_53_NRW_KREISE"
 denominator = "2022_PHYSICAL_CANDIDATES_NOT_RV_INSURED_CONTRACTS"
-licence_review = "PRODUCT_YEAR_SPECIFIC_NRW_HU2022_REUSE_METADATA_STILL_TO_CONFIRM"
+licence_review = "NRW_HU2022_OFFICIAL_PRODUCT_PAGE_DL_DE_ZERO_2_0_METADATA_ONLY"
 lineage = "OFFICIAL_SOURCE_REBUILT_AND_SHA256_VERIFIED"
 access = "SOURCE_REPLAY_ONLY_NOT_AS_LOSS_CALIBRATION"
 source_file_sha256 = "10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da"
 approval_evidence = "SOURCE_ONLY_CI_42246960507"
-limitations = "All 11,232,755 original 2022 record stream and 10k research candidate assignment verified; no roofs, construction typology, actual insurer policies, property values or claims. Source is not a wind loss calibration target."
+limitations = "The original Geobasis NRW historical Hausumringe product page explicitly lists the 2022_hu_EPSG4647_Shape.zip release under Datenlizenz Deutschland - Zero - Version 2.0 (verified 2026-11-09); this product evidence is distinct from general NRW BY wording and separately restricted national BKG HU-DE. Original 2022 full source SHA256, 11,232,755 record stream and 10k research candidate assignment previously verified. No original raw source data or selected geocodes are redistributed in this registry. Product licence does not prove physical building completeness, roofs, construction typology, actual R+V insured properties, property values, claims, or German wind loss calibration."
