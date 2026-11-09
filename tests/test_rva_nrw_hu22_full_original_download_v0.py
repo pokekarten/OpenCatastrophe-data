@@ -110,6 +110,25 @@ class TestOneShotHUDownload(unittest.TestCase):
             self.assertTrue(out.is_symlink())
             self.assertFalse(target.exists())
 
+    def test_interrupted_download_cleans_only_owned_partial_archive(self):
+        # KeyboardInterrupt/SystemExit do not inherit Exception, but a
+        # partial 901 MB original must not survive an interrupted read.
+        class Interrupted(Fake):
+            def __init__(self, stop):
+                super().__init__(b"ABCDEF", 6)
+                self.stop = stop
+            def read(self, n):
+                if self.pos:
+                    raise self.stop("simulated interrupted provider stream")
+                return super().read(3)
+        with patch.object(m,"MAX_BYTES",6),tempfile.TemporaryDirectory() as t:
+            for kind in (KeyboardInterrupt, SystemExit):
+                with self.subTest(stop=kind.__name__):
+                    out=Path(t)/"interrupted.zip"
+                    with self.assertRaises(kind):
+                        m.download_original_once(out,urlopen_=lambda req,timeout:Interrupted(kind))
+                    self.assertFalse(out.exists())
+
     def test_same_size_wrong_sha_fails_before_archive_is_consumed(self):
         good_digest=hashlib.sha256(b"ABCDEF").hexdigest()
         with patch.object(m,"MAX_BYTES",6), \
