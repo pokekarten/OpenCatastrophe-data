@@ -187,16 +187,25 @@ The **independent-source reconstructibility P0** gate
 and **normal low-cost source-only CI dependency cutover** each
 have successful actual GitHub Actions runs. Keep
 [Issue #1400](https://github.com/pokekarten/OpenCatastrophe-data/issues/1400)
-open until the full costly replay workflow has a reviewed and
-available default-branch `workflow_dispatch`/merge route and an
-independent *post-2026-11-19* full original-provider rebuild verifies
-persistence over the earlier artifact's expiry. The exact historical
+open until the now-merged default-branch manual gateway has an
+independently reviewed **actual full replay run**, and a separate
+*post-2026-11-19* full original-provider rebuild verifies
+reproducibility after the old artifact's expiry. The gateway exists,
+but its presence and the historical successful run are not a new dispatch. The exact historical
 HU2022 product-level licence is now documented above; separate
 multi-source scientific/privacy/publication gates remain in force. Do not treat passing source-only
 CI as passing the 10,000-site full CAT model.
 
 
 ## 2026-11-09 operational handoff for Issue #1400 (no implicit 901 MB run)
+
+**Status correction after PR #1466:** The reviewed default-branch gateway
+is merged and visible in repository code; do not read the earlier
+historical `workflow_dispatch`-availability paragraphs as current
+blockers. **No new manual-gateway full replay was executed by this
+documentation correction.** The expensive run requires separate,
+explicit authorization and still remains a reproducibility acceptance
+gate.
 
 The original historical 2022 HU archive SHA/CRC and deterministic sample
 identities are unchanged. The research branch provides an independent
@@ -211,21 +220,33 @@ if a Python interruption occurs and rejects pre-existing/symlinked paths.
 
 **Owner/reviewer decision required before a costly rerun:**
 
-1. Review the 87-file R+V research PR #1373 for source rights,
-   privacy, model-science labels and full test receipts. Review a
-   default-branch merge/cutover route for the independent replay workflow;
-   manual GitHub dispatch requires an eligible workflow file on `main`.
-   A green draft PR alone cannot make a future manual run available.
+1. Review R+V research PR #1373 for source rights, privacy,
+   model-science labels and full test receipts. The separately reviewed
+   **default-branch manual gateway already exists on `main`**, merged
+   in [PR #1466](https://github.com/pokekarten/OpenCatastrophe-data/pull/1466)
+   at commit `233a8ecea69b9fdba8ad47a9106a5e8ea7664cf5`.
+   It is the *gateway*, not the draft research workflow, that should
+   be manually selected from the default-branch Actions interface.
+   Its reusable workflow and explicit checkout `source_ref` both
+   pin `75dba089478927003d201032cb41303ebf587952`.
+   Neither the gateway merge nor a green draft PR proves it was run.
 2. Confirm permission to fetch roughly 901 MB of original historical
    Geobasis NRW source for a one-shot reproduction. Keep the immutable
    official archive identity `10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da`
    and the source-approved/ephemeral processing boundaries unchanged.
-3. Once an approved default-branch workflow exists, explicitly dispatch
-   `rva-nrw-hu22-daria-fresh-independent-replay.yml` at the reviewed
-   commit and retain the resulting source-only, method-parity artifact
-   checksum/logs. Require 10,000 original source candidates, 53 Kreise,
-   unchanged *fictional* 4,826,029,500 EUR TIV, and six original CLIMADA
-   source-method totals with zero cent-differences.
+3. With explicit owner permission for the ~901 MB source fetch,
+   dispatch **`.github/workflows/nrw-hu22-2022-manual-replay-gateway.yml`
+   on `main`** (displayed as `P0 NRW HU2022 full original-source
+   research replay (manual pinned SHA)`), **not** the draft
+   `rva-nrw-hu22-daria-fresh-independent-replay.yml` directly.
+   The gateway calls the immutable research workflow at
+   `75dba089478927003d201032cb41303ebf587952`. Inspect actual
+   run/job conclusions and preserve only privacy-safe, source/method
+   receipts and logs. Require the original archive SHA-256, 10,000
+   original public building candidates, 53 Kreise, unchanged
+   *fictional* EUR 4,826,029,500 TIV, and six original CLIMADA
+   source-method totals with zero cent-differences. Do not assume
+   a successful run merely because this dispatch route is installed.
 4. **After 2026-11-19T19:52:57Z**, rerun the same approved fresh-source
    route and independently verify that it no longer depends on ephemeral
    artifact #13447603258 / run #42097472463. Only then can the
