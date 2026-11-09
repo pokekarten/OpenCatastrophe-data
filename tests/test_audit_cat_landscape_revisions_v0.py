@@ -119,7 +119,7 @@ class LandscapeRevisionsTests(unittest.TestCase):
         with self.assertRaisesRegex(LandscapeRevisionBlocked, "repeated candidate_id"):
             proof(shard(), duplicate)
         forbidden = shard()
-        forbidden["entries"][0]["authoritative_url"] = "https://localhost/raw"
+        forbidden["entries"][0]["authoritative_url"] = "http://example.org/raw"
         with self.assertRaisesRegex(LandscapeRevisionBlocked, "invalid non-admission"):
             proof(shard(), forbidden)
         data = encoded(shard())
