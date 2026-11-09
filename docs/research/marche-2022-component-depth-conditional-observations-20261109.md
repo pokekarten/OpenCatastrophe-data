@@ -37,6 +37,8 @@ Use fixed half-open external-depth ranges in metres: [0,0.5), [0.5,1), [1,2), [2
 
 **Suppression rule:** publish a cell only when at least 10 paired properties, at least 3 positives, and at least 3 negatives. No exact suppressed counts or positive totals are published for those cells. Aggregation is data minimization, not an anonymity or commercial-privacy approval.
 
+**Disclosure limitation:** Suppressing individual small-bin outputs does not prove anonymity. The already documented sector-wide valid-pair counts and published bins may reveal residual small-bin sizes by subtraction. No per-building IDs, individual outcomes or exact original coordinates are exported; independent privacy and permitted-use review is still required before any downstream release.
+
 **No monotonicity enforcement:** industry fractions are high and roughly flat/nonmonotone; two sufficiently populated mid-depth residential bins show increasing exterior coating/plaster occurrence. Their descriptive intervals overlap. Do **not** infer causal depth effect, universality, between-sector comparability, or out-of-event validation.
 
 ## Reproducibility and execution
