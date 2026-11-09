@@ -63,6 +63,54 @@ Historical stage has one additional version discrepancy:
 `landscape/sources-peer-cat-repositories-20261102.json`. Never silently
 overwrite old version rows in stage or production just to reduce drift counts.
 
+## Original Git blob version pairs: evidence, not automatic replacement
+
+On 2026-11-09 the eight **production-source** SHA differences were rechecked by
+fetching both original Git objects from the public repository and comparing
+candidate identity, fields and source status. All eight original
+\`registry.source_record\` production rows and original rehearsal rows
+remain intentionally untouched. Old/new SHAs below are **Git blob SHA-1**,
+not the SHA-256 digest of a provider dataset.
+
+| Source path (relative to repo) | Neon original Git blob SHA-1 | Current reviewed Git blob SHA-1 | Identity-preserving difference |
+| --- | --- | --- | --- |
+| \`landscape/sources-europe-building-attribute-discovery.json\` | \`40e67dd494aea80775879ca768c77f37202a1c91\` | \`e1804ae540dd7e9bf2f8b78a7dab624e30975da1\` | 16 to 19 candidates: VDL City 2019 3D, ACT LiDAR 2019 index, ACT orthophoto 2019; previous entries untouched; \`review_date\` changed |
+| \`landscape/sources-europe-cat-model-components.json\` | \`835daf700e2877cded1d169aa35f00486d6c3224\` | \`9b337498540a7e78e2158fd25560adcb6dc14bb7\` | XWS windstorm \`note\` expanded with native Kyrill NetCDF comparison and explicit limitations |
+| \`landscape/sources-event-loss-benchmarks-2026.json\` | \`ba3e8446cc8eebf1a42ff39a2a884c55566f7b92\` | \`880c1851a066c3eb23e1677b4c3de0f767b50277\` | CLIMK \`note\` adds verified original bytes, synthetic Oasis comparison, 50-event selections and cross-catalogue mismatch limits |
+| \`landscape/sources-exposure-impact-validation.json\` | \`79d91635a154b6ae20482b953021a6ade52c3491\` | \`f19346157e01d32a82a51bc511f4039aa09bfc9d\` | Overture \`temporal_scope\`, \`resolution_or_granularity\`, \`note\` changed (2026-10-21.0 release, GERS identity and source conflation cautions); \`review_date\` changed |
+| \`landscape/sources.json\` | \`792719b1b3a577d108c46692f48ad8d5dd775872\` | \`c1aab3639f93f5f4ebf3cf0bed4644d966cc4a62\` | NOAA Storm Events and IBTrACS \`note\` added observational row-count, join-multiplicity and historical track semantics |
+| \`access/esa.worldcover.2021.v200.json\` | \`830fff1705d6b29d8c88dc423a27c7254608ca50\` | \`2884e2f50b495eee3b399f55c08d43cfa100b602\` | 16 changed contract fields; status \`documented_only → probe_ready\`, \`none → head\`, fixed original TIFF canary; commercial rights already marked allowed before |
+| \`access/globaldamwatch.gdw.v1.0.json\` | \`cfc4189609e8d69688b84f4f8ca8c842fb04c966\` | \`8710f53ee145fed31ae878fc0fe54c2a86cd054d\` | 18 changed fields; \`documented_only → probe_ready\`, \`none → metadata_get\`; licensed dataset and author request not to mirror original files remain distinct |
+| \`access/noaa.coops.water-levels.json\` | \`53aa5e6e9f23dc0ddd153fae1c57a4752f31b0aa\` | \`f617e0a1915e84d0dbe51f08532793c7fb8accb4\` | 15 changed fields; \`documented_only → probe_ready\`, \`none → provider_specific\`, API terms \`separate_unreviewed → separate_reviewed\`, commercial automation \`unknown → allowed\` |
+
+The five landscape revisions **do not** delete or re-identify pre-existing
+candidate IDs, and their metadata retain \`rights_review_status=not_reviewed\`,
+\`scientific_review_status=not_reviewed\`, \`admission_status=not_admitted\`.
+Three added Luxembourg sources remain **non-admitted** and must not be
+counted as three verified exposure datasets.
+
+All three access revisions preserve \`access_id\` and the exact
+\`source_ids\` array but enable **new bounded probe modes** relative to
+the historical production contract. NOAA also contains explicit API
+terms and automation-rights upgrades. These must be separately reviewed
+against provider terms and original receipts before a production
+revision. An allowed dataset licence alone does not establish a
+model-ready footprint or an unrestricted crawl.
+
+An offline companion \`scripts/audit_cat_landscape_revisions_v0.py\`
+SHA-checks old/new original metadata bytes, rejects silent candidate removal,
+duplicate IDs, changed provider/source URL and unsafe admission status, and
+reports added candidate IDs and changed existing fields. The older
+\`scripts/audit_access_contract_revisions_v0.py\` already provides the
+analogous SHA-pinned **access** contract review. Neither program writes
+SQL, admits source bytes or approves a production UPDATE.
+
+**Separate decision still required:** preserve old production rows until
+the eight field-level scientific/access reviews are accepted; then
+perform a separately authorized, conditional revision in an isolated
+Neon branch with unchanged historical receipts, followed by a
+production change review. Do not treat this table as that authorization.
+
 ## Branch capacity and completed isolated append rehearsal
 
 A request for a **new** isolated Neon branch
