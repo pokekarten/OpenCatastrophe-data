@@ -9,7 +9,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/nrw-hu22-2022-manual-replay-gateway.yml"
-SOURCE_SHA = "7df2bd716998eead99c5e4e114c8fa1d9a36cc95"
+SOURCE_SHA = "75dba089478927003d201032cb41303ebf587952"
 TARGET = "pokekarten/OpenCatastrophe-data/.github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml"
 
 
