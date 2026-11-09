@@ -127,8 +127,20 @@ def _dictionary_outcome_contract(book: bytes, sector: str) -> None:
 
 
 def _summarize(pairs: list[tuple[Decimal, int]], *, sector: str) -> dict:
+    # This helper can also be called directly by research consumers; never
+    # permit malformed inputs to produce apparently valid damage frequencies.
+    if sector not in SOURCE:
+        raise SourceStructureError("Unknown source sector for component damage")
     bins: dict[str, Counter[str]] = {name: Counter() for name in DEPTH_BINS}
-    for depth, damage in pairs:
+    for item in pairs:
+        if not isinstance(item, tuple) or len(item) != 2:
+            raise SourceStructureError("Invalid paired observation structure")
+        depth, damage = item
+        if (type(depth) is not Decimal or not depth.is_finite()
+                or depth < 0 or depth > 10):
+            raise SourceStructureError("Invalid outside-depth observation in metres")
+        if type(damage) is not int or damage not in (0, 1):
+            raise SourceStructureError("Invalid binary component-damage observation")
         bin_count = bins[_bin(depth)]
         bin_count["n"] += 1
         bin_count["yes"] += damage
