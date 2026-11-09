@@ -130,10 +130,24 @@ class PublicSurfaceTests(unittest.TestCase):
         dependency_review = "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
         allowed = {checkout, setup_python_v7_0, setup_python_v7_1, dependency_review}
 
+        # Narrow, immutable same-repository replay approval for this gateway
+        # only; third-party Actions and arbitrary reusable SHAs remain blocked.
+        gateway = ".github/workflows/nrw-hu22-2022-manual-replay-gateway.yml"
+        gateway_call = (
+            "pokekarten/OpenCatastrophe-data/.github/workflows/"
+            "rva-nrw-hu22-daria-fresh-independent-replay.yml"
+            "@75dba089478927003d201032cb41303ebf587952"
+        )
+        # The internal workflow is NOT a global allowed Action: it is
+        # accepted only at the exact manual gateway path below.
+        self.assertNotIn(gateway_call, allowed)
         for workflow_path, item in uses:
             with self.subTest(workflow=workflow_path, uses=item):
                 self.assertRegex(item, r"^[^@\s]+@[0-9a-f]{40}$")
-                self.assertIn(item, allowed)
+                if workflow_path == gateway:
+                    self.assertEqual(item, gateway_call)
+                else:
+                    self.assertIn(item, allowed)
 
     def test_workflow_action_scanner_covers_semantic_yaml_forms(self) -> None:
         untrusted = "example/action@main"
