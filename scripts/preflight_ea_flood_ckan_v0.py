@@ -73,6 +73,18 @@ PACKAGES = {
 }
 
 
+# Original response-body receipts: raw bytes were retrieved from the official CKAN
+# publisher via a third-party HTTP transport on 2026-11-10. These hashes enable
+# exact-byte comparison, NOT proof that future caller-supplied bytes are authentic.
+# No provider response body, catalogue row values, or resource asset bytes are
+# stored in this repository.
+OBSERVED_ORIGINAL_METADATA_RECEIPTS = {
+    "river_present": (13469, "943bed40c29050164ac059f5ae8335761bf38ee70b44bfbd233b7b31f31212e7"),
+    "river_climate": (14594, "385b691407fa761cbf0179f0f78e274f17faa7a1f7a49241ae6be0d9c7614f33"),
+    "surface_present": (9555, "4c79f4f6df2530f92118269090cf66ec13dbab6468d59166622c7c7d19aff458"),
+}
+
+
 class EACatalogueError(ValueError):
     """Missing, changed or unsafe publisher metadata."""
 
@@ -146,6 +158,8 @@ def inspect_metadata(raw: bytes, dataset: str) -> dict[str, Any]:
         name, fmt, role = frozen[rid]
         if item.get("name") != name or item.get("format") != fmt or item.get("url") != expected_url(package, name, role):
             raise EACatalogueError("resource name, format or exact publisher URL drift")
+    digest = hashlib.sha256(raw).hexdigest()
+    observed_length, observed_digest = OBSERVED_ORIGINAL_METADATA_RECEIPTS[dataset]
     return {
         "contract": "EA-FLOOD-CKAN-METADATA-PREFLIGHT-v0",
         "dataset_selector": dataset,
@@ -155,7 +169,11 @@ def inspect_metadata(raw: bytes, dataset: str) -> dict[str, Any]:
         "resource_count": len(seen),
         "resource_roles": dict(sorted(Counter(row[3] for row in package["resources"]).items())),
         "input_bytes": len(raw),
-        "input_sha256": hashlib.sha256(raw).hexdigest(),
+        "input_sha256": digest,
+        "matches_observed_original_metadata_receipt": (
+            len(raw) == observed_length and digest == observed_digest
+        ),
+        "observed_original_metadata_receipt_date": "2026-11-10",
         "input_authenticity_verified": False,
         "provider_requests_performed": 0,
         "resource_links_followed": 0,
