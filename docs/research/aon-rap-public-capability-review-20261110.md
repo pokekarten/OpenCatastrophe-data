@@ -88,3 +88,60 @@ Until answered: document as **capability benchmark**; no scraping behind login, 
 6. [Aon ImpactWorkbench](https://www.aon.com/reinsurance/impact-workbench/default.jsp) — **P**, separate transformation/API product.
 
 **Review result:** Public product capabilities are supported by Aon's own statements. RAP user-level implementation details, APIs, access entitlements, model/data licensing and potential scientific calibration remain **unknown**. This document is original repository-authored commentary linking to provider pages, **not** an imported Aon dataset, scientific calibration, official partnership or admission decision.
+
+## Executable fictional underwriting accumulation benchmark (2026-11-10)
+
+The P0 comparison above now has a **runnable, standalone, stdlib-only** reference implementation in
+[research/aon_rap_fictional_accumulation_v0.py](../../research/aon_rap_fictional_accumulation_v0.py)
+and eight regression methods in
+[tests/test_aon_rap_fictional_accumulation_v0.py](../../tests/test_aon_rap_fictional_accumulation_v0.py).
+It uses one **invented** physical storm, two fully synthetic regional damage ratios (HIGH 30%, LOW 5%),
+one-to-one fictional risk/policy pairs, and per-risk EUR-cent policy deductibles and caps.
+It is *not* a geographic model, a risk score or an Aon algorithm.
+
+From the repository root:
+
+\`\`\`sh
+python -m research.aon_rap_fictional_accumulation_v0
+python -m unittest discover -s tests -p 'test_aon_rap_fictional_accumulation_v0.py' -v
+\`\`\`
+
+Both proposed risks add **EUR 50,000 TIV** with identical EUR 250 per-risk deductible
+and EUR 50,000 per-risk insured limit. Baseline fictional TIV is EUR 200,000;
+baseline gross scenario loss EUR 35,000 and insured scenario loss EUR 34,500.
+Adding proposal A in the higher-risk synthetic zone increases conditional
+GUL by **EUR 15,000** and insured scenario loss by **EUR 14,750**.
+Adding proposal B in the lower-risk synthetic zone increases GUL by
+**EUR 2,500** and insured loss by **EUR 2,250**.
+The two proposals are **counterfactual alternatives**, not simultaneous risks.
+All amounts are integer-cent calculations; rounding is half-up to one cent
+at individual-risk gross loss before deductibles and limits.
+
+The result explicitly reports
+\`risk_metric_kind=conditional_scenario\`,
+\`annual_ep_admitted=false\`,
+\`aon_data_or_score_used=false\`,
+\`actual_insurer_data_used=false\` and
+\`source_original_bytes_verified=false\`.
+Its \`fictional_fixture_sha256\` binds the constructed **fixture only**;
+it does **not** authenticate provider hazard observations, Oasis outputs,
+a vendor score or any externally licensed source. One event and the same
+invented risk terms are used on both sides, so zero-event years, CAT XL,
+retro, risk-premium pricing, annual frequencies and OEP/AEP are unsupported.
+
+**Fail-closed controls:** strict integer cents and 0–10,000 integer damage
+basis points, no float/Boolean coercion, EUR currency only, no duplicate
+location or policy IDs, equal proposed TIV/terms, separate proposed zones,
+and no missing hazard zone (missing footprint is unknown, **not** zero loss).
+Unknown input fields, annualization flags and multi-event claims are
+rejected instead of being silently ignored.
+
+**Executed scope:** the exact two resulting Python source Git blobs were
+re-fetched and matched the locally executed source: module
+\`bafd43ff5c5b591bdaf25813b67ab40c54e3a6cd\`, test
+\`29766b365f259eab994139da37df18f41dee56f8\`.
+**8/8 isolated CPython unit tests passed**; module invocation and
+\`compileall\` succeeded. Full public repository CI must independently
+run on the final PR HEAD before considering any **research-only** merge.
+No rights, source data, insurer location, native model or financial-science
+admission status is changed.
