@@ -33,13 +33,13 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Legal, privacy and independence limits
 
-The Zenodo record was openly accessible, but its **Rights / License field was blank in the accessible page view** at this review. The README credits Southern Water for permitting **public sharing** of its sewer-monitoring data. Neither that acknowledgement nor Zenodo's generic default licence proves permission for commercial insurer model calibration, re-publishing telemetry, publishing individual sewer locations, or derivative distribution. Rights and privacy remain **not reviewed** and source admission **not admitted**.
+The rendered Zenodo page's **Rights / License display was blank** in the accessible view; however, the **official Zenodo REST API** for the exact version `https://zenodo.org/api/records/20699635` returned `metadata.access_right=open` and `metadata.license.id=cc-by-4.0`. The API also listed nine source files, including `README.md` (`size=6995`, advertised MD5 `dd4805e631f9519e1bf19472df82a13b`) and `index_telemetry_data.csv` (`size=117300`, advertised MD5 `aa2d98d36ea6837f35b8ced1c2141767`). This is version-bound **record-level licence and publisher checksum evidence**, not a downloaded index, signed response, or a complete audit of all embedded source rights. The README credits Southern Water for permitting **public sharing** of its sewer-monitoring data. Neither that acknowledgement nor Zenodo's generic default licence proves permission for commercial insurer model calibration, re-publishing telemetry, publishing individual sewer locations, or derivative distribution. Rights and privacy remain **not reviewed** and source admission **not admitted**.
 
 Blue Heart water-level sensors, UK Environment Agency rainfall / river products, and modeled pluvial inundation surfaces can share input events and cannot automatically serve as independent ground truth for one another.
 
 ## Smallest causal next preflight
 
-1. Establish the exact versioned Zenodo data-rights statement and right to compute/commercially model with the data; specifically confirm Southern Water's dataset reuse scope.
+1. The official versioned Zenodo record now explicitly declares CC BY 4.0; verify whether the complete set of third-party telemetry, precise sewer assets and derivatives can be used for insurer model calibration and redistribution, especially Southern Water's reuse scope and privacy.
 2. Retrieve **metadata-only** the 117.3-kB original index CSV with its own byte count + SHA-256 outside Git (subject to rights). Validate field names, one-to-one paths, category distribution and units, without recording source coordinate rows or identities in the public repo.
 3. Confirm the Highway gully source timezone and DST handling, including explicit crosswalk to offset-bearing QC timestamps. Do not synthesize it.
 4. Only after clearance, choose one small, bounded sensor and weather-event period. Freeze the exact ZIP identity, preserve QC class and unit mapping, and run a deterministic synthetic/held-out challenge. Do not generalise to flood depth, urban sewer property damage or an insured loss without separate physically observed evidence.
