@@ -123,3 +123,40 @@ area-type and depth-class digits; it is not a property water depth or loss.
    pin final URL and content SHA-256, then investigate a synthetic-only
    `Unavailable`/AEP/defence/CRS schema validator. Keep this PR Draft until
    genuine data admission evidence permits promotion.
+
+## Follow-up: 3.3% defended depth scenarios (2026-11-10)
+
+The [EA present-day 3.3% AEP depth product](https://www.data.gov.uk/dataset/2b1dc7a4-ff9f-42fd-9971-11638eabf814/rivers-and-sea-3-3-defended-flood-risk-depths-present-day)
+and corresponding [climate-change 3.3% AEP depth product](https://www.data.gov.uk/dataset/9d5e56d5-7713-42a1-890f-3d0a3e895cd5/rivers-and-sea-3-3-defended-flood-risk-depths-climate-change)
+were confirmed from the original publisher's CKAN catalogue metadata. They
+contribute **two more fixed catalogues** and 18 separate resource UUIDs,
+bringing the exact metadata snapshot coverage to **5 CKAN products / 38
+resource metadata records**.
+
+| Fixed selector | Publisher CKAN package UUID | Catalogue modified | Original JSON bytes | Exact raw SHA-256 |
+| --- | --- | --- | ---: | --- |
+| `river_3p3_present` | `2b1dc7a4-ff9f-42fd-9971-11638eabf814` | `2026-10-30T14:00:33.438078` | 13959 | `64d01c89e24c82e7c9384f1a8a2762ddc065890bbbff81e19e16bc4fc8a32857` |
+| `river_3p3_climate` | `9d5e56d5-7713-42a1-890f-3d0a3e895cd5` | `2026-10-30T14:00:32.171469` | 15093 | `15ba47630e376659d3c22dcdcd72ac504e3ee5ff8b150b0491e5613848e3e1fa` |
+
+Two original uncached publisher CKAN JSON response bodies were retrieved
+through an external HTTP transport. Both redirected to
+`https://ckan.publishing.service.gov.uk/api/action/package_show?id=...`
+and carried `application/json;charset=utf-8`. As with the original three
+datasets, hash equality supports *exact byte replay only* and does not
+authenticate an arbitrary payload or authorize following 18 linked resources.
+No response bodies or ZIP assets are committed. The separately frozen asset
+identity and resource naming are in
+[`scripts/preflight_ea_flood_ckan_v0.py`](../../scripts/preflight_ea_flood_ckan_v0.py).
+Metadata-only access and unreviewed rights are recorded in
+[`access/uk.ea.flood-depth-3p3.ckan.2026.json`](../../access/uk.ea.flood-depth-3p3.ckan.2026.json).
+
+**Scientific scope:** 3.3% AEP (approximately 1 in 30 per year) is a
+scenario-probability label, *not* annual loss frequency inferred from a
+stochastic flood event catalogue. Both products are defended-only;
+there is no undefended 3.3% scenario in these particular packages, and
+defence failure is not modelled. The current and RCP8.5 climate scenarios
+have shared national modelling lineage, not independent evidence. Depth
+classes are not precise building-ground-level inundation measurements.
+Unavailable national coverage remains explicitly missing. Do not use these
+products to construct event counts, AEP/OEP or per-property vulnerability
+parameters before asset and scientific checks.
