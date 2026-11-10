@@ -19,7 +19,9 @@ ROOT = "6_highway_gully_telemetry_data"
 def make_archive(*, missing_qc=None, extra=None, broken=None):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr(ROOT + "/", b"")
+        directory = zipfile.ZipInfo(ROOT + "/")
+        directory.compress_type = zipfile.ZIP_STORED
+        zf.writestr(directory, b"")
         for i in range(15):
             stem = f"SYNTHETIC_{i:02d}"
             zf.writestr(f"{ROOT}/{stem}.csv", b"timestamp,value\n2025-01-01T00:00:00+00:00,0\n")
@@ -93,7 +95,9 @@ class BlueHeartGullyZipInventoryTests(unittest.TestCase):
     def test_high_compression_ratio_rejected(self):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-            zf.writestr(ROOT + "/", b"")
+            directory = zipfile.ZipInfo(ROOT + "/")
+        directory.compress_type = zipfile.ZIP_STORED
+        zf.writestr(directory, b"")
             for i in range(15):
                 stem = f"SYNTHETIC_{i:02d}"
                 data = b"0" * 200_000 if i == 0 else b"data"
