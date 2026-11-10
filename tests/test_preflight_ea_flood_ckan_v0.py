@@ -36,8 +36,11 @@ def check(doc: dict, dataset: str = "river_present") -> dict:
 
 
 class EAOfflineCkanTests(unittest.TestCase):
-    def test_three_catalogues_and_no_network_or_rights_promotion(self):
-        for ds, n in (("river_present", 8), ("river_climate", 8), ("surface_present", 4)):
+    def test_five_catalogues_and_no_network_or_rights_promotion(self):
+        for ds, n in (
+            ("river_present", 8), ("river_climate", 8), ("surface_present", 4),
+            ("river_3p3_present", 9), ("river_3p3_climate", 9),
+        ):
             with self.subTest(ds=ds):
                 s = synthetic(ds)
                 s["result"]["contact_email"] = "private@example.invalid"
@@ -57,7 +60,7 @@ class EAOfflineCkanTests(unittest.TestCase):
         self.assertEqual(set(OBSERVED_ORIGINAL_METADATA_RECEIPTS), set(PACKAGES))
         self.assertEqual(
             sum(size for size, _digest in OBSERVED_ORIGINAL_METADATA_RECEIPTS.values()),
-            37618,
+            66670,
         )
         for dataset, (size, digest) in OBSERVED_ORIGINAL_METADATA_RECEIPTS.items():
             with self.subTest(dataset=dataset):
@@ -67,6 +70,25 @@ class EAOfflineCkanTests(unittest.TestCase):
                 report = check(synthetic(dataset), dataset)
                 self.assertFalse(report["matches_observed_original_metadata_receipt"])
                 self.assertEqual(report["observed_original_metadata_receipt_date"], "2026-11-10")
+
+    def test_3p3_present_and_climate_have_separate_source_ids(self):
+        present = synthetic("river_3p3_present")
+        climate = synthetic("river_3p3_climate")
+        self.assertNotEqual(present["result"]["id"], climate["result"]["id"])
+        self.assertEqual(present["result"]["num_resources"], 9)
+        self.assertEqual(climate["result"]["num_resources"], 9)
+        with self.assertRaises(EACatalogueError):
+            check(present, "river_3p3_climate")
+        with self.assertRaises(EACatalogueError):
+            check(climate, "river_3p3_present")
+
+    def test_3p3_source_url_tamper_fails_closed(self):
+        record = synthetic("river_3p3_present")
+        record["result"]["resources"][-1]["url"] = (
+            "https://untrusted.example.invalid/ogc/features/v1"
+        )
+        with self.assertRaises(EACatalogueError):
+            check(record, "river_3p3_present")
 
     def test_wrong_selector(self):
         with self.assertRaises(EACatalogueError):
