@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Offline, fail-closed preflight for three fixed Environment Agency CKAN catalogues.
+"""Offline, fail-closed preflight for five fixed Environment Agency CKAN catalogues.
 
 Pass an independently saved JSON response. This program makes no network calls,
 never dereferences provider resource links, and does not certify source rights,
@@ -70,6 +70,44 @@ PACKAGES = {
             ("12236b59-a563-4b31-b26f-04032960b8d0", "SurfaceWaterSpatialPlanningDepths_WMS", "", "wms"),
         ),
     },
+    "river_3p3_present": {
+        "id": "2b1dc7a4-ff9f-42fd-9971-11638eabf814",
+        "slug": "rivers-and-sea-3-3-defended-flood-risk-depths-present-day",
+        "modified": "2026-10-30T14:00:33.438078",
+        "file_set": "54d9e4b8-2778-4ed0-b6dc-ddc385386fce",
+        "explore": "767c96e6-b149-4744-9d4d-34b32f6c0e1b",
+        "spatial": "rivers-and-sea-1in30-defended-flood-risk-depths-present-day",
+        "resources": (
+            ("80478751-19e7-4928-bb48-af6379511c77", "Rivers_and_Sea_3_3_defended_flood_risk_depths_present_day.gdb.zip", "ZIP", "file"),
+            ("e405ef64-314f-4121-aefd-62aa2e2cb04e", "Rivers_and_Sea_3_3_defended_flood_risk_depths_present_day.geojson.zip", "ZIP", "file"),
+            ("4bd8350b-18ff-44f9-94d3-f4c8324437ae", "Rivers_and_Sea_3_3_defended_flood_risk_depths_present_day.gpkg.zip", "ZIP", "file"),
+            ("a45be695-8cfa-4473-a0a1-a944daa0ca60", "Rivers_and_Sea_Defended_and_Undefended_Depths_Product_Description.pdf", "PDF", "file"),
+            ("e705cdeb-9bb5-4f01-a54c-62c8c62e7c17", "Rivers_and_Sea_Depths.lyrx", "", "file"),
+            ("eea725c8-6972-4119-986c-26f4d3a1491f", "Rivers_1in30_Sea_1in30_defended_depths_Download", "", "explore"),
+            ("fc2a5564-dc3f-4821-b525-12aeddb2a968", "Rivers_1in30_Sea_1in30_defended_depths_WMS", "", "wms"),
+            ("6d2191d1-5664-4ea9-9ace-07f2e2637753", "Rivers_1in30_Sea_1in30_defended_depths_WFS", "", "wfs"),
+            ("eab4f02c-b2eb-45d0-a8e5-d12b8467fe63", "OGC API - Features service", "", "ogc"),
+        ),
+    },
+    "river_3p3_climate": {
+        "id": "9d5e56d5-7713-42a1-890f-3d0a3e895cd5",
+        "slug": "rivers-and-sea-3-3-defended-flood-risk-depths-climate-change",
+        "modified": "2026-10-30T14:00:32.171469",
+        "file_set": "7844932f-d689-471c-aa1e-76ee0cbd51ef",
+        "explore": "defaf0fb-8574-46c6-bb2e-e6eb1a5e467a",
+        "spatial": "rivers-and-sea-1in30-defended-flood-risk-depths-climate-change",
+        "resources": (
+            ("2e1dca94-fcda-48e4-aa1b-dbac16f45978", "Rivers_and_Sea_3_3_defended_flood_risk_depths_climate_change.gdb.zip", "ZIP", "file"),
+            ("06b5dbee-d911-46c6-affd-55622c925f47", "Rivers_and_Sea_3_3_defended_flood_risk_depths_climate_change.geojson.zip", "ZIP", "file"),
+            ("dfa5eb9e-3ffa-480e-9416-836b138d24be", "Rivers_and_Sea_3_3_defended_flood_risk_depths_climate_change.gpkg.zip", "ZIP", "file"),
+            ("706ed33e-1b2b-4b78-ba0b-238d179586ee", "Rivers_and_Sea_Climate_Change_Depths.lyrx", "", "file"),
+            ("06a37b85-3d8b-4422-a93c-d055b456ef05", "Rivers_and_Sea_Defended_and_Undefended_Depths_Product_Description.pdf", "PDF", "file"),
+            ("950f383d-a11a-40b4-bf4e-b2e213d33ee7", "Rivers_1in30_Sea_1in30_defended_depths_CCP1_Download", "", "explore"),
+            ("7d8d09be-efc9-4139-8579-b40916353e07", "Rivers_1in30_Sea_1in30_defended_depths_CCP1_WMS", "", "wms"),
+            ("1983e819-f26e-4dc3-8282-fb60a490d9e0", "Rivers_1in30_Sea_1in30_defended_depths_CCP1_WFS", "", "wfs"),
+            ("1e1ef0ba-c120-45a8-b7a8-72ce83bcba7d", "OGC API - Features service", "", "ogc"),
+        ),
+    },
 }
 
 
@@ -82,6 +120,8 @@ OBSERVED_ORIGINAL_METADATA_RECEIPTS = {
     "river_present": (13469, "943bed40c29050164ac059f5ae8335761bf38ee70b44bfbd233b7b31f31212e7"),
     "river_climate": (14594, "385b691407fa761cbf0179f0f78e274f17faa7a1f7a49241ae6be0d9c7614f33"),
     "surface_present": (9555, "4c79f4f6df2530f92118269090cf66ec13dbab6468d59166622c7c7d19aff458"),
+    "river_3p3_present": (13959, "64d01c89e24c82e7c9384f1a8a2762ddc065890bbbff81e19e16bc4fc8a32857"),
+    "river_3p3_climate": (15093, "15ba47630e376659d3c22dcdcd72ac504e3ee5ff8b150b0491e5613848e3e1fa"),
 }
 
 
