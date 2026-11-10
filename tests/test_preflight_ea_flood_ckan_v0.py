@@ -8,7 +8,8 @@ import json
 import unittest
 
 from scripts.preflight_ea_flood_ckan_v0 import (
-    EACatalogueError, MAX_BYTES, PACKAGES, expected_url, inspect_metadata,
+    EACatalogueError, MAX_BYTES, PACKAGES, OBSERVED_ORIGINAL_METADATA_RECEIPTS,
+    expected_url, inspect_metadata,
 )
 
 
@@ -46,10 +47,26 @@ class EAOfflineCkanTests(unittest.TestCase):
                 self.assertEqual(result["provider_requests_performed"], 0)
                 self.assertEqual(result["resource_links_followed"], 0)
                 self.assertFalse(result["input_authenticity_verified"])
+                self.assertFalse(result["matches_observed_original_metadata_receipt"])
                 self.assertFalse(result["commercial_reuse_approved"])
                 self.assertFalse(result["model_data_admitted"])
                 self.assertNotIn("private@example.invalid", json.dumps(result))
                 self.assertNotIn("environment.data.gov.uk", json.dumps(result))
+
+    def test_receipts_are_pinned_and_synthetic_bytes_do_not_match(self):
+        self.assertEqual(set(OBSERVED_ORIGINAL_METADATA_RECEIPTS), set(PACKAGES))
+        self.assertEqual(
+            sum(size for size, _digest in OBSERVED_ORIGINAL_METADATA_RECEIPTS.values()),
+            37618,
+        )
+        for dataset, (size, digest) in OBSERVED_ORIGINAL_METADATA_RECEIPTS.items():
+            with self.subTest(dataset=dataset):
+                self.assertGreater(size, 0)
+                self.assertEqual(len(digest), 64)
+                self.assertTrue(all(ch in "0123456789abcdef" for ch in digest))
+                report = check(synthetic(dataset), dataset)
+                self.assertFalse(report["matches_observed_original_metadata_receipt"])
+                self.assertEqual(report["observed_original_metadata_receipt_date"], "2026-11-10")
 
     def test_wrong_selector(self):
         with self.assertRaises(EACatalogueError):
