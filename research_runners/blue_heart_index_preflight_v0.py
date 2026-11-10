@@ -27,6 +27,11 @@ class BlueHeartPreflightError(ValueError):
 
 
 GAUGE_TYPES = frozenset({"Borehole", "Fluvial", "Sewer", "Highway gully", "Rain"})
+OPTIONAL_NUMERIC_BY_GAUGE = {
+    "floodThreshold_mm": "Highway gully",
+    "bedLevelEstimate_mAOD": "Fluvial",
+    "bankLevelEstimate_mAOD": "Fluvial",
+}
 REQUIRED_COLUMNS = frozenset(
     {
         "locationLatitude",
@@ -37,6 +42,7 @@ REQUIRED_COLUMNS = frozenset(
         "gaugeParameters",
         "parameterUnits",
         "gaugeOwner",
+        *OPTIONAL_NUMERIC_BY_GAUGE,
     }
 )
 QUALITY_CATEGORIES = {"1": "good", "2": "suspect", "3": "bad"}
@@ -109,12 +115,37 @@ def _param_units(row: Mapping[str, str]) -> None:
     if not params or len(params) != len(units) or not all(params) or not all(units):
         raise BlueHeartPreflightError("gaugeParameters/parameterUnits must be one-to-one")
 
+def _optional_numeric_fields(
+    row: Mapping[str, str],
+    gauge_type: str,
+    populated: Counter[str],
+) -> None:
+    """Validate optional dimensions only where present; missing is never zero."""
+
+    for field, allowed_type in OPTIONAL_NUMERIC_BY_GAUGE.items():
+        original = row.get(field)
+        if original is None:
+            raise BlueHeartPreflightError(f"missing optional dimension column: {field}")
+        value = original.strip()
+        if not value:
+            continue
+        try:
+            numeric = float(value)
+        except ValueError as exc:
+            raise BlueHeartPreflightError(f"non-numeric {field}") from exc
+        if not math.isfinite(numeric):
+            raise BlueHeartPreflightError(f"non-finite {field}")
+        if gauge_type != allowed_type:
+            raise BlueHeartPreflightError(f"{field} belongs to {allowed_type} gauges")
+        populated[field] += 1
+
 
 def inspect_index_csv(path: Path, *, expected_gauges: int | None = None) -> dict[str, object]:
     """Check one local, separately rights-cleared index; return no sensitive rows."""
 
     path = Path(path)
     counts: Counter[str] = Counter()
+    optional_populated: Counter[str] = Counter()
     seen_data_paths: set[str] = set()
     seen_qc_paths: set[str] = set()
     with path.open("r", encoding="utf-8-sig", newline="") as fileobj:
@@ -132,6 +163,7 @@ def inspect_index_csv(path: Path, *, expected_gauges: int | None = None) -> dict
             _coord(row, "locationLatitude", -90.0, 90.0)
             _coord(row, "locationLongitude", -180.0, 180.0)
             _param_units(row)
+            _optional_numeric_fields(row, gauge_type, optional_populated)
             data_path = _relative_csv_path(row.get("dataPath"), field="dataPath")
             qc_path = _relative_csv_path(row.get("dataQualityFlagsPath"), field="dataQualityFlagsPath")
             if data_path == qc_path or data_path in seen_data_paths or qc_path in seen_qc_paths:
@@ -148,6 +180,9 @@ def inspect_index_csv(path: Path, *, expected_gauges: int | None = None) -> dict
     return {
         "index_rows": total,
         "gauge_type_counts": {key: counts[key] for key in sorted(counts)},
+        "optional_field_populated_counts": {
+            field: optional_populated[field] for field in sorted(OPTIONAL_NUMERIC_BY_GAUGE)
+        },
         "has_telemetry_and_qc_paths": total,
         "source_bytes_admitted": False,
         "timestamp_alignment_approved": False,
