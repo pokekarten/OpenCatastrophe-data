@@ -37,6 +37,7 @@ class BlueHeartTemporalPairTests(unittest.TestCase):
         report = inspect_timestamp_pair(raw, qc)
         self.assertEqual(report["matched_timestamp_count"], 2)
         self.assertTrue(report["timestamp_sets_identical"])
+        self.assertFalse(report["timestamp_alignment_approved"])
         self.assertFalse(report["physical_clock_provenance_verified"])
         self.assertFalse(report["source_bytes_admitted"])
         self.assertNotIn("2025", str(report))
