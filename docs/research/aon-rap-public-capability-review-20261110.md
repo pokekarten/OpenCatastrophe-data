@@ -101,10 +101,10 @@ It is *not* a geographic model, a risk score or an Aon algorithm.
 
 From the repository root:
 
-\`\`\`sh
+```sh
 python -m research.aon_rap_fictional_accumulation_v0
 python -m unittest discover -s tests -p 'test_aon_rap_fictional_accumulation_v0.py' -v
-\`\`\`
+```
 
 Both proposed risks add **EUR 50,000 TIV** with identical EUR 250 per-risk deductible
 and EUR 50,000 per-risk insured limit. Baseline fictional TIV is EUR 200,000;
@@ -118,12 +118,12 @@ All amounts are integer-cent calculations; rounding is half-up to one cent
 at individual-risk gross loss before deductibles and limits.
 
 The result explicitly reports
-\`risk_metric_kind=conditional_scenario\`,
-\`annual_ep_admitted=false\`,
-\`aon_data_or_score_used=false\`,
-\`actual_insurer_data_used=false\` and
-\`source_original_bytes_verified=false\`.
-Its \`fictional_fixture_sha256\` binds the constructed **fixture only**;
+`risk_metric_kind=conditional_scenario`,
+`annual_ep_admitted=false`,
+`aon_data_or_score_used=false`,
+`actual_insurer_data_used=false` and
+`source_original_bytes_verified=false`.
+Its `fictional_fixture_sha256` binds the constructed **fixture only**;
 it does **not** authenticate provider hazard observations, Oasis outputs,
 a vendor score or any externally licensed source. One event and the same
 invented risk terms are used on both sides, so zero-event years, CAT XL,
@@ -138,10 +138,10 @@ rejected instead of being silently ignored.
 
 **Executed scope:** the exact two resulting Python source Git blobs were
 re-fetched and matched the locally executed source: module
-\`bafd43ff5c5b591bdaf25813b67ab40c54e3a6cd\`, test
-\`29766b365f259eab994139da37df18f41dee56f8\`.
+`bafd43ff5c5b591bdaf25813b67ab40c54e3a6cd`, test
+`29766b365f259eab994139da37df18f41dee56f8`.
 **8/8 isolated CPython unit tests passed**; module invocation and
-\`compileall\` succeeded. Full public repository CI must independently
+`compileall` succeeded. Full public repository CI must independently
 run on the final PR HEAD before considering any **research-only** merge.
 No rights, source data, insurer location, native model or financial-science
 admission status is changed.
