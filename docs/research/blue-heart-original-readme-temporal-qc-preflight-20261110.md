@@ -50,6 +50,19 @@ To turn this receipt into a reproducible full-object integrity gate once authori
 
 **Next experimental boundary:** the directory receipt makes a source archive technically inspectable, but it does *not* resolve the 15 highway-gully raw timestamp timezone. Do not force event/time calibration from the matching index, the published README's naive timestamps or the upstream author's UTC-localization convention.
 
+## Cross-file publisher index-to-archive path reconciliation
+
+A second read-only metadata check reconstructed **two distinct original Zenodo v1.0 products** via finite HTTP Range windows: the 117,300-byte `index_telemetry_data.csv` (original full-source SHA-256 `44d53fe95e70cd3665678aec469666c1b22b3323c52424d9838ee5a6d24c4f40` as recorded above) and the original highway-gully ZIP's last 12,095 bytes (central-directory metadata only). The 497-row global index identifies exactly **15 Highway gully** rows, each with a `dataPath` and `dataQualityFlagsPath`.
+
+Compared the original relative paths **in memory** against the 30 CSV filenames from the ZIP central directory:
+
+- **15/15** highway-gully measurement paths resolve to a ZIP CSV member;
+- **15/15** corresponding quality-file paths resolve to a ZIP CSV member;
+- **0** index-referenced highway-gully paths are missing from the ZIP central directory;
+- **0** ZIP CSV members are unreferenced by those 15 index rows.
+
+This is an original **cross-file metadata linkage** between the published gauge index and the published archive inventory; it improves on merely matching 15 filename stems. **No individual source path, row, location name or coordinate was printed, stored in the public repository, or imported into Neon.** Metadata linkage does not prove original CSV payload CRC/integrity, quality scores, device timezone or a scientifically admissible storm-to-loss calibration.
+
 ## Offline two-file temporal reconciliation gate (added 2026-11-10)
 
 New `research_runners/blue_heart_timestamp_pair_preflight_v0.py` and `tests/test_blue_heart_timestamp_pair_preflight_v0.py` exercise a **locally supplied**, bounded measurement CSV and its matching quality-label CSV, using synthetic data in repository tests. This additional preflight checks only the `timestamp` headers and rows. It does **not** fetch, embed or publish source telemetry or declare the gauge record fit for insured flood modelling.
