@@ -39,6 +39,19 @@ The original Blue Heart authors publish [the example scripts](https://github.com
 
 The author loader also offers a `Quality1` mode filtering to only QC flag `1`. That is a user-selected analysis filter, not a guarantee that discarded `2`/suspect data are invalid; report missingness and selection bias separately in future calibration. The project does not copy or vendor the example loader.
 
+
+## Offline two-file temporal reconciliation gate (added 2026-11-10)
+
+New `research_runners/blue_heart_timestamp_pair_preflight_v0.py` and `tests/test_blue_heart_timestamp_pair_preflight_v0.py` exercise a **locally supplied**, bounded measurement CSV and its matching quality-label CSV, using synthetic data in repository tests. This additional preflight checks only the `timestamp` headers and rows. It does **not** fetch, embed or publish source telemetry or declare the gauge record fit for insured flood modelling.
+
+The gate rejects missing/non-unique timestamp headers, missing or malformed time cells, naïve timestamps, duplicate **UTC-equivalent** instants (even across different declared offsets), empty datasets, malformed CSV rows and counts over the configured cap. Offset-bearing instants are normalized to UTC for matching; it reports only aggregate matched/missing timestamp counts. Equal timestamp sets are a *necessary technical shape condition* but do **not** approve the physical logger clock; `physical_clock_provenance_verified`, `timestamp_alignment_approved` and `source_bytes_admitted` all remain `false`.
+
+Provider application-script behaviour still differs: author example code localizes offset-naive timestamps to UTC, but this is a coding convention rather than an instrument's verified UTC/DST provenance. Accordingly this preflight **fails closed** for the highway-gully raw-file timestamps documented as offset-naive in the source README. It is not appropriate to force UTC merely to produce matched joins. When upstream instrument timing has been verified, any specialized, documented alignment transform should be implemented separately and tested for ambiguous and repeated local DST hours, not silently enabled in the generic preflight.
+
+The upstream paper [ESSD-2026-569](https://doi.org/10.5194/essd-2026-569) remains a **preprint under review** at the time of this source research; it is scientific methodology evidence, not a peer-reviewed acceptance claim or raw logger UTC certification.
+
+**Not performed:** No individual sensor time series or QC ZIP archives were inspected during this new check, no original time pairing statistics asserted, no author correction or time-zone source evidence obtained, and no downstream model input admitted.
+
 ## Legal, privacy and independence limits
 
 The rendered Zenodo page's **Rights / License display was blank** in the accessible view; however, the **official Zenodo REST API** for the exact version `https://zenodo.org/api/records/20699635` returned `metadata.access_right=open` and `metadata.license.id=cc-by-4.0`. The API also listed nine source files, including `README.md` (`size=6995`, advertised MD5 `dd4805e631f9519e1bf19472df82a13b`) and `index_telemetry_data.csv` (`size=117300`, advertised MD5 `aa2d98d36ea6837f35b8ced1c2141767`). This is version-bound **record-level licence and publisher checksum evidence**, not a downloaded index, signed response, or a complete audit of all embedded source rights. The README credits Southern Water for permitting **public sharing** of its sewer-monitoring data. Neither that acknowledgement nor Zenodo's generic default licence proves permission for commercial insurer model calibration, re-publishing telemetry, publishing individual sewer locations, or derivative distribution. Rights and privacy remain **not reviewed** and source admission **not admitted**.
