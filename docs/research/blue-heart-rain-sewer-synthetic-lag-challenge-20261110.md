@@ -27,6 +27,26 @@ The source index's **15/15 rain** and **398/398 sewer** rows were matched by the
 
 **Evidence boundary:** Source URL and record identity remain version-bound; the original archive ZIP MD5, full-object SHA-256, decompression CRC, source time-series measurement values, QC pass fractions, clock conventions, sampled time windows, inter-sensor independence and original response lag **were not verified**. A correct ZIP directory and source index link are file-discovery evidence, not proof that any real timeseries can be aligned or used commercially without separate rights review.
 
+## Aggregate spatial reach of the rain gauges (original published index)
+
+Using the **same original 117,300-byte, 497-row v1.0 index**, a bounded in-memory read extracted only the 15 Rain and 398 Sewer latitude/longitude fields. For each of the 398 sewer stations, the shortest *spherical great-circle (Haversine)* distance to any of the 15 rain gauges was computed; output is **aggregate-only**, rounded to 0.1 km. Coordinates are taken at face value as geographic degrees; exact survey/CRS accuracy, altitude, drainage direction and the true rainfall footprint were not established.
+
+| Geometric relationship from original index | Result |
+| --- | ---: |
+| Nearest rain gauge within 250 m of a sewer gauge | 42/398 (10.6%) |
+| Within 500 m | 123/398 (30.9%) |
+| Within 1 km | 313/398 (78.6%) |
+| Within 2 km | 386/398 (97.0%) |
+| Within 3 km | 398/398 (100.0%) |
+| Nearest-rain distance median | approx. 0.7 km |
+| 90th percentile | approx. 1.4 km |
+| 95th percentile | approx. 1.8 km |
+| Maximum | approx. 2.2 km |
+
+The minimum distance rounds to **0.0 km**; this is only rounding, **not** a claim of precisely colocated instruments. These results show many *geometrically nearby* rain-to-sewer candidate pairs and help predefine a later stratified spatial holdout. They **do not** prove simultaneous time-series availability, rainfall representativeness, causal drainage linkage, source timezone integrity, or experimental independence. Adjacent sewer sites may share catchment, forcing and infrastructure; avoid treating each of the 398 as an independent storm replication.
+
+No individual station coordinates, identifiers, nearest-neighbour pairings or raw index rows were emitted, included in this document or added to Git. This does not alter privacy, source-admission or insurance modelling gates.
+
 ## A minimal synthetic model contract
 
 Implemented in `research_runners/blue_heart_synthetic_rain_sewer_lag_v0.py` with tests `tests/test_blue_heart_synthetic_rain_sewer_lag_v0.py`. Invoke from repository root:
