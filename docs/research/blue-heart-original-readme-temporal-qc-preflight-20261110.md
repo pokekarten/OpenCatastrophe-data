@@ -37,11 +37,27 @@ The rendered Zenodo page's **Rights / License display was blank** in the accessi
 
 Blue Heart water-level sensors, UK Environment Agency rainfall / river products, and modeled pluvial inundation surfaces can share input events and cannot automatically serve as independent ground truth for one another.
 
+## Original index CSV receipt — bounded read-only inspection (2026-11-10)
+
+This is a separate original provider-byte inspection from the 6,995-byte README review. We read the exact Zenodo record-v1.0 public resource `https://zenodo.org/api/records/20699635/files/index_telemetry_data.csv/content` using four finite, non-overlapping HTTP Range byte windows: `0-29999`, `30000-59999`, `60000-89999` and `90000-117299`. Each returned the expected number of response bytes. The four windows were reconstructed **in memory**, parsed as RFC-4180-style CSV and hashed with a SHA-256 routine checked against the `abc` test vector.
+
+- Observed complete source length: **117,300 bytes** (equal to the official Zenodo record API's file size).
+- Observed complete-source SHA-256: `44d53fe95e70cd3665678aec469666c1b22b3323c52424d9838ee5a6d24c4f40`.
+- Zenodo API **advertised** MD5: `aa2d98d36ea6837f35b8ced1c2141767` (this MD5 was not independently recomputed).
+- Strict structural scope: **497 nonempty CSV records**, **12 distinct field names**, **497 distinct telemetry paths**, **497 distinct QC paths**. All 497 rows had the required field values (except the three scientifically optional level/threshold attributes).
+- Gauge classes: **398 Sewer**, **58 Fluvial**, **15 Rain**, **15 Highway gully**, **11 Borehole**. Parameter count distribution: **417 one-parameter**, **21 two-parameter**, **59 three-parameter** rows.
+- Scientific optional dimensions: `floodThreshold_mm` populated in **15/15 highway gully** rows (482 blanks across the full index); `bedLevelEstimate_mAOD` and `bankLevelEstimate_mAOD` each populated in only **39/58 fluvial** rows (458 blanks per field across the full index). The other **19 fluvial rows** have no published bed/bank estimates in these index columns. Their absence is *missing*, not a value of zero or sea level.
+- Structural checks observed **zero** duplicate data paths, duplicate QC paths, malformed `.csv` path extensions, missing required param/unit mappings, non-finite/out-of-range lat/lon, unexpected gauge-type placement for optional dimensions, non-numeric optional dimensions, and unpaired bed/bank population in this exact index snapshot.
+
+**Evidence limit:** A read-only intermediary retrieved the source in four windows; this is not a publisher-signed attestation or a separate provider MD5 verification. Reproducibility requires the SHA-256, exact record DOI/version, content URI and the byte-window procedure; the source bytes are not present in Git. The number of sensors is not their **temporal** coverage, QC pass rate, a count of genuine observed flood events, a licence approval for individual sewer coordinates, or a validated pluvial loss model. No telemetry ZIP, gauge-level series, original index rows or sensitive coordinates were committed or loaded into Neon.
+
+The offline Python preflight `research_runners/blue_heart_index_preflight_v0.py` now checks the optional columns for finite values and compatible gauge classes without requiring that all fluvial sensors have bed/bank estimates. This preserves source missingness and reports only aggregate optional-field counts. Its reproducible synthetic tests remain separate from the in-memory original-source inspection.
+
 ## Smallest causal next preflight
 
 1. The official versioned Zenodo record now explicitly declares CC BY 4.0; verify whether the complete set of third-party telemetry, precise sewer assets and derivatives can be used for insurer model calibration and redistribution, especially Southern Water's reuse scope and privacy.
-2. Retrieve **metadata-only** the 117.3-kB original index CSV with its own byte count + SHA-256 outside Git (subject to rights). Validate field names, one-to-one paths, category distribution and units, without recording source coordinate rows or identities in the public repo.
-3. Confirm the Highway gully source timezone and DST handling, including explicit crosswalk to offset-bearing QC timestamps. Do not synthesize it.
-4. Only after clearance, choose one small, bounded sensor and weather-event period. Freeze the exact ZIP identity, preserve QC class and unit mapping, and run a deterministic synthetic/held-out challenge. Do not generalise to flood depth, urban sewer property damage or an insured loss without separate physically observed evidence.
+2. **Completed technical metadata inspection:** the exact 117,300-byte original CSV index was read in memory and hashed; 497 gauge rows and optional-field coverage are documented above. This neither authorizes publication of the source rows nor resolves third-party sewer-network reuse.
+3. Confirm the Highway gully raw-device timezone and DST handling, including an explicit crosswalk to offset-bearing QC timestamps. Do not synthesize missing timezone context.
+4. After source-specific rights and time-zone clearance, choose one bounded sensor and weather-event period, freeze the exact ZIP identity, preserve QC class and unit mapping, and run a deterministic synthetic/held-out challenge. Do not generalise to flood depth, urban sewer property damage or insured losses without separate physical evidence.
 
-**Explicitly not done:** Original telemetry or index data retrieval, licence approval, direct independent publisher-byte signature, full range/time coverage evaluation, event overlay, AEP/OEP loss computation, source admissibility or Neon ingest.
+**Explicitly not done:** Original telemetry ZIP retrieval, independently signed provider-byte attestation, full time-series coverage/QC rate analysis, source-wide rights/admission approval, event overlay, AEP/OEP loss computation or Neon ingest.
