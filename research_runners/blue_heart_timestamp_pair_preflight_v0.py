@@ -28,11 +28,13 @@ def _read_explicit_utc_instants(path: Path, *, max_rows: int) -> set[str]:
     with Path(path).open("r", encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
         headers = reader.fieldnames
-        if headers is None or headers.count("timestamp") != 1:
+        if headers is None or len(set(headers)) != len(headers) or headers.count("timestamp") != 1:
             raise BlueHeartPreflightError("timestamp column missing or duplicated")
         for index, row in enumerate(reader, start=1):
             if index > max_rows:
                 raise BlueHeartPreflightError("timestamp preflight row limit exceeded")
+            if None in row or any(row.get(key) is None for key in headers):
+                raise BlueHeartPreflightError("malformed CSV row shape")
             instant = explicit_utc_timestamp(row.get("timestamp"))
             if instant in times:
                 raise BlueHeartPreflightError("repeated UTC instant in one measurement or QC file")
@@ -70,7 +72,8 @@ def inspect_timestamp_pair(
         "raw_without_quality_count": unmatched_raw,
         "quality_without_raw_count": unmatched_qc,
         "timestamp_sets_identical": exact,
-        "timestamp_alignment_approved": exact,
+        # An identical time index is necessary, not proof of physical logger time.
+        "timestamp_alignment_approved": False,
         "physical_clock_provenance_verified": False,
         "source_bytes_admitted": False,
     }
@@ -88,7 +91,9 @@ def main() -> int:
         result = inspect_timestamp_pair(
             args.measurements, args.quality, max_rows=args.max_rows
         )
-    except (BlueHeartPreflightError, OSError, UnicodeError, csv.Error) as exc:
+    except OSError:
+        parser.error("unable to read one or both local timestamp files")
+    except (BlueHeartPreflightError, UnicodeError, csv.Error) as exc:
         parser.error(str(exc))
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     return 0
