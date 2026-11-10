@@ -53,8 +53,10 @@ Implemented in `research_runners/blue_heart_synthetic_rain_sewer_lag_v0.py` with
 
 ```bash
 python -m research_runners.blue_heart_synthetic_rain_sewer_lag_v0 --synthetic-demo
-python -m unittest tests.test_blue_heart_synthetic_rain_sewer_lag_v0 -v
+python -m unittest discover -s tests -p 'test_blue_heart_synthetic_rain_sewer_lag_v0.py' -v
 ```
+
+**Executed CI evidence:** GitHub Actions on code commit `0afa52ea5b5de3de40174922d8c74fadd6431157` passed on Python 3.11, 3.12, 3.13 and 3.14. The Python 3.12 job log explicitly records **all 16 synthetic challenge tests as `ok`**, including independent holdout, no-timezone, quality, gaps, units and CLI checks. The synthetic fixture deliberately embeds a 10-minute lag and a 3.5 mm-level/mm-rain gain; the test confirms the engine recovers these fixtures, not a provider-derived physical parameter.
 
 The command accepts **no downloaded observation or insured-loss input**, generates two internally constructed and chronologically separate synthetic event windows, and emits only an aggregate JSON result. Parameter choices are demonstration fixtures, **not observed Blue Heart coefficients**. The software gate uses:
 
