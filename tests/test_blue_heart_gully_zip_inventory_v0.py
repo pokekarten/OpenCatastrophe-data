@@ -96,8 +96,8 @@ class BlueHeartGullyZipInventoryTests(unittest.TestCase):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             directory = zipfile.ZipInfo(ROOT + "/")
-        directory.compress_type = zipfile.ZIP_STORED
-        zf.writestr(directory, b"")
+            directory.compress_type = zipfile.ZIP_STORED
+            zf.writestr(directory, b"")
             for i in range(15):
                 stem = f"SYNTHETIC_{i:02d}"
                 data = b"0" * 200_000 if i == 0 else b"data"
