@@ -20,6 +20,7 @@ class BlueHeartIndexPreflightTests(unittest.TestCase):
     FIELDS = [
         "locationLatitude", "locationLongitude", "gaugeType", "dataPath",
         "dataQualityFlagsPath", "gaugeParameters", "parameterUnits", "gaugeOwner",
+        "floodThreshold_mm", "bedLevelEstimate_mAOD", "bankLevelEstimate_mAOD",
     ]
 
     def sample(self, **overrides):
@@ -32,6 +33,9 @@ class BlueHeartIndexPreflightTests(unittest.TestCase):
             "gaugeParameters": "Precipitation;Air Temperature",
             "parameterUnits": "mm;°C",
             "gaugeOwner": "Blue Heart",
+            "floodThreshold_mm": "",
+            "bedLevelEstimate_mAOD": "",
+            "bankLevelEstimate_mAOD": "",
         }
         row.update(overrides)
         return row
@@ -55,14 +59,53 @@ class BlueHeartIndexPreflightTests(unittest.TestCase):
                 dataPath="6_gully/SYNTHETIC.csv",
                 dataQualityFlagsPath="6_gully/SYNTHETIC_quality_flags.csv",
                 gaugeParameters="Water Level", parameterUnits="mm",
+                floodThreshold_mm="120",
             ),
         ]
         result = inspect_index_csv(self.make_index(rows), expected_gauges=2)
         self.assertEqual(result["index_rows"], 2)
         self.assertEqual(result["gauge_type_counts"], {"Highway gully": 1, "Rain": 1})
         self.assertFalse(result["timestamp_alignment_approved"])
+        self.assertEqual(result["optional_field_populated_counts"]["floodThreshold_mm"], 1)
         self.assertNotIn("50.0", str(result))
         self.assertNotIn("SYNTHETIC.csv", str(result))
+
+
+    def test_optional_fluvial_levels_are_counted_without_imputing_missing(self):
+        rows = [
+            self.sample(),
+            self.sample(
+                gaugeType="Fluvial",
+                dataPath="4_fluvial/SYNTHETIC.csv",
+                dataQualityFlagsPath="4_fluvial/SYNTHETIC_quality_flags.csv",
+                bedLevelEstimate_mAOD="2.5",
+                bankLevelEstimate_mAOD="3.6",
+            ),
+        ]
+        result = inspect_index_csv(self.make_index(rows))
+        self.assertEqual(result["optional_field_populated_counts"], {
+            "bankLevelEstimate_mAOD": 1,
+            "bedLevelEstimate_mAOD": 1,
+            "floodThreshold_mm": 0,
+        })
+
+    def test_threshold_on_rain_gauge_is_not_accepted(self):
+        with self.assertRaisesRegex(BlueHeartPreflightError, "belongs to Highway gully"):
+            inspect_index_csv(self.make_index([self.sample(floodThreshold_mm="100")]))
+
+    def test_non_numeric_or_non_finite_optional_value_is_rejected(self):
+        for value in ("missing", "NaN", "inf"):
+            with self.subTest(value=value), self.assertRaises(BlueHeartPreflightError):
+                inspect_index_csv(self.make_index([self.sample(
+                    gaugeType="Fluvial",
+                    bedLevelEstimate_mAOD=value,
+                )]))
+
+    def test_missing_optional_column_is_rejected_for_pinned_v1_index(self):
+        fields = [x for x in self.FIELDS if x != "floodThreshold_mm"]
+        row = self.sample()
+        with self.assertRaisesRegex(BlueHeartPreflightError, "required README"):
+            inspect_index_csv(self.make_index([{key: row[key] for key in fields}], headers=fields))
 
     def test_missing_qc_path_rejected(self):
         with self.assertRaisesRegex(BlueHeartPreflightError, "dataQualityFlagsPath"):
