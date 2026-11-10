@@ -51,17 +51,17 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 ## Observed inundation and hydrodynamic simulation data
 
 **Candidate ID:** `si.donevska-inundation-hydrodynamic.zenodo-22275184`  
-**Provider:** Donevska and Mikos / University of Ljubljana / Zenodo  
+**Provider:** Rusjan and Donevska (dataset); Mikoš (paper coauthor) / University of Ljubljana / Zenodo  
 **Categories:** `flood`, `observed_inundation`, `hydrodynamic_simulation`, `uncertainty`, `validation`, `slovenia`  
-**Spatial scope:** Slovenia study catchment; exact reach, CRS and flood-event location must be established from original GIS metadata  
-**Temporal scope:** Zenodo record 22275184 published 2026-09-03; observed extent date and modeled design-storm return period are separate temporal semantics  
+**Spatial scope:** Lower Vipava River valley, western Slovenia: last 21 km of the river in Slovenia before it enters Italy; original GeoTIFF grid/CRS/vertical datum remain to be checked  
+**Temporal scope:** Zenodo record 22275184 released in 2026; the linked 2026 NHESS article identifies the observed flood extent as September 2010; modeled Q10/Q100/Q500 are design return-period scenarios, not observation dates  
 **Resolution / granularity:** Observed inundation extent archive plus GeoTIFF hydrodynamic simulations for Q10, Q100, Q500 and multiple channel/floodplain/uncertainty configurations  
 **Potential roles:** `observed_vs_modelled_flood_extent_challenge`, `hydraulic_sensitivity_benchmark`, `flood_depth_and_uncertainty_test_cases`  
 **Access hint:** `public_zenodo_cc_by4_record_zipped_geotiff_and_observation_metadata_only_until_exact_asset_gate`  
 **Authoritative source:** <https://zenodo.org/records/22275184>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Zenodo displays CC BY 4.0 for this record, but exact source reuse, raster contents and dependencies still need source review. Distinguish surveyed/remote observed inundation from modeled Q10/Q100/Q500 depth outputs and 10/90 confidence scenarios. Return period labels do not imply real historical event frequency for the measured extent. Must inspect TIFF band units, CRS, NoData, vertical datum, observed event timestamp, uncertainties and overlap with existing Copernicus/EEA flood products. No bytes acquired or damage/claims inferred.
+**Note:** The peer-reviewed source paper (Rusjan, Donevska and Mikoš, NHESS 26, 5647–5665, 2026; DOI 10.5194/nhess-26-5647-2026) locates the study on the lower Vipava, and identifies the mapped historical inundation as the September 2010 flood. This empirical event must remain separate from hydrodynamic Q10/Q100/Q500 and their 10/90 confidence/sensitivity ensembles; scenario exceedance maps are not independently observed claim events or annual occurrence sequences. Zenodo displays CC BY 4.0 for this record, but exact source and raster reuse rights and upstream dependencies still require a dataset-level review. Verify original GeoTIFF units, CRS, NoData, terrain/vertical datum, flood-event mask and model ensemble settings before any hazard validation. No source bytes fetched, no insurance losses inferred, no scientific admission.
 
 ## Blue Heart high-density urban hydrometric and sewer monitoring dataset
 
