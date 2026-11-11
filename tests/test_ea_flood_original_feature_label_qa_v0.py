@@ -58,9 +58,6 @@ class EAFloodOriginalFeatureLabelQATests(unittest.TestCase):
                 self.assertFalse(out["commercial_asset_rights_approved"])
                 self.assertIsNone(out["representative_depth_mm"])
                 self.assertIsNone(out["estimated_damage_ratio"])
-                self.assertIsNone(out["physical_depth_at_individual_building_verified"] if
-                                  out["physical_depth_at_individual_building_verified"] is None
-                                  else None)
                 self.assertFalse(out["physical_depth_at_individual_building_verified"])
 
     def test_four_original_flood_source_labels_are_distinct(self):
