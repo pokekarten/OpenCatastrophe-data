@@ -5,15 +5,15 @@ import hashlib
 import unittest
 
 from scripts.probe_dwd_catrare_w3_range_v0 import (
-    DWDRangeBlocked, EXPECTED_CONTENT_RANGE, MAX_BYTES, NoRedirect,
+    ALLOWED, DWDRangeBlocked, EXPECTED_CONTENT_RANGE, MAX_BYTES, NoRedirect,
     RANGE_HEADER, SOURCE, URL, verify_csv_prefix,
 )
 
 
-def synthetic_prefix():
+def synthetic_prefix(variant="W3"):
     header = ["CatVersion", "KEY_FIELD", "Event_ID"] + [f"Col{n:02d}" for n in range(64)]
     rows = [
-        ["W3_Eta_v2026_01", f"W3_Eta_{i:06d}", str(i)] + [str(i * 100 + n) for n in range(64)]
+        [f"{variant}_Eta_v2026_01", f"{variant}_Eta_{i:06d}", str(i)] + [str(i * 100 + n) for n in range(64)]
         for i in range(1, 5)
     ]
     csv_text = "\n".join([";".join(header)] + [";".join(v) for v in rows]) + "\n"
@@ -31,6 +31,26 @@ class DWDCSVRangeTests(unittest.TestCase):
         self.assertEqual(result["complete_source_events_examined"], 3)
         self.assertFalse(result["model_input_approved"])
         self.assertFalse(result["provider_bytes_persisted"])
+
+    def test_t5_exact_version_and_identity_is_separate_from_w3(self):
+        self.assertEqual(set(ALLOWED), {"W3", "T5"})
+        self.assertNotEqual(ALLOWED["T5"]["filename"], ALLOWED["W3"]["filename"])
+        raw = synthetic_prefix("T5")
+        result = verify_csv_prefix(
+            raw, status=206, content_range="bytes 0-4095/17208653",
+            media_type="application/octet-stream", variant="T5")
+        self.assertEqual(result["source_id"], "dwd.catrare.t5-eta.v2026.01")
+        self.assertEqual(result["response_sha256"], hashlib.sha256(raw).hexdigest())
+        self.assertEqual(result["csv_schema_columns"], 67)
+        self.assertFalse(result["w3_t5_independent"])
+        with self.assertRaises(DWDRangeBlocked):
+            verify_csv_prefix(
+                raw, status=206, content_range="bytes 0-4095/12410601",
+                media_type="text/csv", variant="T5")
+        with self.assertRaises(DWDRangeBlocked):
+            verify_csv_prefix(
+                raw, status=206, content_range="bytes 0-4095/17208653",
+                media_type="text/csv", variant="W3")
 
     def test_block_nonpartial_stale_file_and_wrong_media(self):
         raw = synthetic_prefix()
