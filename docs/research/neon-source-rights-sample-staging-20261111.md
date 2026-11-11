@@ -128,3 +128,37 @@ CHECK (sample_sha256 =
 ```
 
 Die Originalantwort-SHA-256-Receipts dienen der Upstream-Byte-Identität. Die **eigenen** Sample-Hashes sichern unabhängig davon den verarbeiteten DB-Inhalt. Dieser Unterschied ist verpflichtend für alle weiteren Imports.
+
+## Fortsetzung II: DLR WMS-Minikarten und Dresden Q, 11.11.2026
+
+Neon-Live-Abnahme: 707 registrierte Quellen, 692 Landschaftskandidaten, 25 Samples aus 18 Quellenkennungen; 12 produktbezogene kommerzielle Lizenzprüfungen. Die SHA-256-Constraint besteht für 25/25 JSONB-Samples; null Samples sind als produktive CAT-Modelleingaben zugelassen.
+
+### Neu gespeicherte Samples
+
+| Neon sample_id | Quellkennung | Layer / Station | Art | SHA-256 der Originalanbieter-Antwort |
+| ---: | --- | --- | --- | --- |
+| 18 | dlr.wsf.2019 | WSF_2019 | geospatial_preview | b1da1fab04a2fa83fe4f848797ab8fd7e7a992a747e4cdac680d56f66c9b54d1 |
+| 19 | dlr.eoc.wsf-tracker.2016-2026 | WSF_TRACKER | geospatial_preview | 4f8c22ef1a30dfccaa54866c714f3a6392caf19a165e874574c3038c8b5b771d |
+| 20 | dlr.wsf.evolution.1985-2015 | WSF_Evolution | geospatial_preview | d7b130996240a51a3deae76826384b6afd70002407b21934710c1307d59333be |
+| 21 | wsv.pegelonline.elbe-dresden-discharge.2020-2023 | DRESDEN | observed_values | df2196186aae192d0ccf7cc867451094f472a223c314885050241919d7e38a4d |
+| 22 | dlr.wsf.3d.v02 | WSF3D_V02_BUILDINGAREA | geospatial_preview | 00c740303c7a6bd05f4a01eecf6b81e4c43c9f96f598cc1cbdc55bb663b6ae52 |
+| 23 | dlr.wsf.3d.v02 | WSF3D_V02_BUILDINGVOLUME | geospatial_preview | 46d9256b651dcab2414a561c495d0c20d6d73df9ea2c307a60869172e9d9aed4 |
+| 24 | dlr.wsf.3d.v02 | WSF3D_V02_BUILDINGFRACTION | geospatial_preview | 9604323c9d43543eb0d83cb0219df73bef60634465149c6da955b59f5ed636d1 |
+| 25 | dlr.wsf.3d.v02 | WSF3D_V02_BUILDINGHEIGHT | geospatial_preview | 07055b96dd34d99edb559c9d3d7354bc3d2fa922cd8c43cf2b502e5cccf4f6c3 |
+
+Die sieben DLR-Karten sind echte gerenderte 32×32-PNG-Antworten des originalen DLR-WMS, keine nativen TIFF-Pixel oder numerischen Gebäudeattribute. Eingefrorene Requestparameter: HTTPS geoservice.dlr.de/eoc/land/wms, WMS 1.1.1, BBOX 11.52,48.10,11.60,48.18 (EPSG:4326, Lon/Lat), WIDTH=HEIGHT=32, FORMAT=image/png. Versioniert und rechtlich produktbezogen: WSF 2019, WSF Tracker, WSF Evolution und WSF 3D v02 (Area, Volume, Fraction, Height). DLR bestätigt CC BY 4.0 auf den jeweiligen offiziellen Produktseiten:
+
+- https://geoservice.dlr.de/web/datasets/wsf_2019
+- https://geoservice.dlr.de/web/datasets/wsf_tracker
+- https://geoservice.dlr.de/web/datasets/wsf_evo
+- https://geoservice.dlr.de/web/datasets/wsf_3d
+
+Der neue GitHub-Actions-Probe mit festem Layer-Allowlist, No-Redirect-Gate, PNG-CRC-/IHDR-Prüfung und maximal 16 KiB je Antwort lief erfolgreich für **alle sieben** Layer. Alle **7/7** in Actions berichteten Response-SHA-256 stimmen mit den in Neon gespeicherten Mini-PNG-Originalbytes überein. Keine fremden PNG-Daten werden in Git gespeichert oder geloggt.
+
+Beweis: https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43084497058
+
+**Wichtige WSV-Zeitgrenze:** Dresden Elbe Q wurde über die offizielle PEGELONLINE-API (DL-DE Zero 2.0) mit einem einzigen relativen P1D-Fenster abgerufen. Der 15-Minuten-Abfluss in m³/s lag als 95 Messungen vom 10. bis 11.11.2026 vor; genau die ersten 12 echten Werte sind als Sample #21 abgelegt. Der vorhandene Quellen-ID-Suffix 2020-2023 **ist dadurch nicht historisch validiert**. Rohmessungen bleiben provisorisch und sind kein Hochwasser-/Versicherungsverlustmodell. https://wasserstaende.de/webservice/guideRestapi
+
+Rechte-Triage weiterhin offen: 118 positive, aber ungeprüfte Lizenzhinweise; 43 Restriktions-/Zugangssignale; 519 ohne eindeutige Lizenz; 12 exakt produktbezogen bestätigt. Externe Anbieter-Assets, TIV, personenbezogene Adressen oder Roharchive wurden nicht nach Git übernommen.
+
+Die nächsten fachlichen Hürden sind die native pixelgenaue GeoTIFF-Probe mit CRS/NoData statt WMS-Farbbild, DWD-CDC Windböenwerte, und der GHS-OBAT ODbL/CC-BY-Lizenzkonflikt.
