@@ -28,10 +28,14 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set up exact Python 3.12 (match repository CI)
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
       - name: Install pinned binary Rasterio and NumPy wheels
         run: |
-          python3 -m pip install --disable-pip-version-check --only-binary=:all: "numpy==2.3.5" "rasterio==1.5.2"
+          python -m pip install --disable-pip-version-check --only-binary=:all: "numpy==2.3.5" "rasterio==1.5.2"
       - name: Synthetic independent GDAL LZW and original SHA-gate tests
-        run: python3 -m unittest tests.test_verify_dlr_wsf_native_rasterio_v0 -v
+        run: python -m unittest tests.test_verify_dlr_wsf_native_rasterio_v0 -v
       - name: Read original compressed TIFF block through GDAL and compare Neon SHA receipts
-        run: python3 -m scripts.verify_dlr_wsf_native_rasterio_v0
+        run: python -m scripts.verify_dlr_wsf_native_rasterio_v0
