@@ -32,14 +32,6 @@ jobs:
             --json "$RUNNER_TEMP/all-source-audit.json" \
             --markdown "$RUNNER_TEMP/all-source-audit.md"
           cat "$RUNNER_TEMP/all-source-audit.md" >> "$GITHUB_STEP_SUMMARY"
-      - name: Publish complete JSON receipt (public metadata only)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: all-source-coverage-audit
-          path: ${{ runner.temp }}/all-source-audit.json
-          if-no-files-found: error
-          retention-days: 14
-
   reviewed-live-api-probes:
     name: Fixed HTTPS probe / ${{ matrix.source }}
     needs: [all-source-offline-audit]
