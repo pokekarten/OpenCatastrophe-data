@@ -68,5 +68,62 @@ class NativeRasterioCrosscheckTests(unittest.TestCase):
                 self.assertTrue(48.1 < bbox[1] < bbox[3] < 48.2)
 
 
+
+    def test_sparse_file_from_only_one_native_tile(self):
+        """Real GDAL reads exactly one LZW tile from a partly present TIFF.
+
+        Synthetic fixture: all provider bytes are local synthetic and the
+        independent pixel check does not depend on our pure-Python decoder.
+        """
+        import struct
+        import numpy as np
+        import rasterio
+        from rasterio.transform import from_origin
+        from rasterio.windows import Window
+
+        with tempfile.TemporaryDirectory(prefix="oc-wsf-sparse-gdal-test-") as directory:
+            original_path = Path(directory) / "synthetic-full.tif"
+            sparse_path = Path(directory) / "synthetic-one-block.tif"
+            native = np.zeros((1024, 1024), dtype="uint8")
+            ys, xs = np.indices((256, 256))
+            native[768:, 768:] = np.where((ys + xs) % 3 == 0, 255, 0).astype("uint8")
+
+            with rasterio.open(
+                original_path, "w", driver="GTiff", width=1024, height=1024,
+                count=1, dtype="uint8", crs="EPSG:4326",
+                transform=from_origin(11.0, 49.0, 0.0001, 0.0001),
+                compress="LZW", tiled=True, blockxsize=256, blockysize=256,
+            ) as dst:
+                dst.write(native, 1)
+            original = original_path.read_bytes()
+            self.assertEqual(original[:4], b"II\x2a\x00")
+            ifd = struct.unpack_from("<I", original, 4)[0]
+            entries = struct.unpack_from("<H", original, ifd)[0]
+            tags = {}
+            for i in range(entries):
+                tag, kind, number, address = struct.unpack_from(
+                    "<HHII", original, ifd + 2 + 12 * i)
+                tags[tag] = (kind, number, address)
+            offsets = struct.unpack_from(
+                "<" + "I" * tags[324][1], original, tags[324][2])
+            lengths = struct.unpack_from(
+                "<" + "I" * tags[325][1], original, tags[325][2])
+            offset, length = offsets[15], lengths[15]
+            self.assertGreater(offset, 1024)
+            self.assertGreater(length, 100)
+
+            with sparse_path.open("w+b") as out:
+                out.truncate(len(original))
+                out.seek(0)
+                out.write(original[:1024])  # TIFF metadata, no full raster
+                out.seek(offset)
+                out.write(original[offset:offset + length])  # one original block
+                out.flush()
+            with rasterio.open(sparse_path) as src:
+                pixels = src.read(1, window=Window(768, 768, 32, 32))
+            self.assertTrue(np.array_equal(pixels, native[768:800, 768:800]))
+            self.assertEqual(int(np.count_nonzero(pixels == 255)), 341)
+
+
 if __name__ == "__main__":
     unittest.main()
