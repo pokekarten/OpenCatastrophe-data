@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-name: DWD CatRaRE W3 fixed 4KiB range
+name: DWD CatRaRE W3 T5 fixed 4KiB range
 on:
   workflow_dispatch:
   pull_request:
@@ -18,5 +18,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Offline exact W3 v2026.01 and 4KiB rights gate
         run: python3 -m unittest tests.test_probe_dwd_catrare_w3_range_v0 -v
-      - name: Original DWD CSV 4096-byte Range probe, no provider-byte persistence
-        run: python3 scripts/probe_dwd_catrare_w3_range_v0.py
+      - name: Both exact DWD W3 and T5 4096-byte Range probes, no provider bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/probe_dwd_catrare_w3_range_v0.py --variant W3
+          python3 scripts/probe_dwd_catrare_w3_range_v0.py --variant T5
