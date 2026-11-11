@@ -108,9 +108,21 @@ def markdown_summary(report: dict) -> str:
         "No external provider payloads were downloaded by this audit. "
         "No source rights or model-input status was promoted.",
         "",
-        "Use the JSON artifact for **one row per record**, including the actionable next step.",
+        "<details>",
+        f"<summary>All {report['total_source_records']} source records and next actions</summary>",
         "",
+        "| Source ID | Record type | Readiness | Contract IDs | Next action |",
+        "| --- | --- | --- | --- | --- |",
     ]
+    for row in report["records"]:
+        # Machine-readable IDs and known review state, never provider values.
+        fields = [
+            row["source_id"], row["record_type"], row["readiness"],
+            ", ".join(row["access_contract_ids"]) or "none", row["next_action"],
+        ]
+        escaped = [value.replace("|", "\\|").replace("\\n", " ") for value in fields]
+        lines.append("| " + " | ".join(escaped) + " |")
+    lines += ["", "</details>", ""]
     return "\n".join(lines)
 
 
