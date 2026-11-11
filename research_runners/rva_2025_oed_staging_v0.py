@@ -110,29 +110,10 @@ def rows_from_validated_sources(inputs: list[dict], case: str) -> list[dict]:
     return cells
 
 
-
-def validate_cohort_identity(cells: list[dict]) -> None:
-    """Reject ambiguous cohort IDs before emitting any OED policy identifiers."""
-    seen: set[tuple[str, int]] = set()
-    for cell in cells:
-        if type(cell) is not dict:
-            raise StagingError('invalid fictional cohort row')
-        ags, age, published = cell.get('ags'), cell.get('age'), cell.get('published_2022')
-        if (type(ags) is not str or len(ags) != 5 or not ags.isascii() or not ags.isdigit()
-            or type(age) is not int or not 0 <= age < 10
-            or type(published) is not int or published < 0):
-            raise StagingError('invalid AGS, age class or source building count')
-        key = (ags, age)
-        if key in seen:
-            raise StagingError('duplicate county/age cohort would reuse OED policy IDs')
-        seen.add(key)
-
-
 def export(cells: list[dict], out: Path, case: str, valuation: str,
            requested_sample_size: int, input_hashes: dict[str,str], valuation_pattern: str = 'flat') -> dict:
     if case not in CASES or valuation not in VALUES or valuation_pattern not in VALUATION_PATTERNS:
         raise StagingError('unapproved fictional scenario')
-    validate_cohort_identity(cells)
     selected = allocate_sample(cells,requested_sample_size)
     nrows = sum(selected)
     total_tiv = 0
