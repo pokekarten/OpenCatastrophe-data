@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: All-source rights and API readiness gate
+
+on:
+  pull_request:
+    paths:
+      - "scripts/source_api_readiness_v0.py"
+      - "tests/test_source_api_readiness_v0.py"
+      - ".github/workflows/source-api-readiness.yml"
+      - "scripts/build_source_access_inventory.py"
+      - "scripts/validate_source_access.py"
+  workflow_dispatch:
+    inputs:
+      probe_mode:
+        description: "Offline full coverage or exactly 11 reviewed bounded live probes"
+        required: true
+        default: audit_only
+        type: choice
+        options:
+          - audit_only
+          - reviewed_11
+  schedule:
+    - cron: "23 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-api-readiness-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  full-offline-contract-audit:
+    name: Audit every source and all reviewed access contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact trusted repository ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test exhaustive coverage, rights fail-closed and reviewed runner allowlist
+        run: >-
+          python -m unittest
+          tests.test_source_api_readiness_v0
+          tests.test_audit_all_sources_v0
+          tests.test_source_access_inventory_failclosed
+          tests.test_probe_fixed_public_sources_v0
+          -v
+      - name: Generate one blocker/gate per source without network or provider bytes
+        run: |
+          python -m scripts.source_api_readiness_v0 \
+            --json "$RUNNER_TEMP/source-api-readiness.json" \
+            --markdown "$RUNNER_TEMP/source-api-readiness.md"
+          cat "$RUNNER_TEMP/source-api-readiness.md" >> "$GITHUB_STEP_SUMMARY"
+
+  reviewed-live-probes:
+    name: Sequentially verify only the 11 explicitly reviewed public capabilities
+    needs: full-offline-contract-audit
+    if: github.event_name == 'workflow_dispatch' && inputs.probe_mode == 'reviewed_11'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run security, rights and fixed-request regression tests before any network
+        run: >-
+          python -m unittest
+          tests.test_source_api_readiness_v0
+          tests.test_probe_fixed_public_sources_v0
+          -v
+      - name: Execute one fixed bounded request per reviewed source; receipts only
+        run: python -m scripts.source_api_readiness_v0 --run-reviewed-live >> "$GITHUB_STEP_SUMMARY"
