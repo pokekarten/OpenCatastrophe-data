@@ -238,6 +238,8 @@ def inspect_original(raw: bytes, *, resource: str, expected_sha256: str | None =
             if not target_cols:
                 raise BnpbWorkbookError("no expected count columns")
             missing = {h: 0 for h in target_cols}
+            detail_sums = {h: 0 for h in target_cols}
+            total_sums = None
             row_count = 0
             province_keys: set[str] = set()
             peril_keys: set[str] = set()
@@ -249,24 +251,42 @@ def inspect_original(raw: bytes, *, resource: str, expected_sha256: str | None =
                     if not province:
                         raise BnpbWorkbookError("missing province identity")
                     key = province.casefold()
-                    if key in province_keys:
-                        raise BnpbWorkbookError("duplicate province identifier")
-                    province_keys.add(key)
+                    is_total = key == "indonesia"
+                    if not is_total:
+                        if key in province_keys:
+                            raise BnpbWorkbookError("duplicate province identifier")
+                        province_keys.add(key)
                 else:
                     peril = row.get(headers["jenis bencana"], ("", "text"))[0].strip()
                     if not peril:
                         raise BnpbWorkbookError("missing event/peril identity")
                     key = _clean(peril)
-                    if key in peril_keys:
-                        raise BnpbWorkbookError("duplicate event/peril identity")
-                    peril_keys.add(key)
+                    is_total = key == "total"
+                    if not is_total:
+                        if key in peril_keys:
+                            raise BnpbWorkbookError("duplicate event/peril identity")
+                        peril_keys.add(key)
+                count_values = {}
                 for name in target_cols:
                     value, kind = row.get(headers[name], ("", "text"))
-                    if _to_count(value, kind, column=name) is None:
+                    parsed = _to_count(value, kind, column=name)
+                    if parsed is None and not is_total:
                         missing[name] += 1
-                row_count += 1
+                    count_values[name] = parsed
+                if is_total:
+                    if total_sums is not None or any(v is None for v in count_values.values()):
+                        raise BnpbWorkbookError("duplicate or incomplete national source total")
+                    total_sums = count_values
+                else:
+                    for name, value in count_values.items():
+                        if value is not None:
+                            detail_sums[name] += value
+                    row_count += 1
             if not row_count:
                 raise BnpbWorkbookError("no source rows after matched header")
+            if total_sums is not None:
+                if any(missing.values()) or any(detail_sums[k] != total_sums[k] for k in target_cols):
+                    raise BnpbWorkbookError("national source total mismatch or missing detail values")
     except (zipfile.BadZipFile, OSError, ET.ParseError, RuntimeError) as exc:
         raise BnpbWorkbookError("not a valid bounded OOXML workbook") from exc
     return {
@@ -280,6 +300,8 @@ def inspect_original(raw: bytes, *, resource: str, expected_sha256: str | None =
         "worksheet_name": sheet,
         "header_row_element_index": offset,
         "source_data_row_count": row_count,
+        "national_total_rows_excluded": 1 if total_sums is not None else 0,
+        "national_total_reconciled": total_sums is not None,
         "expected_numeric_columns": target_cols,
         "missing_cell_counts_not_zero": missing,
         "province_key_count": len(province_keys) if resource == "province_houses" else None,

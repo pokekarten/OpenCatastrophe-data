@@ -70,6 +70,38 @@ class BnpbPreflightTests(unittest.TestCase):
         self.assertFalse(out['province_peril_severity_crosswalk_established'])
         self.assertEqual(out['missing_cell_counts_not_zero']['rumah rusak berat'],0)
 
+    def test_national_total_is_excluded_from_province_count(self):
+        total = [('Indonesia','inlineStr'),('12','n'),('1','n'),('6','n'),('5','inlineStr'),('','inlineStr')]
+        # Missing tsunami/detail values prevent an authoritative reconciliation.
+        with self.assertRaisesRegex(m.BnpbWorkbookError, 'duplicate or incomplete national source total'):
+            m.inspect_original(workbook(sheet(PROVINCE,[*PROWS,total])),resource='province_houses')
+        rows = [
+            [('Aceh','inlineStr'),('12','n'),('0','n'),('2','n'),('5','inlineStr'),('0','inlineStr')],
+            [('Sumut','inlineStr'),('0','n'),('1','n'),('4','n'),('0','inlineStr'),('0','inlineStr')],
+            [('INDONESIA','inlineStr'),('12','n'),('1','n'),('6','n'),('5','inlineStr'),('0','inlineStr')],
+        ]
+        receipt=m.inspect_original(workbook(sheet(PROVINCE,rows)),resource='province_houses')
+        self.assertEqual(receipt['province_key_count'],2)
+        self.assertEqual(receipt['source_data_row_count'],2)
+        self.assertEqual(receipt['national_total_rows_excluded'],1)
+        self.assertTrue(receipt['national_total_reconciled'])
+
+    def test_national_total_mismatch_blocks_instead_of_double_counting(self):
+        rows = [
+            [('Aceh','inlineStr'),('12','n'),('0','n'),('2','n'),('5','inlineStr'),('0','inlineStr')],
+            [('Sumut','inlineStr'),('0','n'),('1','n'),('4','n'),('0','inlineStr'),('0','inlineStr')],
+            [('INDONESIA','inlineStr'),('13','n'),('1','n'),('6','n'),('5','inlineStr'),('0','inlineStr')],
+        ]
+        with self.assertRaisesRegex(m.BnpbWorkbookError,'national source total mismatch'):
+            m.inspect_original(workbook(sheet(PROVINCE,rows)),resource='province_houses')
+
+    def test_summary_grand_total_not_an_observation(self):
+        rows=[*SROWS,[('Total','inlineStr'),('2','n'),('1','n'),('3','n'),('5','n')]]
+        receipt=m.inspect_original(workbook(sheet(SUMMARY,rows)),resource='peril_severity_summary')
+        self.assertEqual(receipt['source_data_row_count'],2)
+        self.assertEqual(receipt['national_total_rows_excluded'],1)
+        self.assertTrue(receipt['national_total_reconciled'])
+
     def test_wrong_resource_identity_is_blocked(self):
         raw=workbook(sheet(PROVINCE,PROWS))
         with self.assertRaisesRegex(m.BnpbWorkbookError,'exactly one sheet'):
