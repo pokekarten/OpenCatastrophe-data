@@ -27,14 +27,14 @@ These tables **do not** change `registry.source_record`, source manifests, prior
 
 | Status | Count | Interpretation |
 | --- | ---: | --- |
-| No clear license signal | 520 | Find original-provider terms, exact version, dataset and API/service rights |
+| No clear license signal | 519 | Find original-provider terms, exact version, dataset and API/service rights |
 | Possible open-license signal | 126 | Existing source notes mention a license; independently verify original terms and third-party layers |
 | Restrictions or access-gate signal | 43 | Treat as blocked for new samples until the exact gate is resolved |
-| Source-scoped commercial reuse independently verified | 3 | GFZ Kp, GDW v1.0, USGS 3DEP; attribution/terms and asset scope still apply |
+| Source-scoped commercial reuse independently verified | 4 | GFZ Kp, GDW v1.0, USGS 3DEP, ESA WorldCover 2021 v200; attribution/terms and asset scope still apply |
 
-This view gives **692/692** records a queue category, not **692 approved licenses**. Unknown or incompatible rights never default to commercial approval. `commercial_reuse_verdict=allowed_verified` is currently restricted to three exact products.
+This view gives **692/692** records a queue category, not **692 approved licenses**. Unknown or incompatible rights never default to commercial approval. `commercial_reuse_verdict=allowed_verified` is currently restricted to four exact products.
 
-## Initial six original-provider samples written to Neon (no provider bytes in Git)
+## Initial seven original-provider samples written to Neon (no provider bytes in Git)
 
 | Source / research-only sample | Scoped license and evidence | Original response SHA-256 |
 | --- | --- | --- |
@@ -44,8 +44,9 @@ This view gives **692/692** records a queue category, not **692 approved license
 | STORM IBTrACS v4 **DataCite DOI metadata only** | [DataCite CC0 metadata policy](https://support.datacite.org/docs/datacite-data-file-use-policy) **does not cover linked original storm-track files** | `90bbb620c7e04632e45b5c86c2998b3b023a55d246b56c2c7f09cc1a66c62f66` |
 | Global Dam Watch v1.0 Figshare files/version metadata | [GDW original publisher CC BY](https://www.globaldamwatch.org/database); archive GIS bytes not downloaded | `16739c79caa320eb0be27a0486040efb5fdcf02db4416a1493d6f9fac93b77ef` |
 | USGS 3DEP Florida S1M catalogue metadata | [USGS public-domain 3DEP](https://www.usgs.gov/3d-elevation-program/); actual elevation raster not downloaded | `a4f2397d06242e702d63ca627379daadeb915d9bdd3c378dbcc761cc7a325c48` |
+| ESA WorldCover 2021 v200 N48E009 original TIFF 4096-byte header metadata (no pixels stored) | [ESA original source CC BY 4.0](https://esa-worldcover.org/en/data-access), mandatory WorldCover/Sentinel attribution; GeoTIFF partial-header evidence only | `a74fc1ff4733c3afff09328e014c0731eba2f1912f3f5cbc330ed0700f3f3529` |
 
-The original-response hashes above match the prior successful fixed GitHub Actions probes. Any stored subset has its own derived SHA in Neon; all six sample rows are explicitly `model_input_approved=false`. Original raw response retention is permitted only by the source-scoped decision, and no individual building coordinates, insurer records, confidential portfolios, large archives, licensed downstream vendor assets, or provider secrets were added.
+The original-response hashes above match the prior successful fixed GitHub Actions probes. Any stored subset has its own derived SHA in Neon; all seven sample rows are explicitly `model_input_approved=false`. Original raw response retention is permitted only by the source-scoped decision, and no individual building coordinates, insurer records, confidential portfolios, large archives, licensed downstream vendor assets, or provider secrets were added.
 
 ## Required next causal steps
 
