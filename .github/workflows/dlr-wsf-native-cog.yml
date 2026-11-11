@@ -33,4 +33,4 @@ jobs:
       - name: Synthetic independent GDAL LZW and original SHA-gate tests
         run: python3 -m unittest tests.test_verify_dlr_wsf_native_rasterio_v0 -v
       - name: Read original compressed TIFF block through GDAL and compare Neon SHA receipts
-        run: python3 scripts/verify_dlr_wsf_native_rasterio_v0.py
+        run: python3 -m scripts.verify_dlr_wsf_native_rasterio_v0
