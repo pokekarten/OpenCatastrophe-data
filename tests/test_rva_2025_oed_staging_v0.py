@@ -83,6 +83,25 @@ class TestStage(unittest.TestCase):
             self.assertNotEqual(tiv,4500000000)
             self.assertFalse(receipt['germany_peril_model_lookup_allowed'])
 
+    def test_duplicate_and_malformed_cohorts_rejected_before_output(self):
+        cells = fixture()
+        defects = {
+            'duplicate county/age': dict(cells[1], ags=cells[0]['ags'], age=cells[0]['age']),
+            'non-numeric AGS': dict(cells[1], ags='00x01'),
+            'non-ASCII AGS': dict(cells[1], ags='００００１'),
+            'invalid age': dict(cells[1], age=10),
+            'invalid physical count': dict(cells[1], published_2022=-1),
+        }
+        for name, replacement in defects.items():
+            with self.subTest(defect=name), tempfile.TemporaryDirectory() as td:
+                bad = list(cells)
+                bad[1] = replacement  # unchanged national count, but invalid OED identity
+                out = Path(td) / 'must_not_exist'
+                with self.assertRaises(StagingError):
+                    export(bad, out, 'PHYSICAL_BUILDINGS_UNIFORM_AGE_AFFINITY',
+                           'central', 10000, {'test': '00'*32})
+                self.assertFalse(out.exists())
+
     def test_fail_closed(self):
         cells=fixture()
         for size in (-1,NATIONAL+1):
