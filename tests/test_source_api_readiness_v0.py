@@ -30,8 +30,16 @@ class SourceApiReadinessTests(unittest.TestCase):
         self.assertEqual(
             sum(report["blocker_counts"].values()), report["source_records"]
         )
-        self.assertEqual(report["fixed_reviewed_live_probes_configured"], 11)
+        self.assertEqual(report["fixed_reviewed_live_probes_configured"], 15)
         self.assertGreater(report["reviewed_access_contracts"], 0)
+        self.assertEqual(
+            sum(report["contract_status_counts"].values()),
+            report["reviewed_access_contracts"],
+        )
+        self.assertEqual(
+            sum(report["contract_automation_rights_counts"].values()),
+            report["reviewed_access_contracts"],
+        )
         self.assertFalse(report["all_sources_available"])
         self.assertFalse(report["live_provider_requests_made"])
         self.assertFalse(report["new_commercial_rights_approved"])
@@ -82,7 +90,7 @@ class SourceApiReadinessTests(unittest.TestCase):
 
     def test_live_runner_whitelist_is_exact_and_immutable(self):
         self.assertEqual(set(coverage.FIVE_JSON_PROBES), set(coverage.PROBES))
-        self.assertEqual(len(coverage.APPROVED_PROBE_IDS), 11)
+        self.assertEqual(len(coverage.APPROVED_PROBE_IDS), 15)
         self.assertEqual(
             len(coverage.APPROVED_PROBE_IDS),
             len(set(coverage.APPROVED_PROBE_IDS)),
@@ -106,7 +114,7 @@ class SourceApiReadinessTests(unittest.TestCase):
             with self.assertRaisesRegex(coverage.SourceCoverageError, "rights"):
                 coverage.preflight_reviewed_probes()
 
-    def test_live_invokes_all_eleven_exact_runners_without_leaking_stdout(self):
+    def test_live_invokes_all_fifteen_exact_runners_without_leaking_stdout(self):
         captured = StringIO()
         with patch.object(coverage, "preflight_reviewed_probes"), patch.object(
             coverage.subprocess, "run",
@@ -114,7 +122,7 @@ class SourceApiReadinessTests(unittest.TestCase):
         ) as process, redirect_stdout(captured):
             result = coverage.run_reviewed_live_probes()
         self.assertEqual(result, 0)
-        self.assertEqual(process.call_count, 11)
+        self.assertEqual(process.call_count, 15)
         self.assertNotIn("secret-provider-value", captured.getvalue())
         for call, access_id in zip(process.call_args_list, coverage.APPROVED_PROBE_IDS):
             self.assertEqual(
@@ -142,7 +150,7 @@ class SourceApiReadinessTests(unittest.TestCase):
         ), redirect_stdout(StringIO()) as output:
             result = coverage.run_reviewed_live_probes()
         self.assertEqual(result, 1)
-        self.assertEqual(calls, 11)
+        self.assertEqual(calls, 15)
         self.assertIn("BLOCKED", output.getvalue())
         self.assertIn("PASS", output.getvalue())
 
@@ -164,6 +172,29 @@ class SourceApiReadinessTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertIn("BLOCKED", output.getvalue())
         self.assertNotIn("PASS |", output.getvalue())
+
+    def test_two_original_nodd_metadata_digests_both_required(self):
+        digest_a, digest_b = "a" * 64, "b" * 64
+        both = {
+            "objects": {
+                "version": {"response_sha256": digest_a},
+                "countries": {"response_sha256": digest_b},
+            },
+        }
+        import json
+        self.assertEqual(
+            coverage._receipt_digest(json.dumps(both)),
+            "version:" + digest_a + ";countries:" + digest_b,
+        )
+        del both["objects"]["countries"]
+        self.assertIsNone(coverage._receipt_digest(json.dumps(both)))
+
+    def test_full_station_receipt_fields_are_distinct_from_model_admission(self):
+        import json
+        for label in ("compressed_original_sha256", "original_body_sha256"):
+            self.assertEqual(
+                coverage._receipt_digest(json.dumps({label: "a" * 64})), "a" * 64,
+            )
 
     def test_no_arbitrary_provider_output_is_included_in_the_summary(self):
         receipt = '{"response_sha256":"' + "a" * 64 + '","provider_secret":"DO_NOT_LOG"}'
