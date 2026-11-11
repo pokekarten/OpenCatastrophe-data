@@ -100,12 +100,12 @@
         "source_lineage_link_with_radklim"
       ],
       "authoritative_url": "https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_CatRaRE_T5_Eta_v2026.01-de.html",
-      "access_class_hint": "public_official_download_csv_and_geodatabase_exact_rights_and_bytes_pending",
+      "access_class_hint": "public_dwd_cdc_cc_by_4_fixed_4096_byte_range_probe_full_csv_not_admitted",
       "candidate_status": "evidence_checked",
-      "rights_review_status": "not_reviewed",
+      "rights_review_status": "verified",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "T5 and W3 are distinct detection thresholds based on the same radar precipitation source, NOT independent event catalogues. Preserve exact threshold and Eta selection, original event ids qualified by catalogue variant/release, UTC time, event-zone polygon and projection. Require source bytes checksum, licences and threshold-specific event alignment before quantitative comparison or flood-model use."
+      "note": "T5 and W3 are distinct detection thresholds based on the same radar precipitation source, NOT independent event catalogues. Preserve exact threshold and Eta selection, original event ids qualified by catalogue variant/release, UTC time, event-zone polygon and projection. Require source bytes checksum, licences and threshold-specific event alignment before quantitative comparison or flood-model use. Official v2026.01 T5 CSV: https://opendata.dwd.de/climate_environment/CDC/event_catalogues/germany/precipitation/CatRaRE_v2026.01/data/CatRaRE_2001_2025_T5_Eta_v2026_01.csv (17,208,653 bytes in DWD directory). Original DWD CDC Terms_of_use.pdf confirms CC BY 4.0 requiring DWD attribution. One real HTTP Range bytes=0-4095 (4096 bytes, 67 columns, first three T5_Eta records) has SHA-256 5dc4b6f0dac14f0a442103b78c16f647556bd870898aabff6d9f62aa4534f542. This is only a partial-response digest: no full 17.2-MB file hash, event geometry/CRS/time-zone scientific validation or CAT-model admission. T5 and W3 are derived from the SAME RADKLIM parent, and must NOT be added as independent meteorological events."
     },
     {
       "candidate_id": "dwd.hyras-de",
