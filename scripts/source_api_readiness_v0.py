@@ -11,8 +11,8 @@ provider response bodies, unapproved bulk downloads, or model admissions.
 from __future__ import annotations
 
 import argparse
+import hashlib
 from collections import Counter
-from datetime import datetime, timezone
 import json
 from pathlib import Path
 import subprocess
@@ -127,7 +127,7 @@ def build_coverage_report(inventory: dict | None = None) -> dict:
     return {
         "schema_version": "1.0.0",
         "scope": "all_registered_sources_offline_contract_gaps_no_provider_requests",
-        "source_registry_sha256": __import__("hashlib").sha256(canonical_bytes(inventory)).hexdigest(),
+        "source_registry_sha256": hashlib.sha256(canonical_bytes(inventory)).hexdigest(),
         "source_records": len(records),
         "landscape_candidates": inventory["landscape_entry_count"],
         "admitted_manifests": inventory["manifest_entry_count"],
@@ -181,32 +181,55 @@ def command_for(access_id: str) -> tuple[str, ...]:
     return EXTRA_PROBE_COMMANDS[access_id]
 
 
+def _receipt_digest(output: str) -> str | None:
+    """Extract only an exact digest; never echo arbitrary provider response fields."""
+    try:
+        receipt = json.loads(output)
+    except (ValueError, TypeError):
+        return None
+    if type(receipt) is not dict:
+        return None
+    for field in (
+        "response_sha256", "original_response_sha256",
+        "directory_response_sha256", "sample_sha256",
+    ):
+        value = receipt.get(field)
+        if (type(value) is str and len(value) == 64
+                and all(char in "0123456789abcdef" for char in value)):
+            return value
+    return None
+
+
 def run_reviewed_live_probes() -> int:
-    """One bounded, sequential lane; suppress provider values and secrets in logs."""
+    """One bounded, sequential lane; preserve only safe SHA receipts in logs."""
     preflight_reviewed_probes()
-    outcomes: list[tuple[str, str]] = []
+    outcomes: list[tuple[str, str, str]] = []
     for access_id in APPROVED_PROBE_IDS:
+        digest = None
         try:
             completed = subprocess.run(
                 [sys.executable, *command_for(access_id)],
-                cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                text=True, encoding="utf-8", errors="replace",
                 timeout=120, check=False,
             )
-            outcome = "PASS" if completed.returncode == 0 else "BLOCKED"
+            digest = _receipt_digest(completed.stdout or "")
+            outcome = ("PASS" if completed.returncode == 0 and digest is not None
+                       else "BLOCKED")
         except (OSError, subprocess.TimeoutExpired):
             outcome = "BLOCKED"
-        outcomes.append((access_id, outcome))
+        outcomes.append((access_id, outcome, digest or "not-reported"))
     print("## Fixed reviewed live API probes")
     print()
-    print("One bounded provider-specific invocation each; output contains no provider response bodies.")
-    print("A PASS is only a technical probe receipt, not dataset or model admission.")
+    print("One bounded provider-specific invocation each; no provider response bodies are logged.")
+    print("A PASS confirms a typed response digest, not rights to other products or model admission.")
     print()
-    print("| Reviewed access ID | Result |")
-    print("| --- | --- |")
-    for access_id, outcome in outcomes:
-        print(f"| {access_id} | {outcome} |")
+    print("| Reviewed access ID | Result | Bounded original response SHA-256 |")
+    print("| --- | --- | --- |")
+    for access_id, outcome, digest in outcomes:
+        print(f"| {access_id} | {outcome} | {digest if outcome == 'PASS' else 'not-accepted'} |")
     print()
-    return 0 if all(outcome == "PASS" for _, outcome in outcomes) else 1
+    return 0 if all(outcome == "PASS" for _, outcome, _ in outcomes) else 1
 
 
 def main(argv: list[str] | None = None) -> int:
