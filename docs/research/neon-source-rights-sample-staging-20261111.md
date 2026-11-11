@@ -162,3 +162,23 @@ Beweis: https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43084497
 Rechte-Triage weiterhin offen: 118 positive, aber ungeprüfte Lizenzhinweise; 43 Restriktions-/Zugangssignale; 519 ohne eindeutige Lizenz; 12 exakt produktbezogen bestätigt. Externe Anbieter-Assets, TIV, personenbezogene Adressen oder Roharchive wurden nicht nach Git übernommen.
 
 Die nächsten fachlichen Hürden sind die native pixelgenaue GeoTIFF-Probe mit CRS/NoData statt WMS-Farbbild, DWD-CDC Windböenwerte, und der GHS-OBAT ODbL/CC-BY-Lizenzkonflikt.
+
+## Fortsetzung III: DWD CatRaRE 2026.01, erste echte Starkregen-Ereignisproben
+
+Der neue DWD-CDC W3-Eta-v2026.01-Datensatz ist exakt quellenversioniert. Der 2026.01 DOI-Landingpage-Link zur CSV verweist fehlerhaft auf die veraltete Datei der 2025.01-Version (HTTP 404). Das echte offizielle Verzeichnis ist:
+
+https://opendata.dwd.de/climate_environment/CDC/event_catalogues/germany/precipitation/CatRaRE_v2026.01/data/
+
+Exakte CSV-Identität: CatRaRE_2001_2025_W3_Eta_v2026_01.csv; 12.410.601 Bytes laut Originalverzeichnis. Die aktuelle DWD-CDC-Lizenz lautet CC BY 4.0 mit Quellenvermerk (offizielle Nutzungsbedingungen https://opendata.dwd.de/climate_environment/CDC/Terms_of_use.pdf).
+
+Ein anbietergebundener HTTP Range=bytes=0-4095 lieferte genau 4.096 Originalbytes; SHA-256 a3e02cb676b855390c0a9b69f41352c7c3dff74c7c25e2578727e8397f9d9b12. Der Ausschnitt enthält 67 originale semikolongetrennte CSV-Felder und mindestens drei vollständige historische Starkregenereignisse. Genau drei Zeilen liegen in Neon als Sample-ID 26 (observed_values), einschließlich W3-Eta-Version, KEY_FIELD/Event_ID und unveränderter Quellfelder. Der SHA-256 deckt NUR den 4-KiB-Ausschnitt ab. Der vollständige 12,4-MB-Quell-Digest, Polygone, RADKLIM-CRS, Zeitzone, wissenschaftliche Qualitätsgates, Modelladmission und T5-vs-W3-Deduplikation sind ausdrücklich weiterhin NICHT bestätigt.
+
+Im kanonischen Quellenregister landscape/sources-observation-context.json wurde gezielt nur der W3-v2026.01-Kandidat korrigiert: tatsächlich erreichbarer Original-CSV-Pfad, Lizenznachweis, dokumentierter toter Landingpage-Link, 4-KiB-SHA, restriktiver Quell-/Versionsstatus, Rechte nach Originalprüfungsumfang als verified. Der entsprechende Neon-Quellkandidaten-Eintrag wurde an genau diesen neuen Forschungsstand angeglichen. Alle anderen Kandidaten bleiben unberührt.
+
+Reproduzierbare GitHub-Prüfung: scripts/probe_dwd_catrare_w3_range_v0.py; tests/test_probe_dwd_catrare_w3_range_v0.py; .github/workflows/dwd-catrare-w3-range.yml. Vier Offline-Tests prüfen Identität, Version, CSV-Schema, HTTP 206 mit Content-Range, Domain, Weiterleitungen und 4-KiB-Limit. Die erste korrigierte Live-Action ist erfolgreich:
+
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43085939447
+
+Die Action bestätigt erneut den exakt gleichen Originalresponse-SHA-256 wie Neon. Keine Providerdaten in Git; kein offener Bulk-Download; kein CAT-Modellinput.
+
+**Neon-Live-Stand nach diesem Schritt:** 707 kanonische Quellen, 692 Kandidaten; 26 Samples aus 19 unterschiedlichen Quellenkennungen; 13 exakt produktbezogen kommerziell geprüfte Kandidaten; 26/26 JSONB-Integritätsprüfungen; 0 CAT-modellzugelassene Samples. Lizenz-Triage: 118 positive Lizenzhinweise ohne Einzelprüfung, 43 Restriktions-/Zugangssignale und 518 ohne klare Lizenzsignale. Diese Gruppierungen belegen keinen automatischen Rechteentscheid.
