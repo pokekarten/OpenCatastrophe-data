@@ -64,3 +64,28 @@ If and when source rights and original-byte provenance are verified, a predefine
 - Do not use national statistics as claim-level or building-level targets. Do not collapse unknown, missing or non-numeric sentinel values to zero.
 - Never add provider original XLSX/PDF bytes to public Git in this non-admission phase.
 - Re-run source licence reviews at the exact selected release before a public derivative or any commercial model use.
+
+
+## Reproducible local BNPB XLSX preflight (synthetic-only tests)
+
+The new stdlib-only [offline workbook runner](../../research_runners/bnpb_2025_damage_workbook_preflight_v0.py) accepts **an already acquired, locally held original XLSX**. It does **not** fetch a source; no remote endpoint, raw rows or source-derived export are added to public Git. On a machine with permission and access to the exact original resource files:
+
+```bash
+python -m research_runners.bnpb_2025_damage_workbook_preflight_v0 \
+  --resource province_houses --original-xlsx /secure/original-bnpb-2025-provinsi.xlsx \
+  --expected-sha256 <independently-verified-64-character-sha256>
+
+python -m research_runners.bnpb_2025_damage_workbook_preflight_v0 \
+  --resource peril_severity_summary --original-xlsx /secure/original-bnpb-2025-severity.xlsx \
+  --expected-sha256 <independently-verified-64-character-sha256>
+
+python -m unittest tests.test_bnpb_2025_damage_workbook_preflight_v0 -v
+```
+
+This **research preflight**, not a production importer, enforces a bounded OOXML package; rejects macro/external-link ZIP members, hostile paths, formulas, duplicate/invalid cell and row addresses, unknown count sentinels, negative, fractional, non-finite and implausibly large counts; distinguishes explicit zero from missing; and refuses an inferred province × peril × damage-severity crosswalk. It reports only original-byte SHA-256, workbook dimensions/field presence and missing-cell counts—not the source row values. An SHA-256 computed here **without** an independently pinned expected hash proves only the inspected byte identity, not authoritative provenance or a prior identity match. Even a passing run has \`model_input_admitted: false\` and no approved commercial rights.
+
+At this research run, **15 hermetic synthetic OOXML tests passed locally**; the exact original BNPB XLSX resources are still unacquired/unhashed and the original-file run remains blocked. CI on the new PR commit is the separate repository integration check. If the original workbook has a legitimate but different sheet/title/header/total-row shape, stop and review that specific original worksheet rather than weakening this guard or quietly rewriting its data.
+
+### DOSM original-document crosscheck requiring resolution
+
+Two official DOSM materials differ in their visible *extracted text* for identical values. The [media statement, pages 1–2](https://www.dosm.gov.my/uploads/release-content/file_20260415115507.pdf) and official [2025 release page](https://www.dosm.gov.my/portal-main/release-content/special-report-on-impact-of-floods-in-malaysia2025) associate **Johor** with RM 26.2 million living-quarters loss and RM 2.1 million business-premises loss. The separately linked [official infographic PDF](https://www.dosm.gov.my/uploads/release-content/file_20260415114925.pdf) is extracted/indexed with **Terengganu** beside RM 26.2 million living-quarters and RM 2.1 million business-premises losses; it also differs in the RM 0.9 million vehicle and RM 13.0 million agriculture state labels. The PDF screenshot attempt in the research intermediary did **not** succeed, so this is a **document-text conflict candidate**, not an authenticated visual confirmation or corrected assignment. Preserve the six published **national** sector figures as context, but **do not train on or publish the conflicting state-sector pairs** until both original PDFs are visually verified, versioned, and reconciled (or publisher clarification is obtained). The infographic's 16 rounded 2025 state totals sum to MYR **637.1 million**, versus published MYR **636.9 million**; 0.2m is within the possible rounding accumulation for 16 one-decimal figures and is **not** by itself a data error.
