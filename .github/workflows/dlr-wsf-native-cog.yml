@@ -29,7 +29,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Install pinned binary Rasterio and NumPy wheels
-        run: python3 -m pip install --disable-pip-version-check --only-binary=:all: "numpy==2.3.5" "rasterio==1.5.2"
+        run: |
+          python3 -m pip install --disable-pip-version-check --only-binary=:all: "numpy==2.3.5" "rasterio==1.5.2"
       - name: Synthetic independent GDAL LZW and original SHA-gate tests
         run: python3 -m unittest tests.test_verify_dlr_wsf_native_rasterio_v0 -v
       - name: Read original compressed TIFF block through GDAL and compare Neon SHA receipts
