@@ -204,7 +204,7 @@ def synthetic_storm(name: str, start: str, rainfall: Sequence[float], *,
     gain = _number(gain, "synthetic gain", 0, 500)
     decay = FIXED_DECAY
     base = _number(baseline, "synthetic baseline", 0, 2500)
-    if lag_steps not in CANDIDATE_LAGS:
+    if type(lag_steps) is not int or lag_steps not in CANDIDATE_LAGS:
         raise SyntheticRainSewerError("unsupported synthetic lag")
     rows: list[SyntheticSample] = []
     response = 0.0
