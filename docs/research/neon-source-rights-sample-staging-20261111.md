@@ -182,3 +182,21 @@ https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43085939447
 Die Action bestätigt erneut den exakt gleichen Originalresponse-SHA-256 wie Neon. Keine Providerdaten in Git; kein offener Bulk-Download; kein CAT-Modellinput.
 
 **Neon-Live-Stand nach diesem Schritt:** 707 kanonische Quellen, 692 Kandidaten; 26 Samples aus 19 unterschiedlichen Quellenkennungen; 13 exakt produktbezogen kommerziell geprüfte Kandidaten; 26/26 JSONB-Integritätsprüfungen; 0 CAT-modellzugelassene Samples. Lizenz-Triage: 118 positive Lizenzhinweise ohne Einzelprüfung, 43 Restriktions-/Zugangssignale und 518 ohne klare Lizenzsignale. Diese Gruppierungen belegen keinen automatischen Rechteentscheid.
+
+## Fortsetzung IV: zwei gekoppelte CatRaRE-Releases und Abschlussprüfung
+
+Der T5-Eta-v2026.01-Datensatz wurde getrennt von W3 anhand des echten Original-DWD-Verzeichnisses, der offiziellen DWD-CDC-CC-BY-4.0-Lizenz und des fixierten Produktnamens geprüft:
+
+https://opendata.dwd.de/climate_environment/CDC/event_catalogues/germany/precipitation/CatRaRE_v2026.01/data/CatRaRE_2001_2025_T5_Eta_v2026_01.csv
+
+Originaldatei-Länge laut DWD-Verzeichnis: 17.208.653 Bytes. Nur ein 4096-Byte-HTTP-Range wurde original abgerufen. Prefix-SHA-256: 5dc4b6f0dac14f0a442103b78c16f647556bd870898aabff6d9f62aa4534f542. 67 gültige CSV-Spalten, erste drei vollständige T5-Eta-Ereigniszeilen mit unveränderten Quellfeldwerten. In Neon Research als Sample #27, produktgenau mit CC BY 4.0 und Recherche-Sperre erfasst; keine vollständige Datei, keine Geometrie und keine unbewiesene TIV-/Loss-Information.
+
+Im Originalquellenregister landscape/sources-observation-context.json wurden T5 und W3 jeweils einzeln von originalem not_reviewed auf verified für die exakte Datenlizenz angehoben. Beide Quellen bleiben **not_admitted**. Die Research-Quellrecords in insurance-risk-core wurden entsprechend aktualisiert.
+
+Das jetzt zweimal variantenspezifische Werkzeug scripts/probe_dwd_catrare_w3_range_v0.py lässt ausschließlich die beiden festgelegten Quellen W3 und T5 zu und prüft vollständige HEAD/Range-Identität via HTTP 206, Content-Range in Version und Größe, exakt 4096 Bytes, 67 Spalten und drei Version-gerechte Originalereignisse. Der automatisierte GitHub-Actions-Lauf hat alle 5 Offline-Tests und beide externen 4-KiB-Abfragen bestanden; die Antwort-SHA stimmen bei **2/2** mit Neon überein:
+
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43086921155
+
+**Nicht unabhängige Ereignisse:** T5 und W3 beruhen auf demselben RADKLIM-RW v2017.002. Eine additive Zusammenführung würde potenziell Ereignisse doppelt zählen. Vor produktiver Gefahrensimulation: Ereignis- und Zeitüberlappung, Polygone und hydrologische Verluste unabhängig und mit einem definierten Event-ID-/Zeit-Schema prüfen.
+
+**Neon-Endstand 11.11.2026:** 707 kanonische Quellen, davon 692 Forschungsquellen; 27 Samples von 20 unterscheidbaren Quellen; 14 produktbezogen lizenzgeprüfte Kandidaten; 27/27 JSONB-Hashchecks bestanden; 0 CAT-Modelleingaben zugelassen. Rechte-Triage: 118 potenzielle Lizenzen noch ungeprüft, 43 Zugang/Restriktionssignale und 517 ohne klare Lizenzhinweise.
