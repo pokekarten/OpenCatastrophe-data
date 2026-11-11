@@ -92,6 +92,10 @@ jobs:
           -v
       - name: Exercise bounded synthetic building geometry matching
         run: python -m unittest tests.test_building_footprint_overlap_v0 -v
+      - name: Verify EA defended 3.3% synthetic CRS and polygon-area partition
+        run: |
+          python -c 'from shapely.geometry import box; from pyproj import Transformer'
+          python -m unittest tests.test_ea_flood_synthetic_crs_overlay_v0 -v
       - name: Verify official Luxembourg GPKG schema and bounded window with synthetic bytes
         run: python -m unittest tests.test_luxembourg_gpkg_schema_window_v0 -v
       - name: Challenge original Luxembourg EPSG2169 coordinate axis hypotheses with synthetic extents
