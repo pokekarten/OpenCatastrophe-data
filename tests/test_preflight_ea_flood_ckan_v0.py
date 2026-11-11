@@ -160,6 +160,15 @@ class EAOfflineCkanTests(unittest.TestCase):
         with self.assertRaises(EACatalogueError):
             inspect_metadata(b'{"success":NaN}', "river_present")
 
+    def test_reject_overflowed_float_even_in_ignored_metadata(self):
+        # Python's default json.loads accepts 1e999 as inf, which must
+        # never pass as valid publisher metadata just because it is unused.
+        raw = json.dumps(synthetic("river_present"), sort_keys=True).encode()
+        self.assertTrue(raw.endswith(b"}"))
+        injected = raw[:-1] + b',"untrusted_numeric":1e999}'
+        with self.assertRaisesRegex(EACatalogueError, "overflowed JSON float"):
+            inspect_metadata(injected, "river_present")
+
     def test_reject_oversized_response(self):
         with self.assertRaises(EACatalogueError):
             inspect_metadata(b"x" * (MAX_BYTES + 1), "river_present")
