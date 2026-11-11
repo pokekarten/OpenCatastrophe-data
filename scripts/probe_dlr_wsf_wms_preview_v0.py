@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Three exact, anonymous DLR WSF WMS visual-preview probes.
+"""Seven exact, anonymous DLR WSF WMS visual-preview probes.
 
 Never accept caller URLs, coordinates, layer names, output dimensions, or times.
 The service returns *rendered PNG*, not native GeoTIFF class values. This probes
@@ -30,6 +30,10 @@ LAYER_BY_SOURCE = {
     "dlr.wsf.2019": "WSF_2019",
     "dlr.eoc.wsf-tracker.2016-2026": "WSF_TRACKER",
     "dlr.wsf.evolution.1985-2015": "WSF_Evolution",
+    "dlr.wsf.3d.v02.building-area": "WSF3D_V02_BUILDINGAREA",
+    "dlr.wsf.3d.v02.building-volume": "WSF3D_V02_BUILDINGVOLUME",
+    "dlr.wsf.3d.v02.building-fraction": "WSF3D_V02_BUILDINGFRACTION",
+    "dlr.wsf.3d.v02.building-height": "WSF3D_V02_BUILDINGHEIGHT",
 }
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
@@ -144,7 +148,8 @@ def run_probe(source: str) -> dict:
         raise WSFPreviewBlocked("official DLR WMS access failed") from exc
     result = inspect_png(raw, media)
     return {
-        "source_id": source,
+        "source_id": "dlr.wsf.3d.v02" if source.startswith("dlr.wsf.3d.v02.") else source,
+        "probe_id": source,
         "operation": "frozen_32px_wms_1_1_1_preview",
         "layer": LAYER_BY_SOURCE[source],
         "bbox_lonlat": [11.52, 48.10, 11.60, 48.18],
