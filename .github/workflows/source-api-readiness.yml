@@ -14,13 +14,13 @@ on:
   workflow_dispatch:
     inputs:
       probe_mode:
-        description: "Offline full coverage or exactly 11 reviewed bounded live probes"
+        description: "Offline full coverage or exactly 15 reviewed bounded live probes"
         required: true
         default: audit_only
         type: choice
         options:
           - audit_only
-          - reviewed_11
+          - reviewed_15
   schedule:
     - cron: "23 5 * * 1"
 
@@ -48,6 +48,10 @@ jobs:
           tests.test_audit_all_sources_v0
           tests.test_source_access_inventory_failclosed
           tests.test_probe_fixed_public_sources_v0
+          tests.test_probe_ghcnd_ncei_us_station_gzip_v0
+          tests.test_probe_ghcnd_full_station_original_v0
+          tests.test_probe_ghcnd_station_prefix_v0
+          tests.test_probe_ghcnd_nodd_version_country_v0
           -v
       - name: Generate one blocker/gate per source without network or provider bytes
         run: |
@@ -57,11 +61,11 @@ jobs:
           cat "$RUNNER_TEMP/source-api-readiness.md" >> "$GITHUB_STEP_SUMMARY"
 
   reviewed-live-probes:
-    name: Sequentially verify only the 11 explicitly reviewed public capabilities
+    name: Sequentially verify only the 15 explicitly reviewed public capabilities
     needs: full-offline-contract-audit
-    if: github.event_name == 'workflow_dispatch' && inputs.probe_mode == 'reviewed_11'
+    if: github.event_name == 'workflow_dispatch' && inputs.probe_mode == 'reviewed_15'
     runs-on: ubuntu-24.04
-    timeout-minutes: 28
+    timeout-minutes: 38
     steps:
       - name: Checkout exact workflow ref
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -72,6 +76,10 @@ jobs:
           python -m unittest
           tests.test_source_api_readiness_v0
           tests.test_probe_fixed_public_sources_v0
+          tests.test_probe_ghcnd_ncei_us_station_gzip_v0
+          tests.test_probe_ghcnd_full_station_original_v0
+          tests.test_probe_ghcnd_station_prefix_v0
+          tests.test_probe_ghcnd_nodd_version_country_v0
           -v
       - name: Execute one fixed bounded request per reviewed source; receipts only
         run: python -m scripts.source_api_readiness_v0 --run-reviewed-live >> "$GITHUB_STEP_SUMMARY"
