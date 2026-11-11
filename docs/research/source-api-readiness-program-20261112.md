@@ -14,7 +14,7 @@ assigns a machine-readable next gate. It does **not** claim that every entry has
 an API, a reusable data licence, a working asset download or CAT-model fitness.
 
 At the initial review: 692 non-admitted discovery candidates, 15 accepted
-manifests, 707 total records, 68 reviewed source-access contracts, and 11 exact,
+manifests, 707 total records, 68 reviewed source-access contracts, of which 15 have exact,
 separately reviewed public probe programs. The independent insurance research
 database held 29 narrowly scoped samples from 20 source identities and 14
 product-scoped commercial-rights decisions. Those database counts are an
@@ -50,10 +50,10 @@ reproduce the source contract classification.
 ## Actual bounded live testing
 
 Run the workflow manually from the GitHub Actions tab and choose
-the probe_mode option reviewed_11. This is the **only** trigger that performs
+the probe_mode option reviewed_15. This is the **only** trigger that performs
 live network checks in this workflow. A single read-only runner executes the
-eleven existing provider-specific scripts **sequentially** rather than creating
-a matrix of eleven runner jobs. It does not accept a free-form URL, credential,
+fifteen existing provider-specific scripts **sequentially** rather than creating
+a matrix of fifteen runner jobs. It does not accept a free-form URL, credential,
 source ID, search area or download path.
 
 Before any network request, every allowlisted contract must remain
@@ -61,8 +61,9 @@ probe_ready, anonymous, credential-free, with verified dataset rights,
 reviewed API terms and permitted commercial automation. A contract change
 invalidates the full live preflight until reviewed. Every provider-specific
 script enforces its own original URL, operation, response bounds and format.
-Logs contain only source access IDs, PASS/BLOCKED and one strictly typed
-64-hex SHA-256 of the **bounded original response**. Any program without
+Logs contain only source access IDs, PASS/BLOCKED and strictly typed
+64-hex SHA-256 receipts of the **bounded original response** (two object
+receipts where an exact metadata contract permits two requests). Any program without
 this digest, or with nonzero exit, is BLOCKED. Raw provider responses and
 provider-specific untrusted error text are not copied into job summaries.
 
@@ -70,7 +71,9 @@ The eleven fixed probe contracts cover geoBoundaries DEU ADM1, GFZ Kp,
 NOAA SWPC, PEGELONLINE Dresden, EMSC, DWD historical source directory,
 ESA WorldCover GeoTIFF header, Global Dam Watch Figshare metadata, NOAA
 CO-OPS one-day observations, STORM/DataCite metadata and USGS 3DEP
-catalogue metadata. They are limited **capability** probes, not complete
+catalogue metadata, plus four original NOAA GHCN-Daily contracts: NCEI
+single-station compressed CSV, NODD single-station complete CSV, a fixed 64-KiB
+CSV prefix and two tiny version/country metadata objects. They are limited **capability** probes, not complete
 downloads, all-regions proofs or model-input approvals. Some exact original
 provider terms explicitly limit automation cadence; therefore the weekly
 audit **never** schedules live provider requests.
