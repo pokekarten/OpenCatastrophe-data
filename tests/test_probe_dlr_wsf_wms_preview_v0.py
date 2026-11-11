@@ -32,6 +32,10 @@ class BoundedWSFPreviewTests(unittest.TestCase):
             "dlr.wsf.2019",
             "dlr.eoc.wsf-tracker.2016-2026",
             "dlr.wsf.evolution.1985-2015",
+            "dlr.wsf.3d.v02.building-area",
+            "dlr.wsf.3d.v02.building-volume",
+            "dlr.wsf.3d.v02.building-fraction",
+            "dlr.wsf.3d.v02.building-height",
         })
         for source, layer in LAYER_BY_SOURCE.items():
             target = frozen_url(source)
@@ -44,6 +48,21 @@ class BoundedWSFPreviewTests(unittest.TestCase):
                           "https://example.com/wms"):
             with self.assertRaises(WSFPreviewBlocked):
                 frozen_url(untrusted)
+
+    def test_four_3d_layers_are_explicit_and_no_caller_substitution(self):
+        names = {k: v for k, v in LAYER_BY_SOURCE.items()
+                 if k.startswith("dlr.wsf.3d.v02.")}
+        self.assertEqual(set(names.values()), {
+            "WSF3D_V02_BUILDINGAREA",
+            "WSF3D_V02_BUILDINGVOLUME",
+            "WSF3D_V02_BUILDINGFRACTION",
+            "WSF3D_V02_BUILDINGHEIGHT",
+        })
+        for name, layer in names.items():
+            self.assertIn("LAYERS=" + layer, frozen_url(name))
+        for name in ("dlr.wsf.3d.v02", "dlr.wsf.3d.v02.other-layer"):
+            with self.assertRaises(WSFPreviewBlocked):
+                frozen_url(name)
 
     def test_accepts_small_complete_png_and_cryptographic_receipt(self):
         raw = synthetic_png()
