@@ -113,6 +113,18 @@ class SyntheticRainSewerLagTests(unittest.TestCase):
         with self.assertRaisesRegex(SyntheticRainSewerError, "unbounded"):
             validate_storm(event)
 
+    def test_fixture_rejects_boolean_and_float_lag_steps(self):
+        # bool is a subclass of int and 2.0 compares equal to 2, but
+        # neither is a valid discrete five-minute lag index.
+        for invalid in (True, False, 2.0, 2.5, "2", -1, 5):
+            with self.subTest(lag=invalid):
+                with self.assertRaisesRegex(SyntheticRainSewerError, "unsupported synthetic lag"):
+                    synthetic_storm(
+                        "SYNTHETIC_BAD_LAG", "2026-04-12T00:00:00Z",
+                        [0.] * 5 + [1., 2., 3.] + [0.] * 22,
+                        lag_steps=invalid,
+                    )
+
     def test_timestamps_with_explicit_offsets_can_normalise(self):
         event = storm(start="2026-04-12T01:00:00+01:00")
         instants, *_ = validate_storm(event)
