@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission source discovery for four official 2025-2026 water occurrence, observed disaster damage and wildfire monitoring products; original bytes, commercial rights and scientific model-input status remain separate gates.",
+  "review_date": "2026-11-11",
+  "entries": [
+    {
+      "candidate_id": "opengeohub.opera-dswx-s1.water-occurrence.2025.v1",
+      "name": "Global 2025 OPERA DSWx-S1-derived open-water and inundated-vegetation occurrence v1",
+      "provider": "OpenGeoHub Foundation / Isik, Parente and Hengl (NASA OPERA DSWx-S1 upstream)",
+      "categories": [
+        "flood",
+        "surface_water",
+        "inundated_vegetation",
+        "remote_sensing",
+        "derived_observation"
+      ],
+      "spatial_scope": "Global mapped coverage of valid Sentinel-1 OPERA DSWx-S1 observations; valid-observation count and spatial support vary by location",
+      "temporal_scope": "2025-01-01 through 2025-12-31; derived release v1, published 2026-05-05; filenames dated v20260425",
+      "resolution_or_granularity": "Two EPSG:4326 ~0.00027-degree (~30 m) annual integer percentage-of-valid-observation GeoTIFF layers: open water (13.1 GB), inundated vegetation (21.0 GB); nodata 255",
+      "potential_roles": [
+        "permanent_water_mask_research",
+        "flood_extent_context",
+        "wetland_exposure_context",
+        "independent_classification_comparison_with_lineage_check"
+      ],
+      "authoritative_url": "https://zenodo.org/records/20021037",
+      "access_class_hint": "public_zenodo_large_tiff_cc_by_4_0_metadata_only_no_original_bytes_probed",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher version-specific Zenodo record 20021037 identifies CC BY 4.0 and publishes source-listed MD5s for the 13.1-GB open-water and 21.0-GB inundated-vegetation TIFFs. This is a 2025 annual frequency-of-detection product derived from NASA OPERA DSWx-S1, not daily flood event footprints, water depth, flood return periods, claims, or statistically independent of the underlying DSWx-S1 collection already catalogued in OpenCatastrophe-data. For a later bounded original-byte challenge, record exact TIFF filename, original MD5 and locally computed SHA-256, geotransform, nodata=255, valid-observation denominator and coverage. Distinguish derived-product CC BY 4.0 from upstream/hosting and attribution obligations; never auto-admit data or 34.1 GB in Git."
+    },
+    {
+      "candidate_id": "id.bnpb.2025.provincial-disaster-damage-20260708",
+      "name": "Indonesia BNPB 2025 provincial disaster events, damaged houses and human impacts XLSX compilation",
+      "provider": "Badan Nasional Penanggulangan Bencana (BNPB), Indonesia",
+      "categories": [
+        "multi_peril",
+        "reported_disaster_damage",
+        "building_damage",
+        "event_impacts",
+        "regional_validation"
+      ],
+      "spatial_scope": "Indonesia; province-level national statistical compilation; no geocoded individual damaged buildings",
+      "temporal_scope": "Disaster incidents occurring in 2025; BNPB public source created 2026-07-01, last updated 2026-07-08",
+      "resolution_or_granularity": "Multiple downloadable original official XLSX resources for incidents, casualties, affected/displaced people and number of damaged houses by province; published snapshot is aggregated and may require a separate peril classification",
+      "potential_roles": [
+        "independent_regional_building_damage_challenge",
+        "multi_peril_incident_plausibility",
+        "reported_impacts_holdout_design"
+      ],
+      "authoritative_url": "https://data.bnpb.go.id/dataset/kompilasi-data-kejadian-dan-dampak-bencana-2025",
+      "access_class_hint": "official_public_ckan_style_xlsx_catalogue_exact_file_and_license_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official BNPB portal identifies the 2025 compilation and provincial XLSX resources; Indonesia's national data.go.id mirror records release on 2026-07-24 and warns that its One Data Indonesia compliance remains in progress. The source portal's July 8 modification date is not the event year. Public classification 'terbuka' indicates discoverability, not proven commercial redistribution or machine-bulk rights. No original XLSX downloaded or hashed here. Identify exact house-damage severity categories, province boundaries, duplicated event reporting and peril mix before quantitative comparison; regional reported counts are neither building-level footprints nor insured losses, and absent entries are not zero losses. Earlier BNPB DIBI 2015-2024 and InaRISK map candidates are different products."
+    },
+    {
+      "candidate_id": "my.dosm.flood-impact-losses.2025.release20260415",
+      "name": "Malaysia DOSM Special Report on Impact of Floods 2025 by state and sector",
+      "provider": "Department of Statistics Malaysia (DOSM)",
+      "categories": [
+        "flood",
+        "historical_economic_loss",
+        "observed_impacts",
+        "housing_damage",
+        "sectoral_loss_validation"
+      ],
+      "spatial_scope": "Malaysia; reported national, state and selected district aggregates; no identified insured property or event polygon",
+      "temporal_scope": "Flood damage during calendar year 2025; official release 2026-04-15 and 2024 comparatives",
+      "resolution_or_granularity": "Official survey-based and administrative-source aggregate flood damage in Malaysian ringgit by state and sector including residential, vehicles, business, manufacturing, agriculture and public infrastructure; reported national loss 636.9 million MYR",
+      "potential_roles": [
+        "historical_flood_damage_sector_challenge",
+        "regional_economic_loss_prior",
+        "flood_vulnerability_external_validation"
+      ],
+      "authoritative_url": "https://www.dosm.gov.my/portal-main/release-content/special-report-on-impact-of-floods-in-malaysia2025",
+      "access_class_hint": "official_report_web_and_downloaded_publication_terms_and_reuse_rights_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher states living-quarters, vehicle, business and manufacturing amounts arise from a January-December 2025 special survey, while agricultural and public-asset infrastructure values use government-agency information; the national aggregate is MYR 636.9 million (vs MYR 933.4 million in 2024), NOT insured claims. The publisher page and downloadable infographic may have inconsistent state-sector labels, so freeze the exact official report/metadata and resolve tabular values before ingesting any subnational cell. No exact original publication bytes or independent rights/redistribution authorisation obtained. Preserve MYR reference year, sector treatment, sampling uncertainty, reporting bias and possible overlaps; do not treat aggregates as event-specific building loss or direct GUL/IL/RI/OEP/AEP."
+    },
+    {
+      "candidate_id": "dlr.eoc.burnt-area.global-nrt.v2.2",
+      "name": "DLR EOC Burnt Area Daily NRT Global v2.2, 2026 product",
+      "provider": "German Aerospace Center (DLR), EOC Geoservice",
+      "categories": [
+        "wildfire",
+        "burnt_area",
+        "remote_sensing",
+        "near_real_time",
+        "event_footprint_validation"
+      ],
+      "spatial_scope": "Global DLR product; exact footprint availability and observation support must be checked for the selected data tile/time window",
+      "temporal_scope": "Version 2.2 released 2026-06-23; provider listed a recent rolling 2026 observation window on its public product page, not a complete historic catalogue",
+      "resolution_or_granularity": "Public DLR EOC Data Portal near-real-time burnt-area dataset metadata; exact native grid, variable classification, original event identity, update interval, access endpoint and bounding window pending original product probe",
+      "potential_roles": [
+        "independent_wildfire_perimeter_challenge",
+        "burned_area_dynamics_validation",
+        "effis_lineage_comparison"
+      ],
+      "authoritative_url": "https://eodata.dlr.de/en/datasets/burntarea/burntarea_v2",
+      "access_class_hint": "public_portal_metadata_cc_by_nc_4_0_noncommercial_commercial_model_use_blocked",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "DLR's original EOC Data Portal lists global Burnt Area Daily NRT version 2.2, release 2026-06-23, under CC BY-NC 4.0. This explicitly blocks assuming permitted commercial insurer/risk-model use without another licence. Keep it distinct from DLR's separate Europe Sentinel-3 daily/monthly/yearly products and from JRC EFFIS; shared sensors or algorithms may make comparisons non-independent. No original pixels/feature data, endpoint contract, SHA-256 or scientific validation obtained. Resolve spatial coverage, time-window completeness, fire/perimeter semantics, cloud/false positives, and rights before a one-event probe."
+    }
+  ]
+}
