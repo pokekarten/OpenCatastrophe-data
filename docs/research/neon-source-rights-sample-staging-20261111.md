@@ -200,3 +200,33 @@ https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43086921155
 **Nicht unabhängige Ereignisse:** T5 und W3 beruhen auf demselben RADKLIM-RW v2017.002. Eine additive Zusammenführung würde potenziell Ereignisse doppelt zählen. Vor produktiver Gefahrensimulation: Ereignis- und Zeitüberlappung, Polygone und hydrologische Verluste unabhängig und mit einem definierten Event-ID-/Zeit-Schema prüfen.
 
 **Neon-Endstand 11.11.2026:** 707 kanonische Quellen, davon 692 Forschungsquellen; 27 Samples von 20 unterscheidbaren Quellen; 14 produktbezogen lizenzgeprüfte Kandidaten; 27/27 JSONB-Hashchecks bestanden; 0 CAT-Modelleingaben zugelassen. Rechte-Triage: 118 potenzielle Lizenzen noch ungeprüft, 43 Zugang/Restriktionssignale und 517 ohne klare Lizenzhinweise.
+
+## Fortsetzung V: echte native WSF-2019-Pixel (COG, 11.11.2026)
+
+**Native GeoTIFF statt WMS:** Die von DLR original publizierte Version WSF2019_v1_10_48.tif aus der v1-WSF-2019-Collection wurde durch zwei begrenzte HTTPS-Range-Abrufe untersucht: Byte 0–32767 (ClassicTIFF+GeoTIFF-Metadaten) und Byte 12156322–12180980 (ein exakt georeferenzierter, LZW-komprimierter Originaldatenblock). Der Original-Gesamtdatensatz wurde NICHT heruntergeladen.
+
+Originalanbieter/Primärnachweise:
+
+- https://geoservice.dlr.de/eoc/ogc/stac/v1/collections/WSF_2019/items/WSF2019_v1_10_48?f=json
+- https://download.geoservice.dlr.de/WSF2019/files/WSF2019_v1_10_48.tif
+- https://download.geoservice.dlr.de/WSF2019/files/WSF2019_README.txt (0=nicht besiedelt, 255=Siedlung, CC BY 4.0)
+
+Im originalen Header wurden TIFF-Magic II/42, Native-IFD0, Rasterbreite/-höhe jeweils 22.487, 8-Bit/Graustufen, Kompressionscode 5 (TIFF-LZW), Predictor 1, 512×512 Tile-Dimensionen, 1936 Tileindex-Einträge, GeoKey EPSG:4326, Origin und Pixelauflösung 0,00008983152841195215° überprüft. Der GeoTIFF-Header enthält **kein TIFF-GDAL_NODATA-Tag**; das README bezeichnet Null als *Nicht-Siedlung*, nicht als unbekanntes NoData. Bitte dies niemals durch heuristische Rasterkonvertierung ändern.
+
+Fest dokumentierte Originalantwort-SHA-256:
+
+- Erste 32768 Originalbytes: `1e881e8323d3ade63ad4453a0c1b7af6d792ae254356ceb20c197d0316ab80b7`
+- Komprimierter Datenblock (24.659 Bytes, Tile-Index 1793): `8f06d03fcc3cc63930d216a834bca6c51275da6b436e1b2639a39952ddbf0503`
+
+Der original komprimierte Block wurde als TIFF LZW MSB-first/early-change in 262.144 echte uint8-Pixel dekodiert. Genau 144.731 Pixel haben 0 und 117.413 Pixel haben 255. Die große Blockfläche dient nur dem Verifikationskontext, nicht als representative Stadt- oder Versicherungs-Exposure-Statistik.
+
+Die Datenbank speichert bewusst nur **zwei native 32×32-Wertefenster** als 32 originalklassengleiche Zeilen mit 0/1-Codierung (1 bedeutet Originalwert 255). Beide stammen aus demselben Original-Block; die Wiederholung des Originalblock-SHA-256 ist gewollt und nicht als zwei unabhängige Quellassets zu interpretieren:
+
+| Neon Sample | Eingefrorenes 32×32-Native-Fenster | Klasse 0 | Klasse 255 | SHA-256 der 32 Zeilen (LF-getrennt) |
+|---:|---|---:|---:|---|
+| 28 | originaler Tile-Offset x=448,y=432; BBOX [11.548022640413272,48.12858881962954,11.550897249322455,48.13146342853872] | 1024 | 0 | `ff08ea1f4b89475bb4bcf8d4a453e55058f21eba2de2daa1fb5943d1706293df` |
+| 29 | originaler Tile-Offset x=464,y=464; BBOX [11.549459944867865,48.12571421072036,11.552334553777047,48.12858881962954] | 542 | 482 | `85aaf92c2b87fc7ea80359498680bca371aaa0e974d65476328bb70e314b3fce` |
+
+Exakte CI-Ausführung: `scripts/probe_dlr_wsf_native_cog_tile_v0.py`, rein synthetische Offline-Tests `tests/test_probe_dlr_wsf_native_cog_tile_v0.py` und GitHub Actions `.github/workflows/dlr-wsf-native-cog.yml`. Der nichtparametrisierte Workflow akzeptiert nur die genannte Originaldatei und die zwei Byte-Intervalle, lehnt Redirects und Voll-GETs ab, prüft zwei SHA-256-Werte, TIFF/GeoKeys/Geotransform, dekomprimierte Werte, zwei Native-32px-Histogramme und Hashes. Kein ursprünglicher Providerblock wird in Git oder Actions-Artifakte geschrieben.
+
+**Datenbank-Stand:** 29/29 gültige JSONB-SHA-256-Checks, 29 Samples aus 20 Quellkennungen; weiterhin 14 quellproduktbezogene CC-BY/PD-Lizenzeinschätzungen und null CAT-Modellzulassungen. Ein Pixel mit Siedlungswert 255 ist kein eindeutig abgegrenztes Gebäude, kein Gebäudealter, kein versichertes Gebäude und keinesfalls eine belastbare TIV-Position.
