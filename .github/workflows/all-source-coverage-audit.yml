@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: All source coverage and reviewed public API probes
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit_all_sources_v0.py'
+      - 'tests/test_audit_all_sources_v0.py'
+      - '.github/workflows/all-source-coverage-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  all-source-offline-audit:
+    name: Every source registry record and reviewed access contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate all-source coverage and fail-closed access inventory
+        run: python -m unittest tests.test_audit_all_sources_v0 tests.test_source_access_inventory_failclosed -v
+      - name: Generate one status and next action per source, without network
+        run: |
+          python -m scripts.audit_all_sources_v0 \
+            --json "$RUNNER_TEMP/all-source-audit.json" \
+            --markdown "$RUNNER_TEMP/all-source-audit.md"
+          cat "$RUNNER_TEMP/all-source-audit.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish complete JSON receipt (public metadata only)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: all-source-coverage-audit
+          path: ${{ runner.temp }}/all-source-audit.json
+          if-no-files-found: error
+          retention-days: 14
+
+  reviewed-live-api-probes:
+    name: Fixed HTTPS probe / ${{ matrix.source }}
+    needs: [all-source-offline-audit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    strategy:
+      fail-fast: false
+      matrix:
+        source:
+          - geoboundaries.gbopen
+          - gfz.geomagnetic-kp
+          - noaa.swpc.real-time-solar-wind
+          - wsv.pegelonline.rest-v2.dresden
+          - emsc.seismicportal.fdsn-event
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate source allowlist and static contract before network
+        run: python -m unittest tests.test_probe_fixed_public_sources_v0 -v
+      - name: One reviewed, bounded, anonymous request per source
+        env:
+          SOURCE: ${{ matrix.source }}
+        run: python -m scripts.probe_fixed_public_sources_v0 --source "$SOURCE"
