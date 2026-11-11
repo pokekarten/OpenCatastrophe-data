@@ -113,3 +113,18 @@ FROM research.source_sample_v0 ORDER BY sample_id;
 ```
 
 Es wurden **keine Zugangsschlüssel**, Originalraster, nationalen Parzellen oder Versicherungsdaten in Git abgelegt. Die Quelleingänge sind nicht automatisch genehmigte wissenschaftliche Modellinputs.
+
+
+### Integritätskorrektur und dauerhafte DB-Sicherung
+
+Die abschließende Prüfung `sample_sha256 = SHA256(sample_json::text)` zeigte bei den Altproben **GFZ Kp** und **geoBoundaries DEU ADM1** einen Methodenfehler: Der `sample_sha256` enthielt ursprünglich den SHA der **unformatierten Originalantwort**, nicht den SHA der von PostgreSQL normalisierten JSONB-Probe. Diese zwei abgeleiteten Sample-Hashfelder wurden korrigiert; `provider_response_sha256`, Datenwerte und Lizenznachweise sind unverändert. Ergebnis: **17/17** gültige kanonische Sample-Hashes.
+
+Die Research-Tabelle `research.source_sample_v0` hat dafür jetzt den datenbankseitigen Constraint:
+
+```sql
+CONSTRAINT source_sample_canonical_jsonb_sha256_check
+CHECK (sample_sha256 =
+  encode(sha256(convert_to(sample_json::text, 'UTF8')), 'hex'))
+```
+
+Die Originalantwort-SHA-256-Receipts dienen der Upstream-Byte-Identität. Die **eigenen** Sample-Hashes sichern unabhängig davon den verarbeiteten DB-Inhalt. Dieser Unterschied ist verpflichtend für alle weiteren Imports.
