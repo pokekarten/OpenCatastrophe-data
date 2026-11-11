@@ -95,8 +95,9 @@ def inspect_png(data: bytes, media_type: str) -> dict:
             if tag != b"IHDR" or size != 13:
                 raise WSFPreviewBlocked("PNG IHDR not first")
             width, height, depth, color, compression, filtering, interlace = struct.unpack(">IIBBBBB", payload)
-            if (width, height) != (SIZE, SIZE) or depth not in (1, 2, 4, 8)
-                    or color not in (0, 2, 3, 4, 6) or (compression, filtering, interlace) != (0, 0, 0):
+            if ((width, height) != (SIZE, SIZE) or depth not in (1, 2, 4, 8)
+                    or color not in (0, 2, 3, 4, 6)
+                    or (compression, filtering, interlace) != (0, 0, 0)):
                 raise WSFPreviewBlocked("wrong PNG dimension, format or interlacing")
             ihdr_seen = True
         elif tag == b"IDAT":
