@@ -45,9 +45,10 @@ class AllSourceAuditTests(unittest.TestCase):
                 self.assertTrue(row["rights"])
 
     def test_fixed_live_probe_set_is_registered(self):
-        ids = {row["source_id"] for row in self.report["records"]}
+        access_ids = {access_id for row in self.report["records"]
+                      for access_id in row["access_contract_ids"]}
         self.assertEqual(self.report["fixed_public_live_probe_ids"], sorted(PROBES))
-        self.assertTrue(set(PROBES).issubset(ids))
+        self.assertTrue(set(PROBES).issubset(access_ids))
 
     def test_summary_and_json_are_deterministic(self):
         self.assertEqual(canonical_bytes(self.report), canonical_bytes(build_report()))
