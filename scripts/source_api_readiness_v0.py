@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Exhaustive, offline source/contract gap register and narrowly reviewed live probes.
 
-All canonical source records are represented. Only eleven fixed source-specific
+All canonical source records are represented. Only fifteen fixed source-specific
 network programs may run, only after their committed access contracts pass
 fail-closed rights/authentication preflight. No dynamic URLs, credentials,
 provider response bodies, unapproved bulk downloads, or model admissions.
@@ -35,6 +35,10 @@ FIVE_JSON_PROBES = (
     "wsv.pegelonline.rest-v2.dresden",
 )
 EXTRA_PROBE_COMMANDS = {
+    "noaa.ncei.ghcnd-central-park-gzip": ("-m", "scripts.probe_ghcnd_ncei_us_station_gzip_v0", "--live"),
+    "noaa.nodd.ghcnd-central-park-complete": ("-m", "scripts.probe_ghcnd_full_station_original_v0", "--live"),
+    "noaa.nodd.ghcnd-central-park-range": ("-m", "scripts.probe_ghcnd_station_prefix_v0", "--live"),
+    "noaa.nodd.ghcnd-version-country": ("-m", "scripts.probe_ghcnd_nodd_version_country_v0", "--live"),
     "dwd.cdc.extreme-wind.http-file": ("-m", "scripts.probe_dwd_historical_directory_v0"),
     "esa.worldcover.2021.v200": ("-m", "scripts.probe_esa_worldcover_tiff_header_v0", "--live"),
     "globaldamwatch.gdw.v1.0": ("-m", "scripts.probe_globaldamwatch_gdw_v1_metadata_v0", "--live"),
@@ -51,7 +55,7 @@ BLOCKED_CONTRACT_STATUSES = frozenset({
 
 def preflight_reviewed_probes() -> None:
     """Require original, exact contracts and reviewed automation rights."""
-    if set(PROBES) != set(FIVE_JSON_PROBES) or len(APPROVED_PROBE_IDS) != 11:
+    if set(PROBES) != set(FIVE_JSON_PROBES) or len(APPROVED_PROBE_IDS) != 15:
         raise SourceCoverageError("frozen public API allowlist drift")
     for access_id in APPROVED_PROBE_IDS:
         path = ROOT / "access" / (access_id + ".json")
@@ -118,12 +122,19 @@ def build_coverage_report(inventory: dict | None = None) -> dict:
             "access_contract_statuses": entry["contract_statuses"],
             "recorded_rights_posture": entry["rights_posture"],
             "operational_readiness": entry["operational_readiness"],
+            "machine_access_class": entry["machine_access_class"],
+            "api_status": entry["api_status"],
+            "authentication_posture": entry["authentication_posture"],
+            "license_or_terms_flags": entry["license_or_terms_flags"],
             "blocker_or_next_gate": gap,
             "next_action": entry["next_action"],
             "live_probe_verified_by_this_report": False,
             "model_input_approved_by_this_report": False,
         })
     records.sort(key=lambda r: (r["source_id"], r["record_type"], r["registry_path"]))
+    contracts = [validate_path(ROOT / path) for path in inventory["access_contract_files"]]
+    if len(contracts) != len({contract["access_id"] for contract in contracts}):
+        raise SourceCoverageError("duplicate reviewed access contracts")
     return {
         "schema_version": "1.0.0",
         "scope": "all_registered_sources_offline_contract_gaps_no_provider_requests",
@@ -132,6 +143,10 @@ def build_coverage_report(inventory: dict | None = None) -> dict:
         "landscape_candidates": inventory["landscape_entry_count"],
         "admitted_manifests": inventory["manifest_entry_count"],
         "reviewed_access_contracts": len(inventory["access_contract_files"]),
+        "contract_status_counts": dict(sorted(Counter(c["status"] for c in contracts).items())),
+        "contract_automation_rights_counts": dict(sorted(Counter(
+            c["rights_and_policy"]["commercial_automation_status"] for c in contracts
+        ).items())),
         "fixed_reviewed_live_probes_configured": len(APPROVED_PROBE_IDS),
         "reviewed_live_probe_access_ids": list(APPROVED_PROBE_IDS),
         "blocker_counts": dict(sorted(Counter(r["blocker_or_next_gate"] for r in records).items())),
@@ -160,15 +175,22 @@ def report_markdown(report: dict) -> str:
     for name, count in report["blocker_counts"].items():
         lines.append(f"| {_cell(name)} | {count} |")
     lines.extend([
+        "", "## Validated access-contract states", "",
+        "| Contract status | Contracts |", "| --- | ---: |",
+    ])
+    for status, count in report["contract_status_counts"].items():
+        lines.append(f"| {_cell(status)} | {count} |")
+    lines.extend([
         "", "## Every registered source and its next gate", "",
-        "| Source ID | Registry record | Contract IDs | Rights posture | Next gate |",
-        "| --- | --- | --- | --- | --- |",
+        "| Source ID | Registry record | Interface class | Contract IDs | Rights posture | Next gate | Concrete next action |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
     ])
     for item in report["records"]:
         cells = [
-            item["source_id"], item["registry_path"],
+            item["source_id"], item["registry_path"], item["machine_access_class"],
             ", ".join(item["access_contract_ids"]) or "none",
             item["recorded_rights_posture"], item["blocker_or_next_gate"],
+            item["next_action"],
         ]
         lines.append("| " + " | ".join(_cell(c) for c in cells) + " |")
     lines.extend(["", "Unreviewed endpoints are **not called**. No provider data is saved or admitted.", ""])
@@ -182,21 +204,36 @@ def command_for(access_id: str) -> tuple[str, ...]:
 
 
 def _receipt_digest(output: str) -> str | None:
-    """Extract only an exact digest; never echo arbitrary provider response fields."""
+    """Extract only exact SHA digests; never echo arbitrary provider fields."""
     try:
         receipt = json.loads(output)
     except (ValueError, TypeError):
         return None
     if type(receipt) is not dict:
         return None
+
+    def is_digest(value: object) -> bool:
+        return (type(value) is str and len(value) == 64
+                and all(char in "0123456789abcdef" for char in value))
+
     for field in (
-        "response_sha256", "original_response_sha256",
+        "response_sha256", "original_response_sha256", "original_body_sha256",
         "directory_response_sha256", "sample_sha256",
+        "compressed_original_sha256",
     ):
         value = receipt.get(field)
-        if (type(value) is str and len(value) == 64
-                and all(char in "0123456789abcdef" for char in value)):
+        if is_digest(value):
             return value
+
+    # The NODD version/country probe has two distinct fixed original requests.
+    objects = receipt.get("objects")
+    if type(objects) is dict and set(objects) == {"version", "countries"}:
+        version = objects["version"]
+        countries = objects["countries"]
+        if (type(version) is dict and type(countries) is dict
+                and is_digest(version.get("response_sha256"))
+                and is_digest(countries.get("response_sha256"))):
+            return "version:" + version["response_sha256"] + ";countries:" + countries["response_sha256"]
     return None
 
 
@@ -221,10 +258,10 @@ def run_reviewed_live_probes() -> int:
         outcomes.append((access_id, outcome, digest or "not-reported"))
     print("## Fixed reviewed live API probes")
     print()
-    print("One bounded provider-specific invocation each; no provider response bodies are logged.")
+    print("One bounded provider-specific program per reviewed access contract; no provider response bodies are logged.")
     print("A PASS confirms a typed response digest, not rights to other products or model admission.")
     print()
-    print("| Reviewed access ID | Result | Bounded original response SHA-256 |")
+    print("| Reviewed access ID | Result | Bounded original response SHA-256 receipt(s) |")
     print("| --- | --- | --- |")
     for access_id, outcome, digest in outcomes:
         print(f"| {access_id} | {outcome} | {digest if outcome == 'PASS' else 'not-accepted'} |")
