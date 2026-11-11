@@ -57,7 +57,7 @@ class DWDCSVRangeTests(unittest.TestCase):
                 verify_csv_prefix(
                     bad, status=206, content_range=EXPECTED_CONTENT_RANGE, media_type="text/csv")
 
-    def test_no_unreviewed_url_or_redirect():
+    def test_no_unreviewed_url_or_redirect(self):
         self.assertIn("CatRaRE_v2026.01/data/", URL)
         self.assertEqual(RANGE_HEADER, "bytes=0-4095")
         with self.assertRaises(DWDRangeBlocked):
