@@ -57,10 +57,12 @@ def build_report() -> dict:
     if len(rows) != inventory["landscape_entry_count"] + inventory["manifest_entry_count"]:
         raise SourceAuditError("landscape/manifest coverage mismatch")
     rows.sort(key=lambda r: (r["source_id"], r["record_type"], r["registry_path"]))
-    known_sources = {row["source_id"] for row in rows}
-    missing_probes = sorted(set(PROBES) - known_sources)
+    # A frozen probe uses its access_id, which need not equal the source_id.
+    # For example PEGELONLINE's Dresden canary is a narrower source contract.
+    known_access_ids = {access_id for row in rows for access_id in row["access_contract_ids"]}
+    missing_probes = sorted(set(PROBES) - known_access_ids)
     if missing_probes:
-        raise SourceAuditError("fixed live probe has no registered source: " + ", ".join(missing_probes))
+        raise SourceAuditError("fixed live probe has no registered access contract: " + ", ".join(missing_probes))
     status_counts = dict(sorted(Counter(row["readiness"] for row in rows).items()))
     if sum(status_counts.values()) != len(rows):
         raise SourceAuditError("readiness tally does not cover every source")
