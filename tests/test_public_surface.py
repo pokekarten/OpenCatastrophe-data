@@ -138,16 +138,25 @@ class PublicSurfaceTests(unittest.TestCase):
             "rva-nrw-hu22-daria-fresh-independent-replay.yml"
             "@75dba089478927003d201032cb41303ebf587952"
         )
-        # The internal workflow is NOT a global allowed Action: it is
-        # accepted only at the exact manual gateway path below.
+        # A second, *single-workflow* exception permits only the GitHub-
+        # maintained, signed upload-artifact v7.0.2 immutable commit for the
+        # explicitly dispatched, fictional-only 10k NRW research output.
+        # It is NOT a global allowance for artifact upload or source ZIPs.
+        one_shot = ".github/workflows/rva-nrw-hu22-full-one-shot.yml"
+        upload_artifact = "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"
         self.assertNotIn(gateway_call, allowed)
+        self.assertNotIn(upload_artifact, allowed)
+        allowed_uploads = []
         for workflow_path, item in uses:
             with self.subTest(workflow=workflow_path, uses=item):
                 self.assertRegex(item, r"^[^@\s]+@[0-9a-f]{40}$")
                 if workflow_path == gateway:
                     self.assertEqual(item, gateway_call)
+                elif workflow_path == one_shot and item == upload_artifact:
+                    allowed_uploads.append((workflow_path, item))
                 else:
                     self.assertIn(item, allowed)
+        self.assertEqual(allowed_uploads, [(one_shot, upload_artifact)])
 
     def test_workflow_action_scanner_covers_semantic_yaml_forms(self) -> None:
         untrusted = "example/action@main"
