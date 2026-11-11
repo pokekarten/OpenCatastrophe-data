@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: R+V 2025 original-source synthetic OED staging
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-2025-oed-staging.yml"
+      - "research_runners/rva_2025_oed_staging_v0.py"
+      - "research_runners/validate_rva_2025_oed_staging_ods_v0.py"
+      - "research_runners/export_rva_2025_oed_scenario_matrix_v0.py"
+      - "research_runners/rva_nrw_hu22_geocoded_area_rebuild_tiv_v0.py"
+      - "research_runners/rva_nrw_hu22_to_nextgen_c3s_spatial_v0.py"
+      - "research_runners/rva_nrw_10k_c3s_hazard_coverage_gap_audit_v0.py"
+      - "tests/test_rva_nrw_10k_c3s_hazard_coverage_gap_audit_v0.py"
+      - "tests/test_rva_nrw_hu22_to_nextgen_c3s_spatial_v0.py"
+      - "research/fixtures/rva_nrw_c3s_synthetic_grid_demo_v0.toml"
+      - "tests/test_rva_nrw_hu22_geocoded_area_rebuild_tiv_v0.py"
+      - "research_runners/export_rva_nrw_53kreis_oed_pilot_v0.py"
+      - "research_runners/validate_rva_nrw_53kreis_oed_pilot_ods_v0.py"
+      - "tests/test_export_rva_nrw_53kreis_oed_pilot_v0.py"
+      - "research/observations/rva_nrw_53_kreis_census2022_pv2026_source_bridge_v0.toml"
+      - "tests/test_rva_2025_oed_staging_v0.py"
+      - "research_runners/rva_2025_kreis_age_source_sensitivity_v0.py"
+      - "research_runners/rva_2025_kreis_zensus_real_prior_fictional_book_v0.py"
+      - "research/observations/zensus2022_400_kreis_original_building_aggregates_v0.toml"
+      - "research/observations/zensus2022_400_kreis_original_building_age_cohorts_v0.toml"
+      - "research/observations/rva_solo_hgb_property_2019_2025_v0.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-source-oed-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Read-only exact-head checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install pinned official Oasis ODS Tools
+        run: |
+          python -m pip install --disable-pip-version-check --no-input ods-tools==5.0.8
+          python -m pip check
+      - name: Existing original-source and new staging unit tests
+        run: |
+          python -m unittest discover -s tests -p 'test_rva_2025_oed_staging_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_2025_kreis_age_source_sensitivity_v0.py' -v
+          python -m unittest discover -s tests -p 'test_export_rva_nrw_53kreis_oed_pilot_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu22_geocoded_area_rebuild_tiv_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu22_to_nextgen_c3s_spatial_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_10k_c3s_hazard_coverage_gap_audit_v0.py' -v
+          python -m compileall -q research_runners/rva_2025_oed_staging_v0.py research_runners/validate_rva_2025_oed_staging_ods_v0.py tests/test_rva_2025_oed_staging_v0.py
+      - name: Authentic 400-Kreis input + OED format validation (no model run)
+        run: python research_runners/validate_rva_2025_oed_staging_ods_v0.py
+      - name: Build six source-anchored but entirely synthetic OED 5.0 scenarios
+        run: python research_runners/export_rva_2025_oed_scenario_matrix_v0.py "${{ runner.temp }}/rva-oed-research-matrix"
+      - name: Save six fictional OED variants for research download only
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rva-2025-400kreis-oed-synthetic-six-scenarios-not-geocoded
+          path: ${{ runner.temp }}/rva-oed-research-matrix/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
+      - name: Official source-validated NRW 53-Kreis two-case OED 5.0 pilot
+        run: python research_runners/validate_rva_nrw_53kreis_oed_pilot_ods_v0.py "${{ runner.temp }}/rva-nrw-53-oed-conditional-pilot"
+      - name: Save 53-Kreis NRW synthetic only OED research variants
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rva-nrw-53kreis-oed-two-conditional-synthetic-scenarios-NOT-insurer-sites
+          path: ${{ runner.temp }}/rva-nrw-53-oed-conditional-pilot/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6

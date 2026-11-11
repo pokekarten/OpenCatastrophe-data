@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: EIOPA 2023 original XLSX on-demand provenance (NO claims)
+
+# One official source provenance run succeeded at GitHub Actions #42270505316.
+# From this commit onwards: MANUAL ONLY. Do not cause repeated network
+# requests when ordinary PR documentation/research edits occur.
+# Workflow dispatch is available after this Draft PR is reviewed and
+# the workflow is available on the default branch.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eiopa-2023-source-provenance-one-shot
+  cancel-in-progress: false
+
+jobs:
+  original-eiopa-publisher-only-source-receipt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Read-only checkout of source manifest and verifier
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Stable Python 3.11 no third-party packages
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Official original source guard and malicious-input negative tests
+        run: |
+          python -m unittest discover -s tests -p 'test_eiopa_2023_ephemeral_official_xlsx_fetch_v0.py' -v
+          python -m unittest discover -s tests -p 'test_eiopa_catastrophe_2023_local_xlsx_metadata_preflight_v0.py' -v
+          python -m unittest discover -s tests -p 'test_eiopa_2023_original_xlsx_binary_receipt_gate_v0.py' -v
+      - name: One publisher HTTPS GET per EIOPA original; stop at 429, no retries
+        run: |
+          python research_runners/eiopa_2023_ephemeral_official_xlsx_fetch_v0.py \
+            --out-receipt "${{ runner.temp }}/eiopa-official-two-original-workbooks-metadata-NOT-CLAIMS.json"
+      - name: Upload only verified original SHA and worksheet names, NEVER original XLSX
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: eiopa-2023-original-xlsx-only-SHA-metadata-NOT-INSURER-MODEL
+          path: ${{ runner.temp }}/eiopa-official-two-original-workbooks-metadata-NOT-CLAIMS.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
