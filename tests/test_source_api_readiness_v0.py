@@ -110,7 +110,7 @@ class SourceApiReadinessTests(unittest.TestCase):
         captured = StringIO()
         with patch.object(coverage, "preflight_reviewed_probes"), patch.object(
             coverage.subprocess, "run",
-            return_value=subprocess.CompletedProcess(args=[], returncode=0),
+            return_value=subprocess.CompletedProcess(args=[], returncode=0, stdout='{"response_sha256":"' + "a" * 64 + '"}'),
         ) as process, redirect_stdout(captured):
             result = coverage.run_reviewed_live_probes()
         self.assertEqual(result, 0)
@@ -121,7 +121,7 @@ class SourceApiReadinessTests(unittest.TestCase):
                 call.args[0],
                 [coverage.sys.executable, *coverage.command_for(access_id)],
             )
-            self.assertEqual(call.kwargs["stdout"], subprocess.DEVNULL)
+            self.assertEqual(call.kwargs["stdout"], subprocess.PIPE)
             self.assertEqual(call.kwargs["stderr"], subprocess.DEVNULL)
             self.assertEqual(call.kwargs["timeout"], 120)
             self.assertFalse(call.kwargs["check"])
@@ -132,7 +132,10 @@ class SourceApiReadinessTests(unittest.TestCase):
         def fail_one(*args, **kwargs):
             nonlocal calls
             calls += 1
-            return subprocess.CompletedProcess(args=args, returncode=1 if calls == 1 else 0)
+            return subprocess.CompletedProcess(
+                args=args, returncode=1 if calls == 1 else 0,
+                stdout='{"response_sha256":"' + "a" * 64 + '"}',
+            )
 
         with patch.object(coverage, "preflight_reviewed_probes"), patch.object(
             coverage.subprocess, "run", side_effect=fail_one,
@@ -151,6 +154,27 @@ class SourceApiReadinessTests(unittest.TestCase):
         with patch.object(coverage, "preflight_reviewed_probes"):
             with self.assertRaisesRegex(coverage.SourceCoverageError, "coverage"):
                 coverage.build_coverage_report(fake)
+
+    def test_success_without_provider_digest_is_not_accepted(self):
+        with patch.object(coverage, "preflight_reviewed_probes"), patch.object(
+            coverage.subprocess, "run",
+            return_value=subprocess.CompletedProcess(args=[], returncode=0, stdout="{}"),
+        ), redirect_stdout(StringIO()) as output:
+            result = coverage.run_reviewed_live_probes()
+        self.assertEqual(result, 1)
+        self.assertIn("BLOCKED", output.getvalue())
+        self.assertNotIn("PASS |", output.getvalue())
+
+    def test_no_arbitrary_provider_output_is_included_in_the_summary(self):
+        receipt = '{"response_sha256":"' + "a" * 64 + '","provider_secret":"DO_NOT_LOG"}'
+        self.assertEqual(coverage._receipt_digest(receipt), "a" * 64)
+        self.assertIsNone(coverage._receipt_digest('{"response_sha256":"short"}'))
+        with patch.object(coverage, "preflight_reviewed_probes"), patch.object(
+            coverage.subprocess, "run",
+            return_value=subprocess.CompletedProcess(args=[], returncode=0, stdout=receipt),
+        ), redirect_stdout(StringIO()) as output:
+            self.assertEqual(coverage.run_reviewed_live_probes(), 0)
+        self.assertNotIn("DO_NOT_LOG", output.getvalue())
 
 
 if __name__ == "__main__":
