@@ -8,6 +8,8 @@ separately gated read-only workflow does so. No original pixels in Git.
 from __future__ import annotations
 
 import hashlib
+import os
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -123,6 +125,81 @@ class NativeRasterioCrosscheckTests(unittest.TestCase):
                 pixels = src.read(1, window=Window(768, 768, 32, 32))
             self.assertTrue(np.array_equal(pixels, native[768:800, 768:800]))
             self.assertEqual(int(np.count_nonzero(pixels == 255)), 341)
+
+
+    def test_relocated_sparse_single_tile_gdal_reads_original_lzw(self):
+        """Synthetic tile at the actual DLR byte offset; no provider fixture."""
+        try:
+            import numpy as np
+            import rasterio
+            from rasterio.transform import from_origin
+            from rasterio.windows import Window
+        except ImportError:
+            self.skipTest("rasterio wheel required by dedicated native check")
+        with tempfile.TemporaryDirectory(prefix="oc-sparse-relocation-test-") as d:
+            original = Path(d) / "synthetic_source.tif"
+            relocated = Path(d) / "original_like_sparse_copy.tif"
+            resolution = 0.00008983152841195215
+            affine = from_origin(
+                9.989984611636375, 50.010020350689466,
+                resolution, resolution,
+            )
+            with rasterio.open(
+                    original, "w", driver="GTiff", width=22487,
+                    height=22487, count=1, dtype="uint8", crs="EPSG:4326",
+                    transform=affine, tiled=True, blockxsize=512,
+                    blockysize=512, compress="LZW", predictor=1,
+                    SPARSE_OK="YES") as dst:
+                # Entirely artificial. Not copied from the WSF provider.
+                tile = np.zeros((512, 512), dtype="uint8")
+                tile[464:496, 464:480] = 255
+                dst.write(
+                    tile, 1, window=Window(33 * 512, 40 * 512, 512, 512)
+                )
+            header = bytearray(original.read_bytes())
+            self.assertEqual(header[:4], b"II\x2a\x00")
+            ifd = struct.unpack_from("<I", header, 4)[0]
+            count = struct.unpack_from("<H", header, ifd)[0]
+            tags = {}
+            for index in range(count):
+                pos = ifd + 2 + 12 * index
+                tag, typ, n, ptr = struct.unpack_from("<HHII", header, pos)
+                tags[tag] = (typ, n, ptr)
+            self.assertIn(324, tags)  # original TIFF tile-offset array
+            self.assertIn(325, tags)  # compressed byte-count array
+            idx = 40 * 44 + 33
+            original_offset = struct.unpack_from(
+                "<I", header, tags[324][2] + 4 * idx
+            )[0]
+            nbytes = struct.unpack_from(
+                "<I", header, tags[325][2] + 4 * idx
+            )[0]
+            compressed = bytes(header[original_offset:original_offset + nbytes])
+            self.assertTrue(0 < nbytes < 32768)
+            original_dlr_offset = 12156322
+            struct.pack_into(
+                "<I", header, tags[324][2] + 4 * idx,
+                original_dlr_offset,
+            )
+            # This mimics the live runner: only first 32 KiB and ONE
+            # compressed tile at an otherwise sparse 12.1 MB offset.
+            with relocated.open("wb") as dest:
+                dest.write(bytes(header[:32768]).ljust(32768, b"\x00"))
+                dest.seek(original_dlr_offset, os.SEEK_SET)
+                dest.write(compressed)
+            self.assertEqual(
+                relocated.stat().st_size, original_dlr_offset + nbytes
+            )
+            with rasterio.open(relocated, "r") as src:
+                native = src.read(
+                    1, window=Window(
+                        33 * 512 + 464, 40 * 512 + 464, 32, 32
+                    )
+                )
+                self.assertEqual(src.crs.to_epsg(), 4326)
+                self.assertEqual(src.block_shapes, [(512, 512)])
+                self.assertEqual(int(np.count_nonzero(native == 255)), 512)
+                self.assertEqual(int(np.count_nonzero(native == 0)), 512)
 
 
 if __name__ == "__main__":
