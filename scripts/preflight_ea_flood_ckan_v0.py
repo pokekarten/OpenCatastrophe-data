@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -142,6 +143,13 @@ def _reject_constant(value: str) -> None:
     raise EACatalogueError("non-finite JSON value")
 
 
+def _finite_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise EACatalogueError("overflowed JSON float")
+    return parsed
+
+
 def expected_url(package: dict[str, Any], name: str, role: str) -> str:
     """Expected catalogue metadata link; never execute or return this URL."""
     if role == "file":
@@ -161,7 +169,8 @@ def inspect_metadata(raw: bytes, dataset: str) -> dict[str, Any]:
     if type(raw) is not bytes or not 0 < len(raw) <= MAX_BYTES:
         raise EACatalogueError("unbounded or empty JSON response")
     try:
-        doc = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
+        doc = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_pairs, parse_constant=_reject_constant,
+                         parse_float=_finite_float)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise EACatalogueError("invalid UTF-8 JSON") from exc
     if type(doc) is not dict or doc.get("success") is not True:
