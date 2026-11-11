@@ -65,3 +65,60 @@ jobs:
         env:
           SOURCE: ${{ matrix.source }}
         run: python -m scripts.probe_fixed_public_sources_v0 --source "$SOURCE"
+
+  other-reviewed-live-probes:
+    name: Additional fixed public source / ${{ matrix.source }}
+    needs: [all-source-offline-audit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        source:
+          - dwd.cdc.extreme-wind.http-file
+          - esa.worldcover.2021.v200
+          - globaldamwatch.gdw.v1.0
+          - noaa.coops.water-levels
+          - storm.ibtracs.present-climate.v4.datacite
+          - usgs.3dep.s1m.tnmaccess
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Fixed reviewed original-provider probe (one request only)
+        env:
+          SOURCE: ${{ matrix.source }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$SOURCE" in
+            dwd.cdc.extreme-wind.http-file)
+              python -m unittest tests.test_probe_dwd_historical_directory_v0 -v
+              python -m scripts.probe_dwd_historical_directory_v0
+              ;;
+            esa.worldcover.2021.v200)
+              python -m unittest tests.test_probe_esa_worldcover_tiff_header_v0 -v
+              python -m scripts.probe_esa_worldcover_tiff_header_v0 --live
+              ;;
+            globaldamwatch.gdw.v1.0)
+              python -m unittest tests.test_probe_globaldamwatch_gdw_v1_metadata_v0 -v
+              python -m scripts.probe_globaldamwatch_gdw_v1_metadata_v0 --live
+              ;;
+            noaa.coops.water-levels)
+              python -m unittest tests.test_probe_noaa_coops_water_levels_v0 -v
+              python -m scripts.probe_noaa_coops_water_levels_v0 --live
+              ;;
+            storm.ibtracs.present-climate.v4.datacite)
+              python -m unittest tests.test_storm_v4_datacite_probe_v0 -v
+              python -m research_runners.storm_v4_datacite_probe_v0 --probe-once
+              ;;
+            usgs.3dep.s1m.tnmaccess)
+              python -m unittest tests.test_probe_usgs_s1m_florida_tnm_v0 -v
+              python -m scripts.probe_usgs_s1m_florida_tnm_v0 --live
+              ;;
+            *)
+              echo "BLOCKED: no reviewed one-shot probe for source" >&2
+              exit 2
+              ;;
+          esac
