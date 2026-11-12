@@ -28,7 +28,7 @@ The exact original source and science record is in
 and its anonymous original-structure receipt is stored in the
 insurance Neon **sample #61**.
 
-## New bounded native and GEOS canary — unexecuted on original until main
+## Original bounded native and GEOS canary implementation
 
 New runner
 `research_runners/by_hausumringe_oberbayern_first64_geos_v0.py`
@@ -76,9 +76,8 @@ No library table or model admission automatically updated.
 executes pinned GEOS **synthetic-only tests on PRs**.
 Only after CI and manual review/merge to main or explicit trusted
 workflow dispatch does the runner perform exactly one real provider
-request on an ephemeral runner. First real original outcome is **not
-claimed** by this plan until that trusted source job and its numeric
-receipts are directly inspected.
+request on an ephemeral runner. **Original source execution subsequently succeeded** on trusted main;
+the source-run receipt, limits and Neon research sample are shown next.
 
 ## Scientific limits
 
@@ -94,3 +93,76 @@ receipts are directly inspected.
   OED account/location export, TIV, event damage or CAT model input
   is authorized; keep research-only and
   `model_input_approved=false`.
+
+
+## Successful actual original first64 and research Neon #62 — 2026-11-12
+
+**Verified original BVV source run:**
+[GitHub Actions #43321672686](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43321672686),
+trusted `main` merge commit
+`1c42b240a4c26bc859605d59c0ffceb071f255a8` after
+[PR #1525](https://github.com/pokekarten/OpenCatastrophe-data/pull/1525).
+All source-specific GEOS synthetic tests and full repository CI
+(Python 3.11–3.14 plus Berlin) succeeded before merge. The
+**actual original 49,197-byte HTTP-206 source Range** was then
+fetched once, re-verified against its frozen SHA-256 and decoded
+using the official open regional SHP member and GEOS 2.x.
+
+| First-party result | Verified value |
+| --- | --- |
+| Original real live UTC | 2026-11-12 22:38:03 UTC |
+| Original official source | BVV Oberbayern open `hausumringe.shp` member of 174,299,765-byte ZIP |
+| Original exact Range | `bytes=275903-325099/174299765` (49,197 bytes) |
+| Original ranged response SHA-256 | `8a3c95bbbca493b192f6923fa4b6060798f561775f647bd34ffd4fc3af316f80` |
+| Original first 64 complete sequential Shape records | **64** (64 Polygon type 5; zero NULL shapes) |
+| Original Polygon rings checked by GEOS | **64** (one ring per source record; no multi-part records in this excerpt) |
+| Original Polygon vertices examined only in transient RAM | **505** |
+| GEOS rings with invalid/simple-ring flags | **0** |
+| GEOS individual part-Polygon invalid flags | **0** |
+| First 64 consecutive raw native record bytes SHA-256 | `366f87b09c803c6f82adc30b295620bd3c8ba038742b63e06782da3fd1c58051` |
+| Existing first Polygon research Neon sample | **#61**, original first source record only |
+| Additional 64-record aggregate research Neon sample | **#62** (overlaps #61 by one record) |
+| Canonical JSONB SHA-256 for Neon #62 | `d71c14e946eff84662328b6061ede7bca162e7b94e018883c63209ec217c6d34` |
+
+The second research sample **#62** was inserted into
+`insurance-risk-core.research.source_sample_v0` with
+`sample_kind=observed_values`, exact original source response
+SHA-256 as above, *explicit*
+`overlaps_original_source_sample_id=61` and
+`incremental_distinct_original_records_over_sample61=63`.
+It is **not** an independent source dataset or distinct raster
+spatial extent. It contains only anonymous aggregate counts and
+SHA-256 receipts; neither individual building coordinates, native
+Polygon vertices/IDs, original ZIP/SHP bytes, individual feature
+areas nor rendered geometries were persisted. The original
+BVV CC BY 4.0 source attribution is preserved; the dataset ATOM
+`rights=TODO` metadata issue is not suppressed.
+
+Independent read-only Neon proof:
+
+```sql
+SELECT sample_id,source_id,sample_kind,provider_response_sha256,
+       sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex')
+         AS canonical_jsonb_sha256_valid,
+       sample_json->>'native_source_records_structurally_decoded' AS native_records,
+       sample_json->>'native_source_rings_checked_with_geos' AS geos_rings,
+       sample_json->>'geos_invalid_rings' AS invalid_rings,
+       sample_json->>'incremental_distinct_original_records_over_sample61' AS incremental_records,
+       sample_json->>'overlaps_original_source_sample_id' AS overlap_prior_sample,
+       model_input_approved, source_byte_persistence_authorized
+FROM research.source_sample_v0
+WHERE sample_id IN (61,62)
+ORDER BY sample_id;
+```
+
+**Scientific claim scope:** GEOS checks cover **only 64 first
+consecutive records**, a nonrandom and potentially geographically
+clustered selection. These are real official 2026-era source
+polygons, but neither source-survey vintage, spatial completeness,
+multi-part/hole topology for records outside the excerpt, the
+2,703,736 indexed features, independent historical 2020 footprints
+nor the GHSL E2020 32×32 true-building overlay are established.
+One source ZIP response hash is used for both #61 and #62,
+explicitly to prevent false counting of independent sources.
+The candidate remains `not_admitted` to any scientific/insured
+CAT model. `model_input_approved=false` for both research samples.
