@@ -67,9 +67,9 @@ jobs:
           {
             printf '### Fixed public-source connectivity (diagnostic only)\n\n'
             printf '| Field | Observation |\n|---|---|\n'
-            printf '| Source contract | \`%s\` |\n' "$SOURCE_ID"
+            printf '| Source contract | `%s` |\n' "$SOURCE_ID"
             printf '| Provider probe step | **%s** |\n' "$result"
-            printf '| Executed workflow revision | \`%s\` |\n' "$CODE_SHA"
+            printf '| Executed workflow revision | `%s` |\n' "$CODE_SHA"
             printf '\nWorkflow/job green is **not** provider success when probe failures are diagnostic.\n'
             printf 'Neither a successful probe nor this summary establishes licence clearance, data persistence, scientific fitness or CAT-model admission.\n'
           } >> "$GITHUB_STEP_SUMMARY"
