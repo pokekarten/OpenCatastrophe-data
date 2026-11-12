@@ -69,6 +69,30 @@ jobs:
           tests.test_ciara2020_cds_original_source_one_shot_v0
           -v
 
+  google-arco-ciara-public-metadata:
+    # Narrow one-off live ORIGINAL public Zarr metadata probe for this PR only.
+    # Read-only anonymous Google GCS. No cloud/API tokens, no ERA5 data chunks.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-google-arco-10fg-public-metadata-20261112'
+    name: Google public ARCO 10fg original Zarr metadata
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact PR commit, no stored token
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up pinned Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Offline anonymized original-source security and shape regression
+        run: python -m unittest tests.test_ciara2020_google_arco_public_10fg_metadata_v0 -v
+      - name: Read exactly four original variable/coordinate metadata objects
+        run: python research_runners/ciara2020_google_arco_public_10fg_metadata_v0.py --live-metadata
+
   eu-flood-spatial:
     name: EU flood spatial A1
     runs-on: ubuntu-24.04
