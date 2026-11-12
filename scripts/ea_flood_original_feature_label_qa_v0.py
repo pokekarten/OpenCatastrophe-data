@@ -59,6 +59,44 @@ def _finite_float(value: str) -> float:
     return parsed
 
 
+MAX_COORDINATE_POSITIONS = 4096
+
+
+def _check_coordinate_tree(geometry: dict[str, Any]) -> None:
+    """Check bounded GeoJSON coordinate *structure*, not CRS or topology.
+
+    These coordinates are never retained or emitted. A nonempty, finite
+    coordinate tree is necessary but NOT sufficient for valid polygons.
+    """
+    coordinates = geometry.get("coordinates")
+    if type(coordinates) is not list or not coordinates:
+        raise FeatureLabelBlocked("missing or empty polygon coordinates")
+    polygons = [coordinates] if geometry["type"] == "Polygon" else coordinates
+    count = 0
+    if len(polygons) > 32:
+        raise FeatureLabelBlocked("unbounded multipolygon parts")
+    for polygon in polygons:
+        if type(polygon) is not list or not polygon or len(polygon) > 64:
+            raise FeatureLabelBlocked("malformed polygon rings")
+        for ring in polygon:
+            if type(ring) is not list or not ring:
+                raise FeatureLabelBlocked("missing polygon ring")
+            for position in ring:
+                if type(position) is not list or len(position) not in (2, 3):
+                    raise FeatureLabelBlocked("invalid GeoJSON coordinate position")
+                for coordinate in position:
+                    if type(coordinate) not in (int, float):
+                        raise FeatureLabelBlocked("non-numeric GeoJSON coordinate")
+                    try:
+                        if not math.isfinite(coordinate):
+                            raise FeatureLabelBlocked("nonfinite GeoJSON coordinate")
+                    except (ValueError, OverflowError) as exc:
+                        raise FeatureLabelBlocked("out-of-range GeoJSON coordinate") from exc
+                count += 1
+                if count > MAX_COORDINATE_POSITIONS:
+                    raise FeatureLabelBlocked("too many GeoJSON coordinate positions")
+
+
 def inspect_original_label_response(raw: bytes) -> dict[str, object]:
     """Report bounded categorical facts, without outputting feature geometry."""
     if type(raw) is not bytes or not 0 < len(raw) <= MAX_BYTES:
@@ -103,7 +141,8 @@ def inspect_original_label_response(raw: bytes) -> dict[str, object]:
     geometry = feature.get("geometry")
     if type(geometry) is not dict or geometry.get("type") not in ("Polygon", "MultiPolygon"):
         raise FeatureLabelBlocked("unsupported original depth geometry type")
-    # Presence and type do not validate the CRS or polygon; coordinates must
+    _check_coordinate_tree(geometry)
+    # Coordinate structure does not validate the CRS or polygon; coordinates must
     # never enter this report. Field units, area and exact boundary inclusivity
     # are not established by this lexical preflight.
     is_missing = band == MISSING_BAND
@@ -128,6 +167,7 @@ def inspect_original_label_response(raw: bytes) -> dict[str, object]:
         "raw_feature_source_and_release_authenticity_verified": False,
         "geometry_coordinates_reported": False,
         "geometry_topology_verified": False,
+        "geometry_coordinate_tree_structurally_checked": True,
         "geometry_crs_verified": False,
         "shape_area_and_length_units_verified": False,
         "physical_depth_at_individual_building_verified": False,
