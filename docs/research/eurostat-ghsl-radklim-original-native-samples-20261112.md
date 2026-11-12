@@ -175,3 +175,28 @@ python -m research_runners.eurostat_gisco_v3_geotiff_one_cell_v0 \
 ```
 
 The selected cell is a **population exposure covariate** for statistical research; it is **not** an independently geocoded insured building, flood hazard intensity, policy count, sum insured, modelled claim or CAT loss.
+
+### Private research-only PostGIS spatial projection (source cell #63)
+
+The private `insurance-risk-core` Neon database already has PostGIS 3.5.7. An additive, **read-only, fail-closed** source-specific PostGIS view was created and made reproducible in [SQL](../../sql/research_eurostat_census_2021_v3_pixel_research_v0.sql):
+
+`research.eurostat_census_2021_v3_pixel_research_v0`
+
+It includes **only** the official V3 original TIFF research sample profile with a **verified canonical sample JSON SHA**, `research_only=true` and `model_input_approved=false`. Each row contains original ZIP-Range SHA, source version, raster row/column, 1-km `geometry(Point,3035)` centre, PostGIS-transformed `geometry(Point,4326)` centre and the selected public aggregated population fields, with explicit `commercial_underwriting_authorized=false` and `nextgen_cat_model_input_admitted=false`. It never exposes a person, household, original raster bytes, a policy or a building polygon.
+
+The existing original raster **sample #63** was independently projected in Neon/PostGIS:
+
+| Coordinate interpretation | Verified coordinate |
+| --- | --- |
+| TIFF centre (ETRS89-LAEA, EPSG:3035) | **POINT(5018500 5399500)** |
+| PostGIS WGS84 centroid (EPSG:4326) | Longitude **29.081945°**, latitude **70.856388°** |
+| Original census total / M / F | **396 / 201 / 195** |
+| Source NoData and admissibility | **-9999**, research-only, **not admitted** |
+
+The WGS84 position is a **coordinate transformation** of the original grid centre; it is not a new original Eurostat `CNTR_ID` or proof of a particular insured location. Crosswalk against administrative coverage, `GRD_ID` and multi-country provenance is still necessary.
+
+### Quality gate code execution clarity
+
+A standalone [offline original-range validator](../../research_runners/eurostat_gisco_v3_geotiff_one_cell_v0.py) and [synthetic fixture regression tests](../../tests/test_eurostat_gisco_v3_geotiff_one_cell_v0.py) were added to the same draft PR. The **original provider live ZIP byte ranges were independently parsed in this session**, not executed using that Python script; therefore the GitHub CI exercises **synthetic data only**, not a second production byte fetch. The original range SHA used by the runner is independently pinned to the actual observed provider response and can be verified externally against exactly the frozen Range.
+
+The initial CI reported one **synthetic test-data construction error** (a deliberately invalid band label was too long for the fixed-size synthetic GDAL metadata region). This was fixed by mutating a **same-length** band label instead; it still exercises the intended invalid-band parser branch. Do not claim final CI success until the new commit has completed. The original `#63` research sample and its Neon canonical hash check were unaffected.
