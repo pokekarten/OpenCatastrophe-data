@@ -46,5 +46,118 @@ jobs:
       - name: Single fixed HTTPS read; receipt only, no provider bytes retained
         # Transient provider availability is a diagnostic, not a CI-scientific gate.
         # A failed probe remains visible as a failed step; no provider response is logged.
+        id: provider_probe
         continue-on-error: true
         run: python -m scripts.probe_fixed_public_sources_v0 --source ${{ matrix.source }}
+      - name: Report actual provider probe outcome separately from workflow conclusion
+        if: always()
+        shell: bash
+        env:
+          SOURCE_ID: ${{ matrix.source }}
+          PROBE_OUTCOME: ${{ steps.provider_probe.outcome }}
+          CODE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          case "$PROBE_OUTCOME" in
+            success) result="SUCCEEDED" ;;
+            failure) result="FAILED" ;;
+            skipped|"") result="NOT_RUN" ;;
+            *) result="UNKNOWN" ;;
+          esac
+          {
+            printf '### Fixed public-source connectivity (diagnostic only)\n\n'
+            printf '| Field | Observation |\n|---|---|\n'
+            printf '| Source contract | `%s` |\n' "$SOURCE_ID"
+            printf '| Provider probe step | **%s** |\n' "$result"
+            printf '| Executed workflow revision | `%s` |\n' "$CODE_SHA"
+            printf '\nWorkflow/job green is **not** provider success when probe failures are diagnostic.\n'
+            printf 'Neither a successful probe nor this summary establishes licence clearance, data persistence, scientific fitness or CAT-model admission.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$PROBE_OUTCOME" == "failure" ]]; then
+            echo "::warning title=Fixed provider probe failed::Connectivity failed; this diagnostic workflow may remain green because provider errors are non-gating."
+          fi
+
+  reviewed-additional-source-probes:
+    name: Reviewed metadata probe (${{ matrix.source }})
+    needs: offline-contract-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    strategy:
+      fail-fast: false
+      matrix:
+        source:
+          - globaldamwatch.gdw.v1.0
+          - noaa.coops.water-levels
+          - storm.ibtracs.present-climate.v4.datacite
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check source-specific reviewed contract and synthetic failure cases
+        env:
+          SOURCE_ID: ${{ matrix.source }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$SOURCE_ID" in
+            globaldamwatch.gdw.v1.0)
+              python -m unittest tests.test_probe_globaldamwatch_gdw_v1_metadata_v0 -v
+              ;;
+            noaa.coops.water-levels)
+              python -m unittest tests.test_probe_noaa_coops_water_levels_v0 -v
+              ;;
+            storm.ibtracs.present-climate.v4.datacite)
+              python -m unittest tests.test_storm_v4_datacite_probe_v0 -v
+              ;;
+            *)
+              echo "::error::Unreviewed source ID" >&2
+              exit 2
+              ;;
+          esac
+      - name: One fixed public-source read; no raw provider bytes persisted
+        id: provider_probe
+        continue-on-error: true
+        env:
+          SOURCE_ID: ${{ matrix.source }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$SOURCE_ID" in
+            globaldamwatch.gdw.v1.0)
+              python scripts/probe_globaldamwatch_gdw_v1_metadata_v0.py --live
+              ;;
+            noaa.coops.water-levels)
+              python scripts/probe_noaa_coops_water_levels_v0.py --live
+              ;;
+            storm.ibtracs.present-climate.v4.datacite)
+              python research_runners/storm_v4_datacite_probe_v0.py --probe-once
+              ;;
+            *)
+              echo "::error::Unreviewed source ID" >&2
+              exit 2
+              ;;
+          esac
+      - name: Publish actual step outcome; never infer live availability from green workflow
+        if: always()
+        env:
+          SOURCE_ID: ${{ matrix.source }}
+          PROBE_OUTCOME: ${{ steps.provider_probe.outcome }}
+          CODE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$PROBE_OUTCOME" in
+            success) state=SUCCEEDED ;;
+            failure) state=FAILED ;;
+            skipped|"") state=NOT_RUN ;;
+            *) state=UNKNOWN ;;
+          esac
+          {
+            printf '### Bounded source probe (diagnostic only)\n\n'
+            printf '| Source | Outcome | Workflow SHA |\n|---|---|---|\n'
+            printf '| `%s` | **%s** | `%s` |\n' "$SOURCE_ID" "$state" "$CODE_SHA"
+            printf '\nNo provider asset was stored. A successful metadata/observation shape probe grants no data rights, scientific fitness or CAT-model admission.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$PROBE_OUTCOME" == failure ]]; then
+            echo "::warning title=Reviewed provider probe failed::This provider read failed; job conclusion may be green because network diagnostics are non-gating."
+          fi
