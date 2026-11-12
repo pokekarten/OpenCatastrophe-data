@@ -46,5 +46,33 @@ jobs:
       - name: Single fixed HTTPS read; receipt only, no provider bytes retained
         # Transient provider availability is a diagnostic, not a CI-scientific gate.
         # A failed probe remains visible as a failed step; no provider response is logged.
+        id: provider_probe
         continue-on-error: true
         run: python -m scripts.probe_fixed_public_sources_v0 --source ${{ matrix.source }}
+      - name: Report actual provider probe outcome separately from workflow conclusion
+        if: always()
+        shell: bash
+        env:
+          SOURCE_ID: ${{ matrix.source }}
+          PROBE_OUTCOME: ${{ steps.provider_probe.outcome }}
+          CODE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          case "$PROBE_OUTCOME" in
+            success) result="SUCCEEDED" ;;
+            failure) result="FAILED" ;;
+            skipped|"") result="NOT_RUN" ;;
+            *) result="UNKNOWN" ;;
+          esac
+          {
+            printf '### Fixed public-source connectivity (diagnostic only)\n\n'
+            printf '| Field | Observation |\n|---|---|\n'
+            printf '| Source contract | \`%s\` |\n' "$SOURCE_ID"
+            printf '| Provider probe step | **%s** |\n' "$result"
+            printf '| Executed workflow revision | \`%s\` |\n' "$CODE_SHA"
+            printf '\nWorkflow/job green is **not** provider success when probe failures are diagnostic.\n'
+            printf 'Neither a successful probe nor this summary establishes licence clearance, data persistence, scientific fitness or CAT-model admission.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$PROBE_OUTCOME" == "failure" ]]; then
+            echo "::warning title=Fixed provider probe failed::Connectivity failed; this diagnostic workflow may remain green because provider errors are non-gating."
+          fi
