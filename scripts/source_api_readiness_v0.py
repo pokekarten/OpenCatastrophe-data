@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Exhaustive, offline source/contract gap register and narrowly reviewed live probes.
 
-All canonical source records are represented. Only sixteen fixed source-specific
+All canonical source records are represented. Only seventeen fixed source-specific
 network programs may run, only after their committed access contracts pass
 fail-closed rights/authentication preflight. No dynamic URLs, credentials,
 provider response bodies, unapproved bulk downloads, or model admissions.
@@ -35,6 +35,7 @@ FIVE_JSON_PROBES = (
     "wsv.pegelonline.rest-v2.dresden",
 )
 EXTRA_PROBE_COMMANDS = {
+    "meteoswiss.national-hail-climatology": ("-m", "scripts.probe_meteoswiss_hail_stac_collection_v0", "--live"),
     "de.berlin.alkis-gebaeude.wfs": ("-m", "scripts.probe_berlin_alkis_wfs_capabilities_v0", "--live"),
     "noaa.ncei.ghcnd-central-park-gzip": ("-m", "scripts.probe_ghcnd_ncei_us_station_gzip_v0", "--live"),
     "noaa.nodd.ghcnd-central-park-complete": ("-m", "scripts.probe_ghcnd_full_station_original_v0", "--live"),
@@ -56,7 +57,7 @@ BLOCKED_CONTRACT_STATUSES = frozenset({
 
 def preflight_reviewed_probes() -> None:
     """Require original, exact contracts and reviewed automation rights."""
-    if set(PROBES) != set(FIVE_JSON_PROBES) or len(APPROVED_PROBE_IDS) != 16:
+    if set(PROBES) != set(FIVE_JSON_PROBES) or len(APPROVED_PROBE_IDS) != 17:
         raise SourceCoverageError("frozen public API allowlist drift")
     for access_id in APPROVED_PROBE_IDS:
         path = ROOT / "access" / (access_id + ".json")
