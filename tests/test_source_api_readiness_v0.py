@@ -30,7 +30,7 @@ class SourceApiReadinessTests(unittest.TestCase):
         self.assertEqual(
             sum(report["blocker_counts"].values()), report["source_records"]
         )
-        self.assertEqual(report["fixed_reviewed_live_probes_configured"], 15)
+        self.assertEqual(report["fixed_reviewed_live_probes_configured"], 16)
         self.assertGreater(report["reviewed_access_contracts"], 0)
         self.assertEqual(
             sum(report["contract_status_counts"].values()),
@@ -90,7 +90,9 @@ class SourceApiReadinessTests(unittest.TestCase):
 
     def test_live_runner_whitelist_is_exact_and_immutable(self):
         self.assertEqual(set(coverage.FIVE_JSON_PROBES), set(coverage.PROBES))
-        self.assertEqual(len(coverage.APPROVED_PROBE_IDS), 15)
+        self.assertEqual(coverage.command_for("de.berlin.alkis-gebaeude.wfs"),
+                         ("-m", "scripts.probe_berlin_alkis_wfs_capabilities_v0", "--live"))
+        self.assertEqual(len(coverage.APPROVED_PROBE_IDS), 16)
         self.assertEqual(
             len(coverage.APPROVED_PROBE_IDS),
             len(set(coverage.APPROVED_PROBE_IDS)),
@@ -114,7 +116,7 @@ class SourceApiReadinessTests(unittest.TestCase):
             with self.assertRaisesRegex(coverage.SourceCoverageError, "rights"):
                 coverage.preflight_reviewed_probes()
 
-    def test_live_invokes_all_fifteen_exact_runners_without_leaking_stdout(self):
+    def test_live_invokes_all_sixteen_exact_runners_without_leaking_stdout(self):
         captured = StringIO()
         with patch.object(coverage, "preflight_reviewed_probes"), patch.object(
             coverage.subprocess, "run",
@@ -122,7 +124,7 @@ class SourceApiReadinessTests(unittest.TestCase):
         ) as process, redirect_stdout(captured):
             result = coverage.run_reviewed_live_probes()
         self.assertEqual(result, 0)
-        self.assertEqual(process.call_count, 15)
+        self.assertEqual(process.call_count, 16)
         self.assertNotIn("secret-provider-value", captured.getvalue())
         for call, access_id in zip(process.call_args_list, coverage.APPROVED_PROBE_IDS):
             self.assertEqual(
@@ -150,7 +152,7 @@ class SourceApiReadinessTests(unittest.TestCase):
         ), redirect_stdout(StringIO()) as output:
             result = coverage.run_reviewed_live_probes()
         self.assertEqual(result, 1)
-        self.assertEqual(calls, 15)
+        self.assertEqual(calls, 16)
         self.assertIn("BLOCKED", output.getvalue())
         self.assertIn("PASS", output.getvalue())
 
