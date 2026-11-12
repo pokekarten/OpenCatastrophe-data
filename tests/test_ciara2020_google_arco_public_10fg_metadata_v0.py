@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import tomllib
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
@@ -82,6 +83,30 @@ class PublicARCO10fgResearchTests(unittest.TestCase):
             record = result["public_original_zarr_v2_metadata"][name]
             self.assertEqual(len(record["original_metadata_sha256"]), 64)
             self.assertGreater(record["original_metadata_bytes"], 20)
+
+    def test_actual_source_metadata_sha_and_shape_receipt_is_immutable(self):
+        path = (ROOT / "research/observations/"
+                "ciara2020_google_arco_10fg_public_original_metadata_receipt_20261112.toml")
+        with path.open("rb") as f:
+            receipt = tomllib.load(f)
+        self.assertEqual(receipt["github_workflow_job_id"], 131491098112)
+        self.assertTrue(receipt["metadata_origin_unauthenticated_public"])
+        for flag in ("original_wind_data_values_read",
+                     "original_2020_96h_wind_data_read",
+                     "site_insurer_losses_or_real_RV_contracts_read",
+                     "native_GUL_IL_RI_OEP_AEP_admitted"):
+            self.assertFalse(receipt[flag])
+        vars = receipt["original_variables"]
+        self.assertEqual(set(vars), set(p.SOURCE_VARIABLES))
+        self.assertEqual(vars[p.VAR]["shape"], [1323648, 721, 1440])
+        self.assertEqual(vars[p.VAR]["chunks"], [1, 721, 1440])
+        self.assertEqual(vars[p.VAR]["sha256"],
+                         "1e97549514364c3270a42a3af331173226d8f23a57c2378be9db14b924580800")
+        self.assertEqual(vars["time"]["sha256"],
+                         "78fbb0c14db1c7084fe8572fcb75de5f26457df949b66c4b825d0ca63f27d8e8")
+        for record in vars.values():
+            self.assertRegex(record["sha256"], r"^[a-f0-9]{64}$")
+            self.assertGreater(record["metadata_bytes"], 10)
 
     def test_wrong_grids_and_fake_10fg_non_3d_block(self):
         edits = [
