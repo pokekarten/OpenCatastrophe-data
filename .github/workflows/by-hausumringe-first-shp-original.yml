@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Bavaria HU-BY original 49KiB SHP first Polygon source proof
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "research_runners/by_hausumringe_oberbayern_shp_first_original_v0.py"
+      - "tests/test_by_hausumringe_oberbayern_shp_first_original_v0.py"
+      - ".github/workflows/by-hausumringe-first-shp-original.yml"
+  push:
+    branches: [main]
+    paths:
+      - "research_runners/by_hausumringe_oberbayern_shp_first_original_v0.py"
+      - "tests/test_by_hausumringe_oberbayern_shp_first_original_v0.py"
+      - ".github/workflows/by-hausumringe-first-shp-original.yml"
+permissions:
+  contents: read
+jobs:
+  bounded-shp-first-polygon:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout source-specific code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Synthetic original .shp header, Polygon and strict ZIP range regression tests
+        run: python -m unittest tests.test_by_hausumringe_oberbayern_shp_first_original_v0 -v
+      - name: Source-owned public Bavarian original SHP 49KiB first complete Polygon
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: python -m research_runners.by_hausumringe_oberbayern_shp_first_original_v0 --live
