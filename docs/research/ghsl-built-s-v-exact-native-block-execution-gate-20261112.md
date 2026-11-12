@@ -10,6 +10,32 @@ original-provider block run is NOT claimed until its main-branch Actions
 logs are inspected.** This is a read-only research-only original-value
 sample candidate, not source/model admission.
 
+## First original execution diagnosis and exact schema correction — 2026-11-12
+
+The first trusted-main source workflow
+[run 43308918239](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43308918239)
+**failed closed** after the source-specific synthetic tests passed. It
+reported `BLOCKED: original TIFF prefix verification rejected` before any
+original compressed block was requested. **No original pixel values were
+decoded, stored or admitted from that run.**
+
+A separate fixed 4,096-byte original source-prefix inspection for **both**
+unchanged JRC assets showed that TIFF tags `256` (width), `257`
+(height), `322` (tile width), `323` (tile height) are all declared
+**TIFF SHORT type 3**, as is valid for their numeric sizes. The first
+offline parser incorrectly expected TIFF LONG type 4 for these four tags.
+This is a code/schema mismatch, not evidence that the provider TIFF had
+changed. The original 32 KiB and 4 KiB source SHA-256 pins remain unchanged,
+and `BitsPerSample=32` plus `SampleFormat=1` remain the source
+**UINT32 scientific raster value type**, independent of TIFF tag encoding.
+
+The scoped correction requires **exact** original SHORT fields and adds
+synthetic regression tests rejecting a LONG substitution. It does not
+weaken or bypass the original SHA-256, HTTP Range, CRS, compression,
+source byte ceiling or CAT model-admission checks. A corrected main
+source run and actual successful original-byte logs are needed before
+claiming original numeric cell samples.
+
 ## Original source and exact bounded retrieval contract
 
 Source: European Commission JRC

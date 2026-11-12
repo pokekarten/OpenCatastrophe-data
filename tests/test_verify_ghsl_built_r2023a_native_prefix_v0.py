@@ -22,13 +22,14 @@ def synthetic_header(product: str = "surface") -> bytes:
     struct.pack_into("<I", data, 4, IFD_OFFSET)
     struct.pack_into("<H", data, IFD_OFFSET, len(KNOWN_TAGS))
     off = 500
-    short = {258: 32, 259: 8, 262: 1, 277: 1, 284: 1, 317: 1, 339: 1}
-    long = {256: 43201, 257: 21384, 322: 512, 323: 512}
-    tags = {}
-    for tag, val in short.items():
-        tags[tag] = (3, 1, val)
-    for tag, val in long.items():
-        tags[tag] = (4, 1, val)
+    # Matches the observed original JRC IFD: even the 43,201-wide
+    # image dimensions and 512-pixel tile sizes use TIFF SHORT.
+    # UInt32 scientific values are separate from IFD field encoding.
+    short = {
+        256: 43201, 257: 21384, 258: 32, 259: 8, 262: 1,
+        277: 1, 284: 1, 317: 1, 322: 512, 323: 512, 339: 1,
+    }
+    tags = {tag: (3, 1, val) for tag, val in short.items()}
     tags[33550] = (12, 3, off)
     struct.pack_into("<ddd", data, off, *p["scale"], 0.)
     off += 32
@@ -122,6 +123,18 @@ class GHSLBuiltNativePrefixTests(unittest.TestCase):
                     struct.pack_into("<H" if typ == "short" else "<I", data, pos, value)
                 with self.assertRaises(GHSLHeaderBlocked):
                     inspect_tiff_prefix(bytes(data), "surface")
+
+    def test_original_short_dimensions_and_tile_tag_types_are_required(self):
+        doc = synthetic_header("surface")
+        tags = sorted(KNOWN_TAGS)
+        for tag in (256, 257, 322, 323):
+            with self.subTest(tag=tag):
+                # A synthetic TIFF LONG field with the same visible numeric
+                # value is *not* the reviewed original source schema.
+                changed = bytearray(doc)
+                struct.pack_into("<H", changed, IFD_OFFSET+2+12*tags.index(tag)+2, 4)
+                with self.assertRaisesRegex(GHSLHeaderBlocked, "scalar tag type"):
+                    inspect_tiff_prefix(bytes(changed), "surface")
 
     def test_nonfinite_coordinate_and_corrupt_directory_rejected(self):
         base = synthetic_header()

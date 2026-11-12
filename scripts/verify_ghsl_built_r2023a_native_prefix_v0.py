@@ -112,10 +112,14 @@ def inspect_tiff_prefix(prefix: bytes, product: str) -> dict[str, Any]:
             raise GHSLHeaderBlocked(f"unexpected TIFF scalar tag type {tag}")
         return int(_entry_values(prefix, entries, tag)[0])
     exact = {
-        256: (4, WIDTH), 257: (4, HEIGHT), 258: (3, 32),
+        # Original JRC GeoTIFF IFD stores dimensions and tile sizes as
+        # TIFF SHORT (type 3), not LONG (type 4). These SHORT tags
+        # describe the raster layout; individual raster values remain
+        # unsigned 32-bit (BitsPerSample=32 and SampleFormat=1).
+        256: (3, WIDTH), 257: (3, HEIGHT), 258: (3, 32),
         259: (3, 8), 262: (3, 1), 277: (3, 1),
-        284: (3, 1), 317: (3, 1), 322: (4, TILE),
-        323: (4, TILE), 339: (3, 1),
+        284: (3, 1), 317: (3, 1), 322: (3, TILE),
+        323: (3, TILE), 339: (3, 1),
     }
     for tag, (typ, value) in exact.items():
         if scalar(tag, typ) != value:
