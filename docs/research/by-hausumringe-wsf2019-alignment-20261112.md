@@ -145,6 +145,43 @@ unvalidated; no actual building count, matched 2019 WSF score, TIV,
 insurer exposure, model-input approval or automatic scientific admission
 is claimed.
 
+## 2026-11-12 original DBF verified; index-only spatial integrity next
+
+The preceding DBF section described a proposed source test. **It has now
+completed on trusted main:** [GitHub Actions 43306712553](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43306712553)
+inspected all **275,557 original ZIP-compressed DBF bytes** (275,602 bytes
+including ZIP local header) with an exact HTTP 206 source Range, and
+independently decoded **27,037,425** uncompressed original bytes under
+a hard cap. It verified original CRC32 `67324194`, compressed SHA-256
+`21f613c4ac435f45197c87bf8143be8525976a3de7a4c7713c6c09b0643ee1df`,
+uncompressed SHA-256
+`69af1705c347ab9e233598b0bf82c8665239a4bc19f1e516d35b6634e02515ed`,
+dBase III header, **2,703,736 active / 0 deleted records**, one nine-byte
+attribute field and DBF file-header *modification* date **2026-10-01**.
+This metadata is **not** source cadastral survey vintage and the row
+count is not a verified count of physically distinct, insurable buildings.
+
+**Next source index proof**: the same official ZIP declares its `.shx`
+member at byte **166,448,184**, total local-member request **7,851,171
+bytes**, of which **7,851,126** are ZIP-compressed index data. A single
+original HTTP Range `bytes=166448184-174299354` can check original
+CRC32 `f6d2bbb8`, the complete 21,629,988-byte Shapefile index,
+source file-code 9994/version 1000/Polygon type 5, exactly **2,703,736**
+index entries, and all index-record byte offsets for strict contiguity.
+The final index offset must land at **501,212,696** uncompressed SHP bytes
+as **claimed by ZIP central directory only**. The original SHP source
+itself is **not independently downloaded or hashed**.
+
+`research_runners/by_hausumringe_oberbayern_shx_v0.py` and synthetic
+tests implement this exact bounded index-only proof. On PR heads there
+is no network call; trusted `main` executes it only after original
+ZIP prefix/central, projection and DBF checks all succeeded. Inspect
+the provider-step outcome and original SHA/CRC receipt in main logs
+before claiming index verification. Even after success, the 2.7 million
+indices establish **structural source file consistency**, not actual
+polygon geometry quality, observed 2019 building footprints, insured
+TIV or CAT model admission.
+
 ## Offline comparison method (synthetic-only until source acquired)
 
 `research_runners/by_hausumringe_wsf2019_spatial_gate_v0.py` accepts:
