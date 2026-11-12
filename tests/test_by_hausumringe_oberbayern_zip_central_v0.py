@@ -94,7 +94,7 @@ class SyntheticZIPCentralTests(unittest.TestCase):
 
     def test_member_drift_signature_extra_and_compression_block(self):
         origin = CENTRAL_START-START
-        for p,v in ((origin,0),(origin+10,0),(origin+28,0),
+        for p,v in ((origin,0),(origin+12,0),(origin+28,0),
                     (origin+30,0),(origin+46,ord("x")),
                     (origin+20,0),(origin+42,9)):
             raw=bytearray(fake())
