@@ -128,7 +128,7 @@ class SourceApiReadinessTests(unittest.TestCase):
         ) as process, redirect_stdout(captured):
             result = coverage.run_reviewed_live_probes()
         self.assertEqual(result, 0)
-        self.assertEqual(process.call_count, 18
+        self.assertEqual(process.call_count, 18)
         self.assertNotIn("secret-provider-value", captured.getvalue())
         for call, access_id in zip(process.call_args_list, coverage.APPROVED_PROBE_IDS):
             self.assertEqual(
@@ -156,7 +156,7 @@ class SourceApiReadinessTests(unittest.TestCase):
         ), redirect_stdout(StringIO()) as output:
             result = coverage.run_reviewed_live_probes()
         self.assertEqual(result, 1)
-        self.assertEqual(calls, 18
+        self.assertEqual(calls, 18)
         self.assertIn("BLOCKED", output.getvalue())
         self.assertIn("PASS", output.getvalue())
 
