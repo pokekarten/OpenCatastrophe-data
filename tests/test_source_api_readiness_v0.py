@@ -160,6 +160,40 @@ class SourceApiReadinessTests(unittest.TestCase):
         self.assertIn("BLOCKED", output.getvalue())
         self.assertIn("PASS", output.getvalue())
 
+    def test_live_failure_classes_hide_provider_text_and_continue(self):
+        digest = '{"response_sha256":"' + "a" * 64 + '"}'
+        calls = 0
+
+        def result_or_error(*args, **kwargs):
+            nonlocal calls
+            current = calls
+            calls += 1
+            if current == 0:
+                return subprocess.CompletedProcess(args=[], returncode=5, stdout=digest)
+            if current == 1:
+                return subprocess.CompletedProcess(
+                    args=[], returncode=0, stdout='{"secret":"HIDDEN_PROVIDER_TEXT"}',
+                )
+            if current == 2:
+                raise subprocess.TimeoutExpired(cmd=["python"], timeout=120)
+            if current == 3:
+                raise OSError("PRIVATE_RUNNER_ERROR")
+            return subprocess.CompletedProcess(args=[], returncode=0, stdout=digest)
+
+        with patch.object(coverage, "preflight_reviewed_probes"), patch.object(
+            coverage.subprocess, "run", side_effect=result_or_error,
+        ), redirect_stdout(StringIO()) as output:
+            result = coverage.run_reviewed_live_probes()
+
+        self.assertEqual(result, 1)
+        self.assertEqual(calls, len(coverage.APPROVED_PROBE_IDS))
+        summary = output.getvalue()
+        for failure_class in ("runner_nonzero", "missing_digest", "timeout", "runner_unavailable"):
+            self.assertIn(failure_class, summary)
+        self.assertIn("Total: 14 PASS, 4 BLOCKED of 18 reviewed probes.", summary)
+        self.assertNotIn("HIDDEN_PROVIDER_TEXT", summary)
+        self.assertNotIn("PRIVATE_RUNNER_ERROR", summary)
+
     def test_coverage_mismatch_fails_closed(self):
         fake = {
             "entries": [], "entry_count": 1, "landscape_entry_count": 1,
