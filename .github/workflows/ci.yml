@@ -93,6 +93,34 @@ jobs:
       - name: Read exactly four original variable/coordinate metadata objects
         run: python research_runners/ciara2020_google_arco_public_10fg_metadata_v0.py --live-metadata
 
+  google-arco-ciara-real-one-hour:
+    # PUBLIC original reanalysis one-hour/one-gridpoint research challenge.
+    # No Google account, CDS token or insured-site source is accessed.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-google-arco-real-10fg-one-hour-20261112'
+    name: Google public ARCO Ciara 2020 actual one-hour gust
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact branch HEAD, no retained GitHub credential
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up pinned Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install pinned public-Zarr research reader dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-google-arco-2020-original-smoke.txt
+          python -m pip check
+      - name: Independently challenge source SHA, UTC and false-insurer claims offline
+        run: python -m unittest tests.test_ciara2020_google_arco_real_onehour_gust_v0 -v
+      - name: Read exactly one historical original public Google 10fg gridpoint hour
+        run: python research_runners/ciara2020_google_arco_real_onehour_gust_v0.py --live-one-hour
+
   eu-flood-spatial:
     name: EU flood spatial A1
     runs-on: ubuntu-24.04
