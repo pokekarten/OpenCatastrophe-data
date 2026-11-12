@@ -109,3 +109,22 @@ For GISCO, the 2021 census is **not** synonymous with the earlier noncommercial 
 5. For GHSL AGE and JRC GSW v1.5, freeze one exact pixel asset, compare source version/time and quality caveats; collect hashes/CRS/units first, then only permitted and scientifically defensible sample bytes in private Neon.
 
 The five use-case rights records do not override `access/*.json`, original provider agreements, or independent scientific suitability checks.
+
+## Third rights batch: explicit noncommercial/contractual hazards — 2026-11-12
+
+The main source registry and private Neon research table now also record **28 more** product-by-use-case source-rights assessments (the typed table therefore contains **63** observations for **nine** candidate products). No restricted source data was downloaded or stored.
+
+| Exact product | Official source-rights evidence | Research/noncommercial access | Commercial CAT pipeline | Source file / redistribution |
+| --- | --- | --- | --- | --- |
+| EM-DAT Public Data | [EM-DAT original data-access documentation](https://doc.emdat.be/docs/data-accessibility/), [commercial Database License Agreement](https://doc.emdat.be/docs/legal/database-license-agreement/) | Free to qualifying registered noncommercial organizations subject to terms; **not** generally open | **Prohibited under free product terms**, a separate annual paid commercial contract is required (published standard 2025 agreement lists EUR 6,000 per year) | Even the published paid contract limits use to direct internal employees and forbids disclosure, substitute/merged databases without separate written permission. **No data/API/samples imported** |
+| Cloudflare Radar API and downloads | [Cloudflare original licensing policies](https://radar.cloudflare.com/about) | CC BY-NC 4.0 with access/service conditions | **Prohibited under public data licence**; dedicated permission needed | Radar visual charts/images have separate CC BY 4.0 rights, **not a blanket licence** for the API JSON or outage records. **No API records imported** |
+| GEM Global Exposure **tag v2026.0.0** | [GEM original tagged repository](https://github.com/gem/global_exposure_model/tree/v2026.0.0) and [source licence](https://github.com/gem/global_exposure_model) | CC BY-NC-SA 4.0 with attribution/share-alike | **Prohibited by open licence**; negotiate GEM commercial licence | Tagged June 2026 version changed file/column structure. Do not copy building/cost fields into an insurer commercial dataset under the NC licence |
+| GEM Global Vulnerability **release v2026.0.0** | [GEM original product](https://www.globalquakemodel.org/product/global-vulnerability-model) and cited [Zenodo version](https://doi.org/10.5281/zenodo.20730225) | CC BY-NC-SA 4.0 with attribution/share-alike | **Prohibited by open licence**; obtain bespoke agreement | Country XML function data are scientific and legal model components, not unrestricted public vulnerability curves. No raw function bytes imported |
+
+**Legal distinction:** Cloudflare **graph images** and the **API data** are separate licensed products. Likewise, the EM-DAT *informational website* and the registered *data portal* must not share a single copyright verdict. A product advertised as "free for researchers" is not open to an insurer, a commercial agent or an unrestricted public synthetic-portfolio training workflow.
+
+All four affected `research.source_candidate_review_v0` records retain `rights_review_status=not_reviewed` and `admission_status=not_admitted`, because the evidence establishes only narrower use-case restrictions, not completed legal/scientific source admission. Recorded source-level commercial outcomes are one `prohibited` and three `restricted`; per-use-case `commercial_cat_modelling=prohibited` for all four under their **public/free** terms, with separately negotiated paid rights potentially available. None was sampled.
+
+### Source-hint triage (not a licence adjudication)
+
+A read-only first-pass search of the **remaining unreviewed** candidate notes/access hints identified **35** records containing expressions resembling non-commercial, research-only, academic-only or NC, and **32** with authentication/restricted/licence/registration hints (nonoverlapping first-match groups in the exploratory query). These counts are only search signals: source comments may describe an *exception* or *another product*. They are **not** license approval, prohibition, an API test result or proof of reviewed contracts. Direct provider evidence remains mandatory.
