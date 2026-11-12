@@ -55,3 +55,56 @@ CREATE TABLE IF NOT EXISTS research.source_usage_rights_v0 (
 --       AS source_byte_storage
 -- FROM research.source_usage_rights_v0
 -- GROUP BY source_id, product_scope;
+
+-- View is one legal-use dashboard across all existing source candidates.
+-- A source with no reviewed use-case is NOT NULL/implicitly allowed:
+-- it is explicitly surfaced as "not_checked", and remains not_admitted.
+-- The join is product-scoped: distinct release/region rights never overwrite
+-- each other, even if they share a generic provider or source_id.
+CREATE OR REPLACE VIEW research.source_rights_matrix_v0 AS
+SELECT
+    c.source_id,
+    c.source_name,
+    coalesce(r.product_scope, 'no_product_scoped_review') AS product_scope,
+    c.commercial_reuse_verdict AS broad_commercial_verdict,
+    coalesce(max(r.rights_result) FILTER (
+        WHERE r.use_case = 'internal_research'), 'not_checked') AS internal_research,
+    coalesce(max(r.rights_result) FILTER (
+        WHERE r.use_case = 'commercial_cat_modelling'), 'not_checked') AS commercial_cat_modelling,
+    coalesce(max(r.rights_result) FILTER (
+        WHERE r.use_case = 'automated_api_access'), 'not_checked') AS automated_api_access,
+    coalesce(max(r.rights_result) FILTER (
+        WHERE r.use_case = 'internal_neon_metadata'), 'not_checked') AS internal_neon_metadata,
+    coalesce(max(r.rights_result) FILTER (
+        WHERE r.use_case = 'internal_neon_source_sample'), 'not_checked') AS internal_neon_source_sample,
+    coalesce(max(r.rights_result) FILTER (
+        WHERE r.use_case = 'external_raw_redistribution'), 'not_checked') AS external_raw_redistribution,
+    coalesce(max(r.rights_result) FILTER (
+        WHERE r.use_case = 'published_derived_results'), 'not_checked') AS published_derived_results,
+    count(r.use_case)::integer AS explicit_use_cases_checked,
+    coalesce(s.sample_count, 0)::integer AS research_sample_count,
+    c.actual_sample_state,
+    c.rights_review_status,
+    c.admission_status,
+    c.authoritative_url
+FROM research.source_candidate_review_v0 AS c
+LEFT JOIN research.source_usage_rights_v0 AS r
+    ON r.source_id = c.source_id
+LEFT JOIN (
+    SELECT source_id, count(*) AS sample_count
+    FROM research.source_sample_v0
+    GROUP BY source_id
+) AS s
+    ON s.source_id = c.source_id
+GROUP BY c.source_id, c.source_name, r.product_scope,
+    c.commercial_reuse_verdict, s.sample_count,
+    c.actual_sample_state, c.rights_review_status,
+    c.admission_status, c.authoritative_url;
+
+-- Usage:
+-- SELECT source_id, product_scope, commercial_cat_modelling,
+--        automated_api_access, internal_neon_source_sample,
+--        research_sample_count, admission_status
+-- FROM research.source_rights_matrix_v0
+-- WHERE explicit_use_cases_checked > 0
+-- ORDER BY source_id;
