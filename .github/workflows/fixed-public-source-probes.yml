@@ -9,6 +9,10 @@ on:
       - 'tests/test_probe_fixed_public_sources_v0.py'
       - '.github/workflows/fixed-public-source-probes.yml'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fixed-public-source-probes.yml'
 
 permissions:
   contents: read
@@ -47,6 +51,8 @@ jobs:
         # Transient provider availability is a diagnostic, not a CI-scientific gate.
         # A failed probe remains visible as a failed step; no provider response is logged.
         id: provider_probe
+        # PR heads may contain unreviewed code; only trusted main/manual runs contact providers.
+        if: github.event_name != 'pull_request'
         continue-on-error: true
         run: python -m scripts.probe_fixed_public_sources_v0 --source ${{ matrix.source }}
       - name: Report actual provider probe outcome separately from workflow conclusion
@@ -78,7 +84,7 @@ jobs:
           fi
 
   reviewed-additional-source-probes:
-    name: Reviewed metadata probe (${{ matrix.source }})
+    name: Reviewed fixed source probe (${{ matrix.source }})
     needs: offline-contract-tests
     runs-on: ubuntu-24.04
     timeout-minutes: 4
@@ -89,6 +95,13 @@ jobs:
           - globaldamwatch.gdw.v1.0
           - noaa.coops.water-levels
           - storm.ibtracs.present-climate.v4.datacite
+          - dwd.cdc.extreme-wind.http-file
+          - esa.worldcover.2021.v200
+          - noaa.ncei.ghcnd-central-park-gzip
+          - noaa.nodd.ghcnd-central-park-complete
+          - noaa.nodd.ghcnd-central-park-range
+          - noaa.nodd.ghcnd-version-country
+          - usgs.3dep.s1m.tnmaccess
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -109,6 +122,27 @@ jobs:
             storm.ibtracs.present-climate.v4.datacite)
               python -m unittest tests.test_storm_v4_datacite_probe_v0 -v
               ;;
+            dwd.cdc.extreme-wind.http-file)
+              python -m unittest tests.test_probe_dwd_historical_directory_v0 -v
+              ;;
+            esa.worldcover.2021.v200)
+              python -m unittest tests.test_probe_esa_worldcover_tile_head_v0 -v
+              ;;
+            noaa.ncei.ghcnd-central-park-gzip)
+              python -m unittest tests.test_probe_ghcnd_ncei_us_station_gzip_v0 -v
+              ;;
+            noaa.nodd.ghcnd-central-park-complete)
+              python -m unittest tests.test_probe_ghcnd_full_station_original_v0 -v
+              ;;
+            noaa.nodd.ghcnd-central-park-range)
+              python -m unittest tests.test_probe_ghcnd_station_prefix_v0 -v
+              ;;
+            noaa.nodd.ghcnd-version-country)
+              python -m unittest tests.test_probe_ghcnd_nodd_version_country_v0 -v
+              ;;
+            usgs.3dep.s1m.tnmaccess)
+              python -m unittest tests.test_probe_usgs_s1m_florida_tnm_v0 -v
+              ;;
             *)
               echo "::error::Unreviewed source ID" >&2
               exit 2
@@ -116,6 +150,8 @@ jobs:
           esac
       - name: One fixed public-source read; no raw provider bytes persisted
         id: provider_probe
+        # Providers are contacted only by code already on main or manually dispatched.
+        if: github.event_name != 'pull_request'
         continue-on-error: true
         env:
           SOURCE_ID: ${{ matrix.source }}
@@ -131,6 +167,27 @@ jobs:
               ;;
             storm.ibtracs.present-climate.v4.datacite)
               python research_runners/storm_v4_datacite_probe_v0.py --probe-once
+              ;;
+            dwd.cdc.extreme-wind.http-file)
+              python -m scripts.probe_dwd_historical_directory_v0
+              ;;
+            esa.worldcover.2021.v200)
+              python -m scripts.probe_esa_worldcover_tile_head_v0 --live
+              ;;
+            noaa.ncei.ghcnd-central-park-gzip)
+              python scripts/probe_ghcnd_ncei_us_station_gzip_v0.py --live
+              ;;
+            noaa.nodd.ghcnd-central-park-complete)
+              python scripts/probe_ghcnd_full_station_original_v0.py --live
+              ;;
+            noaa.nodd.ghcnd-central-park-range)
+              python scripts/probe_ghcnd_station_prefix_v0.py --live
+              ;;
+            noaa.nodd.ghcnd-version-country)
+              python scripts/probe_ghcnd_nodd_version_country_v0.py --live
+              ;;
+            usgs.3dep.s1m.tnmaccess)
+              python scripts/probe_usgs_s1m_florida_tnm_v0.py --live
               ;;
             *)
               echo "::error::Unreviewed source ID" >&2
