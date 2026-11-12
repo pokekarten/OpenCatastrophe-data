@@ -5,14 +5,13 @@ SPDX-License-Identifier: Apache-2.0
 
 # GHSL R2023A E2020 — independent GDAL/LibTIFF original raster replay
 
-**2026-11-12.** Scientific status: second decoder **implemented and
-synthetically verified**, first new independent original-run outcome **not
-yet asserted**; the source workflow requires PR review and trusted main.
-Do not confuse reproducibility with independent scientific ground truth.
+**2026-11-12.** Scientific status: **independent original GDAL/LibTIFF
+replay successful** on trusted main (run 43317950827). This establishes
+two-decoder source-data equality, not building/insurer/CAT model validity.
 
 ## Frozen original source and provenance
 
-Previously verified, original JRC BUlLT-S and BUILT-V R2023A/2020
+Previously verified, original JRC BUILT-S and BUILT-V R2023A/2020
 32 KiB source-prefix and original compressed TIFF block 809 have been
 acquired under their product-scoped **CC BY 4.0** notices and tested in
 [trusted-main original run 43309743505](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43309743505).
@@ -72,10 +71,10 @@ No source TIFF/pixels/window, transient georeferenced features,
 reconstructed TIFF, secrets, spatial addresses or binary artifact
 is persisted into public GitHub or Neon.
 
-The successful outcome of the **new** workflow must be inspected
-separately before any claim of independent original-data parity or
-new validation receipt; tests with fabricated TIFFs alone do not prove
-that original provider bytes passed.
+The new original-provider workflow **has succeeded independently**
+on trusted main (run 43317950827). Synthetic tests alone were
+insufficient, so the successful main source logs were inspected and
+their original hash and numeric outputs are recorded below.
 
 ## Predeclared geometry and independent building-footprint follow-up
 
@@ -130,3 +129,44 @@ hazard, vulnerability, insured losses or production model fitness.
 No model input approval and no raw data persistence is granted by
 a successful test. Existing Neon research hashes and source-rights
 verdicts stay scoped to the original reviewed samples.
+
+
+## Independent original-source main acceptance receipt — 2026-11-12
+
+**SUCCESS:** [GHSL independent original GDAL Actions run
+43317950827](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43317950827)
+completed on reviewed main commit
+`52ee936b92a288d9c2ddf38013c1f104828516ea`.
+The source-specific PR tests passed six synthetic cases with pinned
+Rasterio 1.5.0 / NumPy 2.3.5 and the complete repository CI matrix
+passed before merge. Two subsequent **live JRC provider probes** each
+enforced original header SHA, HTTP-206 Content-Range and object size,
+one fixed compressed source block #809, and its original block SHA.
+
+| Independently decoded original evidence | BUILT-S | BUILT-V |
+| --- | --- | --- |
+| UTC successful live read | 22:14:00, 12 Nov 2026 | 22:14:01, 12 Nov 2026 |
+| Original compressed source block SHA-256 | `eae39538ec234c80d43f135e7022e1c2ad4be3e10d72dcdc2e82534431a276d9` | `578a62b6164f30ab82479e37cbfbf4353af2db18ff2eef65552aff5dce12e53c` |
+| Independently decoded original 512² UINT32 SHA-256 | `1d961e2c951e4db8df6e22776903aa06ea943a9f49728ef4a8fa8178506c8923` | `e91e026954d2f37d19c48ea87b3e33207e8c67e0efdda0d5c66589a3e751b5f5` |
+| Original fixed 32²-window SHA-256 | `2f1a3322b2081e70e8e7b08339dc14b61d5286605208f063fd57539e80121106` | `2929b3c7e33e00948ca6589bec268eb80ff59bafe13d9463e8440ee7bf298ec9` |
+| Positive / zero / candidate sentinel cells | **937 / 87 / 0** | **937 / 87 / 0** |
+| Positive source-unit sum | **74,802,406 m²** | **520,775,503 m³** |
+| Min / max positive source-unit value | 1 / 321,677 | 1 / 3,168,579 |
+| Original Neon observed-value sample (unchanged) | **49** | **50** |
+
+Thus **two distinct decoder implementations** reproduced the frozen
+original decompressed source SHA, window SHA and all predeclared
+numeric aggregates. GDAL/LibTIFF read the original uint32 values from
+a transient in-memory one-tile TIFF, with a strict 1MiB Deflate frame
+integrity gate. The independent code never emits, writes or commits
+native source pixel arrays or reconstructed TIFF bytes.
+
+**Do not double-count:** this corroboration concerns the same two
+Neon samples #49/#50; no new observation area or separate building
+inventory was added, and no model admission occurred. No full-original-
+TIFF hash or independent building ground truth exists. The official
+BVV Hausumringe database/index/CRS receipts and current public issuer
+ATOM feed are tracked separately in
+[the existing BVV research record](by-hausumringe-wsf2019-alignment-20261112.md).
+In particular actual BVV .shp polygon geometries and survey vintage
+remain unverified and no 2020-vs-2026 spatial accuracy was claimed.
