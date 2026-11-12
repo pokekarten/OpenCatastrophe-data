@@ -94,3 +94,21 @@ python -m unittest tests.test_probe_openfema_nfip_v3_metadata_v0 -v
 ```
 
 These v3 one-column checks test API metadata/readability only, **not availability of a legally reusable claim/policy dataset**, nor any substantive insurance-loss/sample modelling or cross-table join. Full claim/policy data remain intentionally uncollected.
+
+## All 707 source-record API coverage dashboard (private Neon, reproducible SQL)
+
+This same session additionally applied `research.source_api_smoke_receipt_v0`, `research.source_api_coverage_v0` and `research.all_source_api_coverage_v0` to the private Neon database. The complete schema and two views are maintained in [SQL](../../sql/research_source_api_coverage_v0.sql), with **zero** provider payload storage or source admission by these receipts.
+
+After the four original FEMA tests and the earlier bounded NOAA/European-source reads, **10** capability observations were staged: **9** parseable JSON/expected-shape smoke responses and **1** inconclusive NOAA SWPC response due to a malformed/truncated web transport capture. No provider outage is claimed for SWPC. The three earlier NOAA/FEMA v1/v2 real-source samples have receipts 6–8, the NFIP claims/policies v3 metadata checks have receipts 9–10. Provider SHA-256 and original data extracts, when present, are separately recorded in `research.source_sample_v0`.
+
+The full `research.all_source_api_coverage_v0` view joins **692** discovery candidates and **15** pre-existing admitted manifests. It maps the fixed WSV Dresden access-contract ID to the matching **admitted manifest**, rather than inventing a new landscape candidate. Current 707-record snapshot:
+
+| Registry type | Records | Parseable bounded smoke | Inconclusive smoke | No matching direct bounded smoke |
+| --- | ---: | ---: | ---: | ---: |
+| Landscape candidates | 692 | 8 | 1 | 683 |
+| Existing admitted manifests | 15 | 1 | 0 | 14 |
+| **Total** | **707** | **9** | **1** | **697** |
+
+**Crucial definition:** `not_tested` means **no bounded original HTTP request receipt is present in this table**, not an API failure, no source licence, or no other prior research. Some of the 707 sources are DOI catalogues, website portals, static file products or restricted providers and **have no API that should be blindly probed**. Existing manifest admission is pre-existing and not newly revalidated. A smoke probe never grants new source rights, model admission, or persisted raw-provider bytes.
+
+The `$top=0` large-response hazard discovered on both v3 endpoints is intentionally rejected in [the offline synthetic tests](../../tests/test_probe_openfema_nfip_v3_metadata_v0.py). To expand beyond these fixed operations, review the exact source's live API terms, access contract, sensitivity and acceptable byte limit first.
