@@ -5,6 +5,135 @@ SPDX-License-Identifier: Apache-2.0
 
 # Insurance Neon source rights and bounded sample staging — 2026-11-11
 
+## ESA WorldCover original-pixel summary staged to Neon — 2026-11-12
+
+A subsequent **non-destructive, source-scoped research staging** in the
+`insurance-risk-core` Neon database recorded an already independently
+documented provider-byte experiment. No fresh HTTP acquisition, new external
+source-byte copy or new model admission was performed during staging.
+
+- New `research.source_sample_v0` **sample #30**, source
+  `esa.worldcover.2021.v200`, `sample_kind=observed_values`.
+- Exact public upstream original-source execution and methodology:
+  [WorldCover block 185 receipt](esa-worldcover-v200-n48e009-one-real-classified-block185-20261101.md)
+  and [original successful Actions run](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41327465666)
+  dated **2026-11-01**. This is **historical source evidence**, not a
+  newly executed 2026-11-12 remote provider test.
+- Fixed N48E009 v200 original TIFF block 185, source Range
+  `bytes=43278196-43334637`, **56,442** original compressed bytes.
+  Provider-response SHA-256:
+  `526eb0819a9101a4e23df17dd70a040444190bb034528237fee29b415f9dd29a`.
+  The previously validated source metadata Range SHA-256 values are
+  `a74fc1ff4733c3afff09328e014c0731eba2f1912f3f5cbc330ed0700f3f3529`
+  (4 KiB header) and
+  `7de08710b64cad350b81da83a81fcfc0c74f5285e20e28b0a3e42d19151885ba`
+  (10,368-byte tile tables).
+- Original **1,048,576** decoded `uint8` pixels from one **1024 × 1024**
+  native block, decoded SHA-256
+  `5a7cd7ce34de5d054e0f134cd5823b6bac77314fd3a2431ee547fe40cc0b3b7e`.
+  Only the **aggregate** six-class histogram is staged:
+  class 10 = 433,361; 30 = 400,059; 40 = 185,821;
+  50 = 29,214; 60 = 52; 80 = 69. Class 50 is land-cover
+  `built-up`, **not an independently verified building count**.
+- SHA-256 of the actual canonical Neon JSONB representation:
+  `bcc8c39c263bdddb37173303324c5bc7616406fa4efb65031204e2d415b4ffc3`.
+  The canonical candidate's `actual_sample_state` was updated from
+  `metadata_only` to `collected_rights_cleared` **only for this reviewed
+  single-block research sample**. Product-scoped commercial reuse was already
+  recorded as `allowed_verified`. The original broad landscape
+  `rights_review_status=not_reviewed` and `admission_status=not_admitted`
+  remain unchanged.
+- Read-only verification after staging returned **30/30** exact JSONB hashes,
+  **20** distinct sampled source IDs, **zero** model approvals and
+  `source_byte_persistence_authorized=false` for sample #30.
+
+Read-only replay checks, against the designated research database:
+
+```sql
+SELECT sample_id, source_id, sample_kind, provider_response_sha256,
+       sample_sha256,
+       sample_sha256 = encode(sha256(convert_to(sample_json::text, 'UTF8')), 'hex')
+         AS canonical_sample_hash_ok,
+       sample_json->>'decoded_original_pixel_count' AS original_decoded_pixels,
+       model_input_approved, source_byte_persistence_authorized
+FROM research.source_sample_v0
+WHERE sample_id = 30 AND source_id = 'esa.worldcover.2021.v200';
+
+SELECT COUNT(*) AS sample_rows,
+       COUNT(*) FILTER (
+         WHERE sample_sha256 = encode(sha256(convert_to(sample_json::text, 'UTF8')), 'hex')
+       ) AS sample_hashes_valid,
+       COUNT(*) FILTER (WHERE model_input_approved) AS model_approvals
+FROM research.source_sample_v0;
+```
+
+**Interpretation:** This advances one source from header-only *stored evidence*
+to stored, original-source-derived **categorical class counts**. Neither the
+underlying raster block nor individual original pixel rows were stored in Neon,
+Git or this document. It is **not** source-wide coverage, an insurer exposure,
+a classified building census, full COG certification, land-cover ground truth,
+vulnerability calibration or a hazard/loss model-input admission.
+
+## Global Dam Watch original GIS quality evidence staged to Neon — 2026-11-12
+
+A second **aggregate-only original-source research summary** was transferred
+from public, independently executed 2026-11-04 GitHub Actions evidence to the
+Neon insurance research store. This is not a new original-provider retrieval
+or a right to publish the source ZIPs.
+
+- New `research.source_sample_v0` **sample #31**, source
+  `globaldamwatch.gdw.v1.0`, `sample_kind=observed_values`.
+  Replayed public evidence: [original full-source ZIP and GEOS audit](gdw-v1-original-byte-and-spatial-audit-20261104.md),
+  [two-format identical-invalid-ID audit](gdw-v1-original-gdb-shp-invalid-id-concordance-20261104.md)
+  and [successful exact-source Action](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41893588594).
+- One official Figshare v1 inventory, two independent original file formats.
+  Shapefile original (`47913754`, 69,745,749 B) SHA-256
+  `2fe0b367ed3fcfb299160cd9652b16a8a19338951026ee2ac91edfebf1f3b7ae`;
+  FileGDB original (`47913742`, 57,476,758 B) SHA-256
+  `5ebb1092e355f1833132be8a16340da7de979314d06aba00e57eb7412884f09f`.
+  The `provider_response_sha256` of sample #31 binds the Shapefile ZIP;
+  the separate GDB digest is retained as additional evidence, **not** an
+  invented combined-original hash.
+- Only original-source aggregate diagnostics were stored: **41,145**
+  barrier records; **35,295** reservoir polygons, of which **35,074**
+  GEOS-valid and **221** with ring self-intersections; **5,850**
+  point-only barriers. Both original formats identify the **same 221**
+  invalid polygon source IDs. No IDs or geometry values were exported.
+- Neon canonical JSONB sample SHA-256
+  `679764c943a750e4c32e7eb597bde447cc5babe12cbf8fcbd27868dc9a3b6700`.
+  The candidate's `actual_sample_state` advanced from `metadata_only`
+  to `collected_rights_cleared` at the **single reviewed version/scope**;
+  `commercial_reuse_verdict=allowed_verified` was previously source-scoped.
+  Broad discovery `rights_review_status=not_reviewed` and
+  `admission_status=not_admitted` remain unchanged.
+- The original GDW author requests **no wholesale rehosting of the unchanged
+  source files without written consent**; source ZIPs and individual source
+  geometries/coordinates/IDs are never copied to the public repository or Neon.
+  The 221 invalid native polygons are **not repaired or authorized for
+  unqualified spatial joins**. This is **not** dam-breach probability,
+  reservoir water level, hydrological connectivity, insured exposure, or CAT
+  hazard/loss validation.
+
+Minimal read-only audit:
+
+```sql
+SELECT sample_id, source_id, sample_kind,
+       provider_response_sha256, sample_sha256,
+       sample_sha256 = encode(sha256(convert_to(sample_json::text, 'UTF8')), 'hex')
+         AS sample_hash_ok,
+       sample_json->>'geos_invalid_original_reservoir_polygons'
+         AS original_invalid_polygons,
+       model_input_approved, source_byte_persistence_authorized
+FROM research.source_sample_v0
+WHERE sample_id = 31 AND source_id = 'globaldamwatch.gdw.v1.0';
+```
+
+**Next scientific gate:** inspect what changes, if anything, under one
+explicit alternative treatment of the 221 invalid source polygons, without
+changing original bytes, deleting IDs, or treating the geometry as hydraulically
+verified. Keep model-input approval false until an independently reviewed
+scientific consumer and rights scope exist.
+
 ## Verified post-merge execution update — 2026-11-12
 
 This section supersedes the historical `queued` observations in later chronological
