@@ -124,7 +124,7 @@ class OriginalCensusRasterPixelTests(unittest.TestCase):
     def test_wrong_epsg_nodata_band_map_and_bad_strip_block(self):
         for args in (
             {"srid": 4326}, {"nodata": "-8888"},
-            {"names": ("WRONG",) + BANDS[1:]},
+            {"names": ("X",) + BANDS[1:]},
             {"pixel": (NODATA,) + SYNTHETIC_POPULATION_BANDS[1:]},
             {"break_strip": True},
         ):
