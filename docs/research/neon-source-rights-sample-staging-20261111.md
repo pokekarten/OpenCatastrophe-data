@@ -74,6 +74,66 @@ Git or this document. It is **not** source-wide coverage, an insurer exposure,
 a classified building census, full COG certification, land-cover ground truth,
 vulnerability calibration or a hazard/loss model-input admission.
 
+## Global Dam Watch original GIS quality evidence staged to Neon — 2026-11-12
+
+A second **aggregate-only original-source research summary** was transferred
+from public, independently executed 2026-11-04 GitHub Actions evidence to the
+Neon insurance research store. This is not a new original-provider retrieval
+or a right to publish the source ZIPs.
+
+- New `research.source_sample_v0` **sample #31**, source
+  `globaldamwatch.gdw.v1.0`, `sample_kind=observed_values`.
+  Replayed public evidence: [original full-source ZIP and GEOS audit](gdw-v1-original-byte-and-spatial-audit-20261104.md),
+  [two-format identical-invalid-ID audit](gdw-v1-original-gdb-shp-invalid-id-concordance-20261104.md)
+  and [successful exact-source Action](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41893588594).
+- One official Figshare v1 inventory, two independent original file formats.
+  Shapefile original (`47913754`, 69,745,749 B) SHA-256
+  `2fe0b367ed3fcfb299160cd9652b16a8a19338951026ee2ac91edfebf1f3b7ae`;
+  FileGDB original (`47913742`, 57,476,758 B) SHA-256
+  `5ebb1092e355f1833132be8a16340da7de979314d06aba00e57eb7412884f09f`.
+  The `provider_response_sha256` of sample #31 binds the Shapefile ZIP;
+  the separate GDB digest is retained as additional evidence, **not** an
+  invented combined-original hash.
+- Only original-source aggregate diagnostics were stored: **41,145**
+  barrier records; **35,295** reservoir polygons, of which **35,074**
+  GEOS-valid and **221** with ring self-intersections; **5,850**
+  point-only barriers. Both original formats identify the **same 221**
+  invalid polygon source IDs. No IDs or geometry values were exported.
+- Neon canonical JSONB sample SHA-256
+  `679764c943a750e4c32e7eb597bde447cc5babe12cbf8fcbd27868dc9a3b6700`.
+  The candidate's `actual_sample_state` advanced from `metadata_only`
+  to `collected_rights_cleared` at the **single reviewed version/scope**;
+  `commercial_reuse_verdict=allowed_verified` was previously source-scoped.
+  Broad discovery `rights_review_status=not_reviewed` and
+  `admission_status=not_admitted` remain unchanged.
+- The original GDW author requests **no wholesale rehosting of the unchanged
+  source files without written consent**; source ZIPs and individual source
+  geometries/coordinates/IDs are never copied to the public repository or Neon.
+  The 221 invalid native polygons are **not repaired or authorized for
+  unqualified spatial joins**. This is **not** dam-breach probability,
+  reservoir water level, hydrological connectivity, insured exposure, or CAT
+  hazard/loss validation.
+
+Minimal read-only audit:
+
+```sql
+SELECT sample_id, source_id, sample_kind,
+       provider_response_sha256, sample_sha256,
+       sample_sha256 = encode(sha256(convert_to(sample_json::text, 'UTF8')), 'hex')
+         AS sample_hash_ok,
+       sample_json->>'geos_invalid_original_reservoir_polygons'
+         AS original_invalid_polygons,
+       model_input_approved, source_byte_persistence_authorized
+FROM research.source_sample_v0
+WHERE sample_id = 31 AND source_id = 'globaldamwatch.gdw.v1.0';
+```
+
+**Next scientific gate:** inspect what changes, if anything, under one
+explicit alternative treatment of the 221 invalid source polygons, without
+changing original bytes, deleting IDs, or treating the geometry as hydraulically
+verified. Keep model-input approval false until an independently reviewed
+scientific consumer and rights scope exist.
+
 ## Verified post-merge execution update — 2026-11-12
 
 This section supersedes the historical `queued` observations in later chronological
