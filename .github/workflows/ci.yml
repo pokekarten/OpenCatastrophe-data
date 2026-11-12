@@ -62,7 +62,11 @@ jobs:
       - name: Verify acquisition dependency consistency
         run: python -m pip check
       - name: Exercise real NetCDF4 reader with synthetic bytes
-        run: python -m unittest tests.test_glofas_v4_uparea_reader -v
+        run: >-
+          python -m unittest
+          tests.test_glofas_v4_uparea_reader
+          tests.test_ciara2020_nrw_era5_normalized_netcdf_v0
+          -v
 
   eu-flood-spatial:
     name: EU flood spatial A1
