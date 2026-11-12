@@ -34,7 +34,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install deterministic independent raster dependency versions
-        run: python -m pip install --no-input --disable-pip-version-check --only-binary=:all: "numpy==2.3.5" "rasterio==1.5.0"
+        run: |
+          python -m pip install --no-input --disable-pip-version-check --only-binary=:all: "numpy==2.3.5" "rasterio==1.5.0"
       - name: Offline synthetic uint32, Deflate and source-identity negative tests
         run: python -m unittest tests.test_ghsl_original_gdal_independent_replay_v0 -v
       - name: Independently decode original JRC BUILT-S block and match previous source SHA
