@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Actual original anonymous GCS Zarr .zarray metadata source bytes verified
+# by GitHub PR job on 2026-11-12 (NO actual wind values, NO CDS token).
+schema = "CIARA2020_GOOGLE_ARCO_ACTUAL_PUBLIC_ORIGINAL_METADATA_RECEIPT_20261112"
+as_of_utc_date = "2026-11-12"
+source = "Google Research ARCO ERA5 public Google Cloud Storage"
+origin = "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3"
+original_era5_doi = "10.24381/cds.adbb2d47"
+data_licence = "Copernicus Licence with C3S attribution (not Apache software licence)"
+metadata_origin_unauthenticated_public = true
+original_wind_data_values_read = false
+original_2020_96h_wind_data_read = false
+site_insurer_losses_or_real_RV_contracts_read = false
+native_GUL_IL_RI_OEP_AEP_admitted = false
+github_pr = 1506
+github_workflow_run_id = 43306507106
+github_workflow_job_id = 131491098112
+
+[original_variables."10m_wind_gust_since_previous_post_processing"]
+metadata_bytes = 373
+sha256 = "1e97549514364c3270a42a3af331173226d8f23a57c2378be9db14b924580800"
+dtype = "<f4"
+shape = [1323648, 721, 1440]
+chunks = [1, 721, 1440]
+
+[original_variables.latitude]
+metadata_bytes = 317
+sha256 = "aad0eee7c8a71375b715bf39cc2372e6e5f329ce0199f39ae82571a383aea41d"
+dtype = "<f4"
+shape = [721]
+chunks = [721]
+
+[original_variables.longitude]
+metadata_bytes = 319
+sha256 = "c5337a85069fa0fc78a930ecd2c9596325fabaa4df4b291f9b387639198baf56"
+dtype = "<f4"
+shape = [1440]
+chunks = [1440]
+
+[original_variables.time]
+metadata_bytes = 322
+sha256 = "78fbb0c14db1c7084fe8572fcb75de5f26457df949b66c4b825d0ca63f27d8e8"
+dtype = "<i8"
+shape = [1323648]
+chunks = [67706]
