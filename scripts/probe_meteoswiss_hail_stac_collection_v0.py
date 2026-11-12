@@ -55,7 +55,7 @@ def verify_contract(path: Path = CONTRACT) -> None:
         or contract["request_contract"]["path_templates"] != ["/api/stac/v1/collections/" + COLLECTION_ID]
         or contract["authentication"]["mode"] != "none"
         or probe["mode"] != "metadata_get"
-        or probe["operation"] != "read_fixed_hail_climate_stac_collection"
+        or probe["operation"] != "collection_metadata_get"
         or probe["requires_credentials"] is not False
         or rights["dataset_rights_status"] != "verified"
         or rights["api_terms_status"] != "separate_reviewed"
