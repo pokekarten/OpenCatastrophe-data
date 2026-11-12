@@ -120,3 +120,58 @@ Practical **source-format decision** for the 2021 V3 release, grounded in exact 
 For GHSL AGE, the original 1-km `.tif` is **11,015,723 compressed bytes inside the ZIP**, and the entire, CRC-verified age legend is a separate 209-byte uncompressed `.csv` member. A pixel-index join requires the verified native TIFF geotransform and nodata values, not merely the colour legend.
 
 The two file-inventory samples **#59 and #60** remain `sample_kind=public_metadata`, `model_input_approved=false` and `source_byte_persistence_authorized=false` and are distinct from the observed class/grid samples **#51/#52**.
+
+## First original 1-km **non-missing** Eurostat V3 raster pixel (2026-11-12)
+
+A new independent original provider **HTTP Range `bytes=535021482-535070633`** (49,152 B) read only the **local ZIP header and initial DEFLATE segment of the original `ESTAT_Census_2021_V3.tiff`** from [the exact V3 original source ZIP](https://gisco-services.ec.europa.eu/census/2021/Eurostat_Census-GRID_2021_V3.zip). It did **not** download the full TIFF or the 566-MB source archive.
+
+In-memory decoding of this nested TIFF and its first metadata directory produced these **native, not inferred** raster properties:
+
+| Original TIFF evidence | Verified value |
+| --- | --- |
+| Raster dimensions | **5,700 columns × 4,600 rows** |
+| Format | Classic little-endian TIFF; **14× signed int32** bands |
+| TIFF internal strip compression | DEFLATE/zlib, pixel-interleaved, one raster row per strip |
+| Source CRS | **EPSG:3035** from GeoKey, ETRS89-LAEA Europe |
+| GeoTIFF PixelScale | (1000, 1000, 0) m |
+| GeoTIFF tiepoint | (pixel 0,0) at projected x=900,000 m / y=5,500,000 m |
+| GDAL TIFF NoData | **-9999** (not a real negative population) |
+| GDAL band names from original XML | T, M, F, Y_LT15, Y_1564, Y_GE65, EMP, NAT, EU_OTH, OTH, SAME, CHG_IN, CHG_OUT, POPULATED |
+
+Using TIFF `StripOffsets`/`StripByteCounts` and the original ZIP-compressed prefix, source raster rows 100, 150 and 180 were **fully decompressed to 319,200 bytes of all 14 source bands each**. The following exploratory **top-edge-only**, nonrepresentative row quality preview was observed:
+
+| Row (zero-based) | Valid T cells (not -9999) | T positive | T NoData |
+| --- | ---: | ---: | ---: |
+| 100 | 88 | 2 | 5,612 |
+| 150 | 225 | 8 | 5,475 |
+| 180 | 226 | 9 | 5,474 |
+
+**One actual positive population cell, privately recorded in Neon as sample #63:**
+
+| Field | Original value |
+| --- | ---: |
+| TIFF row, column (zero-based) | **100, 4118** |
+| EPSG:3035 cell-centre x, y | **5,018,500 m / 5,399,500 m** |
+| `T` total residents | **396** |
+| `M` / `F` | **201 / 195** |
+| `Y_LT15`, `Y_1564`, `Y_GE65` | **45, 255, 96** |
+| `EMP` employed persons | **210** |
+| `NAT`, `EU_OTH`, `OTH` | **345, 39, 12** |
+| `SAME`, `CHG_IN`, `CHG_OUT` | **348, 45, 3** |
+| `POPULATED` | **1** |
+
+The **exact 49,152-byte original ZIP source response** is independently SHA-256 hashed in private Neon as **`80238bea7841928b220fbf61c980bafd61290f4bf2214a997686441593c09155`**. It is **only the bounded response SHA**, not the complete ZIP, TIFF, CSV or provider release. The original source TIFF metadata (projection, transform, NoData, 14 band labels) and actual pixel values were decoded from the binary TIFF, not copied from the separately sampled CSV; the CSV cross-check for the exact same grid ID remains to be performed.
+
+**Strict limitations:** TIFF alone lacks `CNTR_ID`, `GRD_ID`, unallocated country totals and the CSV's `LAND_SURFACE`; cross-border duplication, land-only ratios, disclosure suppression `-8888` and missing `-9999` must be independently handled. No original full-archive checksum, all-strip coverage, original full-file CRS-scientific regression or underwriting model admission was conducted. No individual resident, policyholder, building location or insured-value record was collected.
+
+New **offline, standard-library-only** [GeoTIFF exact 49,152-byte range QA script](../../research_runners/eurostat_gisco_v3_geotiff_one_cell_v0.py) pinning source URL/member, SHA-256, ZIP and TIFF schema, geokeys/affine transform, NoData, 14 band names, selected row 100 and column 4118; it **also verifies the TIFF scanline zlib stream (including Adler-32)** when run on locally supplied original Range bytes. Its [synthetic regression tests](../../tests/test_eurostat_gisco_v3_geotiff_one_cell_v0.py) construct a **different synthetic population pixel** and check version, CRC/integrity, ZIP identity, CRS, NoData and bad band structure. The script **has no network and was not yet itself run against the real original source bytes in this session**; original live provider bytes were independently decoded above. **Do not claim a live original Python-runner pass solely from offline CI.**
+
+```bash
+python -m unittest tests.test_eurostat_gisco_v3_geotiff_one_cell_v0 -v
+# After separately fetching the exact original 49,152-byte Range:
+python -m research_runners.eurostat_gisco_v3_geotiff_one_cell_v0 \
+  --original-range /path/to/bounded-original-49152-bytes.bin \
+  --expected-sha256 80238bea7841928b220fbf61c980bafd61290f4bf2214a997686441593c09155
+```
+
+The selected cell is a **population exposure covariate** for statistical research; it is **not** an independently geocoded insured building, flood hazard intensity, policy count, sum insured, modelled claim or CAT loss.
