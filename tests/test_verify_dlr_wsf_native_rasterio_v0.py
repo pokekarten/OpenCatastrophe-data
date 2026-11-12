@@ -78,10 +78,16 @@ class NativeRasterioCrosscheckTests(unittest.TestCase):
         independent pixel check does not depend on our pure-Python decoder.
         """
         import struct
-        import numpy as np
-        import rasterio
-        from rasterio.transform import from_origin
-        from rasterio.windows import Window
+        try:
+            import numpy as np
+            import rasterio
+            from rasterio.transform import from_origin
+            from rasterio.windows import Window
+        except ImportError:
+            # The general multi-Python CI deliberately does not install GDAL.
+            # The dedicated independent-gdal job installs pinned wheels and
+            # explicitly requires these imports before executing this test.
+            self.skipTest("GDAL/rasterio exercised in required dedicated job")
 
         with tempfile.TemporaryDirectory(prefix="oc-wsf-sparse-gdal-test-") as directory:
             original_path = Path(directory) / "synthetic-full.tif"
