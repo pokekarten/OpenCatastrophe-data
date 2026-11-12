@@ -71,6 +71,32 @@ class GoogleOriginalCiaraSingleHourTests(unittest.TestCase):
         self.assertFalse(result["source_original_GCS_full_chunk_sha256_verified"])
         self.assertFalse(result["German_wind_damage_vulnerability_or_native_GUL_IL_RI_OEP_AEP_admitted"])
 
+    def test_actual_first_google_2020_gust_receipt_value_and_no_loss_claim(self):
+        file = (ROOT / "research/observations/"
+                "ciara2020_google_arco_one_real_hour_10fg_receipt_20261112.toml")
+        with file.open("rb") as f:
+            actual = tomllib.load(f)
+        self.assertEqual(actual["github_workflow_job_id"], 131496043770)
+        self.assertEqual(actual["original_variable"], s.VAR)
+        self.assertEqual(actual["utc_hour"], "2020-02-09T12:00:00Z")
+        sample = m.validate_hour_sample(
+            variable=actual["original_variable"],
+            time_iso=actual["utc_hour"],
+            latitude=str(actual["grid_latitude"]),
+            longitude=str(actual["grid_longitude"]),
+            source_units="m/s",
+            value=actual["gust_mps_float32_as_python_string"],
+        )
+        self.assertEqual(
+            sample["gridpoint_value_float32_le_sha256_not_source_chunk_sha"],
+            actual["gust_float32_le_sha256_not_original_compressed_chunk_sha256"],
+        )
+        self.assertTrue(actual["original_one_hour_10fg_sample_obtained"])
+        self.assertFalse(actual["source_original_GCS_full_chunk_sha256_verified"])
+        self.assertFalse(actual["full_96hour_160node_ciara_original_data_replayed"])
+        self.assertFalse(actual["independent_German_wind_vulnerability_fit_done"])
+        self.assertFalse(actual["native_Oasis_NextGen_GUL_IL_RI_OEP_AEP_admitted"])
+
     def test_other_date_hours_units_and_10m_mean_wind_fail(self):
         cases = (
             dict(time_iso="2020-02-09T13:00:00Z"),
