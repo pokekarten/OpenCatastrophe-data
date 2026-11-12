@@ -14,13 +14,13 @@ on:
   workflow_dispatch:
     inputs:
       probe_mode:
-        description: "Offline full coverage or exactly 17 reviewed bounded live probes"
+        description: "Offline full coverage or exactly 18 reviewed bounded live probes"
         required: true
         default: audit_only
         type: choice
         options:
           - audit_only
-          - reviewed_17
+          - reviewed_18
   schedule:
     - cron: "23 5 * * 1"
 
@@ -50,6 +50,7 @@ jobs:
           tests.test_probe_fixed_public_sources_v0
           tests.test_probe_berlin_alkis_wfs_capabilities_v0
           tests.test_probe_meteoswiss_hail_stac_collection_v0
+          tests.test_probe_hydroatlas_figshare_v1_metadata_v0
           tests.test_berlin_alkis_source_access_contract_v0
           tests.test_probe_ghcnd_ncei_us_station_gzip_v0
           tests.test_probe_ghcnd_full_station_original_v0
@@ -64,9 +65,9 @@ jobs:
           cat "$RUNNER_TEMP/source-api-readiness.md" >> "$GITHUB_STEP_SUMMARY"
 
   reviewed-live-probes:
-    name: Sequentially verify only the 17 explicitly reviewed public capabilities
+    name: Sequentially verify only the 18 explicitly reviewed public capabilities
     needs: full-offline-contract-audit
-    if: github.event_name == 'workflow_dispatch' && inputs.probe_mode == 'reviewed_17'
+    if: github.event_name == 'workflow_dispatch' && inputs.probe_mode == 'reviewed_18'
     runs-on: ubuntu-24.04
     timeout-minutes: 38
     steps:
@@ -81,6 +82,7 @@ jobs:
           tests.test_probe_fixed_public_sources_v0
           tests.test_probe_berlin_alkis_wfs_capabilities_v0
           tests.test_probe_meteoswiss_hail_stac_collection_v0
+          tests.test_probe_hydroatlas_figshare_v1_metadata_v0
           tests.test_berlin_alkis_source_access_contract_v0
           tests.test_probe_ghcnd_ncei_us_station_gzip_v0
           tests.test_probe_ghcnd_full_station_original_v0
