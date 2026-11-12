@@ -53,7 +53,7 @@
   },
   "probe_contract": {
     "mode": "metadata_get",
-    "operation": "read_fixed_hail_climate_stac_collection",
+    "operation": "collection_metadata_get",
     "requires_credentials": false,
     "expected_evidence": [
       "One original HTTPS 200 STAC Collection JSON with no redirects and strict 256-KiB response cap",
