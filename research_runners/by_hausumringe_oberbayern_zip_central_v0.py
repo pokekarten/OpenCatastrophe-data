@@ -80,7 +80,7 @@ def inspect_suffix(raw: bytes, *, status: int, response_url: str, headers) -> di
     if (disk, cd_disk, disk_entries, entries, size, offset, comment) != (
         0, 0, 4, 4, CENTRAL_SIZE, CENTRAL_START, 0
     ):
-        raise CentralBlocked("ZIP central directory size, offset or cardinailty drift")
+        raise CentralBlocked("ZIP central directory size, offset or cardinality drift")
     pos = CENTRAL_START - START
     if pos < 0 or pos + CENTRAL_SIZE != tail:
         raise CentralBlocked("ZIP directory does not fit exact bounded suffix")
@@ -95,7 +95,7 @@ def inspect_suffix(raw: bytes, *, status: int, response_url: str, headers) -> di
             struct.unpack_from("<HHHHHHIIIHHHHHII", raw, pos+4)
         )
         if (needed > 20 or flags != 0 or method != 8 or diskstart != 0
-                or name_len != 15 or extra_len != 0 or comment_len != 0
+                or name_len != 15 or extra_len + comment_len != 36
                 or compressed <= 0 or inflated <= 0):
             raise CentralBlocked("ZIP encryption, ZIP64 or unexpected member encoding")
         finish = pos+46+name_len
@@ -115,7 +115,9 @@ def inspect_suffix(raw: bytes, *, status: int, response_url: str, headers) -> di
             "directory_claim_local_header_offset": local_offset,
             "directory_crc32_claim": f"{crc:08x}",
         })
-        pos = finish
+        if finish + extra_len + comment_len > tail:
+            raise CentralBlocked("ZIP extra/comment exceeds fixed suffix")
+        pos = finish + extra_len + comment_len
     if pos != tail or set(x["name"] for x in records) != set(FROZEN):
         raise CentralBlocked("four expected original Shapefile members not exhausted")
     ordered = sorted(records, key=lambda x:x["directory_claim_local_header_offset"])
