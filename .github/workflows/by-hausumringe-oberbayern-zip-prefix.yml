@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: BVV Oberbayern original open ZIP 4KiB source connectivity
+on:
+  pull_request:
+    paths:
+      - 'research_runners/by_hausumringe_oberbayern_zip_prefix_v0.py'
+      - 'tests/test_by_hausumringe_oberbayern_zip_prefix_v0.py'
+      - '.github/workflows/by-hausumringe-oberbayern-zip-prefix.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'research_runners/by_hausumringe_oberbayern_zip_prefix_v0.py'
+      - '.github/workflows/by-hausumringe-oberbayern-zip-prefix.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Source-specific fake ZIP, strict Range, redirect and format regression tests
+        run: python -m unittest tests.test_by_hausumringe_oberbayern_zip_prefix_v0 -v
+  bounded-trusted-live:
+    needs: offline-source-contract
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Exactly one original BVV 4KiB HTTPS Range without full ZIP download
+        id: provider_probe
+        continue-on-error: true
+        run: python -m research_runners.by_hausumringe_oberbayern_zip_prefix_v0 --live
+      - name: Explicit actual provider result distinct from green diagnostic workflow
+        if: always()
+        shell: bash
+        env:
+          PROBE_OUTCOME: ${{ steps.provider_probe.outcome }}
+          CODE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          case "$PROBE_OUTCOME" in
+            success) state=SUCCEEDED ;;
+            failure) state=FAILED ;;
+            skipped|"") state=NOT_RUN ;;
+            *) state=UNKNOWN ;;
+          esac
+          {
+            printf '### BVV Hausumringe original 4KiB ZIP prefix (diagnostic only)\n\n'
+            printf '| Provider step | **%s** |\n' "$state"
+            printf '| Workflow SHA | `%s` |\n' "$CODE_SHA"
+            printf '\nNo full archive, Shapefile features, original geometries, Neon writes, licence or CAT model admission.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$PROBE_OUTCOME" == failure ]]; then
+            echo "::warning title=BVV original 4KiB access blocked::A green diagnostic job does not mean the provider was reachable."
+          fi
