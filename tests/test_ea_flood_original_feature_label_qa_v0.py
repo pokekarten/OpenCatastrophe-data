@@ -150,6 +150,45 @@ class EAFloodOriginalFeatureLabelQATests(unittest.TestCase):
         with self.assertRaises(FeatureLabelBlocked):
             check(doc)
 
+    def test_coordinate_tree_rejects_missing_malformed_or_non_numeric_values(self):
+        invalid = [
+            None, [], [None], [[None]], [[[]]],
+            [[[[0.11, 50.22, 0.3, 7.0]]]],
+            [[[[True, 50.22]]]],
+            [[[[0.11, None]]]],
+            [[[[0.11, "50.22"]]]],
+            [[[[0.11, 50.22], [0.12, float("inf")]]]],
+        ]
+        for coordinates in invalid:
+            with self.subTest(coordinates=repr(coordinates)[:60]):
+                data = fixture()
+                data["features"][0]["geometry"]["coordinates"] = coordinates
+                with self.assertRaises(FeatureLabelBlocked):
+                    check(data)
+
+    def test_coordinate_position_limit_blocks_oversized_feature(self):
+        data = fixture()
+        data["features"][0]["geometry"]["coordinates"] = [
+            [[[0.1, 50.2]] * 4097]
+        ]
+        with self.assertRaisesRegex(FeatureLabelBlocked, "too many"):
+            check(data)
+
+    def test_coordinate_structure_check_does_not_claim_topology_or_crs(self):
+        out = check(fixture())
+        self.assertTrue(out["geometry_coordinate_tree_structurally_checked"])
+        self.assertFalse(out["geometry_topology_verified"])
+        self.assertFalse(out["geometry_crs_verified"])
+        data = fixture()
+        data["features"][0]["geometry"] = {
+            "type": "Polygon",
+            "coordinates": [[[0.1, 50.2, 0.0], [0.11, 50.21, 1.0]]],
+        }
+        out = check(data)
+        self.assertTrue(out["geometry_coordinate_tree_structurally_checked"])
+        self.assertFalse(out["geometry_topology_verified"])
+        self.assertFalse(out["model_data_admitted"])
+
     def test_reject_invalid_property_numeric_types(self):
         doc = fixture()
         doc["features"][0]["properties"]["shape_area"] = False
