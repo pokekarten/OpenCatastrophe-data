@@ -5,6 +5,8 @@ SPDX-License-Identifier: Apache-2.0
 
 # Oberbayern HU-BY original Shapefile — bounded first Polygon proof
 
+**Successful actual trusted-main source run:** [GitHub Actions #43320212959](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43320212959), merged original source commit `93386a86ddf383824de04daad9d76557d6c24e03`, first original Polygon record has now been decoded successfully. This remains a **single-source-record structural receipt**, not a 2.7-million-feature scientific admission or 2020 footprint comparison.
+
 **Source scope:** one public, official Bavarian Vermessungsverwaltung
 Hausumringe *Oberbayern* 2026 regional ZIP, not private ALKIS WFS and
 not federal HU-DE. Existing [BVV original ZIP/DBF/SHX/PRJ research
@@ -103,3 +105,88 @@ vintage, geographic completeness around the fixed GHSL E2020
 32×32 window, exact individual building counts, modelled
 BUILT-S/V accuracy against a historical 2020 reference, insured
 TIV, any OED exposure ingestion and CAT model approval.
+
+## Actual first source Polygon success and Neon staging — 2026-11-12
+
+**Verified first-party original source execution:**
+[trusted main GitHub Actions #43320212959](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43320212959),
+from reviewed merge commit
+`93386a86ddf383824de04daad9d76557d6c24e03`.
+The source-specific synthetic suite and full PR Python 3.11–3.14 / Berlin CI
+checks passed prior to
+[PR #1523 merge](https://github.com/pokekarten/OpenCatastrophe-data/pull/1523).
+The main-only source action then **succeeded** on one exact official original
+`hausumringe.shp` ZIP-member prefix, returning confirmed HTTP 206,
+the exact fixed `bytes=275903-325099/174299765` response identity,
+original ZIP header and SHP header, and the first complete native Polygon.
+
+| Original first-party verified fact | Exact proven result |
+| --- | --- |
+| Original publisher source | Official BVV Oberbayern open Hausumringe ZIP (CC BY 4.0, attribution) |
+| Original live UTC | **2026-11-12 22:28:33 UTC** |
+| Exact original ranged ZIP response bytes | **49,197 bytes** |
+| Original exact ranged HTTP response SHA-256 | `8a3c95bbbca493b192f6923fa4b6060798f561775f647bd34ffd4fc3af316f80` |
+| ZIP raw-DEFLATE original SHP compressed-prefix SHA-256 | `e484f0225b8a85677c6824b258ffddd5833d727f1cc154667e05787cb5104b80` |
+| Original bounded decompressed leading SHP bytes | **147,376** |
+| Original bounded decompressed prefix SHA-256 | `fad5abf8ffcd4421acb35b338e7b262c53a780d847318381b411547c86457803` |
+| Complete 100-byte native original SHP header SHA-256 | `f312c12beea148041db5ebf9727ad2aca59e036bef4665aae47402008f02bb09` |
+| Original first complete native Polygon record content SHA-256 | `f6c7b5bc74f1d040a7280f0eb238c0f007aa6126c8c711f71f255b4f6f0c00ab` |
+| Original first record type | **Polygon (5)** |
+| Original first record rings / vertices | **1 ring, 7 points** |
+| Ring closure and internal bbox vs all points | **Both independently checked true** |
+| Independent GEOS/Shapely validity of original Polygon | **Not yet tested** |
+| Exact whole ZIP/SHP byte hash or all features | **Not tested** |
+| Original cadastre survey snapshot date | **Unverified** |
+
+The source runner verified all seven original shape coordinate inputs as
+finite and within the frozen source's broad EPSG:25832 bounding envelope,
+but **emitted neither individual source coordinates nor the first
+Polygon's bbox**, and did not persist original source bytes, geometry,
+identifiers, ring vertex arrays or asset locations.
+
+**Stored directly in the separate insurance Neon research DB:**
+
+- `research.source_sample_v0.sample_id=61`,
+  `source_id=de.bayern.hausumringe`,
+  `sample_kind=observed_values` (one *original* polygon's structure,
+  not an insurance loss or whole inventory);
+- `provider_response_sha256` = exact original 49,197-byte
+  source range hash `8a3c95bbbca493b192f6923fa4b6060798f561775f647bd34ffd4fc3af316f80`;
+- canonical Neon JSONB-SHA-256
+  `6d9d6f30f065822bc9a3a985f2db336d58bd87ba6570794cb2d37ea95559607d`;
+- product-scoped **CC BY 4.0** backed by the original BVV
+  `Gebühren- und Preisliste` §7.4 and feed, attribution unchanged;
+  linked dataset ATOM rights tag `TODO` independently recorded as
+  a metadata inconsistency in #53/54;
+- both `research_only=true` and
+  `model_input_approved=false`,
+  `source_byte_persistence_authorized=false`;
+- candidate advanced only in this **first-record-source research
+  scope** from `actual_sample_state=metadata_only` to
+  `collected_rights_cleared` while
+  `commercial_reuse_verdict=allowed_verified` remains source-scoped
+  and `admission_status=not_admitted` remains unchanged.
+
+Safe *read-only* research replay:
+
+```sql
+SELECT sample_id, source_id, sample_kind, provider_response_sha256,
+       sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex')
+          AS sample_hash_ok,
+       sample_json->>'original_first_record_parts' AS original_parts,
+       sample_json->>'original_first_record_points' AS original_points,
+       sample_json->>'original_first_record_rings_closed' AS ring_closed,
+       sample_json->>'source_geometry_observation_restricted_to_first_record' AS first_record_only,
+       model_input_approved,source_byte_persistence_authorized
+FROM research.source_sample_v0
+WHERE sample_id=61 AND source_id='de.bayern.hausumringe';
+```
+
+**Strict remaining limitations:** one first native Polygon record
+establishes only *bounded, first-record binary consistency*. It does
+**not** validate all 2,703,736 source indexed records, GEOS
+self-intersection validity, actual building counts or insurance
+exposure, original SHP CRC or full file hash, publisher geometry
+completeness, snapshot vintage, historical 2020 buildings, or
+independent GHSL R2023A E2020 model validation. No insurer TIV,
+OED exposure, hazard/vulnerability or CAT model admission.
