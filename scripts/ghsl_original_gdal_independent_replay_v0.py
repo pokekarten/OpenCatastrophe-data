@@ -18,6 +18,7 @@ import json
 import struct
 import sys
 import warnings
+import zlib
 from datetime import datetime, timezone
 
 from scripts.probe_ghsl_built_native_original_block_v0 import (
@@ -87,6 +88,18 @@ def decode_gdal_aggregate(compressed: bytes) -> dict:
         from rasterio.errors import NotGeoreferencedWarning, RasterioIOError
     except ImportError as exc:
         raise IndependentGHSLBlocked("pinned rasterio/numpy dependency unavailable") from exc
+    # LibTIFF can silently truncate an over-inflating stream into one tile.
+    # Require the entire exact Deflate frame to decode to precisely the
+    # reviewed 1MiB native tile BEFORE using GDAL for independent cell values.
+    # This is an input-envelope check, not the independent numeric decoder.
+    try:
+        stream = zlib.decompressobj()
+        inflated = stream.decompress(compressed, NATIVE_BYTES + 1)
+        if (len(inflated) != NATIVE_BYTES or not stream.eof
+                or stream.unused_data or stream.unconsumed_tail):
+            raise IndependentGHSLBlocked("native source Deflate envelope length/trailing bytes invalid")
+    except zlib.error as exc:
+        raise IndependentGHSLBlocked("invalid TIFF source Deflate frame") from exc
     blob = make_ram_only_one_tile_tiff(compressed)
     try:
         with warnings.catch_warnings():
