@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Bavaria Hausumringe vs WSF2019 offline spatial gate
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/by_hausumringe_wsf2019_spatial_gate_v0.py'
+      - 'tests/test_by_hausumringe_wsf2019_spatial_gate_v0.py'
+      - '.github/workflows/by-hausumringe-wsf2019-spatial-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-synthetic-geometry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned GEOS and PROJ wheels without original source datasets
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: "shapely==2.1.2" "pyproj==3.7.2"
+      - name: Require exact GIS deps (no silent geospatial skips)
+        run: python -c 'import shapely, pyproj; assert shapely.__version__ == "2.1.2" and pyproj.__version__ == "3.7.2"'
+      - name: Synthetic fractional overlap and fail-closed source tests
+        run: python -m unittest tests.test_by_hausumringe_wsf2019_spatial_gate_v0 -v
