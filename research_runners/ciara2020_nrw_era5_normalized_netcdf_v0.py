@@ -168,9 +168,14 @@ def summarize_grid_exposure(
         or sum(nodes.values()) != expected_sites
         or sum(tivs.values()) != expected_tiv
         or set(nodes) != set(tivs)
-        or any(n <= 0 or tiv <= 0 for n, tiv in zip(nodes.values(), tivs.values()))
+        or any(nodes[node] <= 0 or tivs[node] <= 0 for node in nodes)
         or len(gust.get("grid_peaks", {})) != 160):
         raise CiaraNetCDFBlocked("10k source-derived grid/tiv support changed")
+    if (expected_sites == EXPECTED_SITES
+        and (len(nodes) != 93
+             or plan.get("requested_atmospheric_grid_nodes_0p25deg") != 160
+             or plan.get("source_derived_10k_archive_sha256") != SOURCE_ARTIFACT_SHA256)):
+        raise CiaraNetCDFBlocked("official source-derived 10k grid population or archive pin drift")
     signature = "".join(
         f"{lat}:{lon}:{nodes[(lat,lon)]}\n" for lat, lon in sorted(nodes)
     ).encode("ascii")
