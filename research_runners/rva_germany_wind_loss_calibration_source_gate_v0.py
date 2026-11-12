@@ -78,6 +78,18 @@ REQUIRED_GATES = {
 }
 
 
+# Stable structured barriers for downstream Native Oasis / NextGen admission.
+# These are **missing evidence**, not numerical parameters to fit.
+MODEL_NO_GO = (
+    "INSURER_EVENT_MATCHED_WIND_ONLY_LOSS_DENOMINATOR_MISSING",
+    "GERMAN_BUILDING_VULNERABILITY_OUT_OF_SAMPLE_VALIDATION_MISSING",
+    "RV_POLICY_COVERAGE_DEDUCTIBLES_AND_TREATY_TERMS_MISSING",
+    "DARIA1990_MATCHED_INSURED_CLAIMS_AND_1990_EXPOSURE_MISSING",
+    "DATA_RIGHTS_AND_PRODUCT_SPECIFIC_CALIBRATION_APPROVAL_MISSING",
+    "ANNUAL_STORM_FREQUENCY_AND_LOSS_ORDERING_VALIDATION_MISSING",
+)
+
+
 class SourceRightsBlocked(ValueError):
     """Source research reference may not be promoted to accepted calibration data."""
 
@@ -196,18 +208,40 @@ def validate_registry(doc: dict) -> dict:
         "EIOPA_original_exposure_source_pinned_metadata_CRC_passed": True,
         "EIOPA_original_exposure_claims_data_rights_or_cells_admitted": False,
         "licence_or_data_reuse_approval_inferred": False,
+        "native_German_wind_GUL_IL_RI_OEP_AEP_admitted": False,
+        "scientific_and_licensing_model_no_go": list(MODEL_NO_GO),
     }
+
+
+def require_admitted_loss_calibration(doc: dict) -> None:
+    """Fail closed before a native loss run on the research-only source register.
+
+    This v0 registry deliberately has no approved claim-based calibration
+    entries. It is NOT possible to promote a source just by changing a flag:
+    that requires a new reviewed schema, rights evidence and independent tests.
+    """
+    status = validate_registry(doc)
+    if status["native_German_wind_GUL_IL_RI_OEP_AEP_admitted"] is not False:
+        raise SourceRightsBlocked("unsafe native model admission state")
+    raise SourceRightsBlocked(
+        "NO_GO_NATURAL_CATASTROPHE_LOSS_MODEL: " +
+        ",".join(status["scientific_and_licensing_model_no_go"])
+    )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-register", type=Path, default=DEFAULT)
+    parser.add_argument("--require-admitted-loss-calibration", action="store_true",
+                        help="explicit native-model preflight; fail closed on v0 sources")
     p = parser.parse_args()
     try:
         if p.source_register.is_symlink() or p.source_register.stat().st_size > 80_000:
             raise SourceRightsBlocked("source register path is untrusted")
         doc = tomllib.loads(p.source_register.read_text(encoding="utf-8"))
         report = validate_registry(doc)
+        if p.require_admitted_loss_calibration:
+            require_admitted_loss_calibration(doc)
         print(json.dumps(report, sort_keys=True))
         return 0
     except (OSError, tomllib.TOMLDecodeError, SourceRightsBlocked, TypeError, KeyError, AttributeError) as exc:
