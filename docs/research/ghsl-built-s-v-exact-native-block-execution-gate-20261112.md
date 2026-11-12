@@ -5,10 +5,87 @@ SPDX-License-Identifier: Apache-2.0
 
 # GHSL BUILT-S / BUILT-V R2023A — original native E2020 block proof gate
 
-**2026-11-12 design and executable implementation. The first new
-original-provider block run is NOT claimed until its main-branch Actions
-logs are inspected.** This is a read-only research-only original-value
-sample candidate, not source/model admission.
+**2026-11-12 execution and original-source research receipt.** The first
+main source run was blocked by an overly strict TIFF tag parser; a corrected
+second main source run succeeded and is independently documented below.
+These are limited original-source research values, not CAT model admission.
+
+## Successful original provider-byte and Neon research staging — 2026-11-12
+
+**Verified main-source run:**
+[GitHub Actions #43309743505](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43309743505),
+exact main merge commit
+`c6c2dff480dc72ef77b7f141ba1a8dd2d12c6249`, all source-specific
+synthetic/offline tests and **both live original-source probe steps
+completed successfully**. This followed the fail-closed first run and
+narrow original TIFF SHORT-tag fix in
+[PR #1512](https://github.com/pokekarten/OpenCatastrophe-data/pull/1512).
+No original source bytes, full TIFF, individual raw cells, feature IDs
+or actual building coordinates were saved to Git or Neon.
+
+The runner fetched the exact fixed 32 KiB TIFF original header per product,
+reverified its SHA-256, checked **HTTP 206**, Content-Range/full file size,
+expected Deflate uint32 encoding, EPSG:4326 and original native offset
+tables. It then fetched exactly **one** immutable indexed original TIFF
+block per product, and decoded exactly **262,144 original uint32 raster
+cells (1,048,576 bytes)** transiently. One previously chosen
+**32×32 (1,024 cell)** native source window was aggregated, with no
+original pixel row or array logged, committed or imported.
+
+| Actual original result | BUILT-S surface | BUILT-V volume |
+| --- | ---: | ---: |
+| Original source UTC | 2026-11-12 21:23:21 | 2026-11-12 21:23:22 |
+| Original compressed block bytes | **523,373** | **570,557** |
+| Original compressed source block SHA-256 | `eae39538ec234c80d43f135e7022e1c2ad4be3e10d72dcdc2e82534431a276d9` | `578a62b6164f30ab82479e37cbfbf4353af2db18ff2eef65552aff5dce12e53c` |
+| Independently decoded native block SHA-256 | `1d961e2c951e4db8df6e22776903aa06ea943a9f49728ef4a8fa8178506c8923` | `e91e026954d2f37d19c48ea87b3e33207e8c67e0efdda0d5c66589a3e751b5f5` |
+| Exact 32×32 original window uint32 LE SHA-256 | `2f1a3322b2081e70e8e7b08339dc14b61d5286605208f063fd57539e80121106` | `2929b3c7e33e00948ca6589bec268eb80ff59bafe13d9463e8440ee7bf298ec9` |
+| Positive original source cells | **937** | **937** |
+| Zero source cells | **87** | **87** |
+| Potential uint32-max sentinel cells in window | **0** | **0** |
+| Sum of positive source values in window | **74,802,406 m²** built-up surface | **520,775,503 m³** modelled built-up volume |
+| Minimum/maximum positive cell values | 1 / 321,677 | 1 / 3,168,579 |
+| Insurance Neon `sample_id` | **49** | **50** |
+| Canonical Neon JSONB SHA-256 | `9b3e183d113c10f0fa1a1142ce9041813043874980eac67f038ef39802fd0ed5` | `a9bf86d9fbbe6c84fbd81ad6050a2d8774171af38953b7976e6dd48eabc01876` |
+
+The original provider **block response SHA-256** is stored as
+`provider_response_sha256` in Neon, *not* a claimed whole-object hash.
+The signed-off source `rights_scope` is limited to the documented
+CC BY 4.0 research sample. Both candidates were advanced from
+`actual_sample_state=metadata_only` to
+`collected_rights_cleared` **only for that single reviewed original
+window**, retaining `commercial_reuse_verdict=allowed_verified`,
+`admission_status=not_admitted` and all
+`model_input_approved=false` flags. The original 32KiB prefix-only
+samples **#43/#44** remain historical provenance alongside the actual
+aggregate **#49/#50**.
+
+Read-only replay inside the designated insurance Neon research database:
+
+```sql
+SELECT sample_id, source_id, sample_kind, provider_response_sha256,
+       sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')), 'hex')
+         AS canonical_sample_hash_ok,
+       sample_json->>'original_source_decoded_block_sha256' AS decoded_block_sha,
+       sample_json->>'fixed_window_positive_non_sentinel_cells' AS positive_cells,
+       sample_json->>'fixed_window_zero_cells' AS zero_cells,
+       sample_json->>'fixed_window_positive_sum_raw_source_units' AS raw_unit_sum,
+       model_input_approved, source_byte_persistence_authorized
+FROM research.source_sample_v0
+WHERE sample_id IN (49, 50);
+```
+
+**Scientific interpretation remains explicitly limited:** built-up
+surface per cell (m²) and modelled building volume per cell (m³)
+are dependent GHSL estimates, not two independent building censuses.
+The identical spatial nonzero mask does not prove roof/structure
+identity, independent height, occupancy or TIV. At 30 arcseconds in
+EPSG:4326, source raster grid pitch is angular and cannot itself be
+treated as constant metric cell area. Full original TIFF SHA-256,
+source-wide coverage, NoData semantics beyond the fixed observed
+window, systematic spatial/temporal uncertainty, independent reference
+building footprints and CAT model fitness are **not validated**.
+Do not infer average height, unique buildings, insured TIV or event losses
+from a ratio of these source sums. No source-model admission occurred.
 
 ## First original execution diagnosis and exact schema correction — 2026-11-12
 
