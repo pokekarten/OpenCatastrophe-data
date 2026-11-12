@@ -146,21 +146,7 @@ Using TIFF `StripOffsets`/`StripByteCounts` and the original ZIP-compressed pref
 | 150 | 225 | 8 | 5,475 |
 | 180 | 226 | 9 | 5,474 |
 
-**One actual positive population cell, privately recorded in Neon as sample #63:**
-
-| Field | Original value |
-| --- | ---: |
-| TIFF row, column (zero-based) | **100, 4118** |
-| EPSG:3035 cell-centre x, y | **5,018,500 m / 5,399,500 m** |
-| `T` total residents | **396** |
-| `M` / `F` | **201 / 195** |
-| `Y_LT15`, `Y_1564`, `Y_GE65` | **45, 255, 96** |
-| `EMP` employed persons | **210** |
-| `NAT`, `EU_OTH`, `OTH` | **345, 39, 12** |
-| `SAME`, `CHG_IN`, `CHG_OUT` | **348, 45, 3** |
-| `POPULATED` | **1** |
-
-The **exact 49,152-byte original ZIP source response** is independently SHA-256 hashed in private Neon as **`80238bea7841928b220fbf61c980bafd61290f4bf2214a997686441593c09155`**. It is **only the bounded response SHA**, not the complete ZIP, TIFF, CSV or provider release. The original source TIFF metadata (projection, transform, NoData, 14 band labels) and actual pixel values were decoded from the binary TIFF, not copied from the separately sampled CSV; the CSV cross-check for the exact same grid ID remains to be performed.
+**One actual positive population cell** has been isolated at TIFF row **100**, column **4118** (zero-based); the complete **14-band source values** and source-range SHA-256 are retained **only** in private Neon **sample #63** and not reproduced as raw source cell values in this public, reference-only repository. The native EPSG:3035 cell-centre location is **X 5,018,500 m, Y 5,399,500 m**. This confirms a real positive total-population reading, not an observation about insured persons or buildings.\n\nThe **exact 49,152-byte original ZIP source response** is independently SHA-256 hashed in private Neon as **`80238bea7841928b220fbf61c980bafd61290f4bf2214a997686441593c09155`**. It is **only the bounded response SHA**, not the complete ZIP, TIFF, CSV or provider release. The original source TIFF metadata (projection, transform, NoData, 14 band labels) and actual pixel values were decoded from the binary TIFF, not copied from the separately sampled CSV; the CSV cross-check for the exact same grid ID remains to be performed.
 
 **Strict limitations:** TIFF alone lacks `CNTR_ID`, `GRD_ID`, unallocated country totals and the CSV's `LAND_SURFACE`; cross-border duplication, land-only ratios, disclosure suppression `-8888` and missing `-9999` must be independently handled. No original full-archive checksum, all-strip coverage, original full-file CRS-scientific regression or underwriting model admission was conducted. No individual resident, policyholder, building location or insured-value record was collected.
 
@@ -190,7 +176,7 @@ The existing original raster **sample #63** was independently projected in Neon/
 | --- | --- |
 | TIFF centre (ETRS89-LAEA, EPSG:3035) | **POINT(5018500 5399500)** |
 | PostGIS WGS84 centroid (EPSG:4326) | Longitude **29.081945°**, latitude **70.856388°** |
-| Original census total / M / F | **396 / 201 / 195** |
+| Original individual cell population counts | Private Neon sample #63 only; not republished here |
 | Source NoData and admissibility | **-9999**, research-only, **not admitted** |
 
 The WGS84 position is a **coordinate transformation** of the original grid centre; it is not a new original Eurostat `CNTR_ID` or proof of a particular insured location. Crosswalk against administrative coverage, `GRD_ID` and multi-country provenance is still necessary.
