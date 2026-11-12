@@ -85,3 +85,13 @@ The source candidate rows are **not** promoted to `admitted`. The GHSL and Euros
 ### Next causal work
 
 Freeze the exact whole original archive SHA for a 1-km Eurostat subset or JRC AGE TIFF and decode a **single valid pixel** with CRS, nodata and scientific provenance. Separately acquire and verify an entire corrected DWD RW2021 NetCDF member, CF metadata and time coordinate; do not sample the original bad 2021 archive. Preserve source rights and confidentiality sentinels in Neon before any NextGen/Oasis CAT source-admission proposal.
+
+### Additional original DWD 2021 corrected NetCDF4 member confirmation
+
+A second exact bounded Range GET of the **same** corrected 2021 supplement archive (`bytes=0-2047`; identical original prefix SHA-256 `741c1320301be519a57818655d0380d94a6b6865adc3249f454f9c9cdf254867`) was decompressed in memory far enough to inspect **two TAR headers and the first eight NetCDF bytes**. It confirmed:
+
+- The first TAR member is directory `2021/`; the next original source member is **`2021/RW_2017.002_202107.nc`** (July 2021), uncompressed TAR member size **91,356,907 bytes**. This is only the first TAR-listed month, *not* a completeness check or a promise of first chronological month.
+- The first data bytes of this original NetCDF file are `89 48 44 46 0d 0a 1a 0a` — the **HDF5 magic signature**, confirming a real **NetCDF4/HDF5-formatted file**, not just an accessible `.tar.gz` path.
+- The full actual HDF5 file was **not** downloaded or parsed, so no verified precipitation values, CF conventions, CRS, time coordinate, 2021 completeness or original archive end-to-end SHA are claimed.
+
+This narrower original-source structural proof is retained as **private Neon metadata-only sample #58** with `model_input_approved=false`. Both DWD sample #55 (provider correction warning and gzip prefix) and #58 (native NetCDF4/HDF5 member signature) are **metadata receipts**, never provider array downloads.
