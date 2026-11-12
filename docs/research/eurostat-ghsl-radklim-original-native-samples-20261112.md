@@ -95,3 +95,28 @@ A second exact bounded Range GET of the **same** corrected 2021 supplement archi
 - The full actual HDF5 file was **not** downloaded or parsed, so no verified precipitation values, CF conventions, CRS, time coordinate, 2021 completeness or original archive end-to-end SHA are claimed.
 
 This narrower original-source structural proof is retained as **private Neon metadata-only sample #58** with `model_input_approved=false`. Both DWD sample #55 (provider correction warning and gzip prefix) and #58 (native NetCDF4/HDF5 member signature) are **metadata receipts**, never provider array downloads.
+
+## Machine-readable original archive index (without 566 MB / 18 MB acquisition)
+
+Separate original `Range: bytes=-32768` suffix GETs on the **same two provider archives** were decoded directly as ZIP End-of-Central-Directory and complete central-directory metadata (names, sizes, offsets, compression, per-member CRC32). Both source-tail byte responses were independently hashed inside Neon; they are **not** full-archive SHA-256 values. No original raster or entire ZIP source bytes were persisted.
+
+| Source | Internal entries | ZIP end-of-central-directory implied entire archive size* | Actual Neon metadata sample | Original suffix SHA-256 |
+| --- | ---: | ---: | ---: | --- |
+| JRC GHSL GHS-AGE R2025A, 1-km V1-0 | 7 | 18,663,320 B | **#59** | `20ba1a5e0a8129fe3b954a9c42b43c40b0a78d38ddb013d50798f1c30585fb60` |
+| Eurostat Census Grid 2021 V3 | 9 | 566,125,577 B | **#60** | `590d677db2f9bf010dd5b00b738eee42e027e3fe6ade786124ed119495509a28` |
+
+`*` Size is calculated from original ZIP central-directory offset plus directory size plus 22-byte no-comment EOCD, **not** separately independently verified from full-file download or HEAD.
+
+Practical **source-format decision** for the 2021 V3 release, grounded in exact central-directory compressed sizes:
+
+| Exact member | ZIP compressed bytes | Suggested source workflow |
+| --- | ---: | --- |
+| `ESTAT_Census_2021_V3.csv` | 49,110,575 | Controlled source-level CSV sanity test: preserve `CNTR_ID`, `GRD_ID`, confidentiality/other missing flags |
+| `ESTAT_Census_2021_V3.parquet` | 55,211,012 | Candidate for scalable column-pruned research ingestion after original/full SHA and schema equivalence checks |
+| `ESTAT_Census_2021_V3.gpkg` | 221,469,461 | Geometry-specific spatial research only; be cautious with country-straddling cells and non-geometric unallocated totals |
+| `ESTAT_Census_2021_V3.tiff` | 30,762,675 | Multi-band gridded population; categorical/text identifiers omitted and unallocated population absent |
+| `ESTAT_Census_2021_LAND_SURFACE_V3.tiff` | 5,751,483 | Distinct raster of floating land-surface area; do not assume the population TIFF holds it |
+
+For GHSL AGE, the original 1-km `.tif` is **11,015,723 compressed bytes inside the ZIP**, and the entire, CRC-verified age legend is a separate 209-byte uncompressed `.csv` member. A pixel-index join requires the verified native TIFF geotransform and nodata values, not merely the colour legend.
+
+The two file-inventory samples **#59 and #60** remain `sample_kind=public_metadata`, `model_input_approved=false` and `source_byte_persistence_authorized=false` and are distinct from the observed class/grid samples **#51/#52**.
