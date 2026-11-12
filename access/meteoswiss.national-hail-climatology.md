@@ -100,7 +100,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Mode:** metadata_get
 
-**Operation:** read_fixed_hail_climate_stac_collection
+**Operation:** collection_metadata_get
 
 **Requires credentials:** `false`
 
