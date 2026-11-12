@@ -8,12 +8,15 @@ on:
       - 'tests/test_by_hausumringe_oberbayern_zip_prefix_v0.py'
       - 'research_runners/by_hausumringe_oberbayern_zip_central_v0.py'
       - 'tests/test_by_hausumringe_oberbayern_zip_central_v0.py'
+      - 'research_runners/by_hausumringe_oberbayern_prj_v0.py'
+      - 'tests/test_by_hausumringe_oberbayern_prj_v0.py'
       - '.github/workflows/by-hausumringe-oberbayern-zip-prefix.yml'
   push:
     branches: [main]
     paths:
       - 'research_runners/by_hausumringe_oberbayern_zip_prefix_v0.py'
       - 'research_runners/by_hausumringe_oberbayern_zip_central_v0.py'
+      - 'research_runners/by_hausumringe_oberbayern_prj_v0.py'
       - '.github/workflows/by-hausumringe-oberbayern-zip-prefix.yml'
   workflow_dispatch:
 permissions:
@@ -26,10 +29,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Install independent pinned PROJ projection library (no provider data)
+        run: python -m pip install --disable-pip-version-check --only-binary=:all: "pyproj==3.7.2"
       - name: Source-specific fake ZIP, strict Range, redirect and format regression tests
         run: |
           python -m unittest tests.test_by_hausumringe_oberbayern_zip_prefix_v0 -v
           python -m unittest tests.test_by_hausumringe_oberbayern_zip_central_v0 -v
+          python -m unittest tests.test_by_hausumringe_oberbayern_prj_v0 -v
   bounded-trusted-live:
     needs: offline-source-contract
     if: github.event_name != 'pull_request'
@@ -48,12 +54,21 @@ jobs:
         if: steps.provider_probe.outcome == 'success'
         continue-on-error: true
         run: python -m research_runners.by_hausumringe_oberbayern_zip_central_v0 --live
+      - name: Install independent PROJ only after ZIP central directory is verified
+        if: steps.central_probe.outcome == 'success'
+        run: python -m pip install --disable-pip-version-check --only-binary=:all: "pyproj==3.7.2"
+      - name: Check complete original 301-byte ZIP projection member and EPSG:25832
+        id: prj_probe
+        if: steps.central_probe.outcome == 'success'
+        continue-on-error: true
+        run: python -m research_runners.by_hausumringe_oberbayern_prj_v0 --live
       - name: Explicit actual provider result distinct from green diagnostic workflow
         if: always()
         shell: bash
         env:
           PROBE_OUTCOME: ${{ steps.provider_probe.outcome }}
           CENTRAL_OUTCOME: ${{ steps.central_probe.outcome }}
+          PROJECTION_OUTCOME: ${{ steps.prj_probe.outcome }}
           CODE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
@@ -73,6 +88,13 @@ jobs:
               *) central_state=UNKNOWN ;;
             esac
             printf '| Central directory step | **%s** |\n' "$central_state"
+            case "$PROJECTION_OUTCOME" in
+              success) projection_state=SUCCEEDED ;;
+              failure) projection_state=FAILED ;;
+              skipped|"") projection_state=NOT_RUN ;;
+              *) projection_state=UNKNOWN ;;
+            esac
+            printf '| Original projection step | **%s** |\n' "$projection_state"
             printf '| Workflow SHA | `%s` |\n' "$CODE_SHA"
             printf '\nNo full archive, Shapefile features, original geometries, Neon writes, licence or CAT model admission.\n'
           } >> "$GITHUB_STEP_SUMMARY"
@@ -81,4 +103,7 @@ jobs:
           fi
           if [[ "$CENTRAL_OUTCOME" == failure ]]; then
             echo "::warning title=BVV ZIP central directory blocked::A green diagnostic job does not prove the archived member layout."
+          fi
+          if [[ "$PROJECTION_OUTCOME" == failure ]]; then
+            echo "::warning title=BVV original projection blocked::ZIP projection SHA/CRC/EPSG did not verify."
           fi
