@@ -71,3 +71,26 @@ WHERE source_id IN (
 The product-specific private rights matrix stores **14 separate use-case decisions** for these two products. Commercial CAT modelling is `conditional` (**research/statistical reporting only**, no individual decisions). API automation and any wider bulk/reuse/distribution remain separately reviewable.
 
 **Next steps:** independently review versioned FEMA API dataset-level lineage, product-specific retention, record types and privacy constraints; consider a source-specific `access/` contract if recurring automated execution becomes necessary; test joins with other administrative disaster data using aggregates only, with no policyholder/claims-level inference and no promotion to CAT model use.
+
+## Follow-up: v3 high-sensitivity Claims/Policies safe metadata-only probes
+
+The original **NFIP Redacted Claims v3** and **NFIP Redacted Policies v3** APIs are **not equivalent** to the two low-sensitivity v1/v2 public data products above.
+
+**A live safety discovery:** Attempting `$top=0` produced a large default response, rather than zero records. It was rejected as oversized and not saved, and there was no attempt to decode/store claim or policy content. A request without a positive bound is unsafe for a capability canary. The corrected provider requests each use **exactly one** public, non-sensitive column and `$top=1`, with no user-controlled paging/filtering.
+
+| Canonical source ID | Original exact tested GET | Returned | Private metadata sample | Original response SHA-256 |
+| --- | --- | ---: | ---: | --- |
+| `fema.openfema.nfip-redacted-claims.v3` | [v3 Claims – one yearOfLoss field](https://www.fema.gov/api/open/v3/NfipClaims?$top=1&$select=yearOfLoss) | 294 response bytes; metadata v3; one transient year field | **45** | `97265c34d1200f45f85db33da5456848abb63d70e4a4224aaeb873470fddedc2` |
+| `fema.openfema.nfip-redacted-policies.v3` | [v3 Policies – one policyEffectiveDate field](https://www.fema.gov/api/open/v3/NfipPolicies?$top=1&$select=policyEffectiveDate) | 349 response bytes; metadata v3; one transient date field | **46** | `aced680b68a08d5d16d2dc814908f75cb00814a53e8f2d1add86988df186ee29` |
+
+**The actual selected year/date values are deliberately not stored** in these two Neon metadata samples; no IDs, county/census geographies, claim payments, policy coverages, coordinates, transaction details or individual records are persisted. The summary contains only provider dataset identity/version, one selected field name, bounded response size and source SHA. Both are `sample_kind=public_metadata`, `research_only=true`, `model_input_approved=false`, and `source_byte_persistence_authorized=false`.
+
+Product-scoped rights in the private source-use matrix are separately recorded for both v3 products. `internal_neon_source_sample=unknown` and `external_raw_redistribution=unknown`: an accepted **metadata-only** canary does not authorize persisting actual claims or policy rows. Commercial CAT use remains conditional on a separately reviewed statistical purpose and OpenFEMA's ban on individual entitlement/eligibility decisions. Programme vintage, data retention, deduplication, transaction semantics, privacy and derived use remain open.
+
+A new [exact-source script](../../scripts/probe_openfema_nfip_v3_metadata_v0.py) supports manual opt-in **only** for these two one-field, positive-`$top=1` original routes. It must be executed explicitly with `--live`, emits SHA/shape only and refuses extra fields. The purely [synthetic tests](../../tests/test_probe_openfema_nfip_v3_metadata_v0.py) include regression cases for the dangerous `$top=0` fallback and unexpected PII-like source fields. No recurring GitHub Actions or automated bulk download is added; the Python runner was **not** itself executed live in this PR.
+
+```bash
+python -m unittest tests.test_probe_openfema_nfip_v3_metadata_v0 -v
+```
+
+These v3 one-column checks test API metadata/readability only, **not availability of a legally reusable claim/policy dataset**, nor any substantive insurance-loss/sample modelling or cross-table join. Full claim/policy data remain intentionally uncollected.
