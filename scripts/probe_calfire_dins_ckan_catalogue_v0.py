@@ -27,6 +27,8 @@ ROOT = Path(__file__).resolve().parents[1]
 ACCESS_ID = "us.calfire.dins.ckan-package-catalogue"
 CONTRACT_PATH = ROOT / "access" / (ACCESS_ID + ".json")
 TIMEOUT = 30
+CURRENT_METADATA_MODIFIED = "2026-11-11T01:27:13.459792"
+OBSERVED_20261112_RESPONSE_SHA256 = "83b75ccd9fe2ce7b2f2ee95ba3170b6e87554aa943d2e55748fdc01005fbf2ce"
 USER_AGENT = "OpenCatastrophe-data/1.0 (one-shot reviewed CAL FIRE CKAN catalogue metadata canary)"
 
 
@@ -103,7 +105,7 @@ def fetch_one_original(opener=None) -> bytes:
 def probe_one(opener=None) -> dict:
     verify_reviewed_contract()
     original = fetch_one_original(opener)
-    checked = inspect_ckan_metadata(original)
+    checked = inspect_ckan_metadata(original, expected_metadata_modified=CURRENT_METADATA_MODIFIED)
     return {
         "schema_version": "CALFIRE_DINS_CKAN_META_CANARY_V1",
         "access_id": ACCESS_ID,
@@ -111,6 +113,7 @@ def probe_one(opener=None) -> dict:
         "response_sha256": checked["source_response_sha256"],
         "response_bytes": checked["source_response_bytes"],
         "historical_original_sha256_matches": checked["matches_recorded_original_provider_response_sha256"],
+        "reviewed_20261112_response_sha256_matches": checked["source_response_sha256"] == OBSERVED_20261112_RESPONSE_SHA256,
         "source_package_modified": checked["dataset_metadata_modified"],
         "source_resource_count": checked["resource_count"],
         "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
