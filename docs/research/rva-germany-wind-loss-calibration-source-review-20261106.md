@@ -56,7 +56,7 @@ binary exception. They have **NOT** been approved for product-specific
 data reuse, parsed for insurer claim/financial cells, modelled as a
 complete denominator, joined to original NRW building locations, or
 fed into our model. See
-[original OOXML security resolution](eiopa-2023-exposure-source-pinned-printer-settings-ooxml-admission-20261106.md). A public regulator aggregate does not identify
+[original OOXML security resolution (still in research Draft #1373)](https://github.com/pokekarten/OpenCatastrophe-data/blob/research/rva-2025-oed-staging-20261105/docs/research/eiopa-2023-exposure-source-pinned-printer-settings-ooxml-admission-20261106.md). A public regulator aggregate does not identify
 insured individual R+V buildings or company-specific losses.
 
 **GDV Naturgefahrenreport 2026 (priority 2; aggregate actual reported
@@ -122,7 +122,7 @@ https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/2022_hu_EPS
 The complete official 901,092,946-byte archive SHA-256
 10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da
 was independently verified in the
-[artifact-free full-source workflow](../../.github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml).
+[official full-source one-shot workflow](../../.github/workflows/rva-nrw-hu22-full-one-shot.yml) (original complete-source [run #42097472463](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42097472463)).
 It comprises 11,232,755 original physical candidate objects.
 Our research sample is 10,000 official geosites over 53 NRW Kreise,
 and EUR 4,826,029,500 fictional 2025-like building value.
