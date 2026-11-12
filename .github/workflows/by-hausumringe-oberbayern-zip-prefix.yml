@@ -12,6 +12,8 @@ on:
       - 'tests/test_by_hausumringe_oberbayern_prj_v0.py'
       - 'research_runners/by_hausumringe_oberbayern_dbf_v0.py'
       - 'tests/test_by_hausumringe_oberbayern_dbf_v0.py'
+      - 'research_runners/by_hausumringe_oberbayern_shx_v0.py'
+      - 'tests/test_by_hausumringe_oberbayern_shx_v0.py'
       - '.github/workflows/by-hausumringe-oberbayern-zip-prefix.yml'
   push:
     branches: [main]
@@ -20,6 +22,7 @@ on:
       - 'research_runners/by_hausumringe_oberbayern_zip_central_v0.py'
       - 'research_runners/by_hausumringe_oberbayern_prj_v0.py'
       - 'research_runners/by_hausumringe_oberbayern_dbf_v0.py'
+      - 'research_runners/by_hausumringe_oberbayern_shx_v0.py'
       - '.github/workflows/by-hausumringe-oberbayern-zip-prefix.yml'
   workflow_dispatch:
 permissions:
@@ -41,6 +44,7 @@ jobs:
           python -m unittest tests.test_by_hausumringe_oberbayern_zip_central_v0 -v
           python -m unittest tests.test_by_hausumringe_oberbayern_prj_v0 -v
           python -m unittest tests.test_by_hausumringe_oberbayern_dbf_v0 -v
+          python -m unittest tests.test_by_hausumringe_oberbayern_shx_v0 -v
   bounded-trusted-live:
     needs: offline-source-contract
     if: github.event_name != 'pull_request'
@@ -73,6 +77,11 @@ jobs:
         if: steps.prj_probe.outcome == 'success'
         continue-on-error: true
         run: python -m research_runners.by_hausumringe_oberbayern_dbf_v0 --live
+      - name: Validate original 7.85MB SHX compressed index and all 2.7M offsets
+        id: shx_probe
+        if: steps.dbf_probe.outcome == 'success'
+        continue-on-error: true
+        run: python -m research_runners.by_hausumringe_oberbayern_shx_v0 --live
       - name: Explicit actual provider result distinct from green diagnostic workflow
         if: always()
         shell: bash
@@ -81,6 +90,7 @@ jobs:
           CENTRAL_OUTCOME: ${{ steps.central_probe.outcome }}
           PROJECTION_OUTCOME: ${{ steps.prj_probe.outcome }}
           DBF_OUTCOME: ${{ steps.dbf_probe.outcome }}
+          SHX_OUTCOME: ${{ steps.shx_probe.outcome }}
           CODE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
@@ -114,6 +124,13 @@ jobs:
               *) dbf_state=UNKNOWN ;;
             esac
             printf '| Original compressed DBF step | **%s** |\n' "$dbf_state"
+            case "$SHX_OUTCOME" in
+              success) shx_state=SUCCEEDED ;;
+              failure) shx_state=FAILED ;;
+              skipped|"") shx_state=NOT_RUN ;;
+              *) shx_state=UNKNOWN ;;
+            esac
+            printf '| Original compressed SHX index step | **%s** |\n' "$shx_state"
             printf '| Workflow SHA | `%s` |\n' "$CODE_SHA"
             printf '\nNo full archive, Shapefile features, original geometries, Neon writes, licence or CAT model admission.\n'
           } >> "$GITHUB_STEP_SUMMARY"
@@ -128,4 +145,7 @@ jobs:
           fi
           if [[ "$DBF_OUTCOME" == failure ]]; then
             echo "::warning title=BVV original DBF member blocked::Original DBF row/CRC/header proof failed; a green workflow is diagnostic only."
+          fi
+          if [[ "$SHX_OUTCOME" == failure ]]; then
+            echo "::warning title=BVV original SHX index blocked::Original shape index CRC, pointer range or end-of-SHP claim differs."
           fi
