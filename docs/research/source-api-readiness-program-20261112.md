@@ -66,6 +66,9 @@ Logs contain only source access IDs, PASS/BLOCKED and strictly typed
 receipts where an exact metadata contract permits two requests). Any program without
 this digest, or with nonzero exit, is BLOCKED. Raw provider responses and
 provider-specific untrusted error text are not copied into job summaries.
+The per-source summary additionally distinguishes `runner_nonzero`, `missing_digest`,
+`timeout` and `runner_unavailable` as fixed, provider-text-free diagnostic classes.
+A failure class is not a diagnosis of the remote provider or a rights decision.
 
 The eleven fixed probe contracts cover geoBoundaries DEU ADM1, GFZ Kp,
 NOAA SWPC, PEGELONLINE Dresden, EMSC, DWD historical source directory,
