@@ -30,7 +30,8 @@ jobs:
         with:
           persist-credentials: false
       - name: Install independent pinned PROJ projection library (no provider data)
-        run: python -m pip install --disable-pip-version-check --only-binary=:all: "pyproj==3.7.2"
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: "pyproj==3.7.2"
       - name: Source-specific fake ZIP, strict Range, redirect and format regression tests
         run: |
           python -m unittest tests.test_by_hausumringe_oberbayern_zip_prefix_v0 -v
@@ -56,7 +57,8 @@ jobs:
         run: python -m research_runners.by_hausumringe_oberbayern_zip_central_v0 --live
       - name: Install independent PROJ only after ZIP central directory is verified
         if: steps.central_probe.outcome == 'success'
-        run: python -m pip install --disable-pip-version-check --only-binary=:all: "pyproj==3.7.2"
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: "pyproj==3.7.2"
       - name: Check complete original 301-byte ZIP projection member and EPSG:25832
         id: prj_probe
         if: steps.central_probe.outcome == 'success'
