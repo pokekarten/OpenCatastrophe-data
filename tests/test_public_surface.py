@@ -185,8 +185,8 @@ class PublicSurfaceTests(unittest.TestCase):
         self.assertEqual(uploader[0]["if"], "success()")
         self.assertTrue(any("rm -f --" in x.get("run", "") and x.get("if") == "always()"
                             for x in steps))
-        self.assertFalse(any("persist-credentials: true" in x.get("with", {})
-                             for x in steps if isinstance(x.get("with"), dict)))
+        self.assertIn("persist-credentials: false", contents)
+        self.assertNotIn("persist-credentials: true", contents)
 
     def test_workflow_action_scanner_covers_semantic_yaml_forms(self) -> None:
         untrusted = "example/action@main"
