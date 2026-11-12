@@ -72,7 +72,7 @@ def synthetic_tiff(*, srid=3035, nodata="-9999", names=BANDS,
     )
     assert len(keys) == 32
     struct.pack_into("<32H", raw, 38204, *keys)
-    raw[38268:38268 + 38] = b"ETRS89-extended / LAEA Europe|ETRS89|" + b"\\x00"
+    raw[38268:38268 + 38] = b"ETRS89-extended / LAEA Europe|ETRS89|" + bytes((0,))
     raw[38306:38306 + len(nodata) + 1] = nodata.encode("ascii") + b"\0"
     raw[38312:38312 + len(compressed_strip)] = compressed_strip
     return bytes(raw)
