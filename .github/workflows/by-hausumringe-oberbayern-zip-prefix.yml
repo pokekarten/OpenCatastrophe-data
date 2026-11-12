@@ -10,6 +10,8 @@ on:
       - 'tests/test_by_hausumringe_oberbayern_zip_central_v0.py'
       - 'research_runners/by_hausumringe_oberbayern_prj_v0.py'
       - 'tests/test_by_hausumringe_oberbayern_prj_v0.py'
+      - 'research_runners/by_hausumringe_oberbayern_dbf_v0.py'
+      - 'tests/test_by_hausumringe_oberbayern_dbf_v0.py'
       - '.github/workflows/by-hausumringe-oberbayern-zip-prefix.yml'
   push:
     branches: [main]
@@ -17,6 +19,7 @@ on:
       - 'research_runners/by_hausumringe_oberbayern_zip_prefix_v0.py'
       - 'research_runners/by_hausumringe_oberbayern_zip_central_v0.py'
       - 'research_runners/by_hausumringe_oberbayern_prj_v0.py'
+      - 'research_runners/by_hausumringe_oberbayern_dbf_v0.py'
       - '.github/workflows/by-hausumringe-oberbayern-zip-prefix.yml'
   workflow_dispatch:
 permissions:
@@ -37,6 +40,7 @@ jobs:
           python -m unittest tests.test_by_hausumringe_oberbayern_zip_prefix_v0 -v
           python -m unittest tests.test_by_hausumringe_oberbayern_zip_central_v0 -v
           python -m unittest tests.test_by_hausumringe_oberbayern_prj_v0 -v
+          python -m unittest tests.test_by_hausumringe_oberbayern_dbf_v0 -v
   bounded-trusted-live:
     needs: offline-source-contract
     if: github.event_name != 'pull_request'
@@ -64,6 +68,11 @@ jobs:
         if: steps.central_probe.outcome == 'success'
         continue-on-error: true
         run: python -m research_runners.by_hausumringe_oberbayern_prj_v0 --live
+      - name: Validate one original compressed DBF member (275602 bytes) and anonymous row count
+        id: dbf_probe
+        if: steps.prj_probe.outcome == 'success'
+        continue-on-error: true
+        run: python -m research_runners.by_hausumringe_oberbayern_dbf_v0 --live
       - name: Explicit actual provider result distinct from green diagnostic workflow
         if: always()
         shell: bash
@@ -71,6 +80,7 @@ jobs:
           PROBE_OUTCOME: ${{ steps.provider_probe.outcome }}
           CENTRAL_OUTCOME: ${{ steps.central_probe.outcome }}
           PROJECTION_OUTCOME: ${{ steps.prj_probe.outcome }}
+          DBF_OUTCOME: ${{ steps.dbf_probe.outcome }}
           CODE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
@@ -97,6 +107,13 @@ jobs:
               *) projection_state=UNKNOWN ;;
             esac
             printf '| Original projection step | **%s** |\n' "$projection_state"
+            case "$DBF_OUTCOME" in
+              success) dbf_state=SUCCEEDED ;;
+              failure) dbf_state=FAILED ;;
+              skipped|"") dbf_state=NOT_RUN ;;
+              *) dbf_state=UNKNOWN ;;
+            esac
+            printf '| Original compressed DBF step | **%s** |\n' "$dbf_state"
             printf '| Workflow SHA | `%s` |\n' "$CODE_SHA"
             printf '\nNo full archive, Shapefile features, original geometries, Neon writes, licence or CAT model admission.\n'
           } >> "$GITHUB_STEP_SUMMARY"
@@ -108,4 +125,7 @@ jobs:
           fi
           if [[ "$PROJECTION_OUTCOME" == failure ]]; then
             echo "::warning title=BVV original projection blocked::ZIP projection SHA/CRC/EPSG did not verify."
+          fi
+          if [[ "$DBF_OUTCOME" == failure ]]; then
+            echo "::warning title=BVV original DBF member blocked::Original DBF row/CRC/header proof failed; a green workflow is diagnostic only."
           fi
