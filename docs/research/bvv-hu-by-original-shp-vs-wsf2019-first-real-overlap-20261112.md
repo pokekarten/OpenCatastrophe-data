@@ -20,7 +20,7 @@ No real-world buildings, site/insured addresses, TIV, policy data, loss or CAT-m
 | Original SHP compressed | **166,172,236** bytes, SHA-256 `22364ef161d6411e2010be590d791508242ec6d36ffc3a314833cedcd6afc615` |
 | Original SHP unpacked | **501,212,696** bytes, SHA-256 `977e35aa7764564be115776ea56f78ef228d3cc79939b28f08c6cbe96e2e7a0c` |
 | Original ZIP SHP member CRC32 | **55540a66**, recomputed over the complete source geometry stream |
-| Original source records | **2,703,736** valid sequential Polygon type 5 binary records, independently matching the fully verified SHX index and original dBase table cardinality |
+| Original source records | **2,703,736** structurally parsed sequential Polygon type 5 binary records (not a claim that all 2.7M polygon topologies were individually checked), matching the fully verified SHX index and original dBase table cardinality |
 | Real source execution | [Actions run 43317649994](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43317649994), actual original `source_shp` step **success** |
 | Source script | [research_runners/by_hausumringe_oberbayern_shp_windows_v0.py](../../research_runners/by_hausumringe_oberbayern_shp_windows_v0.py), already merged via [PR #1516](https://github.com/pokekarten/OpenCatastrophe-data/pull/1516) |
 | Original provider bytes persisted | **No**. Streaming decompression only, bounded source-specific 166 MB HTTP Range; output includes **no source polygon coordinates or feature IDs** |
