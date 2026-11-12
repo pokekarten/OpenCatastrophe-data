@@ -20,7 +20,7 @@ def fixture() -> bytes:
         "success": True,
         "result": {
             "id": DATASET_UUID, "name": PACKAGE_SLUG, "license_id": "cc-by",
-            "metadata_modified": METADATA_MODIFIED, "accessLevel": "public",
+            "metadata_modified": p.CURRENT_METADATA_MODIFIED, "accessLevel": "public",
             "isopen": True,
             "resources": [{"id": k, "format": v, "url": "https://invalid.test/do-not-follow"}
                           for k, v in FROZEN_RESOURCES.items()],
@@ -101,6 +101,17 @@ class CalFireDinsCkanMetadataTests(TestCase):
         with self.assertRaises(ValueError):
             p.probe_one(FakeOpener(FakeResponse(raw=json.dumps(x).encode())))
 
+    def test_historical_october_vintage_is_not_current(self):
+        x = json.loads(fixture())
+        x['result']['metadata_modified'] = METADATA_MODIFIED
+        with self.assertRaises(ValueError):
+            p.probe_one(FakeOpener(FakeResponse(raw=json.dumps(x).encode())))
+
+    def test_current_version_receipt_does_not_claim_historical_parity(self):
+        out = p.probe_one(FakeOpener(FakeResponse()))
+        self.assertEqual(out['source_package_modified'], p.CURRENT_METADATA_MODIFIED)
+        self.assertFalse(out['historical_original_sha256_matches'])
+        self.assertFalse(out['reviewed_20261112_response_sha256_matches'])
     def test_reject_resource_identity_drift(self):
         x = json.loads(fixture())
         x["result"]["resources"][0]["id"] = "changed"

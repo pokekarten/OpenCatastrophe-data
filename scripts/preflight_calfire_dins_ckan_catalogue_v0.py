@@ -58,7 +58,7 @@ def _reject_constant(value: str) -> None:
     raise CkanMetadataError("nonfinite JSON value")
 
 
-def inspect_ckan_metadata(raw: bytes) -> dict[str, Any]:
+def inspect_ckan_metadata(raw: bytes, *, expected_metadata_modified: str = METADATA_MODIFIED) -> dict[str, Any]:
     if type(raw) is not bytes or not (0 < len(raw) <= MAX_BYTES):
         raise CkanMetadataError("CKAN metadata response outside bounded byte size")
     try:
@@ -78,7 +78,7 @@ def inspect_ckan_metadata(raw: bytes) -> dict[str, Any]:
         result.get("id") != DATASET_UUID
         or result.get("name") != PACKAGE_SLUG
         or result.get("license_id") != "cc-by"
-        or result.get("metadata_modified") != METADATA_MODIFIED
+        or result.get("metadata_modified") != expected_metadata_modified
         or result.get("accessLevel") != "public"
         or result.get("isopen") is not True
     ):
@@ -103,7 +103,7 @@ def inspect_ckan_metadata(raw: bytes) -> dict[str, Any]:
         "dataset_id": DATASET_UUID,
         "dataset_name": PACKAGE_SLUG,
         "dataset_catalogue_license_label": "cc-by",
-        "dataset_metadata_modified": METADATA_MODIFIED,
+        "dataset_metadata_modified": expected_metadata_modified,
         "resource_count": len(found),
         "resource_formats": sorted(found.values()),
         "source_response_bytes": len(raw),
