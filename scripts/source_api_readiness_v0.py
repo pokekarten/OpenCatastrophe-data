@@ -241,9 +241,9 @@ def _receipt_digest(output: str) -> str | None:
 
 
 def run_reviewed_live_probes() -> int:
-    """One bounded, sequential lane; preserve only safe SHA receipts in logs."""
+    """One bounded, sequential lane; preserve only safe SHA receipts and failure classes."""
     preflight_reviewed_probes()
-    outcomes: list[tuple[str, str, str]] = []
+    outcomes: list[tuple[str, str, str, str]] = []
     for access_id in APPROVED_PROBE_IDS:
         digest = None
         try:
@@ -254,23 +254,33 @@ def run_reviewed_live_probes() -> int:
                 timeout=120, check=False,
             )
             digest = _receipt_digest(completed.stdout or "")
-            outcome = ("PASS" if completed.returncode == 0 and digest is not None
-                       else "BLOCKED")
-        except (OSError, subprocess.TimeoutExpired):
-            outcome = "BLOCKED"
-        outcomes.append((access_id, outcome, digest or "not-reported"))
+            if completed.returncode != 0:
+                outcome, failure_class = "BLOCKED", "runner_nonzero"
+            elif digest is None:
+                outcome, failure_class = "BLOCKED", "missing_digest"
+            else:
+                outcome, failure_class = "PASS", "none"
+        except subprocess.TimeoutExpired:
+            outcome, failure_class = "BLOCKED", "timeout"
+        except OSError:
+            outcome, failure_class = "BLOCKED", "runner_unavailable"
+        outcomes.append((access_id, outcome, failure_class, digest or "not-reported"))
     print("## Fixed reviewed live API probes")
     print()
     print("One bounded provider-specific program per reviewed access contract; no provider response bodies are logged.")
     print("A PASS confirms a typed response digest, not rights to other products or model admission.")
+    print("Failure classes describe only runner outcomes; they do not identify the provider's failure cause.")
     print()
-    print("| Reviewed access ID | Result | Bounded original response SHA-256 receipt(s) |")
-    print("| --- | --- | --- |")
-    for access_id, outcome, digest in outcomes:
-        print(f"| {access_id} | {outcome} | {digest if outcome == 'PASS' else 'not-accepted'} |")
+    print("| Reviewed access ID | Result | Failure class | Bounded original response SHA-256 receipt(s) |")
+    print("| --- | --- | --- | --- |")
+    for access_id, outcome, failure_class, digest in outcomes:
+        accepted_digest = digest if outcome == "PASS" else "not-accepted"
+        print(f"| {access_id} | {outcome} | {failure_class} | {accepted_digest} |")
     print()
-    return 0 if all(outcome == "PASS" for _, outcome, _ in outcomes) else 1
-
+    total_pass = sum(outcome == "PASS" for _, outcome, _, _ in outcomes)
+    print(f"Total: {total_pass} PASS, {len(outcomes) - total_pass} BLOCKED of {len(outcomes)} reviewed probes.")
+    print()
+    return 0 if total_pass == len(outcomes) else 1
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
