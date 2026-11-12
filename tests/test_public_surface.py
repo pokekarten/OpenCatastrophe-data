@@ -138,11 +138,12 @@ class PublicSurfaceTests(unittest.TestCase):
             "rva-nrw-hu22-daria-fresh-independent-replay.yml"
             "@75dba089478927003d201032cb41303ebf587952"
         )
-        # A second, *single-workflow* exception permits only the GitHub-
-        # maintained, signed upload-artifact v7.0.2 immutable commit for the
-        # explicitly dispatched, fictional-only 10k NRW research output.
-        # It is NOT a global allowance for artifact upload or source ZIPs.
+        # Narrow immutable upload-artifact v7.0.2 exceptions for TWO
+        # explicitly identified manual source workflows only. NRW publishes
+        # fictional OED, CDS publishes only the SHA/format metadata receipt.
+        # Neither exception allows arbitrary upload Actions or raw CDS bytes.
         one_shot = ".github/workflows/rva-nrw-hu22-full-one-shot.yml"
+        manual_cds = ".github/workflows/ciara2020-cds-original-source-manual.yml"
         upload_artifact = "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"
         self.assertNotIn(gateway_call, allowed)
         self.assertNotIn(upload_artifact, allowed)
@@ -152,11 +153,40 @@ class PublicSurfaceTests(unittest.TestCase):
                 self.assertRegex(item, r"^[^@\s]+@[0-9a-f]{40}$")
                 if workflow_path == gateway:
                     self.assertEqual(item, gateway_call)
-                elif workflow_path == one_shot and item == upload_artifact:
+                elif workflow_path in (one_shot, manual_cds) and item == upload_artifact:
                     allowed_uploads.append((workflow_path, item))
                 else:
                     self.assertIn(item, allowed)
-        self.assertEqual(allowed_uploads, [(one_shot, upload_artifact)])
+        self.assertCountEqual(allowed_uploads, [
+            (one_shot, upload_artifact),
+            (manual_cds, upload_artifact),
+        ])
+
+    def test_manual_cds_source_workflow_is_opt_in_metadata_only(self) -> None:
+        manual = ROOT / ".github/workflows/ciara2020-cds-original-source-manual.yml"
+        contents = manual.read_text(encoding="utf-8")
+        wf = yaml.load(contents, Loader=StrictWorkflowLoader)
+        self.assertEqual(set(wf["on"]), {"workflow_dispatch"})
+        self.assertEqual(wf["permissions"], {"contents": "read"})
+        self.assertEqual(wf["on"]["workflow_dispatch"]["inputs"]["terms_confirmed"]["default"],
+                         "NOT_ACCEPTED")
+        self.assertEqual(wf["on"]["workflow_dispatch"]["inputs"]["api_form_confirmed"]["default"],
+                         "NOT_VERIFIED")
+        job = wf["jobs"]["opt-in-original-CDS-source"]
+        self.assertIn("inputs.terms_confirmed == 'I_ACCEPTED_DATASET_TERMS_ON_CDS_WEBSITE'",
+                      job["if"])
+        self.assertIn("inputs.api_form_confirmed == 'I_VERIFIED_THIS_DATASET_API_FORM'",
+                      job["if"])
+        steps = job["steps"]
+        uploader = [x for x in steps if x.get("uses", "").startswith("actions/upload-artifact@")]
+        self.assertEqual(len(uploader), 1)
+        self.assertEqual(uploader[0]["with"]["path"],
+                         "${{ runner.temp }}/ciara2020-original-CDS-SHA-and-format-ONLY.json")
+        self.assertEqual(uploader[0]["if"], "success()")
+        self.assertTrue(any("rm -f --" in x.get("run", "") and x.get("if") == "always()"
+                            for x in steps))
+        self.assertIn("persist-credentials: false", contents)
+        self.assertNotIn("persist-credentials: true", contents)
 
     def test_workflow_action_scanner_covers_semantic_yaml_forms(self) -> None:
         untrusted = "example/action@main"
