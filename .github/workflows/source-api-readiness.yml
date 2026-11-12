@@ -14,13 +14,13 @@ on:
   workflow_dispatch:
     inputs:
       probe_mode:
-        description: "Offline full coverage or exactly 15 reviewed bounded live probes"
+        description: "Offline full coverage or exactly 16 reviewed bounded live probes"
         required: true
         default: audit_only
         type: choice
         options:
           - audit_only
-          - reviewed_15
+          - reviewed_16
   schedule:
     - cron: "23 5 * * 1"
 
@@ -48,6 +48,8 @@ jobs:
           tests.test_audit_all_sources_v0
           tests.test_source_access_inventory_failclosed
           tests.test_probe_fixed_public_sources_v0
+          tests.test_probe_berlin_alkis_wfs_capabilities_v0
+          tests.test_berlin_alkis_source_access_contract_v0
           tests.test_probe_ghcnd_ncei_us_station_gzip_v0
           tests.test_probe_ghcnd_full_station_original_v0
           tests.test_probe_ghcnd_station_prefix_v0
@@ -61,9 +63,9 @@ jobs:
           cat "$RUNNER_TEMP/source-api-readiness.md" >> "$GITHUB_STEP_SUMMARY"
 
   reviewed-live-probes:
-    name: Sequentially verify only the 15 explicitly reviewed public capabilities
+    name: Sequentially verify only the 16 explicitly reviewed public capabilities
     needs: full-offline-contract-audit
-    if: github.event_name == 'workflow_dispatch' && inputs.probe_mode == 'reviewed_15'
+    if: github.event_name == 'workflow_dispatch' && inputs.probe_mode == 'reviewed_16'
     runs-on: ubuntu-24.04
     timeout-minutes: 38
     steps:
@@ -76,6 +78,8 @@ jobs:
           python -m unittest
           tests.test_source_api_readiness_v0
           tests.test_probe_fixed_public_sources_v0
+          tests.test_probe_berlin_alkis_wfs_capabilities_v0
+          tests.test_berlin_alkis_source_access_contract_v0
           tests.test_probe_ghcnd_ncei_us_station_gzip_v0
           tests.test_probe_ghcnd_full_station_original_v0
           tests.test_probe_ghcnd_station_prefix_v0
