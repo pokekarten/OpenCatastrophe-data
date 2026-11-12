@@ -61,3 +61,51 @@ Five already-reviewed exact URLs from the **existing** fixed public-probe allowl
 | `noaa.swpc.real-time-solar-wind` | about 59 KB | INCONCLUSIVE: web-scrape transport returned a non-parseable trailing byte sequence | Do not claim provider failure or success; rerun existing trusted Python probe |
 
 These receipts explicitly set `strict_repository_runner_executed=false`, `provider_bytes_persisted=false`, `model_input_approved=false`. The individual endpoint permissions are checked by the corresponding `access/*.json` contracts. The three Zenodo catalogue requests reported above are additional, independently verified metadata GETs.
+
+## Second rights/use-case batch — 2026-11-12 (five source products)
+
+The existing private `insurance-risk-core` Neon database now has a **non-destructive, reproducible** SQL contract `research.source_usage_rights_v0` ([SQL schema](../../sql/research_source_usage_rights_v0.sql)). It stores *separate* outcomes for seven intended uses rather than treating a provider download as a blanket grant:
+
+- `internal_research`;
+- `commercial_cat_modelling`;
+- `automated_api_access`;
+- `internal_neon_metadata`;
+- `internal_neon_source_sample`;
+- `external_raw_redistribution`;
+- `published_derived_results`.
+
+The first **35** source × use-case observations are written in Neon, for these **exact** products and versions. `allowed` on a use case denotes a published **source-licence ceiling**, not source acquisition, science approval or publication admission. Any `conditional` or `unknown` entry is **not permission** to download, store or distribute underlying source files.
+
+| Exact product | Commercial modelling under source rights | Material boundary and original publisher |
+| --- | --- | --- |
+| [EUBUCCO v0.2](https://docs.eubucco.com/v0.2/license/) | **conditional** | ODbL 1.0 base with geometry-specific exceptions: `gov-italy-abruzzo` = CC BY-NC (no base-licence commercial use); `gov-czechia-prague` = CC BY-SA (share-alike). Preserve `geometry_source` and attribute provenance; filter/review both exceptions rather than releasing the mixed raw product wholesale |
+| [Eurostat GISCO Census population grid 2021](https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution) | **allowed**, CC BY 4.0 | Specific to **2021 census** grid (including May 2026 update), not old GEOSTAT 2006/2011 data or separately restricted EuroGeographics administrative boundaries. Counts are disclosure-controlled and not building-level household truth |
+| [DWD RADKLIM RW2017.002](https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_RADKLIM_RW_V2017.002-en.html) | **allowed**, CC BY 4.0 | [DWD CDC Terms](https://opendata.dwd.de/climate_environment/CDC/Terms_of_use.pdf). Original DOI data and the corrected 2021 NetCDF `supplement` are separate identities; pin exact period and source-file/quality metadata |
+| [JRC GHSL GHS-AGE R2025A](https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_AGE_GLOBE_R2025A/copyright.txt) | **allowed**, CC BY 4.0 | Exact original product copyright; estimated age surface is not per-building known construction date or insured value |
+| [JRC Global Surface Water v1.5](https://global-surface-water.appspot.com/download) | **allowed** by official direct-source Copernicus terms | 1984–2024; citation/attribution required. On **2026-11-10**, original provider corrected >100% occurrence anomalies; known Monthly Recurrence undercount issue still open in v1.4/v1.5. Never mix deprecated v1.4 and updated v1.5 without explicit asset/version identity |
+
+All five remain source candidates `not_admitted` and broad `rights_review_status=not_reviewed`; the narrower evidence is saved in the new use-case table and `original_license_evidence` without falsely promoting total review status. Automated API access was left `unknown` for all five: provider dataset rights alone do not establish unconditional unrestricted automation or data volume.
+
+### Three original publisher-rights metadata receipts inserted to Neon
+
+Small original public HTTP responses were directly fetched, scanned for source identity/terms and hashed. Only source-authored metadata summaries are stored (research-only), not original response HTML/text or geospatial/measurement content:
+
+| Source | Neon sample ID | Exact original response SHA-256 |
+| --- | ---: | --- |
+| EUBUCCO v0.2 original licence page | 36 | `0a0255784a637c6d90edea13851562b89af042f19055c6da5ee0afaedf8889c2` |
+| DWD RADKLIM RW original DOI landing metadata | 37 | `f7a5f0bbde0220906dcf75e8e8747d60db4af364184385579e54e10c3399947b` |
+| JRC GHS-AGE R2025A original copyright text | 38 | `f20723519a580fb35b3499870f0b1baea54f483195105416e547f0014f1610d2` |
+
+Neon independently verifies each canonical JSONB sample SHA-256. These three rows have `sample_kind=public_metadata`, `research_only=true`, `model_input_approved=false` and `source_byte_persistence_authorized=false`. The original HTTP page evidence supports only terms/metadata; **no** DWD hourly rain cell, EU population, original building object, GHSL age pixel or JRC water raster was sampled here.
+
+For GISCO, the 2021 census is **not** synonymous with the earlier noncommercial GEOSTAT grid nor the separately restricted EuroGeographics NUTS/LAU boundary geometry. Do not collapse or deduplicate these legal products by provider name. For EUBUCCO, a filter on just `geometry_source` is a necessary first step but not sufficient to resolve inferred attributes and source lineage.
+
+### Strictly bounded next acquisition gates
+
+1. Execute the already reviewed fixed-source GitHub probe suite separately, with result per source (provider HTTP success and JSON contract verification) rather than inferring reachability from offline CI.
+2. For EUBUCCO, resolve a specific ODbL-only NUTS subset after checking all geometry and non-geometry lineage; then bounded projected-column preflight in a controlled DB, with no raw building geometries made public.
+3. For GISCO 2021, confirm May 2026 exact archive/metadata, population disclosure rules and country coverage, before one bounded grid value sample; never silently join a noncommercial EuroGeographics boundary.
+4. For DWD RADKLIM, select a **single original/corrected 2021** file and verify the matching source-version DOI/supplement boundary before decoding any pixel.
+5. For GHSL AGE and JRC GSW v1.5, freeze one exact pixel asset, compare source version/time and quality caveats; collect hashes/CRS/units first, then only permitted and scientifically defensible sample bytes in private Neon.
+
+The five use-case rights records do not override `access/*.json`, original provider agreements, or independent scientific suitability checks.
