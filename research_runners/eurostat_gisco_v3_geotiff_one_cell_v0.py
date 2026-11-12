@@ -72,7 +72,7 @@ def _u32(body: bytes, offset: int) -> int:
 
 
 def _read_tiff_tags(raw: bytes) -> dict[int, tuple[int, int, int]]:
-    _require(raw[:4] == b"II*\\x00".replace(b"\\x00", b"\x00"),
+    _require(raw[:4] == bytes((73, 73, 42, 0)),
              "expected little-endian classic TIFF")
     start = _u32(raw, 4)
     _require(start == 8, "unexpected first TIFF IFD offset")
