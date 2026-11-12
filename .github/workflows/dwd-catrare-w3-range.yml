@@ -3,6 +3,12 @@
 name: DWD CatRaRE W3 T5 fixed 4KiB range
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/probe_dwd_catrare_w3_range_v0.py"
+      - "tests/test_probe_dwd_catrare_w3_range_v0.py"
+      - ".github/workflows/dwd-catrare-w3-range.yml"
   pull_request:
     paths:
       - "scripts/probe_dwd_catrare_w3_range_v0.py"
@@ -16,9 +22,12 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
       - name: Offline exact W3 v2026.01 and 4KiB rights gate
         run: python3 -m unittest tests.test_probe_dwd_catrare_w3_range_v0 -v
       - name: Both exact DWD W3 and T5 4096-byte Range probes, no provider bytes
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail

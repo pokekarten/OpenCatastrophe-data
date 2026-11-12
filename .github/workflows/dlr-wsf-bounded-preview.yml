@@ -3,6 +3,12 @@
 name: DLR WSF bounded WMS visual preview
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/probe_dlr_wsf_wms_preview_v0.py"
+      - "tests/test_probe_dlr_wsf_wms_preview_v0.py"
+      - ".github/workflows/dlr-wsf-bounded-preview.yml"
   pull_request:
     paths:
       - "scripts/probe_dlr_wsf_wms_preview_v0.py"
@@ -16,9 +22,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
       - name: Offline fail-closed PNG / fixed URL tests
         run: python3 -m unittest tests.test_probe_dlr_wsf_wms_preview_v0 -v
       - name: Exactly seven anonymous 32x32 provider previews
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
