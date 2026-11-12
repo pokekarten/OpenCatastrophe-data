@@ -41,6 +41,23 @@ or guessed storm damages:
   The original 10fg Google distribution is regridded ERA5,
   not observed DWD station gust or a source-matched EIOPA claim.
 
+## Independently verified original 2020 source result
+
+The PR's public Google-hosted source test **actually succeeded** in
+GitHub Actions run [#43307934303](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43307934303),
+job **131496043770**. After independently comparing all four original
+source Zarr metadata SHA-256 pins it loaded the public 2020-02-09
+12:00 UTC original ERA5 10fg at the real atmospheric grid centre
+51.0° N, 7.0° E: **20.320262908935547 m/s** (~73.15 km/h).
+
+An exact observation-only historical provenance record is versioned at
+research/observations/ciara2020_google_arco_one_real_hour_10fg_receipt_20261112.toml
+with metadata-source link, timestamp, exact float32 scalar SHA-256
+**12d34d73cece12a90220ddbbb5b092e388a6b1e0d9b0c9dcf5004a01a7c3119c**,
+attribution and model-science nonadmission booleans. This SHA is of the
+**one selected decoded float32 value**, NOT the original globally compressed
+source Zarr chunk; the latter has not been independently archived.
+
 ## Data rights
 
 Google Research publicly documents commercial and research usage of
