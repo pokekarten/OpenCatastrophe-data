@@ -56,7 +56,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /services/wfs/alkis_gebaeude
 
-**Parameter rules:** Only one exact manually initiated anonymous HTTPS GET https://gdi.berlin.de/services/wfs/alkis_gebaeude?request=GetCapabilities&service=WFS; verify original WFS 2.0.0 service identity, Berlin provider, licence/access constraints, and fixed layer alkis_gebaeude:gebaeude with EPSG:25833. No GetFeature, DescribeFeatureType, pagination, BBOX, parameters, arbitrary hosts/paths, redirects, feature attributes, cadastral coordinates, owners, credentials, bulk downloads or scheduled provider polling.
+**Parameter rules:** Only one exact manually initiated anonymous HTTPS GET https://gdi.berlin.de/services/wfs/alkis_gebaeude?request=GetCapabilities&amp;service=WFS; verify original WFS 2.0.0 service identity, Berlin provider, licence/access constraints, and fixed layer alkis_gebaeude:gebaeude with EPSG:25833. No GetFeature, DescribeFeatureType, pagination, BBOX, parameters, arbitrary hosts/paths, redirects, feature attributes, cadastral coordinates, owners, credentials, bulk downloads or scheduled provider polling.
 
 ## Response contract
 
@@ -126,7 +126,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://www.geoportal.de/info/78d98821-42e2-3c82-a0f7-1baad959b74e>
 - <https://www.berlin.de/umweltatlas/nutzung/gebaeudehoehen/fortlaufend-aktualisiert/datengrundlage/>
 - <https://www.govdata.de/dl-de/zero-2-0>
-- <https://gdi.berlin.de/services/wfs/alkis_gebaeude?request=GetCapabilities&service=WFS>
+- <https://gdi.berlin.de/services/wfs/alkis_gebaeude?request=GetCapabilities&amp;service=WFS>
 - <https://gdi.berlin.de/geonetwork/geonetwork/api/records/986ea575-6141-36f1-89e1-1cbf27fe0c7d>
 - <https://www.berlin.de/sen/stadt/stadtdaten/geoinformation/liegenschaftskataster/geobasisdaten-online/nutzungsbedingungen/>
 
