@@ -105,6 +105,46 @@ the source CRS has been reverified in GitHub.
 No original SHP member (~166 MB compressed), building polygon, raw address,
 full ZIP SHA256, source vintage or model admission was obtained or authorized.
 
+## Original source DBF member: bounded table and row-count gate (2026-11-12)
+
+The original official Oberbayern ZIP central directory independently recorded
+`hausumringe.dbf`: **275,557 DEFLATE bytes, 27,037,425 unpacked bytes**,
+CRC32 `67324194`, at ZIP local header byte offset 0. The local ZIP member
+extends to byte **275,601**, directly followed by the previously verified
+original projection member at 275,602. Consequently, a **single read-only
+HTTP 206 Range `bytes=0-275601`** is sufficient to retrieve the *complete
+original compressed DBF*, without the huge original polygon (`.shp`) file.
+
+The source's original `.shx` central directory claims an uncompressed index
+length of **21,629,988 bytes**. Shapefile index format reserves 100 bytes
+for the header and 8 bytes per feature offset/length entry, implying
+**2,703,736 index entries**; the original DBF directory length is also
+consistent with 65-byte dBase III header + `2,703,736 × 10` bytes per row.
+These counts are **arithmetic expectations from ZIP metadata**, not yet
+independently verified records, survey objects or individual usable
+buildings.
+
+`research_runners/by_hausumringe_oberbayern_dbf_v0.py` now implements
+that single-source DBF member check. It requires fixed URL, HTTP 206,
+original archive total length, 275,602-byte exact response, no redirects,
+valid local ZIP header and DEFLATE, CRC32 recomputed over a **bounded
+27-MB decompression**, and source DBF format/version/date/header/field
+length/record count validation. It independently checks the DBF row count
+against the `.shx` **directory-reported** index cardinality and emits only
+an anonymous numeric active/deleted record summary, original SHA-256/CRC32
+receipts, and the DBF header file date (explicitly **not** cadastral survey
+vintage). No IDs, source attribute values, full polygon geometries or
+provider bytes are emitted or retained.
+
+PR-head runs are **offline synthetic only**. The first real source-DBF
+acceptance requires the exact trusted `main` Actions provider-step outcome
+after all prior source prefix/central-directory/projection checks succeed.
+Until then there is **no live DBF record proof**. Even if it succeeds,
+the `.shx` file and `.shp` footprint geometries remain independently
+unvalidated; no actual building count, matched 2019 WSF score, TIV,
+insurer exposure, model-input approval or automatic scientific admission
+is claimed.
+
 ## Offline comparison method (synthetic-only until source acquired)
 
 `research_runners/by_hausumringe_wsf2019_spatial_gate_v0.py` accepts:
