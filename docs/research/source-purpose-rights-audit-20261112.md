@@ -47,3 +47,17 @@ Do not call all 692 candidates blindly: many are landing pages, publication cita
 2. Independently check the referenced archive files and upstream layers in the three Zenodo records before any actual values are sampled.
 3. For ESWD and GEM, document/seek provider-specific commercial agreements rather than automatically acquiring restricted material.
 4. Continue the existing allowlisted live probes separately from offline CI, preserving provider failure as **failure**, not as an admission.
+
+## Additional 2026-11-12 bounded original-provider smoke reads (Neon receipt rows 1–5)
+
+Five already-reviewed exact URLs from the **existing** fixed public-probe allowlist were fetched as one-shot read-only requests. The independent strict Python repository runner was **not** invoked; these are **smoke checks only**, never science/model approval or equivalent to the full GitHub Action probe. Transient original response bodies were discarded; only non-sensitive outcomes were stored as `research.source_api_smoke_receipt_v0` in Neon.
+
+| Fixed source ID | Observed original response | JSON smoke outcome | Limitation |
+| --- | --- | --- | --- |
+| `geoboundaries.gbopen` | 1812 bytes | PASS: DEU/ADM1 licence metadata shape | Frozen original source ID not independently asserted |
+| `gfz.geomagnetic-kp` | 361 bytes | PASS: nonempty JSON object | Kp scientific values/time semantics not validated |
+| `wsv.pegelonline.rest-v2.dresden` | 722 bytes | PASS: station metadata JSON | Full UUID/Q parser not executed |
+| `emsc.seismicportal.fdsn-event` | 602 bytes | PASS: one-or-zero-event GeoJSON | Magnitude/origin scientific suitability not validated |
+| `noaa.swpc.real-time-solar-wind` | about 59 KB | INCONCLUSIVE: web-scrape transport returned a non-parseable trailing byte sequence | Do not claim provider failure or success; rerun existing trusted Python probe |
+
+These receipts explicitly set `strict_repository_runner_executed=false`, `provider_bytes_persisted=false`, `model_input_approved=false`. The individual endpoint permissions are checked by the corresponding `access/*.json` contracts. The three Zenodo catalogue requests reported above are additional, independently verified metadata GETs.
