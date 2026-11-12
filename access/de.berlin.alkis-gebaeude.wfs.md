@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** wfs
 
-**Status:** documented_only
+**Status:** probe_ready
 
 **Documentation url:** <https://daten.berlin.de/datensaetze/alkis-berlin-gebaude-wfs-728b368a>
 
@@ -35,7 +35,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 ## Access scope
 
 - metadata
-- sample
 
 ## Authentication
 
@@ -52,13 +51,12 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 ### Allowed operations
 
 - get_capabilities
-- get_bounded_features
 
 ### Path templates
 
 - /services/wfs/alkis_gebaeude
 
-**Parameter rules:** Documentation-only identity for the official Berlin ALKIS building and building-part WFS. This contract does not authorize sending either operation. A future provider-specific worker must freeze WFS version, exact GetCapabilities parameters, feature type(s) from the original capabilities/schema, a predeclared 200m x 200m EPSG:25833 Berlin research bounding box, response CRS, page/feature cap, content-type and byte limit; reject any caller-selected host, arbitrary query, redirects, unbounded feature traversal or whole-Berlin extraction. The existing five-feature source receipt does not turn this generic interface into an executable access contract.
+**Parameter rules:** Only one exact manually initiated anonymous HTTPS GET https://gdi.berlin.de/services/wfs/alkis_gebaeude?request=GetCapabilities&service=WFS; verify original WFS 2.0.0 service identity, Berlin provider, licence/access constraints, and fixed layer alkis_gebaeude:gebaeude with EPSG:25833. No GetFeature, DescribeFeatureType, pagination, BBOX, parameters, arbitrary hosts/paths, redirects, feature attributes, cadastral coordinates, owners, credentials, bulk downloads or scheduled provider polling.
 
 ## Response contract
 
@@ -68,7 +66,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - text/xml
 - application/gml+xml
 
-**Format:** Official ALKIS Berlin Gebäude WFS service capabilities and building/building-part vector features; authoritative service metadata indicate OGC WFS 1.0.0, 1.1.0 and 2.0.0, CRS EPSG:25833.
+**Format:** WFS 2.0.0 GetCapabilities XML metadata only: exact ALKIS Berlin Gebaeude identity, OWS ServiceIdentification, OWS Fees/AccessConstraints, FeatureTypeList containing alkis_gebaeude:gebaeude and EPSG:25833. No feature geometry or attributes requested.
 
 **Scientific semantics:** Official mutable cadastral building and building-part geometry; updated monthly. An individual ALKIS feature may represent a building or building part rather than one insured asset. Original EPSG:25833 feature identity, date/vintage, geometry type and provenance must survive ingestion. Do not infer building age, insured location, replacement value, TIV, construction type or hazard vulnerability. A separately produced 2022 LoD2 building-height layer derives from ALKIS footprints and height surfaces and is not geometrically independent of this WFS. Historical 2021 building stock cannot be inferred from a current 2026 feature alone.
 
@@ -82,7 +80,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** The official Berlin Geoportal identifies anonymous web feature access but no approved automated request rate or bulk-download quota was established in this contract. No new request is enabled by this documentation; future operations require a bounded site-specific worker and current official service terms review.
+**Rate limit notes:** Official WFS capabilities and government geodata catalogue allow public anonymous access to the building layer; no numerical quota was published. Permit exactly one metadata-only GET on an explicit manually dispatched reviewed action, no retry or automatic recurrence. A wider automated data acquisition, GetFeature or large-scale query requires an independent service and rights review.
 
 **Mutability notes:** Provider describes monthly ALKIS updates; catalogue metadata show 2026 publication/update dates. Bind every later source read to exact UTC retrieval time, service response SHA-256, feature schema/CRS, requested bbox and dataset vintage; never silently substitute current geometry for the 2021 stock or 2022 LoD2 baseline.
 
@@ -90,31 +88,36 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Dataset rights status:** verified
 
-**Api terms status:** unknown
+**Api terms status:** separate_reviewed
 
-**Terms url:** `null`
+**Terms url:** <https://www.berlin.de/sen/stadt/stadtdaten/geoinformation/liegenschaftskataster/geobasisdaten-online/nutzungsbedingungen/>
 
-**Commercial automation status:** unknown
+**Commercial automation status:** allowed
 
 **Redistribution status:** allowed
 
-**Notes:** The official Berlin Open Data catalogue and government spatial metadata identify Datenlizenz Deutschland – Zero – Version 2.0 for the ALKIS buildings layer, without access restrictions. This validates the published layer license, not a numeric provider automation quota, personal-attribute reuse, independent model-input science or all possible derivative publications. Separate WFS service/request conditions have not been reviewed; status therefore remains documented_only and execution disabled.
+**Notes:** Original provider WFS GetCapabilities (2026-11-12) self-declares Datenlizenz Deutschland Zero 2.0 and 'Es gelten keine Zugriffsbeschraenkungen'. Berlin official dataset metadata identifies anonymous download access and same licence. Berlin general cadastral-use terms distinguish protected owner/measurement records from other ALKIS data and those remain out of scope. Commercial automated access judgement is limited to one manually dispatched WFS capabilities metadata GET; there is no approved poll rate, commercial bulk extraction, feature-level personal data processing, redistribution of unreviewed attributes, CAT exposure or model admission.
 
 ## Probe contract
 
-**Mode:** none
+**Mode:** metadata_get
 
-**Operation:** `null`
+**Operation:** get_capabilities
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-_Empty array._
+- Exact single original HTTPS 200 GetCapabilities XML, no redirects or arbitrary parameters
+- At most 1 MiB; strict XML parsing with no DTD or entity expansion; OGC WFS 2.0.0 and Berlin ALKIS Gebaeude identity
+- Original provider official data licence DL-DE Zero 2.0 and access constraints no restrictions recorded as metadata only
+- Frozen alkis_gebaeude:gebaeude feature type and EPSG:25833 default CRS in original capabilities
+- Request SHA-256, original response SHA-256, response byte count, executable code SHA-256 and retrieval UTC
+- No provider payload persistence, GetFeature, owner or building data, geometry download or CAT model admission
 
-**Implementation decision:** document_only
+**Implementation decision:** build_later
 
-**Reviewed at:** 2026-11-01
+**Reviewed at:** 2026-11-12
 
 ## Evidence urls
 
@@ -123,5 +126,8 @@ _Empty array._
 - <https://www.geoportal.de/info/78d98821-42e2-3c82-a0f7-1baad959b74e>
 - <https://www.berlin.de/umweltatlas/nutzung/gebaeudehoehen/fortlaufend-aktualisiert/datengrundlage/>
 - <https://www.govdata.de/dl-de/zero-2-0>
+- <https://gdi.berlin.de/services/wfs/alkis_gebaeude?request=GetCapabilities&service=WFS>
+- <https://gdi.berlin.de/geonetwork/geonetwork/api/records/986ea575-6141-36f1-89e1-1cbf27fe0c7d>
+- <https://www.berlin.de/sen/stadt/stadtdaten/geoinformation/liegenschaftskataster/geobasisdaten-online/nutzungsbedingungen/>
 
-**Notes:** New contract documents a previously inventoried Berlin source and the official endpoint. This is not a network probe or original feature retrieval. Prior five-feature work is independent evidence recorded elsewhere in the repo; do not promote its science or rights status by implication. No new CAT4 data, insured values, building identities or model inputs are admitted here.
+**Notes:** Exactly one reviewed metadata-only WFS capabilities probe was added, not a GetFeature approval. This remains a landscape non-admission. Berlin buildings/building parts do not constitute independent insured assets or TIV; past five-feature evidence is not upgraded, and owner information remains excluded.
