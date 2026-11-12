@@ -88,6 +88,7 @@ jobs:
         source:
           - globaldamwatch.gdw.v1.0
           - noaa.coops.water-levels
+          - storm.ibtracs.present-climate.v4.datacite
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -104,6 +105,9 @@ jobs:
               ;;
             noaa.coops.water-levels)
               python -m unittest tests.test_probe_noaa_coops_water_levels_v0 -v
+              ;;
+            storm.ibtracs.present-climate.v4.datacite)
+              python -m unittest tests.test_storm_v4_datacite_probe_v0 -v
               ;;
             *)
               echo "::error::Unreviewed source ID" >&2
@@ -124,6 +128,9 @@ jobs:
               ;;
             noaa.coops.water-levels)
               python scripts/probe_noaa_coops_water_levels_v0.py --live
+              ;;
+            storm.ibtracs.present-climate.v4.datacite)
+              python research_runners/storm_v4_datacite_probe_v0.py --probe-once
               ;;
             *)
               echo "::error::Unreviewed source ID" >&2
