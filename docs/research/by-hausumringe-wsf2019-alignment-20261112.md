@@ -264,3 +264,84 @@ The dedicated [offline synthetic workflow](../../.github/workflows/by-hausumring
 - **Science gates**: support alignment, full original reference validity, source vintage, survey coverage, omission/commission/false positives, geographic holdout regions and quantitative error before any exposure/calibration claim.
 - **Status**: `model_input_approved=false`; zero new model approvals, no raw provider bytes in Git/Neon, no new rights grant.
 
+
+
+## Original public BVV ATOM service and dataset feeds verified — 2026-11-12
+
+Two **actual anonymous, read-only original issuer ATOM GETs** succeeded
+independently of the existing original BVV ZIP/DBF/SHX investigations.
+No building geometry, original KML-region layer, Shapefile or archive
+bytes were downloaded, redistributed or inserted into Neon in these
+two requests.
+
+| Actual original XML feed | Official issuer URL | Exact original response byte count | SHA-256 of that response | Neon research sample |
+| --- | --- | ---: | --- | ---: |
+| INSPRE-defined Hausumringe **service** | [ATOM_SERVICE](https://geoportal.bayern.de/gdiadmin/ausgabe/ATOM_SERVICE/eb2bc103-d980-4c74-bb86-d850c92ebac6) | **2,946 bytes** | `152c3610d68d5288ffcc187ef4d89754336d3978fc10ee41f64cdf9efbff45d7` | **53** |
+| Hausumringe **dataset** | [ATOM_DATASET](https://geoportal.bayern.de/gdiadmin/ausgabe/ATOM_DATASET/eb2bc103-d980-4c74-bb86-d850c92ebac6) | **1,801 bytes** | `187b873bc66a826b04bd275b3b106cc9e0a675bb167a2cd25c3212f891fb8b3f` | **54** |
+
+Both exact provider responses declared `application/atom+xml`. This
+live test established original issuer/feed identity, a traversable
+service-to-dataset link, publication contact and a dataset-to-regional
+KML index pointer. It **did not** independently expose HTTP status
+headers via the delegated transport, and therefore does **not**
+claim an original HTTP-200 status proof. The feed `updated` timestamps
+are mutable catalogue-state metadata; the two hashes are original
+response receipts, **not version-stable original Shapefile identities**.
+
+**Important source-rights metadata asymmetry:** the top-level
+Bavarian ATOM **service** expressly states `cc-by/4.0` plus
+the exact mandatory attribution
+**“Datenquelle: Bayerische Vermessungsverwaltung – www.geodaten.bayern.de”**;
+the underlying **dataset ATOM** instead has `<rights>TODO</rights>`
+at feed and entry level. This is **incomplete rights metadata** in
+the dataset feed, *not* evidence that the publisher expressly prohibits
+use. The official [BVV Gebühren- und Preisliste, §7.4](https://www.ldbv.bayern.de/mam/ldbv/dateien/gebuehren_und_preisliste.pdf)
+and the issuer's [AdV product rights review](https://www.distributions.informationgrid.eu/freitextsuche?inspire=inspire_false&productgroup=at15&q=view&type=)
+independently establish **CC BY 4.0 for the Bavarian HU-BY open
+Hausumringe product** with attribution and modification notice.
+That product-scoped verdict does **not** transfer to protected
+ALKIS WFS, individual owners, federal HU-DE or third-party datasets.
+
+Both live metadata receipts were added directly to the separate
+insurance Neon `research.source_sample_v0` as
+`sample_kind=public_metadata`, with source-response SHA-256 and
+canonical JSONB SHA-256:
+
+- `sample_id=53`, source `de.bayern.hausumringe`, source SHA above,
+  canonical JSONB SHA-256
+  `b2ab25ccfd07a6a2dd2f22e72f3b44f66d8729ed080918ec7f61eed47321b8b4`.
+- `sample_id=54`, same candidate, source SHA above,
+  canonical JSONB SHA-256
+  `6b400c26ad40844207e733d831745939b71d4eaae714bb6841aeecb8c6729d1a`,
+  with `dataset_atom_rights_field_todo=true`.
+
+**No** original XML bodies persisted in Neon or Git, no new
+original polygon/geometry interpretation, no historic 2020 building
+snapshot and no scientific-model admission. The candidate remains
+`actual_sample_state=metadata_only` with existing product-scoped
+`commercial_reuse_verdict=allowed_verified` and
+`admission_status=not_admitted`.
+
+Read-only research evidence replay in `insurance-risk-core`:
+
+```sql
+SELECT sample_id, source_id, sample_kind, provider_response_sha256,
+       sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex')
+         AS stored_jsonb_hash_valid,
+       sample_json->>'feed_kind' AS original_feed,
+       sample_json->>'dataset_atom_rights_field_todo' AS rights_placeholder,
+       model_input_approved, source_byte_persistence_authorized
+FROM research.source_sample_v0 WHERE sample_id IN (53,54)
+ORDER BY sample_id;
+```
+
+The existing original **Oberbayern** ZIP index/DBF/SHX proofs remain
+separate and stronger regarding actual official file structure:
+2,703,736 active DBF entries and matching original index length
+are now evidenced, with original **EPSG:25832** projection. Yet the
+~501 MB *uncompressed original .shp polygon member* and its
+individual geometries have **not** been independently validated.
+Neither the pre-existing WSF2019 comparison preflight nor the separate
+GHSL E2020/GDAL source-replay work should convert that archive-index
+count into an asserted count of distinct insurable buildings or use a
+2026 snapshot to imply unbiased 2020 validation.
