@@ -14,7 +14,7 @@ assigns a machine-readable next gate. It does **not** claim that every entry has
 an API, a reusable data licence, a working asset download or CAT-model fitness.
 
 At the initial review: 692 non-admitted discovery candidates, 15 accepted
-manifests, 707 total records, 68 reviewed source-access contracts, of which 17 have exact,
+manifests, 707 total records, 68 reviewed source-access contracts, of which 18 have exact,
 separately reviewed public probe programs. The independent insurance research
 database held 29 narrowly scoped samples from 20 source identities and 14
 product-scoped commercial-rights decisions. Those database counts are an
@@ -50,10 +50,10 @@ reproduce the source contract classification.
 ## Actual bounded live testing
 
 Run the workflow manually from the GitHub Actions tab and choose
-the probe_mode option reviewed_17. This is the **only** trigger that performs
+the probe_mode option reviewed_18. This is the **only** trigger that performs
 live network checks in this workflow. A single read-only runner executes the
-seventeen existing provider-specific scripts **sequentially** rather than creating
-a matrix of seventeen runner jobs. It does not accept a free-form URL, credential,
+eighteen existing provider-specific scripts **sequentially** rather than creating
+a matrix of eighteen runner jobs. It does not accept a free-form URL, credential,
 source ID, search area or download path.
 
 Before any network request, every allowlisted contract must remain
@@ -78,7 +78,9 @@ Berlin ALKIS building WFS 2.0.0 GetCapabilities XML metadata request. The
 Berlin test reads no building geometry, addresses, owner attributes, or other
 features. The seventeenth contract adds one MeteoSwiss hail-climatology
 STAC Collection metadata GET; it does not retrieve or follow NetCDF assets,
-STAC items, monthly data or return-period surfaces. They are limited **capability** probes, not complete
+STAC items, monthly data or return-period surfaces. The eighteenth reviewed probe reads only original HydroATLAS v1 Figshare
+article metadata (seven fixed archive and documentation identities), without
+retrieving any multi-gigabyte GIS archive or PDF. They are limited **capability** probes, not complete
 downloads, all-regions proofs or model-input approvals. Some exact original
 provider terms explicitly limit automation cadence; therefore the weekly
 audit **never** schedules live provider requests.
