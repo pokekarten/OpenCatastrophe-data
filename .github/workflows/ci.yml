@@ -66,6 +66,7 @@ jobs:
           python -m unittest
           tests.test_glofas_v4_uparea_reader
           tests.test_ciara2020_nrw_era5_normalized_netcdf_v0
+          tests.test_ciara2020_cds_original_source_one_shot_v0
           -v
 
   eu-flood-spatial:
