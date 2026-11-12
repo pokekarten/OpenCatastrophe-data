@@ -76,6 +76,35 @@ is a **controlled full-member provenance/import** only when necessary and
 with explicit footprint-only storage scope; neither the testing workflow
 nor the model registry should automatically ingest this 174.3-MB ZIP.
 
+## Original ZIP projection .prj: complete single member proof (2026-11-12)
+
+Following the independently reviewed [main ZIP central directory proof](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43291927411),
+the exact original `hausumringe.prj` member was also fetched as **one bounded
+301-byte public HTTP Range** `bytes=275602-275902`. The original 45-byte ZIP
+local header identifies a 256-byte raw-DEFLATE member with **388** unpacked
+bytes; original directory and local header CRC32 `d49ececb` agreed with
+the independently recomputed CRC32 of the unpacked WKT.
+
+Original member SHA-256 fingerprints (independently observed, not a whole
+ZIP hash): compressed deflate bytes
+`055f581691a9def92166569c959a0713d4c0e34cf746d1238821ad18caaea2c8`;
+uncompressed 388-byte WKT
+`03c412dbe0da64f769d15d4de5ee08309680542a54630d3e8baf8d82d0091670`.
+The WKT identifies `ETRS89_UTM_zone_32N`; a separate pyproj 3.7.2 parse
+independently maps it to **EPSG:25832**. This validates the *real original
+projection file* for the cadastral-to-WSF conversion, not geometry correctness.
+
+`research_runners/by_hausumringe_oberbayern_prj_v0.py` captures the complete
+301-byte original only transiently; its exact provider request and CRC/SHA
+and CRS checks run **only on trusted main/manual GitHub workflows** after the
+ZIP prefix and central directory succeeded. All PR tests run on **synthetic
+raw-DEFLATE WKT bytes** with pinned PROJ, not original provider content.
+The independent accepted production run remains necessary before claiming
+the source CRS has been reverified in GitHub.
+
+No original SHP member (~166 MB compressed), building polygon, raw address,
+full ZIP SHA256, source vintage or model admission was obtained or authorized.
+
 ## Offline comparison method (synthetic-only until source acquired)
 
 `research_runners/by_hausumringe_wsf2019_spatial_gate_v0.py` accepts:
