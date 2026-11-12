@@ -6,11 +6,14 @@ on:
     paths:
       - 'research_runners/by_hausumringe_oberbayern_zip_prefix_v0.py'
       - 'tests/test_by_hausumringe_oberbayern_zip_prefix_v0.py'
+      - 'research_runners/by_hausumringe_oberbayern_zip_central_v0.py'
+      - 'tests/test_by_hausumringe_oberbayern_zip_central_v0.py'
       - '.github/workflows/by-hausumringe-oberbayern-zip-prefix.yml'
   push:
     branches: [main]
     paths:
       - 'research_runners/by_hausumringe_oberbayern_zip_prefix_v0.py'
+      - 'research_runners/by_hausumringe_oberbayern_zip_central_v0.py'
       - '.github/workflows/by-hausumringe-oberbayern-zip-prefix.yml'
   workflow_dispatch:
 permissions:
@@ -24,7 +27,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Source-specific fake ZIP, strict Range, redirect and format regression tests
-        run: python -m unittest tests.test_by_hausumringe_oberbayern_zip_prefix_v0 -v
+        run: |
+          python -m unittest tests.test_by_hausumringe_oberbayern_zip_prefix_v0 -v
+          python -m unittest tests.test_by_hausumringe_oberbayern_zip_central_v0 -v
   bounded-trusted-live:
     needs: offline-source-contract
     if: github.event_name != 'pull_request'
@@ -38,11 +43,17 @@ jobs:
         id: provider_probe
         continue-on-error: true
         run: python -m research_runners.by_hausumringe_oberbayern_zip_prefix_v0 --live
+      - name: Verify source original ZIP central directory via separate 4KiB bounded suffix
+        id: central_probe
+        if: steps.provider_probe.outcome == 'success'
+        continue-on-error: true
+        run: python -m research_runners.by_hausumringe_oberbayern_zip_central_v0 --live
       - name: Explicit actual provider result distinct from green diagnostic workflow
         if: always()
         shell: bash
         env:
           PROBE_OUTCOME: ${{ steps.provider_probe.outcome }}
+          CENTRAL_OUTCOME: ${{ steps.central_probe.outcome }}
           CODE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
@@ -55,9 +66,19 @@ jobs:
           {
             printf '### BVV Hausumringe original 4KiB ZIP prefix (diagnostic only)\n\n'
             printf '| Provider step | **%s** |\n' "$state"
+            case "$CENTRAL_OUTCOME" in
+              success) central_state=SUCCEEDED ;;
+              failure) central_state=FAILED ;;
+              skipped|"") central_state=NOT_RUN ;;
+              *) central_state=UNKNOWN ;;
+            esac
+            printf '| Central directory step | **%s** |\n' "$central_state"
             printf '| Workflow SHA | `%s` |\n' "$CODE_SHA"
             printf '\nNo full archive, Shapefile features, original geometries, Neon writes, licence or CAT model admission.\n'
           } >> "$GITHUB_STEP_SUMMARY"
           if [[ "$PROBE_OUTCOME" == failure ]]; then
             echo "::warning title=BVV original 4KiB access blocked::A green diagnostic job does not mean the provider was reachable."
+          fi
+          if [[ "$CENTRAL_OUTCOME" == failure ]]; then
+            echo "::warning title=BVV ZIP central directory blocked::A green diagnostic job does not prove the archived member layout."
           fi

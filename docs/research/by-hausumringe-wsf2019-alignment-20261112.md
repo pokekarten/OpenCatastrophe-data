@@ -25,6 +25,57 @@ The original DLR WSF2019 32×32 raster samples #28 and #29 **have** been indepen
 
 **No original Bavarian open-download Hausumringe Shapefile has yet been obtained, version-frozen, spatially sampled, independently hashed, or checked against these WSF windows. No real-world building/WSF overlap or loss validation is claimed by this change.**
 
+## Source-specific open rights and original ZIP central-directory evidence (2026-11-12)
+
+**Primary-source usage rights:** the Bavarian Vermessungsverwaltung's
+[Gebühren- und Preisliste dated 2026-07-01](https://www.ldbv.bayern.de/mam/ldbv/dateien/gebuehren_und_preisliste.pdf),
+section **7.4 Hausumringe**, explicitly states **kostenfrei, Lizenz CC BY 4.0**
+for the house-outline product through Download, APIs or Geodatendienste.
+For this *specific Bavarian HU-BY open product*, CC BY 4.0 permits commercial
+reuse subject to attribution, a license link and indication of changes.
+Do not extrapolate to the restricted ALKIS WFS, owner/address datasets,
+federal HU-DE, or third-party rights. A licence signal is **not** a scientific
+validation or insured-location/TIV approval. The original catalogue
+`rights_review_status=not_reviewed` is retained until a scoped contract and
+database rights review is committed; do not silently change it.
+
+**Format/source semantics:** the LDBV
+[Hausumringe Datenformatbeschreibung (10/2024)](https://www.ldbv.bayern.de/mam/ldbv/dateien/hausumringe-by_datenformatbeschreibung.pdf)
+names exactly four Shapefile components `hausumringe.shp`, `.shx`,
+`.dbf`, `.prj`; defaults to ETRS89/UTM zone 32 (EPSG:25832);
+includes object types other than standalone residential buildings, and
+carries municipal AGS. Data are refreshed quarterly: **the publication
+of that specification does not establish the 2026 regional archive's
+original observation vintage**.
+
+A separately bounded original **4,096-byte HTTP Range from the ZIP end**
+reported the EOCD at the final 22 bytes; the original central directory
+claimed **four** Shape components with exactly these file lengths:
+
+| Original ZIP directory member | Compressed bytes (claimed) | Uncompressed bytes (claimed) |
+| --- | ---: | ---: |
+| `hausumringe.dbf` | 275,557 | 27,037,425 |
+| `hausumringe.prj` | 256 | 388 |
+| `hausumringe.shp` | 166,172,236 | 501,212,696 |
+| `hausumringe.shx` | 7,851,126 | 21,629,988 |
+
+The directory offset is **174,299,355**, size **388 bytes**,
+original archive length **174,299,765 bytes**. All member data extents
+plus local headers are contiguous in this *directory claim*.
+`research_runners/by_hausumringe_oberbayern_zip_central_v0.py`
+strictly checks this profile via one exact `bytes=174295669-174299764`
+HTTP 206; PR tests use synthetic central directories only.
+The production `main` run is a **separate acceptance requirement**
+and may block if the object changes.
+
+This is **central-directory original metadata**, not CRC32 checking of
+decompressed Shape bytes, a full archive SHA-256, proof of actual projection
+text, independent feature count, full region completeness or an observed
+WSF↔official polygon comparison. The next scientifically justified step
+is a **controlled full-member provenance/import** only when necessary and
+with explicit footprint-only storage scope; neither the testing workflow
+nor the model registry should automatically ingest this 174.3-MB ZIP.
+
 ## Offline comparison method (synthetic-only until source acquired)
 
 `research_runners/by_hausumringe_wsf2019_spatial_gate_v0.py` accepts:
