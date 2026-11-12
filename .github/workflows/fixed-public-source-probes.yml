@@ -172,7 +172,7 @@ jobs:
               python -m scripts.probe_dwd_historical_directory_v0
               ;;
             esa.worldcover.2021.v200)
-              python scripts/probe_esa_worldcover_tile_head_v0.py --live
+              python -m scripts.probe_esa_worldcover_tile_head_v0 --live
               ;;
             noaa.ncei.ghcnd-central-park-gzip)
               python scripts/probe_ghcnd_ncei_us_station_gzip_v0.py --live
