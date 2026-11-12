@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: BVV original SHP streaming Munich DLR WSF native-window research
+on:
+  pull_request:
+    paths:
+      - 'research_runners/by_hausumringe_oberbayern_shp_windows_v0.py'
+      - 'tests/test_by_hausumringe_oberbayern_shp_windows_v0.py'
+      - '.github/workflows/by-hausumringe-original-shp-munich-windows.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'research_runners/by_hausumringe_oberbayern_shp_windows_v0.py'
+      - '.github/workflows/by-hausumringe-original-shp-munich-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-synthetic-source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned GIS parser wheels without original provider bytes
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: "numpy==2.3.5" "shapely==2.1.2" "pyproj==3.7.2"
+      - name: Require scientific geometry dependencies; no silent skip
+        run: |
+          python -c 'import numpy,shapely,pyproj; assert (numpy.__version__,shapely.__version__,pyproj.__version__)==("2.3.5","2.1.2","3.7.2")'
+      - name: Run tiny synthetic binary Polygon SHP and fail-closed source QA
+        run: python -m unittest tests.test_by_hausumringe_oberbayern_shp_windows_v0 -v
+
+  trusted-original-geometry:
+    needs: offline-synthetic-source-contract
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned GIS geometry dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: "numpy==2.3.5" "shapely==2.1.2" "pyproj==3.7.2"
+      - name: Bound memory and confirm exact reviewed source dependency source-code chain
+        run: |
+          python -c 'from research_runners.by_hausumringe_oberbayern_shp_windows_v0 import START,END,READ_BYTES,UNCOMPRESSED_BYTES,EXPECTED_SHX_ENTRIES; assert (START,END,READ_BYTES,UNCOMPRESSED_BYTES,EXPECTED_SHX_ENTRIES)==(275903,166448183,166172281,501212696,2703736)'
+      - name: Stream one original official 166 MB SHP source member; NO original bytes persisted
+        id: source_shp
+        continue-on-error: true
+        run: python -m research_runners.by_hausumringe_oberbayern_shp_windows_v0 --live
+      - name: Show real source success or failure, distinct from green diagnostic job
+        if: always()
+        shell: bash
+        env:
+          SOURCE_RESULT: ${{ steps.source_shp.outcome }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          case "$SOURCE_RESULT" in
+            success) actual=SUCCEEDED ;;
+            failure) actual=FAILED ;;
+            skipped|"") actual=NOT_RUN ;;
+            *) actual=UNKNOWN ;;
+          esac
+          {
+            printf '### Official Bavarian Hausumringe original SHP -> two 32x32 research-window fractions\n\n'
+            printf '| Actual source SHP step | **%s** |\n' "$actual"
+            printf '| Version | `%s` |\n' "$COMMIT_SHA"
+            printf '\nSource stream only, no original Shape/DBF bytes, original geometry/IDs, credentials or Neon writes persisted. Derived 32x32 fractions are 2019-vs-current-cadastre exploratory only, not model input.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$SOURCE_RESULT" == failure ]]; then
+            echo "::warning title=Original Bavarian SHP source blocked::Source original ZIP/CRC, complete SHP parser or bounded geometry test failed. Green diagnostic conclusion is not source success."
+          fi
