@@ -5,6 +5,70 @@ SPDX-License-Identifier: Apache-2.0
 
 # Insurance Neon source rights and bounded sample staging — 2026-11-11
 
+## Verified post-merge execution update — 2026-11-12
+
+This section supersedes the historical `queued` observations in later chronological
+sections of this report. **PR [#1481](https://github.com/pokekarten/OpenCatastrophe-data/pull/1481)
+is merged** on `main` as commit `ffa98747ea1bc0907be3e1b46a7de92bfcf6a272`.
+Its exact PR head passed the full four-Python-version
+[CI](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43226123698),
+including the separately pinned GDAL synthetic suite. Pull-request jobs now
+run offline source checks; only trusted `main` or explicitly manually dispatched
+runs contact original providers.
+
+**Independent original DLR verification — T1 original fixed-range scientific
+format check, not exposure admission:** on
+[main Actions run 43226483288](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43226483288),
+both original-source jobs succeeded. The pure-Python TIFF LZW parser and the
+independent Rasterio/GDAL 3.12.2 decoder each read exactly the frozen original
+32,768-byte header and one 24,659-byte native LZW block of DLR WSF 2019
+`WSF2019_v1_10_48.tif` without downloading or retaining the whole TIFF.
+Both paths agreed with the prior Neon research samples:
+
+| Receipt | Exact verified SHA-256 or class count |
+| --- | --- |
+| Original TIFF header 32 KiB | `1e881e8323d3ade63ad4453a0c1b7af6d792ae254356ceb20c197d0316ab80b7` |
+| Compressed original native block | `8f06d03fcc3cc63930d216a834bca6c51275da6b436e1b2639a39952ddbf0503` |
+| Neon sample #28, 32×32 native mask | 1,024 class-0 / 0 class-255; `ff08ea1f4b89475bb4bcf8d4a453e55058f21eba2de2daa1fb5943d1706293df` |
+| Neon sample #29, 32×32 native mask | 542 class-0 / 482 class-255; `85aaf92c2b87fc7ea80359498680bca371aaa0e974d65476328bb70e314b3fce` |
+
+The source tile is EPSG:4326, LZW-compressed, 512×512 native pixels. The
+original source checksum/byte-range and independent decoder agreement are
+verified; the *complete* original 13 MB file SHA-256, cadastral building
+identity, insured portfolio exposure, vulnerability and TIV **are not**.
+The immutable classification `model_input_approved=false` remains.
+
+Other independent [main source checks](https://github.com/pokekarten/OpenCatastrophe-data/actions)
+also succeeded on 2026-11-12:
+- [DLR seven fixed WMS previews, run 43226483180](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43226483180):
+  7/7 anonymous 32×32 PNG response checks; these are *rendered previews*, not native
+  building heights or area data.
+- [DWD CatRaRE W3/T5, run 43226483197](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43226483197):
+  exact two 4,096-byte original CSV prefixes, each with 67 columns and three
+  valid original event rows. Complete 12.4 MB / 17.2 MB files, geographic
+  polygons, event overlap and Radar/RADKLIM parent dependence are not admitted.
+- [Source-access execution matrix, run 43210700574](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43210700574):
+  all **15/15** actual fixed-provider step outcomes were successful; access
+  checks do not imply source/payload/model admission.
+
+An independent read-only query to insurance Neon `research.source_sample_v0`
+and `research.native_raster_sample_quality_v0` confirmed **29/29** valid
+sample JSONB SHA-256 values, **2/2** internally consistent native mask rows,
+**20** distinct sampled source IDs, and **zero** model-input approvals.
+The source-inventory view lists **692** research candidates and **15** preexisting
+manifest records. The 14 product-specific `allowed_verified` commercial
+reuse verdicts apply only to their reviewed scopes; the other 678 research
+candidates remain `unresolved` for commercial reuse. No new provider bytes
+were committed to Git or automatically inserted in Neon by these probes.
+
+**Next scientific work:** independently verify full-asset identity when
+needed; check spatial support, source vintage and out-of-sample agreement
+against cadastral/ground truth; explicitly reconcile different NOAA
+GHCN-Daily NODD/NCEI original versions; resolve CatRaRE W3/T5 overlapping
+events and their common RADKLIM lineage before building peril occurrence sets.
+No premature CAT-model input, individual building-count, insurance-value or
+loss estimation claim is authorized.
+
 ## Scope and actual evidence
 
 The public repository is the canonical source for research source identities. Its fixed-commit source-register audit was executed separately on GitHub Actions:
