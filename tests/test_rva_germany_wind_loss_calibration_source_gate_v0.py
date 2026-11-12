@@ -4,6 +4,9 @@
 from __future__ import annotations
 from copy import deepcopy
 import tomllib
+from contextlib import redirect_stderr
+from io import StringIO
+from unittest.mock import patch
 from pathlib import Path
 import sys
 import unittest
@@ -36,6 +39,32 @@ class SourceRightsAndCalibrationNoGoTests(unittest.TestCase):
                   "external_workbook_original_bytes_ingested",
                   "licence_or_data_reuse_approval_inferred"):
             self.assertIs(status[f], False)
+
+    def test_native_german_wind_loss_requires_all_external_evidence(self):
+        status = gate.validate_registry(self.register)
+        self.assertIs(status["native_German_wind_GUL_IL_RI_OEP_AEP_admitted"], False)
+        self.assertEqual(
+            set(status["scientific_and_licensing_model_no_go"]),
+            set(gate.MODEL_NO_GO),
+        )
+        self.assertEqual(len(gate.MODEL_NO_GO), 6)
+        self.assertTrue(all("DARIA1990" not in record["id"]
+                            for record in self.register["records"]))
+        with self.assertRaisesRegex(gate.SourceRightsBlocked,
+                                    "NO_GO_NATURAL_CATASTROPHE_LOSS_MODEL"):
+            gate.require_admitted_loss_calibration(self.register)
+
+    def test_cli_native_loss_preflight_exits_nonzero_and_names_blockers(self):
+        stderr = StringIO()
+        with patch.object(sys, "argv", [
+            "rva_germany_wind_loss_calibration_source_gate_v0.py",
+            "--source-register", str(gate.DEFAULT),
+            "--require-admitted-loss-calibration",
+        ]), redirect_stderr(stderr), self.assertRaises(SystemExit) as blocked:
+            gate.main()
+        self.assertEqual(blocked.exception.code, 2)
+        self.assertIn("DARIA1990_MATCHED_INSURED_CLAIMS", stderr.getvalue())
+        self.assertIn("DATA_RIGHTS", stderr.getvalue())
 
     def test_gdv_text_data_mining_must_not_be_claimed_approved(self):
         doc = self.altered()
