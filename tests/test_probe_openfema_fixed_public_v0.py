@@ -75,7 +75,6 @@ class FixedOpenFEMATests(unittest.TestCase):
         raw = payload(NFIP, [nfip_row(1), nfip_row(2, resPenetrationRate=.2)])
         out = validate_response(NFIP, raw)
         self.assertEqual(out["ratio_over_100pct_field_count"], 1)
-        self.assertIsNone(out["missing_structure_denominator_fields"] if False else None)
         self.assertEqual(out["rows"], 2)
         self.assertEqual(out["missing_structure_denominator_fields"], 0)
         self.assertFalse(out["model_input_approved"])
