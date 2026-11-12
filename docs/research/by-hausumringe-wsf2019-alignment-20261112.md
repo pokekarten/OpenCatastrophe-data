@@ -182,6 +182,61 @@ indices establish **structural source file consistency**, not actual
 polygon geometry quality, observed 2019 building footprints, insured
 TIV or CAT model admission.
 
+## Original official SHP member: controlled full stream, restricted 2-window geometry (2026-11-12)
+
+**Source-only scientific research, not model admission.**
+Existing original primary source evidence was generated on trusted main at
+[GitHub Actions run 43308079377](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43308079377):
+fully decoded original DBF records **2,703,736**, all **2,703,736** original
+SHX offsets continuous and ending exactly at **501,212,696** uncompressed
+SHP bytes, and exact original projection EPSG:25832. Full original SHP
+geometry had **not** been fetched or checked in those source runs.
+
+The new `research_runners/by_hausumringe_oberbayern_shp_windows_v0.py`
+and dedicated
+[Actions workflow](../../.github/workflows/by-hausumringe-original-shp-munich-windows.yml)
+introduce a carefully bounded and **one-time on `main` push** full-member
+network stream of the *original* 166,172,236-byte DEFLATE ZIP SHP payload
+(plus 45-byte local ZIP header, exact HTTP 206 `Range:
+bytes=275903-166448183`; 166,172,281 source bytes total). No arbitrary
+URL, downloads from private ALKIS, redirects, retry crawls, or full
+ZIP files are authorized. It verifies the original ZIP member header,
+CRC32 `55540a66`, complete source compressed/uncompressed SHA-256,
+501,212,696 original unpacked bytes, binary Shapefile 9994/1000/Polygon 5,
+and all 2,703,736 sequential record IDs and byte boundaries.
+
+Streaming parser drops every original polygon except **at most 2,048
+polygon candidates per independently GDAL-verified WSF native 32x32
+Munich grid** (fixed bounding boxes for Neon research samples **#28 and
+#29**). Selected footprints are processed exclusively in process RAM:
+record 2D polygon geometry, original EPSG:25832 to EPSG:4326 using
+independent `pyproj==3.7.2`, then fractional area coverage on
+the original native 32x32 pixel grid using `shapely==2.1.2`.
+The report may emit **only** aggregate source counts, area, fixed
+2048-byte **uint16 little-endian 32x32 per-cell fractional footprint
+coverage grids**, derived grid SHA256 and review metadata. Original
+polygon vertices, record offsets, cadastral identifiers, raw SHP
+source bytes and complete provider archive are never persisted in
+Git, SQL, log output or workflow artifacts.
+
+PR heads run **synthetic-only** geometry/stream tests with pinned numpy,
+shapely and pyproj; only reviewed main push or explicit trusted manual
+dispatch may fetch the full original public source.
+The streaming job is a non-blocking diagnostic with an **explicit
+actual provider-step SUCCESS/FAILURE** output, not a silently green
+scientific approval. On failure keep original source incomplete
+and record the scientific blocker without data admission.
+
+After a successful source receipt, the per-cell derived coverage
+must still be joined **outside Git** against the independently verified
+Neon original DLR-WFS 2019 pixel masks (#28/#29), preserving their
+immutable mask SHA256 fingerprints, to calculate real matched *area*
+statistics. The two different source years introduce genuine
+2019-vs-2026 capture/vintage confounding. No population-level
+building-exposure validation, false-positive rate, insurance TIV or
+model input can be inferred from two native 32x32 windows or from
+the counts of shapefile records.
+
 ## Offline comparison method (synthetic-only until source acquired)
 
 `research_runners/by_hausumringe_wsf2019_spatial_gate_v0.py` accepts:
