@@ -24,7 +24,7 @@ def synthetic_original(*, deleted=False):
     body[64]=0x0d
     for i in range(3):
         flag=b"*" if deleted and i==1 else b" "
-        body.extend(flag+(f"fake{i:05d}x".encode("ascii")))
+        body.extend(flag+(f"fake{i:04d}x".encode("ascii")))
     assert len(body)==95
     z=zlib.compressobj(level=6,wbits=-15)
     comp=z.compress(body)+z.flush()
