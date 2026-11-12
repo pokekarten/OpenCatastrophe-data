@@ -12,8 +12,28 @@ We now have a six-source rights-and-scientific-kind register at
 [research/observations/rva_germany_wind_loss_calibration_source_register_v0.toml](../../research/observations/rva_germany_wind_loss_calibration_source_register_v0.toml).
 The corresponding fail-closed Python source-classification gate is
 in research_runners/rva_germany_wind_loss_calibration_source_gate_v0.py
-with eight independent regression/negative test cases in
+with fourteen independent regression/negative test cases in
 tests/test_rva_germany_wind_loss_calibration_source_gate_v0.py.
+
+## Native model admission preflight (2026-11-12)
+
+This six-source registry remains **reference-only**; the HTTP and licence
+review does not create a single validated wind loss sample. The validator
+prints a machine-readable `scientific_and_licensing_model_no_go` array with
+six missing evidence types. For NextGen/Oasis, an explicit fail-closed check is:
+
+```bash
+python research_runners/rva_germany_wind_loss_calibration_source_gate_v0.py \
+  --require-admitted-loss-calibration
+```
+
+**Expected outcome:** exit 2, not a GUL/IL/RI admission. It is intentionally
+impossible to make v0 pass by editing a status flag: a future calibrated
+model needs newly reviewed licensed source data, matched wind-event
+intensities and insured-loss denominators, coverages/terms, independent
+out-of-sample validation, and annual frequency evidence. The retained
+Daria 1990 / HU2022 / fictional 2025-like value scenario is not that
+matched study. Source register state is explicitly dated 2026-11-09.
 
 ## Highest-value observational sources
 
