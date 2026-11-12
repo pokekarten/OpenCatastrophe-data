@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: GHSL original 2020 BUILT-S/V bounded native TIFF block canaries
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/probe_ghsl_built_native_original_block_v0.py"
+      - "scripts/verify_ghsl_built_r2023a_native_prefix_v0.py"
+      - "tests/test_probe_ghsl_built_native_original_block_v0.py"
+      - ".github/workflows/ghsl-built-native-original-block.yml"
+  pull_request:
+    paths:
+      - "scripts/probe_ghsl_built_native_original_block_v0.py"
+      - "scripts/verify_ghsl_built_r2023a_native_prefix_v0.py"
+      - "tests/test_probe_ghsl_built_native_original_block_v0.py"
+      - ".github/workflows/ghsl-built-native-original-block.yml"
+permissions:
+  contents: read
+jobs:
+  fixed-source:
+    name: Fixed original source 32 KiB prefix + one native uint32 block per product
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout reviewed source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up exact Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Fail-closed synthetic network and native unsigned-32-bit coding tests
+        run: python -m unittest tests.test_verify_ghsl_built_r2023a_native_prefix_v0 tests.test_probe_ghsl_built_native_original_block_v0 -v
+      - name: Verify original JRC surface source native block with no data retention
+        if: github.event_name != 'pull_request'
+        run: python -m scripts.probe_ghsl_built_native_original_block_v0 --product surface --live
+      - name: Independently verify original JRC volume source native block with no data retention
+        if: github.event_name != 'pull_request'
+        run: python -m scripts.probe_ghsl_built_native_original_block_v0 --product volume --live
