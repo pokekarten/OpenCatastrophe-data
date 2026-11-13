@@ -20,7 +20,9 @@ permissions:
   contents: read
 # Never run two full official BVV source streams concurrently in GitHub.
 concurrency:
-  group: bvv-full-shp-ghsl-roi-${{ github.ref }}
+  # PRs are synthetic and must not cancel the independent BVV PR canary.
+  # Trusted-main live source runs still share the BVV 166-MB origin gate.
+  group: ${{ github.event_name == 'pull_request' && 'ghsl-bvv-cellwise-synthetic-pr' || 'bvv-full-shp-ghsl-roi' }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   original-cross-epoch-cellwise:
