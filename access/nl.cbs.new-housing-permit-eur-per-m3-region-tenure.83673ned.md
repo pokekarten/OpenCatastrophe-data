@@ -53,7 +53,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - original_metadata_small_rows
 - first_2012_permit_cost_row
-- 2026_june_rolling_rental_and_owner_exact_rows
+- rolling_2026_june_rental_owner_exact_rows
 
 ### Path templates
 
