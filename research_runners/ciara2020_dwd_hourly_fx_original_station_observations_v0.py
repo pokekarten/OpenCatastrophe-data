@@ -38,6 +38,7 @@ EVENT_END = EVENT_START + timedelta(hours=HOURS - 1)
 TARGET_LAT = 51.0
 TARGET_LON = 7.0
 MAX_STATIONS = 3
+MAX_CANDIDATE_ARCHIVES = 12
 MAX_RADIUS_KM = 120.0
 MAX_STATION_LIST = 900_000
 MAX_INDEX = 450_000
@@ -244,19 +245,38 @@ def live_dwd_2020_original_three_stations(*, opener=None) -> dict:
     html = _get_publisher_bytes(INDEX, MAX_INDEX, opener)
     stations = station_candidates(station_bytes)
     links = historical_zip_links(html)
-    chosen = [station for station in stations if station["station_id"] in links][:MAX_STATIONS]
-    if len(chosen) != MAX_STATIONS:
-        raise OriginalDWDRejected("three official local station archives spanning Ciara 2020 required")
+    chosen = [station for station in stations if station["station_id"] in links][:MAX_CANDIDATE_ARCHIVES]
+    if len(chosen) < MAX_STATIONS:
+        raise OriginalDWDRejected("three eligible original 2020 station archives are required")
     reports = []
+    skipped_incomplete_stations = []
     for station in chosen:
         original_url = links[station["station_id"]]
         zip_blob = _get_publisher_bytes(original_url, MAX_ZIP, opener)
-        measured = measured_2020_gust_from_original_zip(zip_blob, station["station_id"])
+        try:
+            measured = measured_2020_gust_from_original_zip(zip_blob, station["station_id"])
+        except OriginalDWDRejected as exc:
+            # A historical archive *covers the date range* but the original
+            # 2020 hourly gust product can be too sparse. Record that
+            # explicitly, reject it, and try the next nearest original
+            # candidate. Do NOT bypass malformed ZIP, source-ID or QN flags.
+            if str(exc) != "original DWD 2020 FX_911 hour coverage too sparse":
+                raise
+            skipped_incomplete_stations.append({
+                "original_station_id": station["station_id"],
+                "original_station_zip_sha256": hashlib.sha256(zip_blob).hexdigest(),
+                "reason": "LESS_THAN_48_VALID_FX911_HOURS_IN_96H_STUDY",
+            })
+            continue
         reports.append({
             **station,
             "original_DWD_historical_FX_zip_url": original_url,
             **measured,
         })
+        if len(reports) == MAX_STATIONS:
+            break
+    if len(reports) != MAX_STATIONS:
+        raise OriginalDWDRejected("too few sufficiently complete original DWD 2020 stations in bounded nearest 12")
     return {
         "schema": SCHEMA,
         "status": "REAL_DWD_ORIGINAL_FX911_STATION_OBSERVATIONS_2020_NO_ERA5_LOSS_CALIBRATION",
@@ -274,6 +294,8 @@ def live_dwd_2020_original_three_stations(*, opener=None) -> dict:
         "source_rights_evidence": DWD_RIGHTS,
         "source_variable_schema": DWD_FORMAT,
         "station_count": len(reports),
+        "historical_station_archive_candidates_checked": len(reports) + len(skipped_incomplete_stations),
+        "skipped_original_archives_due_to_insufficient_2020_gust_coverage": skipped_incomplete_stations,
         "stations": reports,
         "original_DWD_station_winds_measured_not_ERA5_grid_reanalysis": True,
         "same_station_temporal_spatial_methods_as_ERA5_verified": False,
