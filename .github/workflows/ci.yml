@@ -17,6 +17,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  cbs-85728ned-input-four-original:
+    # Public CBS CC BY 4.0 exact frozen OData request set ONLY,
+    # no secrets, feeds, redirect, pagination or automatic full-source model admission.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/20261113-cbs-nl-85728ned-bounded-odata-probe' && github.event.pull_request.head.repo.full_name == github.repository
+    name: CBS 85728NED input index four original public requests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout original research PR revision without retained token
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up pinned Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Review licensed original source boundary with offline fail-closed regression
+        run: python -m unittest tests.test_probe_nl_cbs_85728ned_v0 tests.test_probe_nl_cbs_85728ned_v0_urllib_timeout_kw_v0 -v
+      - name: Get only 4 pre-approved public CBS OData original responses
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '### CBS 85728NED input index four original public requests: original provider sha/byte receipt' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Official CBS StatLine CC BY 4.0; one bounded reviewed 4-GET source version; no original JSON body persisted, no insurer CAT scientific admission.' >> "$GITHUB_STEP_SUMMARY"
+          python -m scripts.probe_nl_cbs_85728ned_v0 --live | tee -a "$GITHUB_STEP_SUMMARY"
+
   check:
     name: Python ${{ matrix.python-version }}
     needs: [eu-flood-spatial]
