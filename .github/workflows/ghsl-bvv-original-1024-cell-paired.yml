@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Original GHSL BVV 1024 native cells cross-epoch paired area research
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "research_runners/ghsl_bvv_original_1024_cell_pairwise_v0.py"
+      - "tests/test_ghsl_bvv_original_1024_cell_pairwise_v0.py"
+      - "research_runners/bvv_oberbayern_full_shp_roi_stream_v0.py"
+      - ".github/workflows/ghsl-bvv-original-1024-cell-paired.yml"
+  push:
+    branches: [main]
+    paths:
+      - "research_runners/ghsl_bvv_original_1024_cell_pairwise_v0.py"
+      - "tests/test_ghsl_bvv_original_1024_cell_pairwise_v0.py"
+      - "research_runners/bvv_oberbayern_full_shp_roi_stream_v0.py"
+      - ".github/workflows/ghsl-bvv-original-1024-cell-paired.yml"
+permissions:
+  contents: read
+# Never run two full official BVV source streams concurrently in GitHub.
+concurrency:
+  # PRs are synthetic and must not cancel the independent BVV PR canary.
+  # Trusted-main live source runs still share the BVV 166-MB origin gate.
+  group: ${{ github.event_name == 'pull_request' && 'ghsl-bvv-cellwise-synthetic-pr' || 'bvv-full-shp-ghsl-roi' }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  original-cross-epoch-cellwise:
+    name: GHSL uint32 + BVV GEOS cellwise original-source research canary
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout reviewed source with no reusable credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned GEOS PROJ and STRtree dependencies
+        run: |
+          python -m pip install --no-input --disable-pip-version-check --only-binary=:all: "shapely==2.1.2" "pyproj==3.7.2"
+      - name: Offline synthetic 1024 original source-grid and fixed geodata privacy checks
+        run: |
+          python -m unittest tests.test_ghsl_bvv_original_1024_cell_pairwise_v0 -v
+      - name: Acquire only reviewed JRC source blocks and entire BVV SHA-pinned SHP once
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          python -m research_runners.ghsl_bvv_original_1024_cell_pairwise_v0 --live
