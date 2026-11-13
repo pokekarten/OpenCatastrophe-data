@@ -8,11 +8,11 @@ SELECT
   p.provider_observed_at,p.response_http_status,p.original_response_bytes,
   p.original_response_sha256,p.original_source_identity_validated,
   p.response_json_schema_validated,
-  COUNT(s.sample_id) AS matching_private_research_metadata_samples,
-  COUNT(s.sample_id) FILTER (
+  COUNT(DISTINCT s.sample_id) AS matching_private_research_metadata_samples,
+  COUNT(DISTINCT s.sample_id) FILTER (
     WHERE s.sample_sha256=encode(sha256(convert_to(s.sample_json::text,'UTF8')),'hex')
   ) AS matching_valid_private_sample_sha256,
-  COUNT(u.use_case) AS joined_source_rights_cases,
+  COUNT(DISTINCT u.use_case) AS joined_source_rights_cases,
   p.original_response_body_persisted,p.original_feature_rows_acquired,
   p.raw_source_assets_admitted,p.model_input_approved,
   p.science_or_version_admission_verified
