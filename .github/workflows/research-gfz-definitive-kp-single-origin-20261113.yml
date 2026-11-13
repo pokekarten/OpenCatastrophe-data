@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# TEMPORARY source-branch one-shot original provider check; remove after
+# receipt, never add a new host/query to the frozen reviewed allowlist.
+name: GFZ definitive 2024 Kp one original provider GET
+on:
+  push:
+    branches:
+      - research/noaa-swpc-rtsw-2026-shape-gate-20261113
+    paths:
+      - ".github/workflows/research-gfz-definitive-kp-single-origin-20261113.yml"
+permissions:
+  contents: read
+jobs:
+  one-gfz-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Complete source-specific synthetic GFZ NOAA regression
+        run: python3 -m unittest tests.test_probe_fixed_public_sources_v0 -v
+      - name: Exactly one reviewed GFZ public definitive Kp source request
+        run: python3 -m scripts.probe_fixed_public_sources_v0 --source gfz.geomagnetic-kp
