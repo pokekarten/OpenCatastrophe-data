@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import struct
 import tempfile
 import unittest
 import warnings
@@ -59,12 +60,23 @@ def frozen_directory(path):
         }
 
 
+def synthetic_eocd_reference(path):
+    # Synthetic ZIP's original tail directory, not real Eurostat bytes.
+    data=Path(path).read_bytes()
+    pos=data.rfind(b"PK\\x05\\x06".replace(b"\\x05",b"\x05").replace(b"\\x06",b"\x06"))
+    assert pos>=0
+    fields=struct.unpack("<IHHHHIIH",data[pos:pos+22])
+    return fields[6],fields[5]
+
+
 def verify_fixture(path, digest, info, *, expected_names=(CSV_MEMBER,), **override):
     return verify_complete_local_v3_zip(
         Path(path),
         expected_zip_bytes=Path(path).stat().st_size,
         expected_member_names=expected_names,
         expected_member_directory=frozen_directory(Path(path)),
+        expected_central_directory_offset=synthetic_eocd_reference(path)[0],
+        expected_central_directory_size=synthetic_eocd_reference(path)[1],
         expected_csv_header_offset=info.header_offset,
         expected_csv_compressed_bytes=info.compress_size,
         expected_csv_uncompressed_bytes=info.file_size,
@@ -99,7 +111,7 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
             with self.assertRaisesRegex(CSVParityBlocked,"directory"):
                 verify_fixture(p,digest,info)
             digest,info=write_source(p,comment=True)
-            with self.assertRaisesRegex(CSVParityBlocked,"comment"):
+            with self.assertRaisesRegex(CSVParityBlocked,"EOCD|comment"):
                 verify_fixture(p,digest,info)
 
     def test_missing_target_row_and_wrong_country_block(self):
@@ -121,6 +133,8 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
                     p, expected_zip_bytes=p.stat().st_size,
                     expected_member_names=(CSV_MEMBER,),
                     expected_member_directory=frozen_directory(p),
+                    expected_central_directory_offset=synthetic_eocd_reference(p)[0],
+                    expected_central_directory_size=synthetic_eocd_reference(p)[1],
                     expected_csv_header_offset=info.header_offset,
                     expected_csv_compressed_bytes=info.compress_size,
                     expected_csv_uncompressed_bytes=info.file_size,
@@ -135,7 +149,7 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp)/"duplicates.zip"
             digest,info=write_source(p,duplicate=True)
-            with self.assertRaisesRegex(CSVParityBlocked,"central directory member"):
+            with self.assertRaisesRegex(CSVParityBlocked,"EOCD|central directory member"):
                 verify_fixture(p,digest,info)
 
     def test_changed_non_csv_member_must_not_pass_frozen_directory(self):
@@ -165,6 +179,55 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
                     expected_zip_bytes=p.stat().st_size,
                     expected_member_names=(CSV_MEMBER,readme),
                     expected_member_directory=pinned,
+                    expected_central_directory_offset=synthetic_eocd_reference(p)[0],
+                    expected_central_directory_size=synthetic_eocd_reference(p)[1],
+                    expected_csv_header_offset=info.header_offset,
+                    expected_csv_compressed_bytes=info.compress_size,
+                    expected_csv_uncompressed_bytes=info.file_size,
+                    expected_csv_crc32=info.CRC,
+                    expected_pixel_sha256=digest,
+                )
+
+    def test_eocd_trailer_and_central_directory_tamper_blocked(self):
+        # Original V3 must end at the exact classic EOCD, not at hidden data.
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)/"bounded.zip"
+            digest,info=write_source(p)
+            initial=p.read_bytes()
+            offset,size=synthetic_eocd_reference(p)
+            receipt=verify_fixture(p,digest,info)
+            self.assertEqual(receipt["eocd_central_directory_offset"],offset)
+            self.assertEqual(receipt["eocd_central_directory_bytes"],size)
+            self.assertTrue(receipt["eocd_exact_archive_termination_verified"])
+            metadata={CSV_MEMBER:(info.header_offset,info.compress_size,
+                                  info.file_size,info.CRC,info.compress_type)}
+            corrupted=bytearray(initial)
+            # Classic EOCD 4-byte directory offset begins at position -6.
+            corrupted[-6]^=0x01
+            p.write_bytes(corrupted)
+            with self.assertRaisesRegex(CSVParityBlocked,"EOCD central directory"):
+                verify_complete_local_v3_zip(
+                    p,
+                    expected_zip_bytes=len(corrupted),
+                    expected_member_names=(CSV_MEMBER,),
+                    expected_member_directory=metadata,
+                    expected_central_directory_offset=offset,
+                    expected_central_directory_size=size,
+                    expected_csv_header_offset=info.header_offset,
+                    expected_csv_compressed_bytes=info.compress_size,
+                    expected_csv_uncompressed_bytes=info.file_size,
+                    expected_csv_crc32=info.CRC,
+                    expected_pixel_sha256=digest,
+                )
+            p.write_bytes(initial+b"X")
+            with self.assertRaisesRegex(CSVParityBlocked,"size mismatch"):
+                verify_complete_local_v3_zip(
+                    p,
+                    expected_zip_bytes=len(initial),
+                    expected_member_names=(CSV_MEMBER,),
+                    expected_member_directory=metadata,
+                    expected_central_directory_offset=offset,
+                    expected_central_directory_size=size,
                     expected_csv_header_offset=info.header_offset,
                     expected_csv_compressed_bytes=info.compress_size,
                     expected_csv_uncompressed_bytes=info.file_size,
@@ -181,6 +244,8 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
                     p, expected_zip_bytes=p.stat().st_size+1,
                     expected_member_names=(CSV_MEMBER,),
                     expected_member_directory=frozen_directory(p),
+                    expected_central_directory_offset=synthetic_eocd_reference(p)[0],
+                    expected_central_directory_size=synthetic_eocd_reference(p)[1],
                     expected_csv_header_offset=info.header_offset,
                     expected_csv_compressed_bytes=info.compress_size,
                     expected_csv_uncompressed_bytes=info.file_size,
