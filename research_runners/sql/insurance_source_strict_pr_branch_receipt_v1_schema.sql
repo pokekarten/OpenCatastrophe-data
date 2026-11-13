@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS research.source_strict_pr_branch_receipt_v1 (
     (
       original_http_status = 206
       AND source_operation = 'corrected_2021_2k_prefix'
+      AND original_request_range IS NOT NULL
+      AND original_content_range IS NOT NULL
       AND original_request_range = 'bytes=0-2047'
       AND original_content_range = 'bytes 0-2047/820143312'
       AND original_response_bytes = 2048
@@ -75,6 +77,16 @@ CREATE TABLE IF NOT EXISTS research.source_strict_pr_branch_receipt_v1 (
     (source_id = 'dwd.radklim.rw.v2017.002' AND source_operation = 'corrected_2021_2k_prefix')
     OR (source_id = 'noaa.swpc.real-time-solar-wind' AND source_operation = 'rtsw_mag_1m_json')
     OR (source_id = 'gfz.geomagnetic-kp' AND source_operation = 'definitive_kp_day_json')
+  ),
+  -- Bind every claimed original body hash to the fixed, previously
+  -- reviewed provider endpoint. No caller-selected host or query.
+  CONSTRAINT source_strict_pr_branch_receipt_v1_exact_endpoint_ck CHECK (
+    (source_id = 'dwd.radklim.rw.v2017.002'
+     AND exact_source_url = 'https://opendata.dwd.de/climate_environment/CDC/grids_germany/hourly/radolan/reproc/2017_002/netCDF/supplement/RW2017.002_2021_netcdf_supplement.tar.gz')
+    OR (source_id = 'noaa.swpc.real-time-solar-wind'
+     AND exact_source_url = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json')
+    OR (source_id = 'gfz.geomagnetic-kp'
+     AND exact_source_url = 'https://kp.gfz.de/app/json/?start=2024-01-01T00:00:00Z&end=2024-01-01T23:59:59Z&index=Kp&status=def')
   ),
   CONSTRAINT source_strict_pr_branch_receipt_v1_validated_code_ck CHECK (
     access_contract_sha256 IS NOT NULL OR offline_validator_sha256 IS NOT NULL
