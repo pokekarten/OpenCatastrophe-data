@@ -39,6 +39,7 @@ WINDOW_GLOBAL_COL_ROW = (22973, 4899)
 WINDOW_SIDE = 32
 CHUNK = 65536
 MAX_BUFFER = 2 * CHUNK + SOURCE_SHX_MAX_CONTENT_BYTES
+MAX_PENDING_ROI_FEATURES = 2048  # bounded transient GEOS batch
 READ_BYTES = ZIP_HEADER_BYTES + COMPRESSED_MEMBER_BYTES
 END = START + READ_BYTES - 1
 RANGE = f"bytes={START}-{END}"
@@ -103,6 +104,8 @@ class NativeSHPStream:
         self.roi_invalid_rings = self.roi_invalid_geometries = 0
         self.roi_area_sum = 0.0
         self.roi_clipped_geometries = []
+        self.roi_union_levels = []  # binary-carry union, O(log number of batches)
+        self.roi_union_batches = 0
         self.sha = hashlib.sha256()
         self.crc = 0
         self.header_seen = False
@@ -152,6 +155,8 @@ class NativeSHPStream:
             self.records += 1
             self.max_original_record_content = max(size, self.max_original_record_content)
             self._inspect_record(body)
+            if self.records % 250_000 == 0:
+                print(f"RESEARCH_PROGRESS native_frames={self.records} roi_candidates={self.roi_bbox_candidates}", flush=True)
 
     def _inspect_record(self, body: bytes):
         if struct.unpack_from("<I", body, 0)[0] != 5:
@@ -238,8 +243,37 @@ class NativeSHPStream:
             self.roi_intersecting += 1
             self.roi_area_sum += clipped.area
             self.roi_clipped_geometries.append(clipped)
-            if len(self.roi_clipped_geometries) > 100000:
-                raise FullSHPBlocked("original ROI feature budget exceeded")
+            if len(self.roi_clipped_geometries) >= MAX_PENDING_ROI_FEATURES:
+                self._flush_roi_union()
+
+    def _flush_roi_union(self):
+        """Exact hierarchical GEOS union of bounded 2048-shape batches.
+
+        Each unioned geometry is ephemeral in RAM. The doubling-level
+        accumulator avoids retaining every original Polygon and avoids
+        repeatedly unioning the entire growing region per source record.
+        """
+        if not self.roi_clipped_geometries:
+            return
+        from shapely.ops import unary_union
+        combined = unary_union(self.roi_clipped_geometries)
+        self.roi_clipped_geometries.clear()
+        if not combined.is_valid:
+            raise FullSHPBlocked("invalid GEOS union over a native source ROI batch")
+        self.roi_union_batches += 1
+        level = 0
+        while level < len(self.roi_union_levels) and self.roi_union_levels[level] is not None:
+            combined = unary_union((combined, self.roi_union_levels[level]))
+            self.roi_union_levels[level] = None
+            if not combined.is_valid:
+                raise FullSHPBlocked("invalid GEOS hierarchical ROI overlap union")
+            level += 1
+        if level == len(self.roi_union_levels):
+            self.roi_union_levels.append(combined)
+        else:
+            self.roi_union_levels[level] = combined
+        if len(self.roi_union_levels) > 24:
+            raise FullSHPBlocked("excessive original study union levels")
 
     def finish(self):
         if (not self.header_seen or self.buf or
@@ -269,9 +303,15 @@ class NativeSHPStream:
         }
         if self.roi is not None:
             from shapely.ops import unary_union
-            geo = unary_union(self.roi_clipped_geometries) if self.roi_clipped_geometries else None
+            self._flush_roi_union()
+            fragments = [g for g in self.roi_union_levels if g is not None]
+            geo = unary_union(fragments) if fragments else None
+            if geo is not None and not geo.is_valid:
+                raise FullSHPBlocked("invalid final GEOS ROI polygon union")
             union = geo.area if geo is not None else 0.0
             result.update({
+                "roi_geos_union_batches_completed": self.roi_union_batches,
+                "roi_geos_union_active_levels": len(fragments),
                 "projected_utm32_study_roi_area_m2": round(self.roi.area,3),
                 "roi_original_polygon_areas_sum_pre_union_m2": round(self.roi_area_sum,3),
                 "roi_original_polygon_areas_union_m2": round(union,3),
@@ -279,6 +319,7 @@ class NativeSHPStream:
                 "roi_polygon_count_is_not_number_of_insured_buildings": True,
             })
         self.roi_clipped_geometries.clear()
+        self.roi_union_levels.clear()
         return result
 
 
