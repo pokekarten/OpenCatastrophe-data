@@ -21,6 +21,7 @@ import json
 import math
 from pathlib import Path
 import sys
+import tomllib
 import zipfile
 
 import ciara2020_nrw_10k_era5_area_request_v0 as area
@@ -172,6 +173,75 @@ def summarize_exposure_by_public_source_grid(
     }
 
 
+ACCEPTED_SOURCE_JOIN_TOML = (
+    ROOT / "research/observations/"
+    "ciara2020_nrw_hu22_10k_public_2022_2020_gust_counterfactual_receipt_v0.toml"
+)
+
+
+def require_independently_accepted_actual_source_counterfactual(result: dict) -> None:
+    """Freeze independently observed 2020/2022 COUNTERFACTUAL exposure only."""
+    with ACCEPTED_SOURCE_JOIN_TOML.open("rb") as accepted_file:
+        source = tomllib.load(accepted_file)
+    if (source.get("schema") != SCHEMA
+        or source.get("status") != result.get("status")
+        or source.get("first_successful_original_live_github_run") != 43489088388
+        or source.get("first_successful_original_live_github_job") != 132105176207
+        or source.get("source_original_2022_HU_derived_10k_archive_sha256")
+            != area.SOURCE_ARTIFACT_SHA256
+        or source.get("source_original_2022_HU_10k_93cell_csv_sha256")
+            != SOURCE_CELL_CSV_SHA256
+        or source.get("source_10k_93cell_occupancy_signature_sha256")
+            != SOURCE_COUNT_SIGNATURE_SHA256
+        or source.get("2020_google_arco_original_96h_160cell_decoded_sha256")
+            != ORIGINAL_ERA5_MATRIX_SHA256
+        or result.get("2020_google_arco_original_decoded_96h_160cell_sha256")
+            != ORIGINAL_ERA5_MATRIX_SHA256
+        or source.get("public_2022_building_candidate_count") != EXPECTED_SITES
+        or source.get("source_2022_NRW_counties") != EXPECTED_COUNTIES
+        or source.get("source_2022_occupied_0p25deg_grid_cells") != EXPECTED_CELLS
+        or source.get("fictional_building_tiv_eur") != EXPECTED_TIV
+        or source.get("historical_2020_google_era5_hourly_gust_frames") != 96):
+        raise CiaraCounterfactualBlocked("accepted independent source/2020 weather receipt changed")
+    field_map = (
+        ("candidate_weighted_2020_ciara_96h_peak_wind_mps",
+         "candidate_weighted_2020_ciara_96h_peak_wind_mps"),
+        ("fictional_tiv_weighted_2020_ciara_96h_peak_wind_mps",
+         "fictional_tiv_weighted_2020_ciara_96h_peak_wind_mps"),
+        ("source_occupied_cell_96h_peak_gust_mps_min",
+         "occupied_grid_cell_peak_mps_min"),
+        ("source_occupied_cell_96h_peak_gust_mps_max",
+         "occupied_grid_cell_peak_mps_max"),
+    )
+    if any(source.get(key) != result.get(value_key) for key, value_key in field_map):
+        raise CiaraCounterfactualBlocked("actual 10k 2020 wind exposure statistics differ from first original live source")
+    thresholds = result.get("peak_wind_hazard_threshold_mps", {})
+    accepted_thresholds = source.get("threshold_mps", {})
+    if set(accepted_thresholds) != {str(x) for x in THRESHOLDS} or set(thresholds) != set(accepted_thresholds):
+        raise CiaraCounterfactualBlocked("real 2020 hazard threshold set changed")
+    for threshold in THRESHOLDS:
+        actual = thresholds[str(threshold)]
+        accepted = accepted_thresholds[str(threshold)]
+        if (actual.get("public_2022_building_candidate_count")
+            != accepted.get("public_2022_building_candidate_count")
+            or actual.get("fictional_2025_like_building_tiv_eur")
+            != accepted.get("fictional_building_tiv_eur")
+            or actual.get("distinct_occupied_0p25deg_grid_cells")
+            != accepted.get("occupied_grid_cells")):
+            raise CiaraCounterfactualBlocked("2020 original 10fg × source-derived 2022 wind threshold parity failed")
+    if (any(source.get(flag) is not False for flag in (
+        "public_2022_building_occupancy_as_of_2020_verified",
+        "real_RV_2020_insured_site_universe_observed",
+        "2020_insurer_coverage_or_claims_observed",
+        "original_GCS_compressed_chunk_SHA_or_CDS_GRIB_parity_verified",
+        "German_wind_vulnerability_native_GUL_IL_RI_OEP_AEP_admitted",
+        "annual_stochastic_EP_or_capital_model_admitted",
+    )) or result.get("German_vulnerability_native_GUL_IL_RI_OEP_AEP_admitted") is not False
+        or result.get("annual_stochastic_EP_or_capital_model_admitted") is not False
+        or result.get("individual_sites_or_polygon_coordinates_published") is not False):
+        raise CiaraCounterfactualBlocked("real insurer model/no-original-loss scientific quarantine changed")
+
+
 def run_live_counterfactual() -> dict:
     cells = load_source_cell_aggregates()
     # Existing full 96-hour Google ARCO weather reader repeats publisher
@@ -190,7 +260,7 @@ def run_live_counterfactual() -> dict:
         or not isinstance(matrix, list)):
         raise CiaraCounterfactualBlocked("real weather source identity or science gate drift")
     summary = summarize_exposure_by_public_source_grid(cells, matrix)
-    return {
+    result = {
         "schema": SCHEMA,
         "status": "2020_ORIGINAL_GOOGLE_ERA5_WIND_ON_2022_PUBLIC_BUILDINGS_10K_COUNTERFACTUAL_NO_LOSS",
         "source_original_2022_hu22_derived_fictional_10k_archive_sha256": area.SOURCE_ARTIFACT_SHA256,
@@ -211,6 +281,8 @@ def run_live_counterfactual() -> dict:
         "annual_stochastic_EP_or_capital_model_admitted": False,
         "individual_sites_or_polygon_coordinates_published": False,
     }
+    require_independently_accepted_actual_source_counterfactual(result)
+    return result
 
 
 def main() -> int:
