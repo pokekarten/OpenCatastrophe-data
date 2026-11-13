@@ -119,9 +119,29 @@ pass **before** declaring complete ROI coverage for *this exact
 original archive*. Neither individual geometries nor complete
 raw rasters are retained; no loss/TIV/asset locations are created.
 
-The transient ROI collection is limited to 100,000 intersecting
-features; a larger area blocks the job for an explicit resource review,
-not silent truncation.
+The source's original `main` attempt
+[Actions 43468044298](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43468044298)
+failed **closed** at its original safety limit of 100,000 ROI
+Polygon features: `BLOCKED: original ROI feature budget exceeded`.
+It did **not** complete the 166 MB compressed original source
+scan or verify original full-member CRC, so no total-inventory claim,
+Neon sample or scientific exposure result can be derived from that
+failed attempt.
+
+The original-source pressure is addressed by an **exact GEOS
+hierarchical union in bounded 2,048-feature transient batches**.
+Each completed batch is merged into a binary-carry geometric union
+accumulator. This preserves exact (not merely summed) ROI union
+area without keeping all original individual polygons, and prevents
+unbounded per-source feature lists. No silent truncation, feature
+dropping or false complete-ROI flag is allowed. The accumulated
+union is checked for GEOS validity after every merge and final
+combination. A 24-level geometry-union budget remains fail-closed.
+Synthetic regression tests include six overlapping polygons spread
+over multiple forced-small union batches. Only the corrected
+**new trusted-main original run** can establish full-member
+CRC/SHA, total 2,703,736 original native records and ROI
+area/count statistics; they must not be inferred from PR tests.
 
 ## Scientific interpretation and next evidence gate
 
