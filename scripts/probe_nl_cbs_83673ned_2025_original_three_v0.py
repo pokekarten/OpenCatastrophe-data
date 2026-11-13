@@ -87,7 +87,7 @@ def direct_open(req: request.Request, timeout: int):
         NoRedirect(),
         request.HTTPSHandler(context=ssl.create_default_context()),
     )
-    return opener.open(req, timeout)
+    return opener.open(req, timeout=timeout)
 
 
 def verify_contract(path: Path = PATH) -> dict[str, Any]:
@@ -262,7 +262,7 @@ def probe(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--live-three", action="store_true",
                         help="opt in once to exact three public CBS requests")
     args = parser.parse_args(argv)
