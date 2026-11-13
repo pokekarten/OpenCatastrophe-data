@@ -131,6 +131,71 @@ def reviewed_probe(source: str, root: Path = ROOT):
     return url, operation, max_bytes, timeout
 
 
+
+def _inspect_noaa_swpc_rtsw_mag(payload: object) -> dict:
+    """Validate the 2026 RTSW list-of-objects shape, never the physical readings.
+
+    NOAA's 2026 replacement uses source + active for a multi-spacecraft,
+    rolling stream. A generic nonempty JSON response must not pass. Presence
+    and types are checked, not source homogeneity, calibration, continuity,
+    numerical accuracy, or scientific admissibility.
+    """
+    import math
+    from datetime import datetime
+
+    if not isinstance(payload, list) or not 0 < len(payload) <= 20000:
+        raise ProbeBlocked("NOAA RTSW response must be a bounded list of records")
+    magnetic_fields = ("bx_gsm", "by_gsm", "bz_gsm", "bt")
+    found_magnetic_value = False
+    source_names = set()
+    for record in payload:
+        if not isinstance(record, dict):
+            raise ProbeBlocked("NOAA RTSW record is not an object")
+        if not all(key in record for key in ("time_tag", "source", "active", *magnetic_fields)):
+            raise ProbeBlocked("NOAA RTSW mandatory field missing")
+        source_name = record["source"]
+        if (not isinstance(source_name, str) or not source_name.strip()
+                or len(source_name) > 80 or not source_name.isprintable()):
+            raise ProbeBlocked("NOAA RTSW spacecraft/source identity missing")
+        if type(record["active"]) is not bool:
+            raise ProbeBlocked("NOAA RTSW active spacecraft flag is not Boolean")
+        raw_time = record["time_tag"]
+        if not isinstance(raw_time, str) or not 19 <= len(raw_time) <= 32:
+            raise ProbeBlocked("NOAA RTSW timestamp shape missing")
+        import re
+        if not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z?", raw_time):
+            raise ProbeBlocked("NOAA RTSW timestamp shape invalid")
+        try:
+            datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ProbeBlocked("NOAA RTSW calendar timestamp invalid") from exc
+        source_names.add(source_name)
+        for key in magnetic_fields:
+            value = record[key]
+            if value is None:
+                continue  # NOAA legitimately records instrument gaps.
+            if type(value) not in (int, float):
+                raise ProbeBlocked("NOAA RTSW magnetometer field is not numeric/null")
+            try:
+                finite = math.isfinite(value)
+            except (OverflowError, ValueError):
+                finite = False
+            if not finite:
+                raise ProbeBlocked("NOAA RTSW magnetometer field is not finite")
+            found_magnetic_value = True
+    if not found_magnetic_value:
+        raise ProbeBlocked("NOAA RTSW response contains no magnetic observation")
+    return {
+        "verified_shape": "noaa_swpc_rtsw_mag_2026_multispacecraft",
+        "spacecraft_identity_fields_present": True,
+        "active_stream_flags_typed": True,
+        "magnetic_reading_present": True,
+        "sensor_lineage_verified": False,
+        "scientific_values_verified": False,
+        "rolling_window_complete": False,
+    }
+
+
 def verify_response(source: str, raw: bytes) -> dict:
     try:
         payload = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_object,
@@ -156,9 +221,7 @@ def verify_response(source: str, raw: bytes) -> dict:
         # A structural probe does not assert scientific Kp content or calibration.
         return {"verified_shape": "json_object_only", "scientific_values_verified": False}
     if source == "noaa.swpc.real-time-solar-wind":
-        if not isinstance(payload, (list, dict)) or not payload:
-            raise ProbeBlocked("NOAA response is not a nonempty JSON collection")
-        return {"verified_shape": "json_collection_only", "sensor_lineage_verified": False}
+        return _inspect_noaa_swpc_rtsw_mag(payload)
     if source == "emsc.seismicportal.fdsn-event":
         from scripts.probe_emsc_fdsn_event_v0 import EMSCProbeError, inspect_json_bytes
         try:
