@@ -24,7 +24,7 @@
     "allowed_operations": [
       "original_metadata_small_rows",
       "first_2012_permit_cost_row",
-      "2026_june_rolling_rental_and_owner_exact_rows"
+      "rolling_2026_june_rental_owner_exact_rows"
     ],
     "path_templates": [
       "/ODataApi/OData/83673NED/TableInfos",
