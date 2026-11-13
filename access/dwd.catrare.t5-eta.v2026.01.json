@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "dwd.catrare.t5-eta.v2026.01",
+  "source_ids": [
+    "dwd.catrare.t5-eta.v2026.01"
+  ],
+  "provider": "Deutscher Wetterdienst (DWD) Climate Data Center",
+  "interface_type": "http_file",
+  "status": "probe_ready",
+  "documentation_url": "https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_CatRaRE_T5_Eta_v2026.01-de.html",
+  "service_root": "https://opendata.dwd.de/climate_environment/CDC/event_catalogues/germany/precipitation/CatRaRE_v2026.01/data",
+  "api_version": "CatRaRE T5 Eta v2026.01, DOI 10.5676/DWD/CatRaRE_T5_Eta_v2026.01, observation window 2001-01-01–2025-12-31",
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "read_fixed_csv_prefix"
+    ],
+    "path_templates": [
+      "/CatRaRE_2001_2025_T5_Eta_v2026_01.csv"
+    ],
+    "parameter_rules": "ONE fixed original DWD HTTPS Range GET exactly https://opendata.dwd.de/climate_environment/CDC/event_catalogues/germany/precipitation/CatRaRE_v2026.01/data/CatRaRE_2001_2025_T5_Eta_v2026_01.csv Range: bytes=0-4095, no query/fragment, caller paths, version substitution, credentials, redirects, retries, pagination, other file downloads, CSV bulk or geometry acquisition. Expect HTTP 206 Content-Range bytes 0-4095/17208653, precisely 4096 original UTF-8 CSV bytes, semicolon-separated, 67 unique headers (CatVersion/KEY_FIELD/Event_ID first), three source-specific first event IDs. Review was scoped to ONE fixed variant and the original 2026.01 release. The W3 and T5 catalogues share the same RADKLIM-RW V2017.002 parent and cannot be treated as independent event frequencies."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/octet-stream",
+      "text/csv",
+      "text/plain"
+    ],
+    "format": "First 4096 original bytes of immutable T5 Eta v2026.01 semicolon-delimited 67-column event CSV, not a whole file or source geometry.",
+    "scientific_semantics": "DWD CatRaRE T5 Eta uses extreme-rain radar-derived objects from 1 km RADKLIM-RW V2017.002, 11 accumulation durations and provider event-detection / Eta selection; catalogue events are not independent of RADKLIM or of the other W3/T5 threshold catalogue. The CSV does not include an observed damage footprint, insurance exposure, loss amount or spatial EventZones geometry. Preserve UTC, event duration, event IDs qualified by threshold and version; no model admission without whole-file hash, full event uniqueness/time/geometry and independent reference validation."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 4096,
+    "max_sample_bytes": 4096,
+    "retry_policy": "none",
+    "rate_limit_notes": "Original DWD CDC-OpenData Terms_of_use.pdf documents CC BY 4.0 for CDC data. One exact 4KiB anonymously retrieved partial response is a deliberately tiny request to public source under the same dataset download terms; no claim of unlimited API service volume, no full 12/17MB CSV, no WFS, and no bulk crawler. The workflow only runs approved fixed probes from trusted main push or manual dispatch; never PR live.",
+    "mutability_notes": "Original 2026.01 DWD directory listed source CSV at exactly 17208653 bytes. Previous actual original 4KiB HTTP Range observation SHA-256 5dc4b6f0dac14f0a442103b78c16f647556bd870898aabff6d9f62aa4534f542 must match fresh direct run or source drift fails closed. This is NOT full CSV SHA-256. W3 official DOI landing-page CSV link historically pointed to older missing archive; prefer only explicitly frozen current /data/2026.01 asset; preserve release and byte range. A changed original archive must be separately reviewed before re-pinning."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "same_as_dataset",
+    "terms_url": "https://opendata.dwd.de/climate_environment/CDC/Terms_of_use.pdf",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "allowed",
+    "notes": "DWD official CDC-OpenData Terms_of_use.pdf (May 2024) explicitly applies CC BY 4.0 to CDC datasets, including commercial reuse and reproduction with attribution and change indication; original CatRaRE T5 DOI landing page pins the exact release. This review interprets the very small anonymous fixed-file Range GET as covered by CDC dataset access conditions, not a right to unlimited automated crawling, unrelated DWD interfaces or redistributing unreviewed original provider bytes through this repository. Publisher attribution: Deutscher Wetterdienst (DWD), CatRaRE T5 Eta v2026.01, 10.5676/DWD/CatRaRE_T5_Eta_v2026.01; changes declared when appropriate. Dataset licensing does not establish model scientific validity."
+  },
+  "probe_contract": {
+    "mode": "provider_specific",
+    "operation": "read_fixed_csv_prefix",
+    "requires_credentials": false,
+    "expected_evidence": [
+      "Exactly one original official DWD HTTPS GET at pinned W3/T5 path and Range: bytes=0-4095, 30-second timeout, HTTP 206 and Content-Range bytes 0-4095/17208653; no redirects/retries",
+      "Exactly 4096 original uncompressed UTF-8 bytes, 67 semicolon CSV columns, CatVersion/KEY_FIELD/Event_ID source-version identity and first three complete rows",
+      "Original unmodified 4KiB response SHA-256 equals historical 5dc4b6f0dac14f0a442103b78c16f647556bd870898aabff6d9f62aa4534f542, retrieval UTC, request SHA, original-byte count and exact variant, with no provider raw bytes persisted",
+      "No full CSV SHA-256, full event frequencies, source polygons, insured exposure, W3/T5 independence, CAT model input or source-byte storage approval implied"
+    ]
+  },
+  "implementation_decision": "build_later",
+  "reviewed_at": "2026-11-13",
+  "evidence_urls": [
+    "https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_CatRaRE_T5_Eta_v2026.01-de.html",
+    "https://opendata.dwd.de/climate_environment/CDC/Terms_of_use.pdf",
+    "https://opendata.dwd.de/climate_environment/CDC/event_catalogues/germany/precipitation/CatRaRE_v2026.01/data/",
+    "https://www.dwd.de/copyright"
+  ],
+  "notes": "Version-scoped CatRaRE T5 source access contract backed by a historical exact 4096-byte direct-source receipt already recorded in the public landscape; new work adds enforceable in-repo rights/exact-route fail-closed policy. No source bytes or full archive have been acquired by this contract. The scientific and admission gates remain open; the fixed runner and existing workflow must pass synthetic PR tests before trusted main original-provider checks."
+}
