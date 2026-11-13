@@ -17,6 +17,7 @@ import math
 import ssl
 import struct
 import sys
+import time
 import zlib
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
@@ -347,8 +348,12 @@ class VerifiedOriginalSegmentStream:
 
     Each segment's HTTP connection closes before its bytes are parsed. This
     prevents a slow GEOS union from starving a long-lived 166-MB response.
-    Every source byte is still hashed/CRC-checked in one logical DEFLATE stream;
-    no retries, no skips, no reused source offsets, no local file.
+    Every source byte is still hashed/CRC-checked in one logical DEFLATE
+    stream; no skipped/reused source bytes or local file. A **single**
+    provider retry is permitted ONLY for transport-level timeout/connection
+    failure, short response, or specified 408/5xx statuses, after a
+    five-second pause. A 429, bad Content-Range, unexpected ETag, invalid
+    original SHA/CRC, URL redirect or malformed source fails closed.
     """
 
     def __init__(self):
@@ -360,42 +365,77 @@ class VerifiedOriginalSegmentStream:
         self.validator_identity = None
         self.all_source_ranges_exact = True
 
-    def _get_segment(self, start: int, end: int):
-        """External read-only provider I/O; can be mocked in offline tests."""
+    def _read_exact_segment_once(self, start: int, end: int):
+        """One source-owned, full-response exact Range; no internal retry."""
         req = Request(URL, method="GET", headers={
             "Range": f"bytes={start}-{end}",
             "Accept-Encoding": "identity",
             "Accept": "application/zip",
             "User-Agent": "OpenCatastrophe-BVV-Exact-Original-SHP-Segmented-ROI/0.2",
         })
-        try:
-            with build_opener(
-                ProxyHandler({}), NoRedirect(),
-                HTTPSHandler(context=ssl.create_default_context()),
-            ).open(req, timeout=60) as res:
-                if res.status != 206 or res.geturl() != URL:
-                    raise FullSHPBlocked("original segmented ZIP source ignored HTTP Range or redirected")
-                headers = res.headers
-                want = end - start + 1
-                if headers.get("Content-Range") != f"bytes {start}-{end}/{TOTAL}":
-                    raise FullSHPBlocked("source segmented ZIP Content-Range identity changed")
-                if headers.get("Content-Length") not in (None, str(want)):
-                    raise FullSHPBlocked("source segmented ZIP Content-Length drift")
-                if headers.get("Content-Encoding", "identity").lower() != "identity":
-                    raise FullSHPBlocked("original segmented source HTTP encoding unexpected")
-                if headers.get("Content-Type", "").split(";", 1)[0].strip().lower() not in (
-                    "application/zip", "application/octet-stream", "binary/octet-stream"
-                ):
-                    raise FullSHPBlocked("source segmented ZIP MIME drift")
-                # ETag and modification time are cross-request provenance
-                # validators; complete original CRC still anchors source.
-                validators = (headers.get("ETag"), headers.get("Last-Modified"))
-                payload = res.read(want + 1)
-        except (HTTPError, URLError, OSError, TimeoutError) as exc:
-            raise FullSHPBlocked("fixed original ZIP segmented HTTPS source unavailable") from exc
-        if len(payload) != want:
-            raise FullSHPBlocked("bounded original ZIP source segment truncated or oversized")
-        return payload, validators
+        with build_opener(
+            ProxyHandler({}), NoRedirect(),
+            HTTPSHandler(context=ssl.create_default_context()),
+        ).open(req, timeout=60) as res:
+            if res.status != 206 or res.geturl() != URL:
+                raise FullSHPBlocked("original ZIP provider ignored Range or redirected")
+            headers = res.headers
+            want = end - start + 1
+            if headers.get("Content-Range") != f"bytes {start}-{end}/{TOTAL}":
+                raise FullSHPBlocked("original source exact ZIP Content-Range changed")
+            if headers.get("Content-Length") not in (None,str(want)):
+                raise FullSHPBlocked("original source ZIP response Content-Length changed")
+            if headers.get("Content-Encoding","identity").lower() != "identity":
+                raise FullSHPBlocked("original source ZIP unexpected HTTP re-encoding")
+            if headers.get("Content-Type","").split(";",1)[0].strip().lower() not in (
+                "application/zip", "application/octet-stream", "binary/octet-stream"
+            ):
+                raise FullSHPBlocked("original source ZIP MIME changed")
+            # Publisher validators must be equal across ALL successful
+            # source segments, including segments that required one retry.
+            validators=(headers.get("ETag"), headers.get("Last-Modified"))
+            payload=res.read(want+1)
+        return payload,validators
+
+    def _get_segment(self, start: int, end: int):
+        """One exact segment; max TWO total attempts for transient network errors.
+
+        The retry never skips, advances, or persists any original source
+        bytes. Non-206 status, 429 rate limits, metadata changes, redirects,
+        source-object revision or header drift MUST fail immediately.
+        """
+        if (type(start) is not int or type(end) is not int or
+                not START <= start <= end <= END or
+                end-start+1 > MAX_ORIGINAL_SEGMENT_BYTES):
+            raise FullSHPBlocked("unreviewed original source segment Range")
+        want=end-start+1
+        for attempt in range(2):
+            problem = None
+            try:
+                payload,validators=self._read_exact_segment_once(start,end)
+                if type(payload) is not bytes:
+                    raise FullSHPBlocked("original source segment response not bytes")
+                if len(payload)==want:
+                    return payload,validators
+                problem="truncated_or_oversized_original_response"
+            except HTTPError as exc:
+                # 429 may signal provider rate limits. Do not automatically
+                # retry it, nor any 403/404, redirect or policy rejection.
+                if exc.code not in (408,500,502,503,504):
+                    raise FullSHPBlocked(
+                        f"official original source HTTP {exc.code} not retryable"
+                    ) from exc
+                problem=f"transient_provider_http_{exc.code}"
+            except (URLError,OSError,TimeoutError) as exc:
+                problem=f"transient_provider_transport_{type(exc).__name__}"
+            if attempt==0:
+                time.sleep(5)
+            else:
+                raise FullSHPBlocked(
+                    "original source bounded HTTP 206 segment unavailable "
+                    f"after two attempts ({problem})"
+                )
+        raise FullSHPBlocked("original source retry budget exceeded")
 
     def _next_segment(self):
         if self.next_source_offset > END:
