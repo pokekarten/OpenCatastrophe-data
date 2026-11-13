@@ -196,19 +196,19 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
                 response_url=p.URL,headers={},roi=None,verified_segments=True)
 
     def test_bounded_transient_http_503_then_verified_same_segment_succeeds(self):
-        reader=p.VerifiedOriginalSegmentStream()
         req=[]
         def source(start,end):
             req.append((start,end))
             if len(req)==1:
                 raise HTTPError(p.URL,503,"temporary",None,None)
             return b"Z"*(end-start+1),('"v1"',"Fri, 13 Nov 2026 18:00:00 GMT")
-        reader._read_exact_segment_once=source
         with (patch.object(p,"START",100),
               patch.object(p,"END",107),
               patch.object(p,"READ_BYTES",8),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
               patch.object(p.time,"sleep") as slept):
+            reader=p.VerifiedOriginalSegmentStream()
+            reader._read_exact_segment_once=source
             self.assertEqual(reader.read(8),b"Z"*8)
             self.assertEqual(reader.requests_verified,1)
             self.assertEqual(reader.http_bytes_verified,8)
@@ -218,7 +218,6 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
             self.assertTrue(reader.complete())
 
     def test_transient_network_short_response_retries_same_exact_range(self):
-        reader=p.VerifiedOriginalSegmentStream()
         responses=[URLError("transient reset"),(b"bad",("etag","date")),
                    (b"X"*8,("etag","date"))]
         offsets=[]
@@ -227,11 +226,12 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
             item=responses.pop(0)
             if isinstance(item,Exception): raise item
             return item
-        reader._read_exact_segment_once=source
         with (patch.object(p,"START",100),patch.object(p,"END",107),
               patch.object(p,"READ_BYTES",8),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
               patch.object(p.time,"sleep") as delay):
+            reader=p.VerifiedOriginalSegmentStream()
+            reader._read_exact_segment_once=source
             # one retry per SOURCE segment; first attempt fails, so no
             # third request is permitted (even if a later one could pass).
             with self.assertRaisesRegex(p.FullSHPBlocked,"after two attempts"):
@@ -242,49 +242,49 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
             delay.assert_called_once_with(5)
 
     def test_truncated_first_source_attempt_can_retry_once_exact_range(self):
-        reader=p.VerifiedOriginalSegmentStream()
         responses=[(b"bad",("etag","date")),(b"Y"*8,("etag","date"))]
         calls=[]
         def source(start,end):
             calls.append((start,end))
             return responses.pop(0)
-        reader._read_exact_segment_once=source
         with (patch.object(p,"START",100),patch.object(p,"END",107),
               patch.object(p,"READ_BYTES",8),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
               patch.object(p.time,"sleep") as delay):
+            reader=p.VerifiedOriginalSegmentStream()
+            reader._read_exact_segment_once=source
             self.assertEqual(reader.read(8),b"Y"*8)
             self.assertEqual(calls,[(100,107),(100,107)])
             self.assertTrue(reader.complete())
             delay.assert_called_once_with(5)
 
     def test_non_retryable_http429_and_bad_source_range_fail_immediately(self):
-        reader=p.VerifiedOriginalSegmentStream()
         calls=[]
         def policy(start,end):
             calls.append((start,end))
             raise HTTPError(p.URL,429,"rate limited",None,None)
-        reader._read_exact_segment_once=policy
         with (patch.object(p,"START",100),patch.object(p,"END",107),
               patch.object(p,"READ_BYTES",8),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
               patch.object(p.time,"sleep") as delay):
+            reader=p.VerifiedOriginalSegmentStream()
+            reader._read_exact_segment_once=policy
             with self.assertRaisesRegex(p.FullSHPBlocked,"HTTP 429"):
                 reader.read(8)
             self.assertEqual(calls,[(100,107)])
             delay.assert_not_called()
             with self.assertRaisesRegex(p.FullSHPBlocked,"unreviewed"):
                 reader._get_segment(105,115)
-        reader=p.VerifiedOriginalSegmentStream()
         attempts=[]
         def invalid_source(start,end):
             attempts.append((start,end))
             raise p.FullSHPBlocked("original issuer sha/source mismatch")
-        reader._read_exact_segment_once=invalid_source
         with (patch.object(p,"START",100),patch.object(p,"END",107),
               patch.object(p,"READ_BYTES",8),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
               patch.object(p.time,"sleep") as delay):
+            reader=p.VerifiedOriginalSegmentStream()
+            reader._read_exact_segment_once=invalid_source
             with self.assertRaisesRegex(p.FullSHPBlocked,"issuer sha"):
                 reader.read(8)
             self.assertEqual(attempts,[(100,107)])
