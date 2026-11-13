@@ -150,6 +150,34 @@ class DWDOriginalFX911Station2020Tests(unittest.TestCase):
         for station in receipt["stations"]:
             self.assertEqual(len(station["provider_original_zip_sha256"]),64)
 
+    def test_real_original_archive_having_missing_2020_hours_is_skipped_not_approved(self):
+        docs={m.STATION_LIST:station_description(), m.INDEX:index_html()}
+        for i in range(1,5):
+            docs[m.INDEX+f"stundenwerte_FX_{i:05d}_20000101_20251231_hist.zip"]=(
+                product_zip(f"{i:05d}", invalid_hour=3) if i == 1 else product_zip(f"{i:05d}")
+            )
+        # Missing just one (95 valid) is still scientifically usable.
+        okay=m.live_dwd_2020_original_three_stations(opener=FakeOpener(docs))
+        self.assertEqual(okay["station_count"],3)
+        self.assertEqual(okay["historical_station_archive_candidates_checked"],3)
+        self.assertEqual(okay["stations"][0]["original_station_fx911_hourly_valid_count"],95)
+        # Truly sparse: publisher archive has a 2020 date span, but all
+        # 96 FX_911 values are -999. Our code must not claim observations.
+        low=product_zip("00001")
+        lines=[]
+        with zipfile.ZipFile(BytesIO(low)) as z:
+            product=[n for n in z.namelist() if n.startswith("produkt_")][0]
+            rows=z.read(product).decode().splitlines()
+        rows=[rows[0]]+[r.replace(r.split(";")[3], "-999") for r in rows[1:]]
+        b=BytesIO()
+        with zipfile.ZipFile(b,"w",compression=zipfile.ZIP_DEFLATED) as z:
+            z.writestr(product,"\n".join(rows)+"\n")
+        docs[m.INDEX+"stundenwerte_FX_00001_20000101_20251231_hist.zip"]=b.getvalue()
+        # Station 00004 is future-only in the *station metadata*, so it
+        # cannot substitute just because ZIP index happens to list it.
+        with self.assertRaisesRegex(m.OriginalDWDRejected, "too few sufficiently complete"):
+            m.live_dwd_2020_original_three_stations(opener=FakeOpener(docs))
+
     def test_source_dry_run_never_accesses_network(self):
         with patch.object(sys,"argv",["prog","--dry-run"]),\
              patch.object(m,"live_dwd_2020_original_three_stations",
