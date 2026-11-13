@@ -60,3 +60,11 @@ Only synthetic fixtures (not source values or bytes) occur in [`tests/test_euros
 ## Next causal gate
 
 Obtain provider-specific review/permission for a **single authenticated-or-anonymous, fully allowlisted, no-secret, bounded acquisition** of the exact *one* original ZIP CSV member: verify the original ZIP local header, exact archive version, original `Content-Range`, expected compressed member size, original central directory identity, no arbitrary redirects, and rate-limit policy before passing raw DEFLATE to this offline validator. Record **only hashes, checksum, row-count and parity Boolean** in private Neon. Keep full source bytes and personal/policy/claims data out of public Git. A completed one-cell CSV↔TIFF parity is still not whole-EU / insurer exposure approval.
+
+### Streaming robustness added after first passing CI (13 November)
+
+A previously untested **false rejection** was identified for a legitimate, very compressible Census CSV DEFLATE block: one bounded 65,536-byte compressed chunk can decode to more than 2 MiB. The validator now drains `zlib.decompressobj.unconsumed_tail` through repeated **2-MiB maximum output chunks**, while enforcing exact full-source uncompressed byte count, member CRC32, EOF, single-source-row limits and no-progress detection. It does **not** lift any source acquisition permissions or sample/production admission.
+
+A new synthetic-only test contains **35,002 complete rows**, including exactly one matching target cell. The synthetic compressed fixture is under 65,536 bytes but the uncompressed source is over 2 MiB; the test exercises this bound and still checks that only one original target-row SHA fingerprint is used. The exact member length, CRC and ZIP local offset remain verified from the original provider central-directory metadata in private Neon **sample #60**.
+
+After this change, full CI and Python 3.11–3.14 must pass again on the new commit; the earlier green run predates this change.
