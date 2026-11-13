@@ -34,7 +34,7 @@ class CiaraHU22Original2020WindCounterfactualTests(unittest.TestCase):
         self.assertEqual(len(cells), 93)
         self.assertEqual(sum(x[0] for x in cells.values()), 10000)
         self.assertEqual(sum(x[1] for x in cells.values()), 4826029500)
-        self.assertEqual(hashlib.sha256(m.SOURCE_CELL_CSV.read_bytes()).hexdigest(),
+        self.assertEqual(hashlib.sha256(m.read_source_cell_csv_bytes()).hexdigest(),
                          m.SOURCE_CELL_CSV_SHA256)
         self.assertEqual(m.SOURCE_COUNT_SIGNATURE_SHA256,
                          "de10099a9b79febb1a254bc765dc477a47589cb1f49ba75415bfe6b9723c2ebd")
@@ -43,11 +43,11 @@ class CiaraHU22Original2020WindCounterfactualTests(unittest.TestCase):
 
     def test_real_source_cell_csv_mutated_value_header_or_symlink_block(self):
         with tempfile.TemporaryDirectory() as td:
-            alt = Path(td) / "93.csv"
+            alt = Path(td) / "93.toml"
             for text in (
-                m.SOURCE_CELL_CSV.read_text().replace("201,26,4,1539000",
+                m.SOURCE_CELL_ENVELOPE.read_text().replace("201,26,4,1539000",
                                                        "201,26,4,1539001"),
-                m.SOURCE_CELL_CSV.read_text().replace("latitude_quarter_index",
+                m.SOURCE_CELL_ENVELOPE.read_text().replace("latitude_quarter_index",
                                                        "grid_latitude"),
                 "",
             ):
@@ -55,7 +55,7 @@ class CiaraHU22Original2020WindCounterfactualTests(unittest.TestCase):
                 with self.assertRaises(m.CiaraCounterfactualBlocked):
                     m.load_source_cell_aggregates(alt)
             alt.unlink()
-            alt.symlink_to(m.SOURCE_CELL_CSV)
+            alt.symlink_to(m.SOURCE_CELL_ENVELOPE)
             with self.assertRaises(m.CiaraCounterfactualBlocked):
                 m.load_source_cell_aggregates(alt)
 
