@@ -139,3 +139,21 @@ The script computes the full original **local** ZIP SHA-256 by reading the file 
 [Synthetic, entirely offline ZIP tests](../../tests/test_eurostat_census_v3_offline_complete_zip_parity_v0.py) exercise a tiny newly constructed ZIP with correct same-release-like **synthetic values**; wrong central-directory file name, duplicate member, incorrect local-header magic/CRC/offset, absent target cell, reporting-country mismatch, ZIP comment and symlink input all fail closed. Test-only size and CRC overrides do not exist in the production command; the original V3 constants are fixed by default.
 
 **Important distinction:** a complete local ZIP SHA is not a previously published provider SHA unless it is independently attested with fixed original provider URL/HTTPS, content length, final redirects, HTTP identity and access timestamp. A source archive digest, a verified single-cell CSV/TIFF numerical match and legally approved NextGen/CAT model use are **three distinct gates**. None has been promoted by these synthetic tests.
+
+### All nine original ZIP central-directory entries frozen (13 November, further integrity hardening)
+
+The original bounded ZIP central-directory receipt in **private Neon #60** records not only the CSV member but the exact **compressed bytes, uncompressed bytes, CRC32, compression method and local-header offset for all nine V3 members**. The complete-local-ZIP validator now includes these **original source metadata-only invariants**, so a substituted V3 GeoPackage, Parquet, TIFF, README, national-country CSV ZIP or SDMX metadata ZIP cannot pass source ZIP identity merely because it retains the right filename.
+
+| Original ZIP member | Local header offset | Compressed bytes | Uncompressed bytes | Original CRC32 |
+| --- | ---: | ---: | ---: | --- |
+| V3/ directory | 0 | 0 | 0 | `00000000` |
+| Country CSV nested ZIP | 91 | 203,478,177 | 257,389,035 | `84ee38b8` |
+| LAND_SURFACE TIFF | 203,478,408 | 5,751,483 | 5,977,689 | `b8d826f9` |
+| Census V3 CSV | 209,230,036 | 49,110,575 | 339,625,996 | `54cdc404` |
+| Census V3 GeoPackage | 258,340,742 | 221,469,461 | 1,302,953,984 | `fe282818` |
+| Census V3 Parquet | 479,810,335 | 55,211,012 | 76,307,745 | `205a238f` |
+| Census V3 TIFF | 535,021,482 | 30,762,675 | 32,327,795 | `1f5a582f` |
+| Census SDMX metadata nested ZIP | 565,784,289 | 337,508 | 343,891 | `682bc27f` |
+| read.me | 566,121,942 | 2,390 | 5,428 | `8653c53b` |
+
+This **directory-only** integrity check is O(nine entries) and does **not** inflate or independently recheck all non-CSV members. Those CRCs are frozen expected metadata, not proofs of those members' complete compressed data integrity. The full-archive SHA is still computed from a separately acquired local source ZIP, not independently supplied/signed by Eurostat. A new synthetic regression deliberately modifies an auxiliary README while preserving the original synthetic CSV bytes; **directory identity must fail**. The original source remains `documented_only` for automated acquisition, and the actual V3 numeric CSV ↔ TIFF match has **not** been performed.
