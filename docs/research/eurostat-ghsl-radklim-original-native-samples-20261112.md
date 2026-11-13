@@ -207,3 +207,25 @@ A separate [fully offline provider-response identity validator](../../research_r
 ### Next scientific gate
 
 For exact V3 **population-count** parity, read the `ESTAT_Census_2021_V3.csv` member's record with `GRD_ID=CRS3035RES1000mN5399000E5018000` (and `CNTR_ID=NO`) from the *same* release and compare all 14 fields **without silently dropping `-8888` or `-9999`**. A GISCO ID response alone cannot establish that equality. The full released ZIP/TIFF SHA and publication rights/automation caveats remain outstanding before NextGen/Oasis production use.
+
+### Independently verified official 1-km GISCO polygon outline (2026-11-13)
+
+Beyond the separate GISCO grid ID / country responses, an **actual bounded original 391-byte GeoJSON HTTP response** was read from this exact original provider endpoint:
+
+[GISCO 2021 Census Grid official original one-cell GeoJSON](https://gisco-services.ec.europa.eu/id/censusgrid?x=29.081945&y=70.856388&epsg=4326&year=2021&format=geojson&geometry=yes)
+
+The response is a **single MultiPolygon feature** with the matching official 2021 grid ID `NO_CRS3035RES1000mN5399000E5018000`, NUTS3 `NO074`. In private Neon PostGIS, the official WGS84 geometry was transformed back into the original raster's EPSG:3035 and **independently compared with the mathematical TIFF grid cell** (EPSG:3035 lower-left `E5018000 N5399000`, 1000-m square):
+
+| Original provider geometry check | Observed |
+| --- | --- |
+| Source GeoJSON parsed and PostGIS `ST_IsValid` | true |
+| Official polygon `ST_Covers` the existing original TIFF-centre point | true |
+| Official original polygon area in EPSG:3035 | **999,999.9276 m²** (about one km²) |
+| Original GISCO GeoJSON boundary ↔ TIFF-derived 1-km square, PostGIS `ST_HausdorffDistance` | **0.0001448 m**, ~0.15 mm |
+| SHA-256 of the **entire single original 391-B HTTP response** | `4cd38dea150a3abbe9fe7d43016a85f943c6e60c5d11d20fa4efa1ba6f06f445` |
+
+**Private Neon metadata sample #66** saves the source URL, SHA, pass/fail flags and the derived numeric geometry metrics, with `original_polygon_geometry_persisted=false`, `research_only=true` and `model_input_approved=false`. No source GeoJSON coordinates or original response body are persisted in Git/Neon; those original bytes were used **transiently** for the independent comparison. The provider request is additionally logged as bounded API smoke **receipt #13**. The provider 2021 cell ID service may not separately attest the exact 30-May-2026 V3 population-data vintage.
+
+The public repository includes a reproducible, additive [three-sample Neon integrity/geometry evidence view](../../sql/research_eurostat_census_2021_v3_polygon_parity_review_v0.sql), over source samples **#63 (original TIFF values), #65 (original GISCO IDs) and #66 (independent official polygon geometry receipt)**. The view filters to only verified original-source sample JSON hashes, exact linkages, matching cell ID, polygon coverage, area near 1e6 m², and the independently recorded boundary difference below 0.01 m. Its fail-closed output explicitly says `independent_population_count_verified=false` and `nextgen_cat_model_input_approved=false`.
+
+This geometric comparison materially strengthens **spatial provenance**, but it does **not** replace the next missing test: the source V3 CSV row with exact `GRD_ID` and all 14 numeric population fields must still match the raster pixel to prove the census count's independent same-release parity. The source's complete ZIP/TIFF digest and bulk automation/redistribution review are likewise still open.
