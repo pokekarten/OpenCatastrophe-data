@@ -149,6 +149,37 @@ jobs:
       - name: Replay original public 96h x 160 Ciara 2020 wind values and pinned digest
         run: python research_runners/ciara2020_google_arco_real_96h_nrw_area_v0.py --live-96h
 
+  ciara2020-nrw-hu22-10k-93cell-counterfactual:
+    # Exactly 93 SHA-pinned cells from original HU22 public source 10k ZIP.
+    # Live Google public original 96x160 wind read, 2020 vs 2022 exposure
+    # is COUNTERFACTUAL; no site IDs, no GUL/IL/RI or annual EP.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-nrw-hu22-10k-93cell-wind-counterfactual-20261113'
+    name: Ciara public source 2022 10k cells x original 2020 Google wind
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact PR source no retained token
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Pinned Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install reviewed optional public Zarr research reader dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-google-arco-2020-original-smoke.txt
+          python -m pip check
+      - name: Validate SHA-pinned 93-cell source and adversarial no-loss boundaries
+        run: |
+          python -m unittest tests.test_ciara2020_nrw_hu22_10k_google_arco_wind_counterfactual_v0 -v
+          python research_runners/ciara2020_nrw_hu22_10k_google_arco_wind_counterfactual_v0.py --dry-run
+      - name: Live original 96h Google gust x 93 HU2022 public cell aggregate exposure
+        run: python research_runners/ciara2020_nrw_hu22_10k_google_arco_wind_counterfactual_v0.py --live-google
+
   eu-flood-spatial:
     name: EU flood spatial A1
     runs-on: ubuntu-24.04
