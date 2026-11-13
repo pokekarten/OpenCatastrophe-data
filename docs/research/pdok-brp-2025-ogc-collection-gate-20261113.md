@@ -25,6 +25,13 @@ On 2026-11-13, an external read-only intermediary fetched the original JSON coll
 
 The new `access/nl.rvo.brp-gewaspercelen.2025.ogc-collection.json` defines the exact manually executable one-GET contract. `scripts/probe_pdok_brp_2025_collection_v0.py --live` performs no request unless explicitly invoked on a trusted network environment. A valid run requires original HTTP 200, no redirects, content-type JSON, uncompressed original body under 128 KiB, immutable request fingerprint, original SHA-256/bytes, strict collection schema/CRS and timestamp. Only hashes and structural booleans are printed; no provider bodies are saved.
 
+
+### Current/archival version drift — extra provider check on 2026-11-13
+
+The publicly advertised official [legacy Atom index](https://service.pdok.nl/rvo/brpgewaspercelen/atom/v1_0/index.xml) points to the [current official Atom collection feed](https://service.pdok.nl/rvo/gewaspercelen/atom/basisregistratie_gewaspercelen_brp.xml). A separate read-only intermediary metadata inspection of those original XML feeds on 2026-11-13 exposed the feed updated **2026-05-15** and a **2026 concept** GeoPackage, but did **not** establish an immutable original 2025 final GeoPackage identity, length, or digest. **Do not infer or download a 2025 file by guessing a filename** from older archive patterns. Obtain an explicitly listed/pinned 2025 original asset and complete product-rights/size/preflight checks first.
+
+[PDOK's original 2025 release notice](https://www.pdok.nl/-/brp-gewaspercelen-2025-definitief) establishes initial 2025 definitive publication on 2026-03-17. The official [PDOK Geoforum follow-up](https://geoforum.nl/t/brp-gewaspercelen-2025-definitief/11417) records a subsequent source/provider correction and updated services on **2026-05-15**, after users identified crop-name changes. This means even a `jaar=2025`, `status=Definitief` feature could be revised at fixed nominal year. An archived 2025 **source-byte SHA-256, exact release timestamp, and per-asset crop-codebook revision** are therefore required for stable research comparisons.
+
 ## Scientific limits and next manifest gates
 
 RVO BRP reports land user *declared* crop/parcel geometry for 15 May, not actual vegetation or insurable agricultural sums insured. The national BRP data may underlie EuroCropsV2 for Netherlands; do not treat the two as independent spatial evidence.
