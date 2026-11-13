@@ -9,6 +9,7 @@ import json
 import math
 from pathlib import Path
 import sys
+import tomllib
 import unittest
 from unittest.mock import patch
 
@@ -100,6 +101,37 @@ class RealGoogleFullCiaraSourceTests(unittest.TestCase):
                 g[2][4] = val
                 with self.assertRaisesRegex(m.RealGridBlocked, "gust"):
                     feed(m.WindAreaAccumulator(), 0, grid=g)
+
+    def test_genuine_96h_live_publisher_source_receipt_sha_and_model_no_go(self):
+        path = (m.FROZEN.parent /
+                "ciara2020_google_arco_real_96h_160node_nrw_gust_20261113.toml")
+        with path.open("rb") as f:
+            accepted = tomllib.load(f)
+        self.assertEqual(accepted["github_live_ci_job_id"] if "github_live_ci_job_id" in accepted
+                         else accepted["github_live_job_id"], 132082141178)
+        self.assertEqual(accepted["github_live_ci_run_id"], 43482459090)
+        self.assertEqual(accepted["verified_original_10fg_gust_scalar_count"], 15360)
+        self.assertEqual(accepted["original_hourly_time_steps"], 96)
+        self.assertEqual(accepted["canonical_decoded_96h_10x16_float32_le_sha256_not_original_zarr_chunk_sha256"],
+                         "5fb7c41963a94f88ee3651b51bfa84cc2f4bf379e1ee6f4eb4a4fb597d37f932")
+        self.assertEqual(accepted["earlier_source_2020_02_09_12_51N_7E_float32_sha256"],
+                         m.EXPECTED_ONEHOUR_20200209_12_LAT51_LON7_GUST_SHA)
+        self.assertEqual(
+            [accepted[f"node_count_peak_gust_ge{t}mps"] for t in (25, 30, 35, 40)],
+            [160, 157, 0, 0]
+        )
+        self.assertLess(accepted["event_gridpoint_peak_gust_mps_min"],
+                        accepted["event_gridpoint_peak_gust_mps_mean"])
+        self.assertLess(accepted["event_gridpoint_peak_gust_mps_mean"],
+                        accepted["event_gridpoint_peak_gust_mps_max"])
+        for not_admitted in ("original_compressed_GCS_chunk_shas_verified",
+                             "underlying_CDS_original_GRIB_byte_equality_verified",
+                             "public_2022_building_candidates_joined_to_weather_grid",
+                             "insurer_original_RV_buildings_or_2020_claims_obtained",
+                             "building_vulnerability_fit_and_native_GUL_IL_RI_OEP_AEP_admitted",
+                             "annual_stochastic_event_set_or_annual_EP_admitted"):
+            with self.subTest(not_admitted=not_admitted):
+                self.assertFalse(accepted[not_admitted])
 
     def test_dry_run_must_not_attempt_real_public_era5_network(self):
         with patch.object(sys, "argv", ["prog", "--dry-run"]), \
