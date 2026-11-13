@@ -158,8 +158,21 @@ class NativeSHPStream:
             raise FullSHPBlocked("source Shape type not Polygon (5)")
         self.shape_polygons += 1
         xmin, ymin, xmax, ymax = struct.unpack_from("<4d", body, 4)
-        if not all(math.isfinite(k) for k in (xmin, ymin, xmax, ymax)):
-            raise FullSHPBlocked("source original record bbox nonfinite")
+        if (not all(math.isfinite(k) for k in (xmin, ymin, xmax, ymax))
+                or not (250000 < xmin < xmax < 950000
+                        and 5_000_000 < ymin < ymax < 5_900_000)):
+            raise FullSHPBlocked("original Shape record bbox nonfinite or outside source UTM32 envelope")
+        # Validate native geometry framing for EVERY official record, not only
+        # bbox candidates. Otherwise a wrong non-ROI part/point frame could
+        # be silently counted as a complete original source inventory.
+        parts, points = struct.unpack_from("<II", body, 36)
+        if (not 1 <= parts <= 128 or not 4 <= points <= 10000
+                or len(body) != 44 + 4*parts + 16*points):
+            raise FullSHPBlocked("original complete-source Polygon part/point frame invalid")
+        offsets = struct.unpack_from("<" + "I"*parts, body, 44)
+        if (offsets[0] != 0 or
+                any(offsets[i] >= offsets[i+1] for i in range(parts-1))):
+            raise FullSHPBlocked("original source Polygon part indices invalid")
         if self.roi is None:
             return
         w, s, e, n = self.bounds
