@@ -123,6 +123,10 @@ def verify_complete_local_v3_zip(
                      and member.CRC == expected_csv_crc32,
                      "original central directory CSV offsets, sizes or CRC32 changed")
             _require(not member.flag_bits & 1, "CSV member encrypted")
+    except CSVParityBlocked:
+        # Keep the precise fail-closed reason for audit trails. Since this
+        # exception subclasses ValueError, it must precede the broad handler.
+        raise
     except (BadZipFile, OSError, ValueError, KeyError) as exc:
         raise CSVParityBlocked("original ZIP central directory is invalid") from exc
 
