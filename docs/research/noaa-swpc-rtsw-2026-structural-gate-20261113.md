@@ -50,7 +50,12 @@ record objects**, with these exact fields present on each record:
 
 The shape gate rejects a non-array, wrong-product list, missing source/active,
 string-encoded numeric readings, malformed timestamps, non-finite numbers,
-all-empty observations and out-of-bound record counts. It **does not** log
+all-empty observations and out-of-bound record counts. The verifier also
+rejects repeated observations for the same spacecraft and UTC instant,
+including equivalent `T...Z` and space-delimited times, and refuses more
+than one `active=true` spacecraft at one instant. SWPC documents exactly one
+operationally active spacecraft per timestamp; `active=false` does not imply
+low measurement quality. These are conservative structural checks only. It **does not** log
 times, spacecraft identifiers or magnetic measurements, but outputs typed
 structural flags and a response digest from the existing reviewed probe
 wrapper. No arbitrary host, new query, redirect, retry or credentials are
