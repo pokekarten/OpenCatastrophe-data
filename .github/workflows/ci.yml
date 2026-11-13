@@ -180,6 +180,32 @@ jobs:
       - name: Live original 96h Google gust x 93 HU2022 public cell aggregate exposure
         run: python research_runners/ciara2020_nrw_hu22_10k_google_arco_wind_counterfactual_v0.py --live-google
 
+  ciara2020-dwd-real-station-fx:
+    # PR-only actual independent DWD observation retrieval. No CDS/GCS
+    # credentials, raw historical ZIPs or insurer/individual site data logged.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-dwd-hourly-fx-original-station-observations-20261113'
+    name: DWD Ciara2020 original hourly FX911 measured gusts at three NRW stations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact PR source without retaining GitHub credential
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Challenge DWD original FX911 strict URLs station/archive/quality and loss no-go
+        run: |
+          python -m unittest tests.test_ciara2020_dwd_hourly_fx_original_station_observations_v0 -v
+          python research_runners/ciara2020_dwd_hourly_fx_original_station_observations_v0.py --dry-run
+      - name: Read actual official historical DWD FX911 2020 measurement stations
+        run: python research_runners/ciara2020_dwd_hourly_fx_original_station_observations_v0.py --live-dwd
+
   eu-flood-spatial:
     name: EU flood spatial A1
     runs-on: ubuntu-24.04
