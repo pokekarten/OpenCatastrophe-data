@@ -92,7 +92,8 @@ def verify_local_zip_http_receipt(
                "HTTP source redirects are not independently reviewed")
     _reject_if(receipt["content_encoding"] != "identity",
                "unexpected gzip, Brotli or transformed source representation")
-    _reject_if(receipt["content_type"] not in ALLOWED_TYPES,
+    _reject_if(not isinstance(receipt["content_type"], str)
+               or receipt["content_type"] not in ALLOWED_TYPES,
                "unexpected provider ZIP content type")
     for k in ("content_length_bytes", "saved_bytes"):
         _reject_if(type(receipt[k]) is not int or receipt[k] != ORIGINAL_ZIP_BYTES
