@@ -17,7 +17,7 @@ Official [PDOK 2025 final release announcement](https://www.pdok.nl/-/brp-gewasp
 
 ## Provider terms and intended use
 
-The specific API landing page labels the dataset **Public Domain Mark 1.0**; [PDOK service conditions](https://www.pdok.nl/veelgestelde-vragen-over-pdok-services) state anonymous/free API access, ordinary commercial/private use and no excessive or disruptive queries. The marker is not a contractual grant or guarantee about every upstream asset/2025 archived extract; dataset extraction publication/privacy/redistribution remain subject to metadata and exact scope review. The v1 access contract permits only *one user-initiated GET for Collection metadata*, with approved API/service fair use **not** being an entitlement for bulk parcels, scheduled crawling or unbounded requests.
+The specific API landing page labels the dataset **Public Domain Mark 1.0**; [PDOK service conditions](https://www.pdok.nl/how-to-faq) state anonymous/free API access, ordinary commercial/private use and no excessive or disruptive queries. The marker is not a contractual grant or guarantee about every upstream asset/2025 archived extract; dataset extraction publication/privacy/redistribution remain subject to metadata and exact scope review. The v1 access contract permits only *one user-initiated GET for Collection metadata*, with approved API/service fair use **not** being an entitlement for bulk parcels, scheduled crawling or unbounded requests.
 
 ## Real original-provider metadata observation versus strict runner
 
