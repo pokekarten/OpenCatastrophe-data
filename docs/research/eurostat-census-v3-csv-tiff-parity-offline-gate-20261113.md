@@ -95,3 +95,27 @@ Synthetic tests cover a normal local header, a valid data-descriptor layout, and
 ### CI evidence
 
 The previous source-branch head `453949f74e20deb2da072e89240fdd21883c50b6` passed [GitHub CI #43459064715](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43459064715). The newly introduced ZIP-local-header gate has a **different head**, which requires its **own** passing CI run before declaring the full PR ready.
+
+### Private Neon source-readiness projection (13 November)
+
+Applied a read-only evidence projection in the private insurance-risk-core database and reproduced the **exact running SQL definition** in [`sql/research_eurostat_census_v3_csv_tiff_parity_readiness_v0.sql`](../../sql/research_eurostat_census_v3_csv_tiff_parity_readiness_v0.sql).
+
+`research.eurostat_census_v3_csv_tiff_parity_readiness_v0` joins exactly verified private source-evidence records #60 (original ZIP central-directory inventory), #63 (original V3 TIFF 14-band pixel), #65 (official GISCO ID) and #66 (official GISCO polygon geometry). The view internally recomputes the **private 14-field raster fingerprint from the retained original cell JSON**, validates source sample canonical SHA-256 and checks exact CSV member compressed/uncompressed sizes, CRC32 and ZIP local-header offset against the frozen CSV contract. **No original row values, raw GISCO bytes, claims or policyholder data are added to Git.**
+
+Read-only current database result (2026-11-13):
+
+| Exact evidence/gate | Result |
+| --- | --- |
+| ZIP metadata and pixel/ID/polygon sample SHA checks | **Pass** |
+| ZIP entry expected sizes, CRC32, original offset | **Pass** |
+| Pinned 14-band GeoTIFF fingerprint | **Pass** |
+| `offline_reference_preflight_ready` | **true** |
+| `gis_static_zip_acquisition_contract_state` | **documented_only** |
+| `gis_static_zip_automation_rights` | **unknown** |
+| `original_full_v3_csv_observed` | **false** |
+| `original_14_band_csv_tiff_parity_verified` | **false** |
+| `production_cat_model_input_admitted` | **false** |
+
+`offline_reference_preflight_ready` **does not equal** actual same-release population parity or permission to fetch the original source. It merely proves that all current *pre-existing* published metadata/byte-range evidence is internally consistent before the blocked full-member operation.
+
+**Service-maintenance caveat:** The original Eurostat website on **13 November 2026** displays a notice that Eurostat web services/APIs, Data Browser and related services are scheduled to be unavailable **14:00–23:00** (site-local time). This is a limitation on interpreting fresh service-probe failures; it does not establish any separate downtime or service terms for the GISCO static ZIP host. The present work makes **no** new bulk/provider live requests.
