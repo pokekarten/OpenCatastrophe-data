@@ -92,11 +92,15 @@ class NativeSHPStream:
 
     def __init__(self, *, expected_records=EXPECTED_SHX_ENTRIES,
                  expected_bytes=UNCOMPRESSED_SHP_BYTES,
-                 expected_header_sha=SOURCE_SHP_HEADER_SHA256, roi=None):
+                 expected_header_sha=SOURCE_SHP_HEADER_SHA256, roi=None,
+                 original_roi_union_analysis=None):
         self.expected_records = expected_records
         self.expected_bytes = expected_bytes
         self.expected_header_sha = expected_header_sha
         self.roi = roi
+        if original_roi_union_analysis is not None and (roi is None or not callable(original_roi_union_analysis)):
+            raise FullSHPBlocked("original ROI union analysis requires a trusted original study ROI")
+        self.original_roi_union_analysis = original_roi_union_analysis
         self.bounds = roi.bounds if roi is not None else None
         self.buf = bytearray()
         self.total = self.records = self.shape_polygons = 0
@@ -319,6 +323,20 @@ class NativeSHPStream:
                 "roi_original_polygon_overlap_area_m2": round(self.roi_area_sum-union,3),
                 "roi_polygon_count_is_not_number_of_insured_buildings": True,
             })
+            # Only the complete native source parser may expose the
+            # transient, already-clipped full-region union to an opt-in
+            # scientific read-only analysis. Never expose coordinates or
+            # per-feature observations through the returned receipt.
+            if self.original_roi_union_analysis is not None:
+                extra = self.original_roi_union_analysis(geo, result)
+                if not isinstance(extra, dict) or not all(
+                    isinstance(k,str) and isinstance(v,(str,int,float,bool,type(None)))
+                    for k,v in extra.items()
+                ):
+                    raise FullSHPBlocked("original ROI analysis returned non-scalar research data")
+                if set(extra).intersection(result):
+                    raise FullSHPBlocked("original ROI analysis would overwrite source provenance")
+                result.update(extra)
         self.roi_clipped_geometries.clear()
         self.roi_union_levels.clear()
         return result
@@ -419,7 +437,8 @@ class VerifiedOriginalSegmentStream:
                 not self.active and self.active_pos == 0)
 
 
-def inspect_original_stream(response, *, status, response_url, headers, roi, verified_segments=False):
+def inspect_original_stream(response, *, status, response_url, headers, roi, verified_segments=False,
+                            original_roi_union_analysis=None):
     if verified_segments:
         if not isinstance(response, VerifiedOriginalSegmentStream):
             raise FullSHPBlocked("segment trust requires exact verified source reader")
@@ -447,7 +466,7 @@ def inspect_original_stream(response, *, status, response_url, headers, roi, ver
     if (head[30:ZIP_HEADER_BYTES] != NAME or
             FROZEN["hausumringe.shp"] != (START,COMPRESSED_MEMBER_BYTES,UNCOMPRESSED_SHP_BYTES)):
         raise FullSHPBlocked("reviewed original Shapefile ZIP member identity drift")
-    parser = NativeSHPStream(roi=roi)
+    parser = NativeSHPStream(roi=roi, original_roi_union_analysis=original_roi_union_analysis)
     inflater = zlib.decompressobj(wbits=-15)
     whole_compressed = hashlib.sha256()
     first_range = hashlib.sha256()
