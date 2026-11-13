@@ -15,6 +15,9 @@ import hashlib
 import json
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
+
+from scripts.validate_source_access import validate_path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener, ProxyHandler, HTTPRedirectHandler
 from urllib.parse import urlsplit
@@ -35,7 +38,12 @@ ALLOWED = {
         "doi": "10.5676/DWD/CatRaRE_T5_Eta_v2026.01",
     },
 }
+ROOT = Path(__file__).resolve().parents[1]
 MAX_BYTES = 4096
+KNOWN_PREFIX_SHA256 = {
+    "W3": "a3e02cb676b855390c0a9b69f41352c7c3dff74c7c25e2578727e8397f9d9b12",
+    "T5": "5dc4b6f0dac14f0a442103b78c16f647556bd870898aabff6d9f62aa4534f542",
+}
 RANGE_HEADER = "bytes=0-4095"
 SOURCE = ALLOWED["W3"]["source"]  # compatibility for earlier W3-only tests
 URL = BASE + ALLOWED["W3"]["filename"]
@@ -45,6 +53,48 @@ EXPECTED_CONTENT_RANGE = f"bytes 0-4095/{ORIGINAL_TOTAL_BYTES}"
 
 class DWDRangeBlocked(ValueError):
     """Provider identity, legal scope, transport or CSV contract rejected."""
+
+
+def verify_reviewed_contract(variant: str) -> Path:
+    """Require exact source/version/rights contract before any original request."""
+    if variant not in ALLOWED:
+        raise DWDRangeBlocked("only exact reviewed W3/T5 variants allowed")
+    cfg = ALLOWED[variant]
+    path = ROOT / "access" / (cfg["source"] + ".json")
+    contract = validate_path(path)
+    rights = contract["rights_and_policy"]
+    probe_contract = contract["probe_contract"]
+    limits = contract["operational_constraints"]
+    if (contract["access_id"] != cfg["source"]
+            or contract["source_ids"] != [cfg["source"]]
+            or contract["interface_type"] != "http_file"
+            or contract["status"] != "probe_ready"
+            or contract["service_root"] != BASE.rstrip("/")
+            or contract["access_scope"] != ["metadata", "sample"]
+            or contract["authentication"]["mode"] != "none"
+            or contract["request_contract"]["allowed_operations"] != ["read_fixed_csv_prefix"]
+            or contract["request_contract"]["path_templates"] != ["/" + cfg["filename"]]
+            or rights["dataset_rights_status"] != "verified"
+            or rights["api_terms_status"] != "same_as_dataset"
+            or rights["terms_url"] != "https://opendata.dwd.de/climate_environment/CDC/Terms_of_use.pdf"
+            or rights["commercial_automation_status"] != "allowed"
+            or probe_contract["mode"] != "provider_specific"
+            or probe_contract["operation"] != "read_fixed_csv_prefix"
+            or probe_contract["requires_credentials"] is not False
+            or limits["max_probe_bytes"] != MAX_BYTES
+            or limits["max_sample_bytes"] != MAX_BYTES
+            or limits["timeout_seconds"] != 30
+            or limits["retry_policy"] != "none"
+            or KNOWN_PREFIX_SHA256[variant] not in limits["mutability_notes"]
+            or str(cfg["total_bytes"]) not in limits["mutability_notes"]):
+        raise DWDRangeBlocked("original CatRaRE rights/variant/route contract changed")
+    return path
+
+
+def verify_original_prefix_digest(result: dict, *, variant: str) -> None:
+    """Provider byte witness must match previously frozen original 4KiB SHA."""
+    if variant not in KNOWN_PREFIX_SHA256 or result.get("response_sha256") != KNOWN_PREFIX_SHA256[variant]:
+        raise DWDRangeBlocked("original CatRaRE 2026.01 4096-byte SHA-256 drift")
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -102,6 +152,7 @@ def verify_csv_prefix(raw: bytes, *, status: int, content_range: str,
 def probe(variant: str = "W3") -> dict:
     if variant not in ALLOWED:
         raise DWDRangeBlocked("only exact reviewed W3/T5 variants allowed")
+    contract_path = verify_reviewed_contract(variant)
     cfg = ALLOWED[variant]
     url = BASE + cfg["filename"]
     parsed = urlsplit(url)
@@ -121,12 +172,21 @@ def probe(variant: str = "W3") -> dict:
                 raise DWDRangeBlocked("provider did not honor fixed Range")
             c_range = response.headers.get("Content-Range", "")
             media = response.headers.get("Content-Type", "")
+            if response.headers.get("Content-Encoding", "identity").strip().lower() != "identity":
+                raise DWDRangeBlocked("compressed source response is not reviewed")
+            stated = response.headers.get("Content-Length")
+            if stated is not None and (not stated.isascii() or not stated.isdecimal()
+                                       or int(stated) != MAX_BYTES):
+                raise DWDRangeBlocked("original partial-response Content-Length mismatch")
             body = response.read(MAX_BYTES + 1)
     except (HTTPError, URLError, TimeoutError) as exc:
         raise DWDRangeBlocked("DWD bounded CSV access failed") from exc
     result = verify_csv_prefix(body, status=206, content_range=c_range,
                                media_type=media, variant=variant)
+    verify_original_prefix_digest(result, variant=variant)
     result.update({
+        "source_access_contract_sha256": hashlib.sha256(contract_path.read_bytes()).hexdigest(),
+        "source_probe_code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "operation": f"exact_{variant.lower()}_v2026_01_first_4096_csv_bytes",
         "request_sha256": hashlib.sha256(
             (url + " ; Range: " + RANGE_HEADER).encode()).hexdigest(),
@@ -138,10 +198,13 @@ def probe(variant: str = "W3") -> dict:
     return result
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--variant", choices=sorted(ALLOWED), default="W3")
-    args = parser.parse_args()
+    parser.add_argument("--live", action="store_true", help="one original bounded DWD source GET")
+    args = parser.parse_args(argv)
+    if not args.live:
+        parser.error("original provider network access disabled by default; --live required")
     try:
         print(json.dumps(probe(args.variant), sort_keys=True))
         return 0
