@@ -131,6 +131,40 @@ def reviewed_probe(source: str, root: Path = ROOT):
     return url, operation, max_bytes, timeout
 
 
+def _inspect_gfz_definitive_kp_day(payload: object) -> dict:
+    """Validate the *fixed* 2024-01-01 GFZ definitive Kp service response.
+
+    Every expected UTC 3-hour interval, finite numeric Kp and explicit
+    definitive status must appear. This is only a provider response-shape gate:
+    it neither verifies physical accuracy nor admits CAT-model input.
+    """
+    import math
+
+    if type(payload) is not dict:
+        raise ProbeBlocked("GFZ definitive Kp response is not an object")
+    timestamps = payload.get("datetime")
+    values = payload.get("Kp")
+    statuses = payload.get("status")
+    if not all(type(x) is list and len(x) == 8
+               for x in (timestamps, values, statuses)):
+        raise ProbeBlocked("GFZ definitive Kp day requires three aligned eight-entry arrays")
+    expected_times = [f"2024-01-01T{hour:02}:00:00Z" for hour in range(0, 24, 3)]
+    if timestamps != expected_times:
+        raise ProbeBlocked("GFZ definitive Kp UTC three-hour interval identity drift")
+    if any(type(status) is not str or status != "def" for status in statuses):
+        raise ProbeBlocked("GFZ Kp response contains non-definitive status")
+    for value in values:
+        if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 9:
+            raise ProbeBlocked("GFZ Kp reading is not a finite in-range number")
+    return {
+        "verified_shape": "gfz_definitive_kp_2024_01_01_eight_3h_bins",
+        "fixed_window_verified": True,
+        "definitive_status_verified": True,
+        "record_count": 8,
+        "scientific_values_verified": False,
+    }
+
+
 def verify_response(source: str, raw: bytes) -> dict:
     try:
         payload = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_object,
@@ -151,10 +185,7 @@ def verify_response(source: str, raw: bytes) -> dict:
         # Returned download links are intentionally not followed.
         return {"verified_shape": "deu_adm1_metadata", "frozen_id": payload["boundaryID"]}
     if source == "gfz.geomagnetic-kp":
-        if not isinstance(payload, dict) or not payload:
-            raise ProbeBlocked("GFZ response is not a nonempty JSON object")
-        # A structural probe does not assert scientific Kp content or calibration.
-        return {"verified_shape": "json_object_only", "scientific_values_verified": False}
+        return _inspect_gfz_definitive_kp_day(payload)
     if source == "noaa.swpc.real-time-solar-wind":
         if not isinstance(payload, (list, dict)) or not payload:
             raise ProbeBlocked("NOAA response is not a nonempty JSON collection")
