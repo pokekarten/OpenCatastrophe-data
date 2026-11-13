@@ -88,7 +88,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Api terms status:** separate_reviewed
 
-**Terms url:** <https://www.pdok.nl/veelgestelde-vragen-over-pdok-services>
+**Terms url:** <https://www.pdok.nl/how-to-faq>
 
 **Commercial automation status:** allowed
 
@@ -120,8 +120,8 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://api.pdok.nl/rvo/gewaspercelen/ogc/v1?f=html&amp;lang=en>
 - <https://www.pdok.nl/ogc-apis/-/article/basisregistratie-gewaspercelen-brp->
 - <https://api.pdok.nl/rvo/gewaspercelen/ogc/v1/api?f=html&amp;lang=en>
-- <https://www.pdok.nl/veelgestelde-vragen-over-pdok-services>
-- <https://www.pdok.nl/ogc-api-features>
+- <https://www.pdok.nl/how-to-faq>
+- <https://www.pdok.nl/features>
 - <https://api.pdok.nl/rvo/gewaspercelen/ogc/v1/collections/brpgewas?f=json>
 
 **Notes:** Metadata-only exact live API access contract, added after publicly available authoritative PDOK terms and original collection metadata were reviewed. An external read-only intermediary on 2026-11-13 returned a JSON collection with id brpgewas/title BRP Gewaspercelen/CRS; intermediary observation does not expose strict original HTTP transport headers or original response byte SHA and must NOT be counted as direct strict repository-runner execution. Requires python -m scripts.probe_pdok_brp_2025_collection_v0 --live on a trusted authorized network execution lane for T1 receipt. No original bytes persisted, crop items queried, or model input admitted. 2025 release freeze remains open.
