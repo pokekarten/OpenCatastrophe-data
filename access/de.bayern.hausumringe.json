@@ -40,10 +40,10 @@
   },
   "operational_constraints": {
     "timeout_seconds": 30,
-    "max_probe_bytes": 8388608,
+    "max_probe_bytes": 5242880,
     "max_sample_bytes": 8388608,
     "retry_policy": "none",
-    "rate_limit_notes": "Official CC BY 4.0 legal permission to use, modify and commercially redistribute the HU-BY open geodata does not itself specify an unlimited source web-server API request cadence, automated full archive mirror rights or request quotas. Prior trusted main workflow used exactly 20 bounded original provider HTTP-206 segments <=8MiB and no retries; no new live calls authorized by this documented_only contract. Review service HTTP transport, acceptable cadence and provider terms separately.",
+    "rate_limit_notes": "Official CC BY 4.0 legal permission to use, modify and commercially redistribute the HU-BY open geodata does not itself specify an unlimited source web-server API request cadence, automated full archive mirror rights or request quotas. Prior trusted main workflow used exactly 20 bounded original provider HTTP-206 segments <=8MiB and no retries; no new live calls authorized by this documented_only contract. New reusable access records cap a future probe at <=5 MiB per response (canonical validator), independent of the separately completed historical main workflow's <=8 MiB source segments. Review service HTTP transport, acceptable cadence and provider terms separately.",
     "mutability_notes": "Archive is a maintained cadastral source, not a frozen 2020 shapefile or a verified survey year. Prior HTTP Range proof pinned exact original ZIP object length, member compressed/decoded SHA256 and CRC, HTTP ETag or Last Modified consistency if present, and one GHSL E2020 native window ROI. Whole ZIP SHA256 remains unverified; other SHX/DBF/PRJ members are separately referenced but not a whole ZIP hash. Source regeneration can change bytes/geometry; do not transfer hashes, inferred footprint counts or historical 2020 ground truth across vintages without a new original archive review."
   },
   "rights_and_policy": {
