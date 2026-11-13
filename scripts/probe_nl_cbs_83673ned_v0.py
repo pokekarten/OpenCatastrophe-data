@@ -82,7 +82,7 @@ def _direct_open(req: request.Request, timeout: int):
         NoRedirect(),
         request.HTTPSHandler(context=ssl.create_default_context()),
     )
-    return opener.open(req, timeout)
+    return opener.open(req, timeout=timeout)
 
 
 def verify_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
