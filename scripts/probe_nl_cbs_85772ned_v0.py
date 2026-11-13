@@ -189,12 +189,14 @@ def validate_rows(bodies: dict[str, dict[str, Any]]) -> dict[str, Any]:
             or row["Prijsindex_1"] != level or row["Prijsindex_3"] != level
             or row.get("OntwikkelingTOVEenJaarEerder_2", object()) != pct
             or row.get("OntwikkelingTOVEenJaarEerder_4", object()) != pct
-            or any(type(row.get(key)) not in {int, float}
-                   for key in ("OntwikkelingTOVEenJaarEerder_2",
-                               "OntwikkelingTOVEenJaarEerder_4"))
-                 if pct is not None else False
         ):
             raise CBSOutputBlocked("CBS original numeric value or VAT series changed")
+        if pct is not None and any(
+            type(row.get(key)) not in {int, float}
+            for key in ("OntwikkelingTOVEenJaarEerder_2",
+                        "OntwikkelingTOVEenJaarEerder_4")
+        ):
+            raise CBSOutputBlocked("CBS year-on-year change is not numeric")
     return {
         "table_id": "85772NED",
         "table_modified": EXPECTED_MODIFIED,
