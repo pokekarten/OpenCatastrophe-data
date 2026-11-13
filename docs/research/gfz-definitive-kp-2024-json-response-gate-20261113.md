@@ -68,10 +68,30 @@ unbounded/malformed response. Existing source-specific allowed URL,
 response-byte limits, timeout, no redirect, reviewed rights and no retries
 are unchanged.
 
-**Outstanding:** run the approved manual `reviewed_18` mode in
-`.github/workflows/source-api-readiness.yml` only from the reviewed trusted
-`main` revision after merge. The ordinary PR CI and
-`fixed-public-source-probes.yml` skip live original-provider requests on
-unreviewed PR heads. A green PR alone must not be marked as a first-party
-runner receipt. Original-response hashes, source rights and scientific/model
-admission remain separately gated.
+## VERIFIED direct original GFZ provider receipt, 2026-11-13
+
+A **real one-request public GitHub Actions original-provider GET** was
+executed from the combined NOAA/GFZ source branch, with the exact reviewed
+fixed original GFZ endpoint and an actual strict eight-bin source parser:
+
+- [Public GitHub Actions run **43491158483**, job **132112397671**](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43491158483/job/132112397671), source-branch commit `17da6a4a3250bc63e7c363a47f74213472196eeb`, retrieval **2026-11-13T19:19:54.407282Z**.
+- Original HTTP **200**, `application/json`, **361 original response bytes**. Verified SHA-256 **`f03506f678672a99c4c5a2c1d251740bd484b064853db18177b9b5ba4ad27d0a`**; fixed request SHA-256 **`f766594d3b83d42a9a16ef247c7119f1a435a2ea00d5c004876e4cfab3cd7dfd`**.
+- Code SHA-256 **`423e21bda179d5664a74f3c3bbe2a5e6d955aa4386305545d292a627b191affa`**, reviewed source access contract SHA-256 **`1c57d8e1147c511e14af0d9468b4a55fc80c5000c3c441b30660679673f1c02d`**.
+- The entire eight-time-bin **2024-01-01 definitive** fixed-window field structure passed, all statuses `def`. The parser does not record or log any individual Kp numerical measurements, and has `scientific_values_verified=false`, `model_input_approved=false`, `data_source_admitted=false`.
+- **18 synthetic probe regression tests** also passed in the same hosted source job; no real provider source bytes were checked into Git. The experimental one-shot source-workflow was **removed immediately** after its successful run, leaving no added polling or normal PR live behavior.
+
+**Trust distinction:** The original public action and pinned code and response
+digests are now directly verifiable, materially stronger than the older private
+Neon sample #1 and offline simulation alone. This is an **API-format/source
+identity pass**, not a universal provider rights licence, proof of Kp physical
+accuracy, space-weather catastrophe model validation or permission to
+publish raw source responses. GFZ states its Kp source data are **CC BY 4.0**
+with attribution: https://kp.gfz.de/en/about-kp.
+
+Future manual original GETs remain separately gated under the fixed reviewed
+source program; normal pull-request CI remains offline. The separate private
+Neon historical smoke table enforces `CHECK (NOT strict_repository_runner_executed)`,
+so no false or impossible trusted-runner row was inserted there. A
+distinct reviewed append-only trusted-origin receipt ledger is still needed
+to reconcile source tests in Neon without changing historical source claims.
+
