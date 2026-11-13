@@ -9,13 +9,14 @@ import tempfile
 import unittest
 import warnings
 from pathlib import Path
-from zipfile import ZIP_DEFLATED, ZipFile
+from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
 
 from research_runners.eurostat_census_v3_full_csv_member_parity_v0 import (
     BANDS, CSV_MEMBER, HEADER, CSVParityBlocked, TARGET_GRID_ID,
 )
 from research_runners.eurostat_census_v3_offline_complete_zip_parity_v0 import (
     verify_complete_local_v3_zip,
+    verify_all_original_zip_member_contents,
 )
 
 
@@ -103,6 +104,55 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
             self.assertFalse(receipt["provider_acquisition_rights_verified"])
             self.assertFalse(receipt["commercial_insurance_model_input_admitted"])
             self.assertNotIn(row()[1],str(receipt))
+
+    def test_optional_single_member_full_crc_sha_receipt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)/"synthetic-source.zip"
+            digest,info=write_source(p)
+            baseline=verify_fixture(p,digest,info)
+            self.assertFalse(baseline["all_original_zip_member_contents_verified"])
+            self.assertEqual(baseline["verified_member_count"],0)
+            checked=verify_fixture(p,digest,info,verify_all_members=True)
+            self.assertTrue(checked["all_original_zip_member_contents_verified"])
+            self.assertEqual(checked["verified_member_count"],1)
+            self.assertEqual(checked["total_uncompressed_member_bytes_verified"],
+                             info.file_size)
+            self.assertEqual(checked["member_content_receipts"][0]["member_crc32_hex"],
+                             f"{info.CRC:08x}")
+            self.assertFalse(checked["source_cat_model_input_approved"])
+            self.assertFalse(checked["source_legal_acquisition_approved_by_test"])
+            self.assertNotIn(row()[1],str(checked))
+
+    def test_changed_non_csv_payload_with_unchanged_directory_crc_is_rejected(self):
+        # The source ZIP central directory is left untouched deliberately.
+        # A metadata-only check cannot detect this silent stored-payload flip.
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)/"synthetic-two-files.zip"
+            digest,_=write_source(p)
+            with ZipFile(p,"r") as z:
+                csv_content=z.read(CSV_MEMBER)
+            note="Eurostat_Census-GRID_2021_V3/read.me"
+            with ZipFile(p,"w",compression=ZIP_DEFLATED) as z:
+                z.writestr(CSV_MEMBER,csv_content)
+                z.writestr(note,b"five synthetic bytes",compress_type=ZIP_STORED)
+            pinned=frozen_directory(p)
+            success=verify_all_original_zip_member_contents(
+                p,expected_member_directory=pinned)
+            self.assertEqual(success["verified_member_count"],2)
+            self.assertTrue(success["all_original_zip_member_contents_verified"])
+            self.assertFalse(success["original_provider_bytes_written"])
+
+            with ZipFile(p,"r") as z:
+                member=z.getinfo(note)
+                self.assertEqual(member.compress_type,ZIP_STORED)
+                payload_at=member.header_offset+30+len(note.encode())+len(member.extra)
+            altered=bytearray(p.read_bytes())
+            altered[payload_at]^=0x01
+            p.write_bytes(altered)
+            self.assertEqual(frozen_directory(p),pinned)
+            with self.assertRaisesRegex(CSVParityBlocked,"complete integrity"):
+                verify_all_original_zip_member_contents(
+                    p,expected_member_directory=pinned)
 
     def test_wrong_zip_source_name_and_comment_fail(self):
         with tempfile.TemporaryDirectory() as tmp:
