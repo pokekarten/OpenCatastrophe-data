@@ -69,8 +69,17 @@ class StrictBranchReceiptContractTests(unittest.TestCase):
         ddl = self.schema
         self.assertIn("original_response_bytes BETWEEN 1 AND 4194304", ddl)
         self.assertIn("original_response_bytes = 2048", ddl)
+        self.assertIn("original_request_range IS NOT NULL", ddl)
+        self.assertIn("original_content_range IS NOT NULL", ddl)
         self.assertIn("original_request_range = 'bytes=0-2047'", ddl)
         self.assertIn("original_content_range = 'bytes 0-2047/820143312'", ddl)
+        self.assertIn("source_strict_pr_branch_receipt_v1_exact_endpoint_ck", ddl)
+        for path in (
+            "https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json",
+            "https://kp.gfz.de/app/json/?start=2024-01-01T00:00:00Z&end=2024-01-01T23:59:59Z&index=Kp&status=def",
+            "https://opendata.dwd.de/climate_environment/CDC/grids_germany/hourly/radolan/reproc/2017_002/netCDF/supplement/RW2017.002_2021_netcdf_supplement.tar.gz",
+        ):
+            self.assertIn(path, ddl)
         self.assertIn("original_http_status = 200", ddl)
         self.assertIn("original_http_status = 206", ddl)
         for col in ("original_bytes_persisted", "full_source_sha256_verified",
