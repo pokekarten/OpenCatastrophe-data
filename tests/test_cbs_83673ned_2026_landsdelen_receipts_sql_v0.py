@@ -82,6 +82,9 @@ class CBSRegionalOriginalReceiptSQLTests(unittest.TestCase):
         self.assertIn("average_permitted_eur_per_m2", self.sql)
         self.assertIn("mean_permitted_dwelling_floor_area_m2", self.sql)
         self.assertIn("mean_permitted_dwelling_volume_m3", self.sql)
+        self.assertIn("source_native_field_crosswalk", self.sql)
+        self.assertIn("'GemiddeldeBouwkostenPerM_2' = 'EUR per m³ (cubic metre), NOT per square metre'", self.sql)
+        self.assertIn("'GemiddeldeBouwkostenPerM_3' = 'EUR per m² (square metre), NOT per cubic metre'", self.sql)
         self.assertIn("ABS(eur_per_m3 * mean_m3", self.sql)
         self.assertIn("ABS(eur_per_m2 * mean_m2", self.sql)
 
