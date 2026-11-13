@@ -78,7 +78,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** Official PDOK states free anonymous OGC access for commercial/private users subject to Producten-en-Diensten-Catalogus (PDC) acceptable use and no excess/disruptive traffic, not unlimited download entitlement. This reviewed operation permits at most one manual collection-metadata GET, no retries, no GeoJSON feature requests, no recurring job. Heavy traffic, separate bulk extracts, regional polygons or derived publication require independent review.
+**Rate limit notes:** Official PDOK states free anonymous OGC access for commercial/private users subject to Producten-en-Diensten-Catalogus (PDC) acceptable use and no excess/disruptive traffic, not unlimited download entitlement. This reviewed operation permits at most one source-scoped collection-metadata GET per reviewed trusted-main workflow run, no retries, no GeoJSON feature requests, no recurring job. Heavy traffic, separate bulk extracts, regional polygons or derived publication require independent review.
 
 **Mutability notes:** The live collection can be revised or replaced; it is NOT a release-frozen copy of the final 2025 BRP release. Preserve collection ID brpgewas, exact GET request fingerprint, retrieval UTC, original body SHA-256/bytes, source code/contract digests and observed response media type. A mutable updated timestamp and bbox do not establish source file SHA, 2025 historical crop coverage, parcel-level rights or model readiness.
 
@@ -94,7 +94,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** unknown
 
-**Notes:** PDOK's authoritative original BRP OGC API landing/docs label the service data 'Public Domain Mark 1.0' (PDM 1.0), no fee and no authentication. PDM is a provider public-domain status label, not itself a legal licence grant, a warranty about underlying third-party rights, or proof that an arbitrary archived 2025 extraction/geometry is clear. PDOK official service terms allow ordinary user/programmatic access subject to fair use and PDC; this review confirms only one manually requested public collection-metadata GET, never unrestricted commercial API traffic or source bytes/geometry redistribution. Specific data/year rights, extraction date, attribution and derivative publication require a separate source-scope review. This source-access status does not grant rights for insurer geolocation, crop values or science.
+**Notes:** PDOK's authoritative original BRP OGC API landing/docs label the service data 'Public Domain Mark 1.0' (PDM 1.0), no fee and no authentication. PDM is a provider public-domain status label, not itself a legal licence grant, a warranty about underlying third-party rights, or proof that an arbitrary archived 2025 extraction/geometry is clear. PDOK official service terms allow ordinary user/programmatic access subject to fair use and PDC; this review confirms only one reviewed trusted-main run of the fixed public collection-metadata GET, never unrestricted commercial API traffic or source bytes/geometry redistribution. Specific data/year rights, extraction date, attribution and derivative publication require a separate source-scope review. This source-access status does not grant rights for insurer geolocation, crop values or science.
 
 ## Probe contract
 
@@ -106,7 +106,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ### Expected evidence
 
-- One exact anonymous manually opted-in GET to fixed PDOK brpgewas collection metadata URL, no redirects or retries, HTTP 200, application/json, original bytes at most 131072
+- One exact anonymous reviewed trusted-main execution GET to fixed PDOK brpgewas collection metadata URL, no redirects or retries, HTTP 200, application/json, original bytes at most 131072
 - Strict bounded UTF-8 JSON object, exactly one self-link, collection id/title, OGC CRS84 and EPSG:28992, finite bounding box overlapping Netherlands
 - UTC retrieval timestamp, exact request SHA-256, original response SHA-256 and byte count, source access contract/code digests; no original response body or features saved
 - Collection not tied to immutable 2025 source vintage; zero feature, polygon, crop-value, personal-data and insurer model inputs requested or admitted
