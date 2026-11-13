@@ -175,6 +175,34 @@ def original_96h_grid() -> dict:
     except (OSError, RuntimeError, ValueError, TypeError, ImportError, KeyError) as exc:
         raise RealGridBlocked("public original 96h Google ARCO bounded read failed") from None
 
+    # The first actually successful original publisher replay on GitHub is
+    # frozen independently as a factual source receipt. Reject source-data
+    # drift without provenance review rather than silently republishing.
+    accepted_path = (FROZEN.parent /
+        "ciara2020_google_arco_real_96h_160node_nrw_gust_20261113.toml")
+    with accepted_path.open("rb") as handle:
+        accepted = tomllib.load(handle)
+    if (accepted.get("schema") != SCHEMA
+        or accepted.get("github_live_ci_run_id") != 43482459090
+        or accepted.get("original_hourly_time_steps") != HOURS
+        or accepted.get("verified_original_10fg_gust_scalar_count") != HOURS * 160
+        or accepted.get("canonical_decoded_96h_10x16_float32_le_sha256_not_original_zarr_chunk_sha256")
+        != outcome["normalized_decoded_96h_10x16_float32_le_sha256_not_original_chunk_sha256"]
+        or accepted.get("earlier_source_2020_02_09_12_51N_7E_float32_sha256")
+        != outcome["single_2020_02_09_12_51N_7E_source_crosscheck_sha256"]
+        or accepted.get("event_gridpoint_peak_gust_mps_min")
+        != outcome["event_max_over_96h_gust_mps_at_160_nodes_min"]
+        or accepted.get("event_gridpoint_peak_gust_mps_mean")
+        != outcome["event_max_over_96h_gust_mps_at_160_nodes_mean"]
+        or accepted.get("event_gridpoint_peak_gust_mps_max")
+        != outcome["event_max_over_96h_gust_mps_at_160_nodes_max"]
+        or any(accepted.get(f"node_count_peak_gust_ge{t}mps")
+               != outcome["node_count_event_peak_gust_above_threshold_mps"][str(t)]
+               for t in (25, 30, 35, 40))
+        or accepted.get("original_compressed_GCS_chunk_shas_verified") is not False
+        or accepted.get("building_vulnerability_fit_and_native_GUL_IL_RI_OEP_AEP_admitted") is not False):
+        raise RealGridBlocked("new original 96h publisher field differs from independently verified first live-source receipt")
+
     return {
         "schema": SCHEMA,
         "status": "PUBLIC_ORIGINAL_GOOGLE_ARCO_REAL_96H_160NODE_GUST_HAZARD_NO_LOSS",
