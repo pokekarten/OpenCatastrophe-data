@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: PDOK BRP original Collection metadata canary
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/pdok-brp-original-metadata-v0.yml"
+      - "access/nl.rvo.brp-gewaspercelen.2025.ogc-collection.json"
+      - "scripts/probe_pdok_brp_2025_collection_v0.py"
+      - "tests/test_probe_pdok_brp_2025_collection_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pdok-brp-original-metadata-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline-source-contract-regression:
+    name: Exact source rights, schema and no-network fixtures
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact repository ref without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run source-specific offline fail-closed checks
+        run: >-
+          python -m unittest tests.test_probe_pdok_brp_2025_collection_v0 -v
+      - name: Verify canonical data-to-public-view projection
+        run: >-
+          python -m scripts.render_public_views --check --scope access
+
+  original-metadata-live-only-when-manually-dispatched-from-main:
+    name: One reviewed PDOK OGC Collection GET (no original feature bytes)
+    needs: offline-source-contract-regression
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout reviewed trusted main commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run exactly one approved provider request and report safe receipt only
+        run: >-
+          python -m scripts.probe_pdok_brp_2025_collection_v0 --live >>
+          "$GITHUB_STEP_SUMMARY"
