@@ -276,8 +276,12 @@ def compute_1024_cell_statistics(original_union, source_receipt:dict,
         raise CellwiseBlocked("exact original Polygon union area not conserved across native cells")
     if paired["paired_ghsl_s_surface_cells_positive"]!=937:
         raise CellwiseBlocked("original GHSL surface-positive cell count drift")
+    # The source parser already owns 'profile' and 'model_input_approved'.
+    # Preserve those original provenance keys unchanged: the callback may
+    # only append namespaced scalar research fields, never overwrite them.
+    paired.pop("model_input_approved")
     return {
-        "profile":"oc-ghsl-bvv-original-1024-cell-paired-cross-epoch-research-v0",
+        "paired_profile":"oc-ghsl-bvv-original-1024-cell-paired-cross-epoch-research-v0",
         **paired,
         "paired_official_current_area_conservation_tolerance_m2":BVV_AREA_TOLERANCE_M2,
         "paired_ghsl_e2020_original_built_surface_total_m2":sum(source_surface),
@@ -288,7 +292,6 @@ def compute_1024_cell_statistics(original_union, source_receipt:dict,
         "paired_native_cell_values_or_original_geometries_persisted":False,
         "paired_bvv_individual_building_count_claimed":False,
         "paired_exposure_or_tiv_approved":False,
-        "model_input_approved":False,
     }
 
 
