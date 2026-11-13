@@ -112,7 +112,8 @@ class OneCellCSVSourceParityTests(unittest.TestCase):
             run_fake(source,member,digest)
         source,member,digest=fake_member(lines=[
             make_row(grid_id="CRS3035RES1000mN1000000E1000000"),
-            make_row(male="-8888"),make_row()])
+            make_row(male="-8888"),
+            make_row(grid_id="CRS3035RES1000mN1001000E1001000")])
         # Sentinel values are preserved in the canonical fingerprint, not zeros.
         self.assertTrue(run_fake(source,member,digest)
                         ["source_same_release_csv_tiff_14_band_parity"])
