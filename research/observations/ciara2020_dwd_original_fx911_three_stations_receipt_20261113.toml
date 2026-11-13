@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Independent actual ORIGINAL DWD CDC measured station FX_911 2020 gust.
+# First live DWD CI run 43499602678 job 132144371691; all 96 h each.
+# DWD dataset CC BY 4.0 (DWD attribution), no raw measurement time series.
+schema = "CIARA2020_DWD_CDC_ORIGINAL_HOURLY_FX911_3_NRW_STATIONS_V0"
+status = "REAL_DWD_ORIGINAL_FX911_STATION_OBSERVATIONS_2020_NO_ERA5_LOSS_CALIBRATION"
+as_of_date_utc = "2026-11-13"
+first_original_live_github_pr = 1564
+first_original_live_github_run_id = 43499602678
+first_original_live_github_job_id = 132144371691
+official_source_index = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/historical/"
+station_original_publisher_list_sha256 = "da71a04670608512719703cbfafa9367fbd8b21b74d2e2275a663c58f5775ed0"
+original_publisher_archive_index_sha256 = "4299666e67be6bd7a2854a2bb291d7619f17f84122d306248485c6a0dbf5bcb0"
+source_rights = "DWD CDC CC BY 4.0; Deutscher Wetterdienst attribution required"
+source_rights_evidence = "https://opendata.dwd.de/climate_environment/CDC/Nutzungsbedingungen_German.txt"
+original_hourly_parameter = "FX_911"
+original_units = "m/s"
+original_study_first_date = "2020-02-08"
+original_study_last_date = "2020-02-11"
+reported_station_count = 3
+source_archives_inspected = 4
+source_archives_rejected_for_insufficient_2020_hours = 1
+rejected_station_id = "03623"
+rejected_original_zip_sha256 = "d2503e4f4c1ff3860d7b9d0f73bd382cb9f08f62068772695878db7bc1ad98f6"
+reported_all_stations_96_original_hours = true
+station_QN8_10_highest_quality_met = false
+DWD_reference_timestamps_UTC_harmonization_verified = false
+station_2020_vs_current_geography_instrument_metadata_verified = false
+actual_2020_real_RV_insurer_claims_observed = false
+German_wind_damage_function_calibrated = false
+native_Oasis_NextGen_GUL_IL_RI_OEP_AEP_admitted = false
+
+[[stations]]
+station_id = "02667"
+name = "Koeln/Bonn"
+original_archive_url = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/historical/stundenwerte_FX_02667_19900701_20251231_hist.zip"
+original_unmodified_zip_sha256 = "e88536b7eebb6c7f94de63de56b1af85a0981fdd769e727f45f6d7db7c93ae78"
+current_publisher_latitude = 50.8645
+current_publisher_longitude = 7.1575
+distance_to_51N_7E_km = 18.677
+published_2020_peak_hour_label = "2020021008"
+observed_2020_96h_peak_gust_mps = 26.4
+valid_2020_hour_count = 96
+missing_original_value_count = 0
+source_quality_QN8_3_hour_count = 96
+
+[[stations]]
+station_id = "15200"
+name = "Wuppertal"
+original_archive_url = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/historical/stundenwerte_FX_15200_20130601_20251231_hist.zip"
+original_unmodified_zip_sha256 = "748ffdbc8f6ebf04a014ebf3d8fdc177e9a903349cc5b36e19f4c425998bfaa0"
+current_publisher_latitude = 51.2531
+current_publisher_longitude = 7.2157
+distance_to_51N_7E_km = 31.916
+published_2020_peak_hour_label = "2020020922"
+observed_2020_96h_peak_gust_mps = 31.1
+valid_2020_hour_count = 96
+missing_original_value_count = 0
+source_quality_QN8_3_hour_count = 96
+
+[[stations]]
+station_id = "00603"
+name = "Koenigswinter-Heiderhof"
+original_archive_url = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/historical/stundenwerte_FX_00603_19990303_20251231_hist.zip"
+original_unmodified_zip_sha256 = "4a61a6394344bba05a06553794ac1a2d5edb4c4e3ac39ae1f26407e5f4e2f62b"
+current_publisher_latitude = 50.7293
+current_publisher_longitude = 7.204
+distance_to_51N_7E_km = 33.332
+published_2020_peak_hour_label = "2020021009"
+observed_2020_96h_peak_gust_mps = 25.5
+valid_2020_hour_count = 96
+missing_original_value_count = 0
+source_quality_QN8_3_hour_count = 96
