@@ -327,3 +327,66 @@ or CAT-model admission follows. The complete original **ZIP archive**
 SHA-256 remains unverified (DBF/SHX/PRJ independently probed),
 even though the full compressed and native original **SHP member**
 SHAs and ZIP-declared SHP CRC32 have been verified.
+
+
+## 2026-11-13 additional original HTTP transport regressions and bounded response retry
+
+The **successful previously verified original BVV main source run**
+[43471636096](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43471636096)
+and Neon research sample **#94** remain unchanged and fully valid
+for their exact original source epoch. However, two subsequent
+**independent main source accesses** encountered transport failures
+without any source evidence of changed native bytes:
+
+- [Paired original GHSL/BVV source research run
+  43483336611](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43483336611),
+  first attempt: after **2,250,000** sequential native
+  Shape records had been parsed, one public BVV source segment
+  request failed: `BLOCKED: original 1024-cell research source
+  verification unavailable: fixed original ZIP segmented HTTPS
+  source unavailable`. No complete-source read or 1,024-cell
+  correlation result was recorded in Neon.
+- [Independent original BVV source-only regression
+  43483336967](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43483336967):
+  the same class of source-segment HTTP failure occurred after
+  **500,000** original Shape records. Both jobs remained
+  **fail-closed** with no claim of full source or new model-admitted data.
+
+These failures are consistent with transient provider HTTP/network
+availability, **not** proof of source-file corruption or invalid
+scientific geometry. The previously independently matching
+**full compressed SHP member SHA-256
+`22364ef161d6411e2010be590d791508242ec6d36ffc3a314833cedcd6afc615`**
+and original native SHP SHA-256
+`977e35aa7764564be115776ea56f78ef228d3cc79939b28f08c6cbe96e2e7a0c`
+are not altered.
+
+**New narrowly bounded source-availability policy:** each
+predeclared, original fixed public BVV HTTP 206 Range
+(8 MiB maximum; 20 *accepted*, adjacent, nonoverlapping
+original segments) permits at most **two total HTTPS attempts**,
+with one **5-second pause** only if the initial request
+fails due to a transient connection/reset/timeout, an
+incomplete transport response, or provider HTTP status
+**408, 500, 502, 503 or 504**. The program **never**
+retries a **429** provider rate-limit response, a
+**403/404**, redirect, wrong HTTP200, altered
+`Content-Range`, object-size drift, ETag/Last-Modified mismatch,
+unexpected MIME, re-encoding, missing original source bytes,
+bad ZIP header, bad native TIFF, CRC32 or SHA-256.
+It never retries/replays an **already accepted** segment.
+A failed request contributes **zero** parsed, hashed or persisted
+source bytes; only an individually accepted, complete exact
+HTTP206 response can advance the contiguous stream. The
+full original file's independently pinned SHA/CRC and record
+counts still must pass before any research sample or cell
+statistic is emitted.
+
+This bounded retry is **not an unlimited network crawler**,
+anonymous source-search, provider rate-limit workaround or a
+change to the reviewed 2020-vs-current source admission.
+New PR tests are fully offline and simulate HTTP503, URLError,
+short replies, HTTP429, invalid source headers and the
+two-attempt limit without calling the real provider. **No new
+original-source success is claimed before a separately verified
+trusted-main workflow result.**
