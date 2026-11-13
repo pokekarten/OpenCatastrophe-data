@@ -50,11 +50,21 @@ def write_source(path, *, target=True, country="NO", wrong_filename=False,
     return digest,info
 
 
+def frozen_directory(path):
+    with ZipFile(path, "r") as z:
+        return {
+            i.filename: (i.header_offset,i.compress_size,i.file_size,
+                         i.CRC,i.compress_type)
+            for i in z.infolist()
+        }
+
+
 def verify_fixture(path, digest, info, *, expected_names=(CSV_MEMBER,), **override):
     return verify_complete_local_v3_zip(
         Path(path),
         expected_zip_bytes=Path(path).stat().st_size,
         expected_member_names=expected_names,
+        expected_member_directory=frozen_directory(Path(path)),
         expected_csv_header_offset=info.header_offset,
         expected_csv_compressed_bytes=info.compress_size,
         expected_csv_uncompressed_bytes=info.file_size,
@@ -86,7 +96,7 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp)/"other.zip"
             digest,info=write_source(p,wrong_filename=True)
-            with self.assertRaisesRegex(CSVParityBlocked,"directory member"):
+            with self.assertRaisesRegex(CSVParityBlocked,"directory"):
                 verify_fixture(p,digest,info)
             digest,info=write_source(p,comment=True)
             with self.assertRaisesRegex(CSVParityBlocked,"comment"):
@@ -110,6 +120,7 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
                 verify_complete_local_v3_zip(
                     p, expected_zip_bytes=p.stat().st_size,
                     expected_member_names=(CSV_MEMBER,),
+                    expected_member_directory=frozen_directory(p),
                     expected_csv_header_offset=info.header_offset,
                     expected_csv_compressed_bytes=info.compress_size,
                     expected_csv_uncompressed_bytes=info.file_size,
@@ -127,6 +138,40 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
             with self.assertRaisesRegex(CSVParityBlocked,"central directory member"):
                 verify_fixture(p,digest,info)
 
+    def test_changed_non_csv_member_must_not_pass_frozen_directory(self):
+        # A complete V3 archive cannot claim original identity when a second
+        # member's central CRC changed while the population CSV stayed intact.
+        # The ZIP and cell are synthetic; no original Eurostat source bytes.
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)/"synthetic-source.zip"
+            digest,csv_info=write_source(p)
+            with ZipFile(p,"r") as z:
+                original_synthetic_csv=z.read(CSV_MEMBER)
+            readme="Eurostat_Census-GRID_2021_V3/read.me"
+            with ZipFile(p,"w",compression=ZIP_DEFLATED) as z:
+                z.writestr(CSV_MEMBER,original_synthetic_csv)
+                z.writestr(readme,b"alpha")
+            pinned=frozen_directory(p)
+            with ZipFile(p,"w",compression=ZIP_DEFLATED) as z:
+                z.writestr(CSV_MEMBER,original_synthetic_csv)
+                z.writestr(readme,b"bravo")
+            with ZipFile(p,"r") as z:
+                info=z.getinfo(CSV_MEMBER)
+            self.assertNotEqual(pinned[readme][3],
+                                frozen_directory(p)[readme][3])
+            with self.assertRaisesRegex(CSVParityBlocked,"per-member metadata changed"):
+                verify_complete_local_v3_zip(
+                    p,
+                    expected_zip_bytes=p.stat().st_size,
+                    expected_member_names=(CSV_MEMBER,readme),
+                    expected_member_directory=pinned,
+                    expected_csv_header_offset=info.header_offset,
+                    expected_csv_compressed_bytes=info.compress_size,
+                    expected_csv_uncompressed_bytes=info.file_size,
+                    expected_csv_crc32=info.CRC,
+                    expected_pixel_sha256=digest,
+                )
+
     def test_extra_bytes_or_symlink_input_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp)/"source.zip"
@@ -135,6 +180,7 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
                 verify_complete_local_v3_zip(
                     p, expected_zip_bytes=p.stat().st_size+1,
                     expected_member_names=(CSV_MEMBER,),
+                    expected_member_directory=frozen_directory(p),
                     expected_csv_header_offset=info.header_offset,
                     expected_csv_compressed_bytes=info.compress_size,
                     expected_csv_uncompressed_bytes=info.file_size,
