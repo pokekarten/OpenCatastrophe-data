@@ -206,6 +206,7 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
         reader._read_exact_segment_once=source
         with (patch.object(p,"START",100),
               patch.object(p,"END",107),
+              patch.object(p,"READ_BYTES",8),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
               patch.object(p.time,"sleep") as slept):
             self.assertEqual(reader.read(8),b"Z"*8)
@@ -228,6 +229,7 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
             return item
         reader._read_exact_segment_once=source
         with (patch.object(p,"START",100),patch.object(p,"END",107),
+              patch.object(p,"READ_BYTES",8),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
               patch.object(p.time,"sleep") as delay):
             # one retry per SOURCE segment; first attempt fails, so no
@@ -248,6 +250,7 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
             return responses.pop(0)
         reader._read_exact_segment_once=source
         with (patch.object(p,"START",100),patch.object(p,"END",107),
+              patch.object(p,"READ_BYTES",8),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
               patch.object(p.time,"sleep") as delay):
             self.assertEqual(reader.read(8),b"Y"*8)
@@ -263,6 +266,7 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
             raise HTTPError(p.URL,429,"rate limited",None,None)
         reader._read_exact_segment_once=policy
         with (patch.object(p,"START",100),patch.object(p,"END",107),
+              patch.object(p,"READ_BYTES",8),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
               patch.object(p.time,"sleep") as delay):
             with self.assertRaisesRegex(p.FullSHPBlocked,"HTTP 429"):
@@ -278,6 +282,7 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
             raise p.FullSHPBlocked("original issuer sha/source mismatch")
         reader._read_exact_segment_once=invalid_source
         with (patch.object(p,"START",100),patch.object(p,"END",107),
+              patch.object(p,"READ_BYTES",8),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
               patch.object(p.time,"sleep") as delay):
             with self.assertRaisesRegex(p.FullSHPBlocked,"issuer sha"):
