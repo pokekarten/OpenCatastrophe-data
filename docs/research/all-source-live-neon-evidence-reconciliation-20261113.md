@@ -136,3 +136,63 @@ Occurrence, NOAA SWPC trusted-runner retest and eight metadata-only sources);
 review the seven genuinely non-native sample/preview sources and the separate
 DLR WSF native-pixel evidence; review legal automation and original byte/CRS/unit completeness *before*
 changing any source's science or admission status.
+
+## Follow-up live Neon checkpoint — 2026-11-13 19:07 UTC
+
+This is a **later** direct, read-only verification on the same separate Neon
+`insurance-risk-core` / `insurance` primary branch. It supersedes the
+**counts only** in the earlier snapshot above; the previous receipt numbers
+remain historical evidence. No provider HTTP call, database write, access
+approval, GitHub Actions dispatch or CAT-model admission occurred in this check.
+
+| Independently queried item | Later live observation |
+| --- | ---: |
+| Canonical inventory entries / distinct source IDs | 707 / 706 |
+| Research source samples / distinct sampled IDs | 99 / 41 |
+| Sample classes: public metadata / observed values / geospatial preview | 61 / 29 / 9 |
+| Neon canonical JSONB SHA-256 mismatches | 0 of 99 |
+| Research API observations / reported successful HTTP reads / inconclusive shape | 45 / 44 / 1 |
+| API receipts marked executed by strict repository GitHub runner | 0 |
+| Product/use-case rights records / distinct IDs reviewed | 163 / 21 |
+| Research samples marked as approved CAT-model inputs | 0 |
+
+Rights-result **record counts** are 53 `allowed`, 87 `conditional`,
+17 `unknown` and 6 `prohibited`. These are *use-case/product decisions*;
+they must never be treated as 53/87/17/6 independent source-level permissions.
+The latest observed research sample ID was **#99**. Original provider-response
+hashes, scientific correctness and the licence for each exact dataset version
+remain separate from these canonical Neon JSONB checks.
+
+Re-executing the PR's unchanged **read-only** decision-queue SELECT as a
+subquery on this newer database snapshot yielded:
+
+| Next-action gate | Later entries |
+| --- | ---: |
+| `P1_retest_provider_with_trusted_runner` | 1 |
+| `P1_review_bounded_first_source_sample` | 1 |
+| `P2_reconcile_candidate_snapshot` | 8 |
+| `P2_review_native_observation_sample` | 7 |
+| `P2_validate_native_pixel_preview_provenance` | 1 |
+| `P2_scientific_native_sample_validation` | 11 |
+| `P3_review_rights_and_exact_access` | 650 |
+| `P4_commercial_use_restricted` | 10 |
+| `P5_commercial_use_prohibited` | 3 |
+| `P6_existing_manifest_validate_separately` | 15 |
+| **Total** | **707** |
+
+The exact two highest-priority source IDs remain
+`noaa.swpc.real-time-solar-wind` (one inconclusive intermediary shape
+observation; needs an approved trusted original-provider retest) and
+`ec-jrc.global-surface-water.1984-2024` (no original sample; automation
+terms/asset version must be reviewed before any bounded acquisition).
+The updated NOAA structural code in PR #1544 has passing *technical CI*, but
+the independent research Neon ledger still has **zero trusted-runner receipts**.
+Do not silently reinterpret a successful CI test as a new original-provider
+API execution. The three additional stale-candidate flags and 25 additional
+samples reflect **later evidence**, not a change to candidate rights or
+model admission.
+
+Run evidence: `SELECT current_timestamp` returned
+`2026-11-13T19:07:43.740Z`; the same connection was the
+`insurance` database. All queries were `SELECT` and the source-evidence
+decision queue was left unchanged.
