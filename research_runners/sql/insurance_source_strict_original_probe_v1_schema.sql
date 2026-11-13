@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS research.source_strict_original_probe_receipt_v1 (
   receipt_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   source_id text NOT NULL CHECK (source_id ~ '^[A-Za-z0-9][A-Za-z0-9._-]*$'),
   original_source_url text NOT NULL CHECK (original_source_url ~ '^https://[^[:space:]]+$'),
-  original_http_status integer NOT NULL CHECK (original_http_status IN (200, 206)),
+  original_http_status integer NOT NULL CHECK (original_http_status = 206),
   original_request_range text NOT NULL CHECK (original_request_range ~ '^bytes=[0-9]+-[0-9]+$'),
   original_content_range text NOT NULL CHECK (original_content_range ~ '^bytes [0-9]+-[0-9]+/[0-9]+$'),
   original_response_bytes integer NOT NULL CHECK (original_response_bytes BETWEEN 1 AND 1048576),
