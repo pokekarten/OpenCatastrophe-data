@@ -40,6 +40,7 @@ WINDOW_SIDE = 32
 CHUNK = 65536
 MAX_BUFFER = 2 * CHUNK + SOURCE_SHX_MAX_CONTENT_BYTES
 MAX_PENDING_ROI_FEATURES = 2048  # bounded transient GEOS batch
+MAX_ORIGINAL_SEGMENT_BYTES = 8 * 1024 * 1024  # 20 short read-only HTTP 206 requests
 READ_BYTES = ZIP_HEADER_BYTES + COMPRESSED_MEMBER_BYTES
 END = START + READ_BYTES - 1
 RANGE = f"bytes={START}-{END}"
@@ -323,18 +324,117 @@ class NativeSHPStream:
         return result
 
 
-def inspect_original_stream(response, *, status, response_url, headers, roi):
-    if status != 206 or response_url != URL:
-        raise FullSHPBlocked("original HTTPS source or Range ignored")
-    if headers.get("Content-Range") != f"bytes {START}-{END}/{TOTAL}":
-        raise FullSHPBlocked("original content range or full archive size drift")
-    if headers.get("Content-Length") not in (None, str(READ_BYTES)):
-        raise FullSHPBlocked("original Range response byte length drift")
-    if headers.get("Content-Encoding","identity").lower() != "identity":
-        raise FullSHPBlocked("unreviewed provider HTTP encoding")
-    if headers.get("Content-Type","").split(";",1)[0].strip().lower() not in (
-            "application/zip","application/octet-stream","binary/octet-stream"):
-        raise FullSHPBlocked("unreviewed original ZIP MIME")
+class VerifiedOriginalSegmentStream:
+    """One contiguous ZIP member assembled only from exact bounded HTTP-206 reads.
+
+    Each segment's HTTP connection closes before its bytes are parsed. This
+    prevents a slow GEOS union from starving a long-lived 166-MB response.
+    Every source byte is still hashed/CRC-checked in one logical DEFLATE stream;
+    no retries, no skips, no reused source offsets, no local file.
+    """
+
+    def __init__(self):
+        self.next_source_offset = START
+        self.active = b""
+        self.active_pos = 0
+        self.requests_verified = 0
+        self.http_bytes_verified = 0
+        self.validator_identity = None
+        self.all_source_ranges_exact = True
+
+    def _get_segment(self, start: int, end: int):
+        """External read-only provider I/O; can be mocked in offline tests."""
+        req = Request(URL, method="GET", headers={
+            "Range": f"bytes={start}-{end}",
+            "Accept-Encoding": "identity",
+            "Accept": "application/zip",
+            "User-Agent": "OpenCatastrophe-BVV-Exact-Original-SHP-Segmented-ROI/0.2",
+        })
+        try:
+            with build_opener(
+                ProxyHandler({}), NoRedirect(),
+                HTTPSHandler(context=ssl.create_default_context()),
+            ).open(req, timeout=60) as res:
+                if res.status != 206 or res.geturl() != URL:
+                    raise FullSHPBlocked("original segmented ZIP source ignored HTTP Range or redirected")
+                headers = res.headers
+                want = end - start + 1
+                if headers.get("Content-Range") != f"bytes {start}-{end}/{TOTAL}":
+                    raise FullSHPBlocked("source segmented ZIP Content-Range identity changed")
+                if headers.get("Content-Length") not in (None, str(want)):
+                    raise FullSHPBlocked("source segmented ZIP Content-Length drift")
+                if headers.get("Content-Encoding", "identity").lower() != "identity":
+                    raise FullSHPBlocked("original segmented source HTTP encoding unexpected")
+                if headers.get("Content-Type", "").split(";", 1)[0].strip().lower() not in (
+                    "application/zip", "application/octet-stream", "binary/octet-stream"
+                ):
+                    raise FullSHPBlocked("source segmented ZIP MIME drift")
+                # ETag and modification time are cross-request provenance
+                # validators; complete original CRC still anchors source.
+                validators = (headers.get("ETag"), headers.get("Last-Modified"))
+                payload = res.read(want + 1)
+        except (HTTPError, URLError, OSError, TimeoutError) as exc:
+            raise FullSHPBlocked("fixed original ZIP segmented HTTPS source unavailable") from exc
+        if len(payload) != want:
+            raise FullSHPBlocked("bounded original ZIP source segment truncated or oversized")
+        return payload, validators
+
+    def _next_segment(self):
+        if self.next_source_offset > END:
+            return False
+        start = self.next_source_offset
+        end = min(END, start + MAX_ORIGINAL_SEGMENT_BYTES - 1)
+        data, validators = self._get_segment(start, end)
+        if type(data) is not bytes or len(data) != end - start + 1:
+            raise FullSHPBlocked("untrusted original segment size or type")
+        if self.validator_identity is None and self.requests_verified == 0:
+            self.validator_identity = validators
+        elif validators != self.validator_identity:
+            raise FullSHPBlocked("original ZIP source ETag/Last-Modified changed across ranges")
+        self.requests_verified += 1
+        self.http_bytes_verified += len(data)
+        self.next_source_offset = end + 1
+        self.active = data
+        self.active_pos = 0
+        return True
+
+    def read(self, amount: int) -> bytes:
+        if type(amount) is not int or not 0 < amount <= CHUNK:
+            raise FullSHPBlocked("source reader may only request one bounded chunk")
+        if self.active_pos >= len(self.active):
+            if not self._next_segment():
+                return b""
+        left = len(self.active) - self.active_pos
+        take = min(amount, left)
+        out = self.active[self.active_pos:self.active_pos + take]
+        self.active_pos += take
+        if self.active_pos == len(self.active):
+            self.active = b""  # release each original segment before GEOS
+            self.active_pos = 0
+        return out
+
+    def complete(self) -> bool:
+        return (self.next_source_offset == END + 1 and
+                self.http_bytes_verified == READ_BYTES and
+                not self.active and self.active_pos == 0)
+
+
+def inspect_original_stream(response, *, status, response_url, headers, roi, verified_segments=False):
+    if verified_segments:
+        if not isinstance(response, VerifiedOriginalSegmentStream):
+            raise FullSHPBlocked("segment trust requires exact verified source reader")
+    else:
+        if status != 206 or response_url != URL:
+            raise FullSHPBlocked("original HTTPS source or Range ignored")
+        if headers.get("Content-Range") != f"bytes {START}-{END}/{TOTAL}":
+            raise FullSHPBlocked("original content range or full archive size drift")
+        if headers.get("Content-Length") not in (None, str(READ_BYTES)):
+            raise FullSHPBlocked("original Range response byte length drift")
+        if headers.get("Content-Encoding","identity").lower() != "identity":
+            raise FullSHPBlocked("unreviewed provider HTTP encoding")
+        if headers.get("Content-Type","").split(";",1)[0].strip().lower() not in (
+                "application/zip","application/octet-stream","binary/octet-stream"):
+            raise FullSHPBlocked("unreviewed original ZIP MIME")
     head = response.read(ZIP_HEADER_BYTES)
     if len(head) != ZIP_HEADER_BYTES or head[:4] != b"PK\x03\x04":
         raise FullSHPBlocked("original ZIP member local header missing")
@@ -372,6 +472,8 @@ def inspect_original_stream(response, *, status, response_url, headers, roi):
                 raise FullSHPBlocked("original Shape DEFLATE parser stalled")
     if first_needed or response.read(1):
         raise FullSHPBlocked("original ZIP Range has missing/extra source bytes")
+    if verified_segments and not response.complete():
+        raise FullSHPBlocked("original segmented source did not cover every byte exactly once")
     if (not inflater.eof or inflater.unconsumed_tail or inflater.unused_data
             or inflater.flush()):
         raise FullSHPBlocked("original compressed source stream has trailing/invalid frame")
@@ -381,6 +483,12 @@ def inspect_original_stream(response, *, status, response_url, headers, roi):
     if result["original_full_decoded_shape_crc32"] != f"{ORIGINAL_DIRECTORY_CRC32_CLAIM:08x}":
         raise FullSHPBlocked("complete original ZIP member CRC32 failure")
     result.update({
+        "provider_original_206_segments_verified": (
+            response.requests_verified if verified_segments else 1),
+        "provider_source_range_mode": (
+            "contiguous_exact_206_bounded_segments" if verified_segments else "single_full_206"),
+        "source_etag_or_modified_validator_present": (
+            any(response.validator_identity) if verified_segments else False),
         "official_source_url": URL,
         "original_member": "hausumringe.shp",
         "exact_source_range": RANGE,
@@ -398,19 +506,11 @@ def inspect_original_stream(response, *, status, response_url, headers, roi):
 
 def probe():
     roi,_ = frozen_roi_geometries()
-    req = Request(URL,method="GET",headers={
-        "Range":RANGE,"Accept-Encoding":"identity","Accept":"application/zip",
-        "User-Agent":"OpenCatastrophe-BVV-Exact-Original-FullSHP-ROI/0.1",
-    })
-    try:
-        with build_opener(ProxyHandler({}),NoRedirect(),
-                          HTTPSHandler(context=ssl.create_default_context())).open(
-                              req,timeout=60) as response:
-            return inspect_original_stream(
-                response,status=response.status,response_url=response.geturl(),
-                headers=response.headers,roi=roi)
-    except (HTTPError,URLError,TimeoutError,OSError) as exc:
-        raise FullSHPBlocked("original Bavarian full Shape source unavailable") from exc
+    reader = VerifiedOriginalSegmentStream()
+    return inspect_original_stream(
+        reader, status=None, response_url=None, headers={},
+        roi=roi, verified_segments=True,
+    )
 
 
 def main(argv=None):
@@ -418,7 +518,7 @@ def main(argv=None):
     parser.add_argument("--live",action="store_true")
     args=parser.parse_args(argv)
     if not args.live:
-        parser.error("original 166MB SHP source download requires explicit reviewed-main --live")
+        parser.error("original 166MB SHP segmented ranges require explicit reviewed-main --live")
     try:
         print(json.dumps(probe(),sort_keys=True,allow_nan=False))
         return 0

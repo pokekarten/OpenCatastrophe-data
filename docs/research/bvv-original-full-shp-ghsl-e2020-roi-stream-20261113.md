@@ -42,16 +42,22 @@ ALKIS WFS, national HU-DE or individual building owner data are used.
 The workflow `.github/workflows/bvv-original-full-shp-ghsl-roi.yml`
 is **synthetic/offline only on pull requests**. After successful
 repository CI, trusted `main` or an explicitly dispatched trusted
-`main` event may perform **one** anonymous fixed original source
-GET, no retries, redirects, credentials, URL parameters, discovered
-URLs, pagination or automatic model registration.
+`main` event may perform **one contiguous source-object coverage as a frozen sequence
+of at most 20 bounded HTTP 206 ranged GETs**, each at most **8 MiB**
+(never one long-lived 166 MB response). There are no retries,
+redirects, credentials, URL parameters, discovered URLs, pagination,
+or automatic model registration. Each individual segment requires
+its own exact HTTP-206 response, exact source Range, file length,
+MIME, encoding, identity URL, and consistent source ETag/Last-Modified
+metadata. Segment contents are released before expensive GEOS work,
+so the provider is never left on a 5-minute idle response.
 
 | Property | Exact reviewed original proof |
 | --- | --- |
 | Original official ZIP | `https://geodaten.bayern.de/odd/m/3/daten/hausumringe/bezirk/data/091_Oberbayern_Hausumringe.zip` |
 | Full original ZIP object bytes | **174,299,765** (only member read) |
-| Exact HTTP Range (includes 45-byte ZIP local header) | **bytes=275903-166448183** |
-| Exact response size | **166,172,281 bytes** |
+| Exact logical original byte coverage (starts with 45-byte ZIP local header) | **bytes=275903-166448183**, partitioned into contiguous non-overlapping 8 MiB or smaller ranges |
+| Exact aggregate provider bytes over validated 206 responses | **166,172,281 bytes**, each individual response size separately verified |
 | Original member | `hausumringe.shp`, DEFLATE, not all four ZIP files |
 | Full compressed original SHP member bytes | **166,172,236** |
 | Full decoded native SHP bytes | **501,212,696** |
@@ -62,7 +68,9 @@ URLs, pagination or automatic model registration.
 | Native SHP header SHA-256 (first 100 decoded bytes) | `f312c12beea148041db5ebf9727ad2aca59e036bef4665aae47402008f02bb09` |
 
 The Python standard-library streaming source parser strictly checks
-original **HTTP 206**, complete Content-Range/full archive size,
+original **HTTP 206 on every bounded source segment**, exact adjacent
+Content-Ranges/full archive size, each segment's exact byte count and
+cross-request `ETag`/`Last-Modified` consistency when provided,
 the original local ZIP member header and **all 2,703,736 sequential
 original Shape records**, stream end-of-file, complete decompressed
 file-length SHA-256 and CRC32 against the original ZIP header/central
@@ -142,6 +150,54 @@ over multiple forced-small union batches. Only the corrected
 **new trusted-main original run** can establish full-member
 CRC/SHA, total 2,703,736 original native records and ROI
 area/count statistics; they must not be inferred from PR tests.
+
+## Real second provider attempt failed closed: long-lived HTTP transport
+
+[Original GitHub Actions #43469127363](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43469127363)
+ran on reviewed main commit
+`1dd6687a4e91c51fa142615a5a953cb7811c0abb` and
+passed the new hierarchical union's offline synthetic tests. It did
+**not** complete the original full-member source transfer. The
+bounded main-only research progress log confirmed:
+
+| Original progress | Sequential native record frames | ROI bbox candidates |
+| --- | ---: | ---: |
+| First | **250,000** | **0** |
+| Second | **500,000** | **10,192** |
+| Third | **750,000** | **110,974** |
+| Fourth | **1,000,000** | **274,649** |
+
+After approximately 5 minutes of real-source work, the provider
+response ceased before the entire fixed HTTP Range was delivered:
+`BLOCKED: original ZIP Shape range truncated` (exit 2).
+There is **no verified complete SHP CRC, full file hash, all-record
+count, regional building exposure or ROI area** from this attempt.
+The 274,649 figure is an **intermediate ROI bbox candidate count**,
+not the count of actual clipped ground-truth buildings and must not
+be reused as final inventory. No Neon observed sample was inserted
+for this failed run.
+
+**Reasoned failure class:** one long-lived original **166 MB**
+HTTP-206 response stayed open during time-intensive GEOS union and
+record parsing; the source stream ended before the file was complete.
+This does not establish that the official file is corrupt, nor
+that its geometries failed validity.
+
+**Transport correction:** the original member is now fetched as
+**20 exact adjacent provider HTTP-206 segments**, at most 8 MiB
+each. The same continuous raw DEFLATE frame is processed in memory
+across the segment boundaries; each segment is fully received,
+checked and its network connection closed before processing. On
+each segment the source URL, exact Range, Content-Length, original
+file size, MIME, no HTTP re-encoding and cross-segment
+ETag/Last-Modified identity are checked. There are no retries or
+skipped/re-read byte intervals. A byte-counting reader must prove
+full logical coverage of **166,172,281** bytes. The existing
+49,197-byte original source SHA, full-member original CRC32
+`55540a66`, total **2,703,736** native records and complete SHA
+are still mandatory. PRs test this on tiny fabricated segmented
+byte streams, including source revision changes and truncated
+segments; the new real main outcome is **not yet known**.
 
 ## Scientific interpretation and next evidence gate
 
