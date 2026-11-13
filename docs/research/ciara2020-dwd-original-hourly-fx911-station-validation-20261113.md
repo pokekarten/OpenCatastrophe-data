@@ -41,9 +41,14 @@ One small, **PR-branch-scoped**, read-only GitHub Actions job uses
 the Python standard library only (no personal API token).
 It downloads the publisher's current station listing and official
 historical ZIP-directory index, filters stations with data spanning
-February 8–11, 2020, and picks exactly the three nearest historically
-covering sites to original ERA5 reference grid centre (51N, 7E),
-within 120km and the NRW 2020 study rectangle.
+February 8–11, 2020, and examines **at most the twelve closest geographically eligible
+historical station archives** to original ERA5 grid centre (51N, 7E),
+within 120km and the NRW 2020 study rectangle. It admits exactly the
+**three nearest stations with >=48 valid original FX_911 hourly values
+in the 96-hour Ciara window**, records rejected original archive
+SHA/identity when data are too sparse, and fails closed if no three
+qualify. A DWD archive covering 2020 by *filename* alone is not
+proof of 2020 hourly observations.
 
 For each of three stations the job obtains **one official historical
 FX ZIP**, verifies the DWD original exact HTTPS host/path and ZIP
@@ -79,6 +84,9 @@ Commands:
    `FX_911=-999` is missing, not zero; completeness below 48
    valid out of 96 requested source hours is rejected. A partially
    observed 96h period cannot prove the full event maximum.
+   The first genuine live source challenge encountered just such an
+   incomplete station and therefore correctly returned NO-GO;
+   a bounded nearest-12 station search now handles this explicitly.
 4. Station observations and ECMWF/C3S atmospheric **reanalysis** differ
    in height, exposure, spatial support, time semantics and gust
    measurement/postprocessing, so compare only with explicit matched
