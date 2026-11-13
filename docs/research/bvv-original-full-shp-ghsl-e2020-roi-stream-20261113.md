@@ -10,10 +10,12 @@ SPDX-License-Identifier: Apache-2.0
 Implement the **first source-complete, bounded-memory, original-publisher
 Hausumringe geometry inventory for the exact previously decoded
 GHS-BUILT-S/V E2020 32×32 native grid window** in the Munich region.
-Do **not** claim success, full archive CRC, original full-SHP SHA,
-ROI totals, historical 2020 footprint truth or Neon observed-values
-sample until the **new trusted-main source workflow succeeds** and its
-real original-provider log is inspected.
+**Verified original source outcome:** the new trusted-main original
+full-SHP member run **succeeded** on 2026-11-13; its original full-member
+CRC/SHA, geometry/ROI aggregates and Neon research sample #94 are
+recorded in the source acceptance section below. This is not the
+SHA of the *entire ZIP archive*, a historical 2020 footprint truth,
+a unique insured-building census or an approved CAT model input.
 
 Previous actual provenance:
 - JRC original BUILT-S/V [#43309743505](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43309743505), independently
@@ -224,5 +226,104 @@ After the actual original main source step succeeds:
    Do not claim a validated CAT model or adjust insurer TIV now.
 
 Failure, provider rate limiting, a source format change or source
-budget overruns must be recorded as **BLOCKED**. The new provider
-workflow **has not run on original data at PR stage**.
+budget overruns must be recorded as **BLOCKED**. The original
+validated-20-segment provider workflow has **now successfully run
+on trusted main**; the exact scope and provenance are recorded below.
+
+
+## Actual full original HU-BY SHP success — verified 2026-11-13
+
+**Trust boundary and result:** [Actions original source run
+#43471636096](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43471636096),
+source code on reviewed `main` commit
+`3542e75d931377c70ec9eda5ad6339a4c5302a2f`,
+produced **SUCCESS**. All offline source-specific and repository
+tests passed before the merge of
+[PR #1545](https://github.com/pokekarten/OpenCatastrophe-data/pull/1545).
+The real issuer original full SHP member was then read in
+**20 exact adjacent and individually verified anonymous HTTP 206
+source ranges**, 8 MiB or smaller. Source validators remained
+consistent across segments. The entire unchanged single original
+raw DEFLATE member was decoded and checked by one continuous SHA-256
+and CRC32 stream (not twenty independent small SHPs).
+
+| Accepted original publisher/source evidence | Verified result |
+| --- | ---: |
+| Official public product | Bavarian HU-BY Oberbayern region Shapefile, CC BY 4.0 |
+| Real original UTC | 2026-11-13 17:29:18 UTC |
+| Exact ranged original source ZIP byte coverage | `bytes=275903-166448183/174299765` |
+| Individually verified contiguous 206 requests | **20** |
+| Full original compressed SHP Deflate bytes | **166,172,236** |
+| Full original compressed-member SHA-256 | `22364ef161d6411e2010be590d791508242ec6d36ffc3a314833cedcd6afc615` |
+| Original native uncompressed SHP bytes | **501,212,696** |
+| Full original native SHP SHA-256 | `977e35aa7764564be115776ea56f78ef228d3cc79939b28f08c6cbe96e2e7a0c` |
+| Computed CRC32 vs original ZIP local/directory record | **`55540a66` matches** |
+| Complete original Shape records and Polygon type-5 frames | **2,703,736 / 2,703,736** |
+| Largest native record content bytes | **10,284**, equals independently verified SHX maximum |
+| Study polygon projected area EPSG:25832 | **588,514,088.109 m²** |
+| Original municipal Polygon bbox candidates overlapping ROI bbox | **431,083** |
+| Original source Polygon records actually intersecting clipped ROI | **417,565** |
+| Invalid original ROI polygon rings / native reconstructed polygons | **0 / 0** |
+| Original clipped individual footprint area sum | **56,871,811.455 m²** |
+| Original footprint union area, no double counting | **56,791,644.170 m²** |
+| Actual overlap difference | **80,167.285 m²** |
+| Exact GEOS union batches | **204**, active final levels **4** |
+
+**Independent prior full-original source-byte corroboration:**
+the compressed source SHA-256 **and** complete uncompressed native
+SHP SHA-256 above exactly match prior original, separate
+[WSF2019 vs BVV execution #43317649994](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43317649994),
+previously stored in insurance Neon research metadata samples
+**#56** and **#57**. They are *repeat observations of the same
+official source file*, not additional independent cadastral datasets.
+The current full source analysis also includes the original
+first64 samples #61 and #62, rather than generating new independent
+building counts.
+
+**Neon successfully received the research aggregate** into
+`insurance-risk-core.research.source_sample_v0`:
+
+- `sample_id=94`, `source_id=de.bayern.hausumringe`,
+  `sample_kind=observed_values`;
+- `provider_response_sha256=22364ef161d6411e2010be590d791508242ec6d36ffc3a314833cedcd6afc615`
+  names **the full compressed original SHP Deflate member bytes**,
+  *not* a full ZIP hash and *not* the 20-segment concatenation with
+  the 45-byte local header;
+- canonical PostgreSQL JSONB SHA-256
+  `c32c7336571d820d0b73813cdb58afcff50d105f2899640d4ab5214b35165482`;
+- exact native full-SHP original CRC/SHA, each source segment
+  count, area union, bbox candidate and 417,565 intersecting Polygon
+  aggregate, original source workflow/commit, and links to overlapping
+  earlier source receipts #56/#57 and #61/#62;
+- `research_only=true`, `model_input_approved=false`,
+  `source_byte_persistence_authorized=false` and the product-specific
+  **BVV HU-BY CC BY 4.0** attribution unchanged. Source dataset
+  ATOM `rights=TODO` is still documented.
+
+A safe read-only source integrity replay:
+
+```sql
+SELECT sample_id,source_id,sample_kind,provider_response_sha256,
+       sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex')
+         AS canonical_sample_hash_valid,
+       sample_json->>'original_full_native_records_checked' AS full_source_records,
+       sample_json->>'original_full_decoded_shape_sha256' AS full_native_sha256,
+       sample_json->>'roi_original_polygon_records_intersecting' AS roi_polygons,
+       sample_json->>'roi_original_polygon_areas_union_m2' AS union_m2,
+       model_input_approved,source_byte_persistence_authorized
+FROM research.source_sample_v0
+WHERE sample_id=94 AND source_id='de.bayern.hausumringe';
+```
+
+**Scientific boundaries:** This proves *source-native coverage for
+exactly this original BVV Oberbayern SHP file* and one fixed projected
+research ROI, not complete geospatial coverage of all possible
+structures or all Germany. The 417,565 native polygons are
+*not* 417,565 insurable buildings. The public source is
+current-era cadastre; **its actual building survey dates are
+unverified**. The JRC GHSL source corresponds to **E2020**,
+so no historical 2020 ground-truth validity/accuracy, insurer TIV
+or CAT-model admission follows. The complete original **ZIP archive**
+SHA-256 remains unverified (DBF/SHX/PRJ independently probed),
+even though the full compressed and native original **SHP member**
+SHAs and ZIP-declared SHP CRC32 have been verified.
