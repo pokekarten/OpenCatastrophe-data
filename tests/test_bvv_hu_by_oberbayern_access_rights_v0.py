@@ -48,7 +48,8 @@ class BVVHubyRightsContractTests(unittest.TestCase):
         self.assertIsNone(self.c["probe_contract"]["operation"])
         self.assertEqual(self.c["probe_contract"]["expected_evidence"], [])
         self.assertEqual(self.c["operational_constraints"]["retry_policy"], "none")
-        self.assertEqual(self.c["operational_constraints"]["max_probe_bytes"], 8 * 1024 * 1024)
+        self.assertEqual(self.c["operational_constraints"]["max_probe_bytes"], 5 * 1024 * 1024)
+        self.assertEqual(self.c["operational_constraints"]["max_sample_bytes"], 8 * 1024 * 1024)
         self.assertIn("no new provider GET/HEAD/Range", self.c["request_contract"]["parameter_rules"])
 
     def test_existing_trusted_shp_member_is_not_whole_zip_or_2020_truth(self):
