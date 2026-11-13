@@ -122,6 +122,39 @@ class StrictBranchReceiptContractTests(unittest.TestCase):
             self.assertNotIn(bad,seed)
         self.assertNotIn("raw_provider_body",seed)
 
+    def test_live_fallback_overlay_is_readonly_and_matches_frozen_three_proofs(self):
+        """Existing Neon metadata-only proof samples work without new DDL."""
+        sql=(ROOT / "insurance_source_pr_branch_live_metadata_readonly_v1.sql").read_text()
+        self.assertIn("WITH fixed_expected(", sql)
+        self.assertIn("research.source_sample_v0", sql)
+        self.assertIn("research.source_usage_rights_v0", sql)
+        self.assertIn("research.all_source_inventory_v0", sql)
+        self.assertIn("research.source_strict_original_probe_receipt_v1", sql)
+        self.assertIn("research.source_strict_metadata_probe_receipt_v1", sql)
+        self.assertIn("canonical_sample_sha_valid", sql)
+        self.assertIn("metadata_only_no_admission", sql)
+        self.assertIn("internal_metadata_licence_scoped", sql)
+        self.assertIn("grants_cat_scientific_admission", sql)
+        self.assertIn("false AS grants_cat_scientific_admission", sql)
+        self.assertIn("NOT c.model_input_approved", sql)
+        self.assertIn("NOT c.source_byte_persistence_authorized", sql)
+        for forbidden in ("CREATE ", "INSERT ", "UPDATE ", "DELETE ", "DROP ",
+                          "ALTER ", "TRUNCATE ", "COPY "):
+            # Ignore descriptive SQL comments; test only the SELECT body.
+            body="\n".join(line for line in sql.splitlines()
+                           if not line.lstrip().startswith("--"))
+            self.assertNotIn(forbidden,body.upper())
+        for source_id,(run_id,job_id,digest,commit) in EXPECTED.items():
+            with self.subTest(source=source_id):
+                self.assertIn(source_id, sql)
+                self.assertIn(run_id, sql)
+                self.assertIn(digest, sql)
+                self.assertIn(source_id, self.seed)
+                self.assertIn(digest, self.seed)
+        # No evidence from main is implied by evidence from a PR branch.
+        self.assertIn("separately_trusted_main_range_exists", sql)
+        self.assertIn("separately_trusted_main_metadata_exists", sql)
+
     def test_verifier_is_read_only_and_does_not_upgrade_main_trust(self):
         sql=self.verify
         self.assertRegex(sql,r"\bSELECT\b")
