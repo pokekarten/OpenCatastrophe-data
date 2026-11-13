@@ -170,6 +170,9 @@ class FixedSourceProbesTests(unittest.TestCase):
             [dict(valid, bx_gsm="1.0")],
             [dict(valid, bt=float("inf"))],
             [dict(valid, bx_gsm=None, by_gsm=None, bz_gsm=None, bt=None)],
+            [valid, dict(valid)],  # repeated identical observation
+            [valid, dict(valid, time_tag="2026-11-13T16:05:00Z")],
+            [dict(valid, active=True), dict(valid, source="ACE", active=True)],
         ):
             with self.subTest(bad=str(bad)[:65]), self.assertRaises(ProbeBlocked):
                 verify_response(source, json.dumps(bad).encode("utf-8"))
@@ -183,6 +186,9 @@ class FixedSourceProbesTests(unittest.TestCase):
         self.assertFalse(receipt["rolling_window_complete"])
         self.assertNotIn("IMAP", str(receipt))
         self.assertNotIn("ACE", str(receipt))
+        # Same timestamp from two different sources is valid with one primary.
+        # Neither a second active source nor a duplicate source/time is valid.
+        self.assertTrue(receipt["active_stream_flags_typed"])
 
     def test_noaa_2026_rtsw_probe_receipt_is_metadata_only(self):
         source = "noaa.swpc.real-time-solar-wind"
