@@ -5,12 +5,15 @@ from __future__ import annotations
 
 import hashlib
 import io
+import struct
 import zlib
 import unittest
 
 from research_runners.eurostat_census_v3_full_csv_member_parity_v0 import (
     BANDS, HEADER, TARGET_CNTR_ID, TARGET_GRID_ID,
-    CSVParityBlocked, verify_csv_deflate_member,
+    CSV_MEMBER, EXPECTED_COMPRESSED_BYTES, EXPECTED_UNCOMPRESSED_BYTES,
+    EXPECTED_ZIP_MEMBER_CRC32, CSVParityBlocked, verify_csv_deflate_member,
+    verify_original_zip_local_header,
 )
 
 
@@ -144,6 +147,56 @@ class OneCellCSVSourceParityTests(unittest.TestCase):
                        + (",OVERLONG"*180)])
         with self.assertRaises(CSVParityBlocked):
             run_fake(source,member,digest)
+
+
+def synthetic_zip_member_header(*, filename=CSV_MEMBER, flags=0,
+                                crc=EXPECTED_ZIP_MEMBER_CRC32,
+                                compressed=EXPECTED_COMPRESSED_BYTES,
+                                uncompressed=EXPECTED_UNCOMPRESSED_BYTES,
+                                extra=b""):
+    # Synthetic structure and fake timestamps; not original GISCO ZIP bytes.
+    encoded = filename.encode("utf-8")
+    return (
+        struct.pack("<IHHHHHIIIHH", 0x04034B50, 20, flags, 8,
+                    0, 0, crc, compressed, uncompressed, len(encoded), len(extra))
+        + encoded + extra
+    )
+
+
+class ZIPLocalHeaderIdentityTests(unittest.TestCase):
+    def test_exact_member_name_sizes_crc_and_offset_required(self):
+        raw = synthetic_zip_member_header()
+        evidence = verify_original_zip_local_header(raw)
+        self.assertEqual(evidence["local_header_bytes"], len(raw))
+        self.assertEqual(evidence["original_member"], CSV_MEMBER)
+        self.assertEqual(evidence["absolute_compressed_payload_offset"],
+                         evidence["local_header_offset"] + len(raw))
+        self.assertTrue(evidence["original_member_crc32_match"])
+        self.assertFalse(evidence["model_input_approved"])
+
+    def test_valid_descriptor_header_with_zero_local_crc_and_sizes(self):
+        raw = synthetic_zip_member_header(
+            flags=0x0008, crc=0, compressed=0, uncompressed=0
+        )
+        evidence = verify_original_zip_local_header(raw)
+        self.assertTrue(evidence["uses_zip_data_descriptor"])
+
+    def test_wrong_member_encryption_crc_sizes_and_truncation_rejected(self):
+        cases = [
+            synthetic_zip_member_header(filename="different.csv"),
+            synthetic_zip_member_header(flags=1),
+            synthetic_zip_member_header(crc=0),
+            synthetic_zip_member_header(compressed=2),
+            synthetic_zip_member_header(uncompressed=4),
+            synthetic_zip_member_header()[:-2],
+            synthetic_zip_member_header() + b"trailing",
+            synthetic_zip_member_header(flags=8, crc=1, compressed=0, uncompressed=0),
+            b"not-a-zip-file",
+        ]
+        for raw in cases:
+            with self.subTest(length=len(raw), header_sha=hashlib.sha256(raw).hexdigest()):
+                with self.assertRaises(CSVParityBlocked):
+                    verify_original_zip_local_header(raw)
 
 
 if __name__=="__main__":
