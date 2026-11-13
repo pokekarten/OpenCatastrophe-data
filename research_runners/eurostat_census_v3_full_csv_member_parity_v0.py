@@ -81,7 +81,15 @@ def _int_field(data: bytes) -> str:
     return str(number)
 
 
-def verify_original_zip_local_header(raw: bytes) -> dict:
+def verify_original_zip_local_header(
+    raw: bytes,
+    *,
+    expected_member_name: str = CSV_MEMBER,
+    expected_compressed_bytes: int = EXPECTED_COMPRESSED_BYTES,
+    expected_uncompressed_bytes: int = EXPECTED_UNCOMPRESSED_BYTES,
+    expected_crc32: int = EXPECTED_ZIP_MEMBER_CRC32,
+    expected_local_header_offset: int = ZIP_MEMBER_LOCAL_HEADER_OFFSET,
+) -> dict:
     """Check exact V3 original CSV member header, never an arbitrary ZIP entry.
 
     The required first 30+filename+extra bytes must have been separately
@@ -90,6 +98,18 @@ def verify_original_zip_local_header(raw: bytes) -> dict:
     """
     _require(isinstance(raw, bytes) and 30 <= len(raw) <= 512,
              "original ZIP local header must be 30..512 bounded bytes")
+    _require(expected_member_name == CSV_MEMBER,
+             "ZIP member identity must remain exact official Eurostat V3 CSV")
+    _require(isinstance(expected_local_header_offset, int)
+             and 0 <= expected_local_header_offset < 1_000_000_000,
+             "invalid ZIP original local header offset")
+    _require(isinstance(expected_compressed_bytes, int)
+             and 1 <= expected_compressed_bytes <= MAX_COMPRESSED_BYTES
+             and isinstance(expected_uncompressed_bytes, int)
+             and 1 <= expected_uncompressed_bytes <= MAX_UNCOMPRESSED_BYTES,
+             "source ZIP member sizes outside bounded contract")
+    _require(isinstance(expected_crc32, int) and 0 <= expected_crc32 <= 0xffffffff,
+             "invalid source ZIP CRC32")
     (signature, version, flags, method, mtime, mdate, crc,
      compressed, plain, filename_size, extra_size) = struct.unpack_from(
         "<IHHHHHIIIHH", raw, 0
@@ -106,25 +126,25 @@ def verify_original_zip_local_header(raw: bytes) -> dict:
         name = raw[30:30 + filename_size].decode("utf-8")
     except UnicodeError as exc:
         raise CSVParityBlocked("original ZIP member name invalid UTF-8") from exc
-    _require(name == CSV_MEMBER, "wrong original CSV archive member name")
+    _require(name == expected_member_name, "wrong original CSV archive member name")
     descriptor = bool(flags & 0x0008)
     if descriptor:
-        _require(crc in (0, EXPECTED_ZIP_MEMBER_CRC32),
+        _require(crc in (0, expected_crc32),
                  "original ZIP local header CRC conflicts with central directory")
-        _require(compressed in (0, EXPECTED_COMPRESSED_BYTES)
-                 and plain in (0, EXPECTED_UNCOMPRESSED_BYTES),
+        _require(compressed in (0, expected_compressed_bytes)
+                 and plain in (0, expected_uncompressed_bytes),
                  "original ZIP local header sizes conflict with central directory")
     else:
-        _require(crc == EXPECTED_ZIP_MEMBER_CRC32
-                 and compressed == EXPECTED_COMPRESSED_BYTES
-                 and plain == EXPECTED_UNCOMPRESSED_BYTES,
+        _require(crc == expected_crc32
+                 and compressed == expected_compressed_bytes
+                 and plain == expected_uncompressed_bytes,
                  "original ZIP local header differs from original central directory")
     return {
         "original_source_archive": PROVIDER_ARCHIVE,
-        "original_member": CSV_MEMBER,
-        "local_header_offset": ZIP_MEMBER_LOCAL_HEADER_OFFSET,
+        "original_member": expected_member_name,
+        "local_header_offset": expected_local_header_offset,
         "local_header_bytes": len(raw),
-        "absolute_compressed_payload_offset": ZIP_MEMBER_LOCAL_HEADER_OFFSET + len(raw),
+        "absolute_compressed_payload_offset": expected_local_header_offset + len(raw),
         "header_sha256": hashlib.sha256(raw).hexdigest(),
         "general_purpose_flags": flags,
         "uses_zip_data_descriptor": descriptor,
