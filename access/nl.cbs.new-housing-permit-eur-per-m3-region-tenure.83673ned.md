@@ -51,9 +51,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ### Allowed operations
 
-- original_metadata_small_rows
-- first_2012_permit_cost_row
-- rolling_2026_june_rental_owner_exact_rows
+- nine_fixed_83673ned_odata_rows
 
 ### Path templates
 
