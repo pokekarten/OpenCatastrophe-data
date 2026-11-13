@@ -144,6 +144,56 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
             p.inspect_original_stream(io.BytesIO(),status=206,
                                      response_url=p.URL,headers={},roi=None)
 
+    def test_verified_original_range_segments_are_exactly_contiguous(self):
+        from unittest.mock import patch
+        chunks = []
+        original = b"abcdefghijklmnopqrstuvwxyz0123456789"
+        reader = p.VerifiedOriginalSegmentStream()
+        def fake_get(start, end):
+            chunks.append((start, end))
+            return original[start-100:end-99], ('"same-source"', "Fri, 13 Nov 2026 11:00:00 GMT")
+        reader._get_segment = fake_get
+        with (patch.object(p, "START", 100),
+              patch.object(p, "END", 135),
+              patch.object(p, "READ_BYTES", 36),
+              patch.object(p, "MAX_ORIGINAL_SEGMENT_BYTES", 9)):
+            pieces=[]
+            while True:
+                block=reader.read(7)
+                if not block:
+                    break
+                pieces.append(block)
+            self.assertEqual(b"".join(pieces), original)
+            self.assertEqual(chunks, [(100,108),(109,117),(118,126),(127,135)])
+            self.assertEqual(reader.requests_verified,4)
+            self.assertTrue(reader.complete())
+            self.assertEqual(reader.http_bytes_verified,36)
+            self.assertEqual(reader.read(1),b"")
+
+    def test_segment_truncation_and_source_mutation_fail_closed(self):
+        reader=p.VerifiedOriginalSegmentStream()
+        reader._get_segment=lambda start,end: (b"bad",("etag","date"))
+        with (patch.object(p,"START",100),patch.object(p,"END",125),
+              patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8)):
+            with self.assertRaisesRegex(p.FullSHPBlocked,"size"):
+                reader.read(5)
+        reader=p.VerifiedOriginalSegmentStream()
+        def changed_validator(start,end):
+            etag='"source-v1"' if start==100 else '"source-v2"'
+            return b"x"*(end-start+1),(etag,"date")
+        reader._get_segment=changed_validator
+        with (patch.object(p,"START",100),patch.object(p,"END",115),
+              patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8)):
+            self.assertEqual(reader.read(8),b"x"*8)
+            with self.assertRaisesRegex(p.FullSHPBlocked,"ETag"):
+                reader.read(8)
+
+    def test_segment_trust_cannot_be_asserted_by_unvalidated_file_reader(self):
+        import io
+        with self.assertRaisesRegex(p.FullSHPBlocked, "exact verified source reader"):
+            p.inspect_original_stream(io.BytesIO(b"X"*100),status=206,
+                response_url=p.URL,headers={},roi=None,verified_segments=True)
+
     def test_explicit_live_main_opt_in_required(self):
         with self.assertRaises(SystemExit) as ctx:
             p.main([])
