@@ -330,7 +330,9 @@ class FixedSourceProbesTests(unittest.TestCase):
     def test_probe_receipt_has_no_provider_values(self):
         source = "gfz.geomagnetic-kp"
         self.write(source)
-        body = b'{"Kp":[1.0],"secret":"never-emit-this"}'
+        synthetic = gfz_day_fixture()
+        synthetic["secret"] = "never-emit-this"
+        body = json.dumps(synthetic).encode("utf-8")
         client = Client(Reply(body))
         receipt = probe(source, root=self.root, opener=client)
         self.assertEqual(receipt["response_bytes"], len(body))
