@@ -10,6 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import tomllib
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -177,6 +178,69 @@ class DWDOriginalFX911Station2020Tests(unittest.TestCase):
         # cannot substitute just because ZIP index happens to list it.
         with self.assertRaisesRegex(m.OriginalDWDRejected, "too few sufficiently complete"):
             m.live_dwd_2020_original_three_stations(opener=FakeOpener(docs))
+
+    def test_original_dwd_three_real_station_sha_2020_QN3_replay_receipt(self):
+        with m.FROZEN_FIRST_REAL_DWD_SOURCE.open("rb") as f:
+            original=tomllib.load(f)
+        self.assertEqual(original["first_original_live_github_run_id"],43499602678)
+        self.assertEqual(original["source_archives_inspected"],4)
+        self.assertEqual(original["source_archives_rejected_for_insufficient_2020_hours"],1)
+        self.assertEqual(original["rejected_station_id"],"03623")
+        self.assertFalse(original["station_QN8_10_highest_quality_met"])
+        self.assertFalse(original["DWD_reference_timestamps_UTC_harmonization_verified"])
+        self.assertFalse(original["native_Oasis_NextGen_GUL_IL_RI_OEP_AEP_admitted"])
+        self.assertEqual([s["station_id"] for s in original["stations"]],
+                         ["02667","15200","00603"])
+        self.assertEqual([s["observed_2020_96h_peak_gust_mps"]
+                          for s in original["stations"]],[26.4,31.1,25.5])
+        self.assertTrue(all(s["source_quality_QN8_3_hour_count"] == 96
+                            and s["valid_2020_hour_count"] == 96
+                            and len(s["original_unmodified_zip_sha256"]) == 64
+                            for s in original["stations"]))
+        live={
+            "status":original["status"],
+            "source_variable":"FX_911",
+            "units":"m/s",
+            "station_count":3,
+            "historic_reference_time_interpretation_verified_as_UTC":False,
+            "actual_2020_insurer_losses_or_building_vulnerability_calibrated":False,
+            "native_NextGen_Oasis_GUL_IL_RI_OEP_AEP_admitted":False,
+            "historical_station_archive_candidates_checked":4,
+            "skipped_original_archives_due_to_insufficient_2020_gust_coverage":[{
+                "original_station_id":original["rejected_station_id"],
+                "original_station_zip_sha256":original["rejected_original_zip_sha256"],
+            }],
+            "stations":[{
+                "station_id":site["station_id"],
+                "original_DWD_historical_FX_zip_url":site["original_archive_url"],
+                "provider_original_zip_sha256":site["original_unmodified_zip_sha256"],
+                "latitude_as_publisher_lists_today":site["current_publisher_latitude"],
+                "longitude_as_publisher_lists_today":site["current_publisher_longitude"],
+                "distance_to_original_era5_51N_7E_km":site["distance_to_51N_7E_km"],
+                "measured_2020_Ciara_window_peak_hour_as_publisher_reports":site["published_2020_peak_hour_label"],
+                "measured_2020_02_08_through_11_max_hourly_gust_mps":site["observed_2020_96h_peak_gust_mps"],
+                "original_station_fx911_hourly_valid_count":site["valid_2020_hour_count"],
+                "original_station_fx911_missing_marker_count":site["missing_original_value_count"],
+                "DWD_QN8_quality_level_hour_counts":{"3":96},
+                "observed_station_max_gust_hours_full_96h":True,
+            } for site in original["stations"]],
+        }
+        self.assertIsNone(m.verify_first_original_2020_station_receipt_against_live(live))
+        for name,field,new_value in (
+            ("gust","measured_2020_02_08_through_11_max_hourly_gust_mps",99.0),
+            ("zip","provider_original_zip_sha256","0"*64),
+            ("2020qc","DWD_QN8_quality_level_hour_counts",{"10":96}),
+            ("hours","original_station_fx911_hourly_valid_count",95),
+        ):
+            with self.subTest(name=name):
+                altered=deepcopy(live)
+                altered["stations"][1][field]=new_value
+                with self.assertRaises(m.OriginalDWDRejected):
+                    m.verify_first_original_2020_station_receipt_against_live(altered)
+        altered=deepcopy(live)
+        altered["actual_2020_insurer_losses_or_building_vulnerability_calibrated"]=True
+        with self.assertRaises(m.OriginalDWDRejected):
+            m.verify_first_original_2020_station_receipt_against_live(altered)
 
     def test_source_dry_run_never_accesses_network(self):
         with patch.object(sys,"argv",["prog","--dry-run"]),\
