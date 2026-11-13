@@ -39,7 +39,7 @@ class BVVHubyRightsContractTests(unittest.TestCase):
         self.assertIn("CC BY 4.0", rights["notes"])
         self.assertIn("Bayerische Vermessungsverwaltung", rights["notes"])
         self.assertIn("modification", rights["notes"])
-        self.assertIn("no additional", self.c["operational_constraints"]["rate_limit_notes"])
+        self.assertIn("no new live calls authorized", self.c["operational_constraints"]["rate_limit_notes"])
 
     def test_no_duplicate_full_zip_source_download_approved(self):
         self.assertEqual(self.c["status"], "documented_only")
@@ -65,7 +65,7 @@ class BVVHubyRightsContractTests(unittest.TestCase):
         science = self.c["response_contract"]["scientific_semantics"]
         self.assertIn("not 2020 historical survey truth", science)
         self.assertIn("not individually insured buildings", science)
-        self.assertIn("CAT", science)
+        self.assertIn("Risk model scientific calibration", science)
 
     def test_cannot_turn_on_probe_without_separate_api_review(self):
         c = deepcopy(self.c)
