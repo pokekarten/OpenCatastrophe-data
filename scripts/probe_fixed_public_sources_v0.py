@@ -147,6 +147,11 @@ def _inspect_noaa_swpc_rtsw_mag(payload: object) -> dict:
         raise ProbeBlocked("NOAA RTSW response must be a bounded list of records")
     magnetic_fields = ("bx_gsm", "by_gsm", "bz_gsm", "bt")
     found_magnetic_value = False
+    # NOAA documents at most one operationally active spacecraft per instant.
+    # Reject duplicate spacecraft/time samples and conflicting active flags;
+    # do not mistake a plausible shape for a valid provider measurement.
+    seen_source_times = set()
+    active_times = set()
     for record in payload:
         if not isinstance(record, dict):
             raise ProbeBlocked("NOAA RTSW record is not an object")
@@ -165,9 +170,21 @@ def _inspect_noaa_swpc_rtsw_mag(payload: object) -> dict:
         if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]{1,6})?Z?", raw_time):
             raise ProbeBlocked("NOAA RTSW timestamp shape invalid")
         try:
-            datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+            observation_time = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
         except ValueError as exc:
             raise ProbeBlocked("NOAA RTSW calendar timestamp invalid") from exc
+        # Provider timestamps are UTC even when the current JSON omits a zone.
+        observation_utc = (observation_time.replace(tzinfo=timezone.utc)
+                           if observation_time.tzinfo is None
+                           else observation_time.astimezone(timezone.utc))
+        source_time = (observation_utc, source_name)
+        if source_time in seen_source_times:
+            raise ProbeBlocked("NOAA RTSW duplicate spacecraft/time observation")
+        seen_source_times.add(source_time)
+        if record["active"]:
+            if observation_utc in active_times:
+                raise ProbeBlocked("NOAA RTSW conflicting active spacecraft at timestamp")
+            active_times.add(observation_utc)
         for key in magnetic_fields:
             value = record[key]
             if value is None:
