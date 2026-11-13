@@ -131,6 +131,120 @@ def reviewed_probe(source: str, root: Path = ROOT):
     return url, operation, max_bytes, timeout
 
 
+
+def _inspect_gfz_definitive_kp_day(payload: object) -> dict:
+    """Validate the *fixed* 2024-01-01 GFZ definitive Kp service response.
+
+    Every expected UTC 3-hour interval, finite numeric Kp and explicit
+    definitive status must appear. This is only a provider response-shape gate:
+    it neither verifies physical accuracy nor admits CAT-model input.
+    """
+    import math
+
+    if type(payload) is not dict:
+        raise ProbeBlocked("GFZ definitive Kp response is not an object")
+    timestamps = payload.get("datetime")
+    values = payload.get("Kp")
+    statuses = payload.get("status")
+    if not all(type(x) is list and len(x) == 8
+               for x in (timestamps, values, statuses)):
+        raise ProbeBlocked("GFZ definitive Kp day requires three aligned eight-entry arrays")
+    expected_times = [f"2024-01-01T{hour:02}:00:00Z" for hour in range(0, 24, 3)]
+    if timestamps != expected_times:
+        raise ProbeBlocked("GFZ definitive Kp UTC three-hour interval identity drift")
+    if any(type(status) is not str or status != "def" for status in statuses):
+        raise ProbeBlocked("GFZ Kp response contains non-definitive status")
+    for value in values:
+        if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 9:
+            raise ProbeBlocked("GFZ Kp reading is not a finite in-range number")
+    return {
+        "verified_shape": "gfz_definitive_kp_2024_01_01_eight_3h_bins",
+        "fixed_window_verified": True,
+        "definitive_status_verified": True,
+        "record_count": 8,
+        "scientific_values_verified": False,
+    }
+
+
+def _inspect_noaa_swpc_rtsw_mag(payload: object) -> dict:
+    """Validate the 2026 RTSW list-of-objects shape, never the physical readings.
+
+    NOAA's 2026 replacement uses source + active for a multi-spacecraft,
+    rolling stream. A generic nonempty JSON response must not pass. Presence
+    and types are checked, not source homogeneity, calibration, continuity,
+    numerical accuracy, or scientific admissibility.
+    """
+    import math
+    from datetime import datetime
+
+    if not isinstance(payload, list) or not 0 < len(payload) <= 20000:
+        raise ProbeBlocked("NOAA RTSW response must be a bounded list of records")
+    magnetic_fields = ("bx_gsm", "by_gsm", "bz_gsm", "bt")
+    found_magnetic_value = False
+    # NOAA documents at most one operationally active spacecraft per instant.
+    # Reject duplicate spacecraft/time samples and conflicting active flags;
+    # do not mistake a plausible shape for a valid provider measurement.
+    seen_source_times = set()
+    active_times = set()
+    for record in payload:
+        if not isinstance(record, dict):
+            raise ProbeBlocked("NOAA RTSW record is not an object")
+        if not all(key in record for key in ("time_tag", "source", "active", *magnetic_fields)):
+            raise ProbeBlocked("NOAA RTSW mandatory field missing")
+        source_name = record["source"]
+        if (not isinstance(source_name, str) or not source_name.strip()
+                or len(source_name) > 80 or not source_name.isprintable()):
+            raise ProbeBlocked("NOAA RTSW spacecraft/source identity missing")
+        if type(record["active"]) is not bool:
+            raise ProbeBlocked("NOAA RTSW active spacecraft flag is not Boolean")
+        raw_time = record["time_tag"]
+        if not isinstance(raw_time, str) or not 19 <= len(raw_time) <= 32:
+            raise ProbeBlocked("NOAA RTSW timestamp shape missing")
+        import re
+        if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]{1,6})?Z?", raw_time):
+            raise ProbeBlocked("NOAA RTSW timestamp shape invalid")
+        try:
+            observation_time = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ProbeBlocked("NOAA RTSW calendar timestamp invalid") from exc
+        # Provider timestamps are UTC even when the current JSON omits a zone.
+        observation_utc = (observation_time.replace(tzinfo=timezone.utc)
+                           if observation_time.tzinfo is None
+                           else observation_time.astimezone(timezone.utc))
+        source_time = (observation_utc, source_name)
+        if source_time in seen_source_times:
+            raise ProbeBlocked("NOAA RTSW duplicate spacecraft/time observation")
+        seen_source_times.add(source_time)
+        if record["active"]:
+            if observation_utc in active_times:
+                raise ProbeBlocked("NOAA RTSW conflicting active spacecraft at timestamp")
+            active_times.add(observation_utc)
+        for key in magnetic_fields:
+            value = record[key]
+            if value is None:
+                continue  # NOAA legitimately records instrument gaps.
+            if type(value) not in (int, float):
+                raise ProbeBlocked("NOAA RTSW magnetometer field is not numeric/null")
+            try:
+                finite = math.isfinite(value)
+            except (OverflowError, ValueError):
+                finite = False
+            if not finite:
+                raise ProbeBlocked("NOAA RTSW magnetometer field is not finite")
+            found_magnetic_value = True
+    if not found_magnetic_value:
+        raise ProbeBlocked("NOAA RTSW response contains no magnetic observation")
+    return {
+        "verified_shape": "noaa_swpc_rtsw_mag_2026_multispacecraft",
+        "spacecraft_identity_fields_present": True,
+        "active_stream_flags_typed": True,
+        "magnetic_reading_present": True,
+        "sensor_lineage_verified": False,
+        "scientific_values_verified": False,
+        "rolling_window_complete": False,
+    }
+
+
 def verify_response(source: str, raw: bytes) -> dict:
     try:
         payload = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_object,
@@ -151,14 +265,9 @@ def verify_response(source: str, raw: bytes) -> dict:
         # Returned download links are intentionally not followed.
         return {"verified_shape": "deu_adm1_metadata", "frozen_id": payload["boundaryID"]}
     if source == "gfz.geomagnetic-kp":
-        if not isinstance(payload, dict) or not payload:
-            raise ProbeBlocked("GFZ response is not a nonempty JSON object")
-        # A structural probe does not assert scientific Kp content or calibration.
-        return {"verified_shape": "json_object_only", "scientific_values_verified": False}
+        return _inspect_gfz_definitive_kp_day(payload)
     if source == "noaa.swpc.real-time-solar-wind":
-        if not isinstance(payload, (list, dict)) or not payload:
-            raise ProbeBlocked("NOAA response is not a nonempty JSON collection")
-        return {"verified_shape": "json_collection_only", "sensor_lineage_verified": False}
+        return _inspect_noaa_swpc_rtsw_mag(payload)
     if source == "emsc.seismicportal.fdsn-event":
         from scripts.probe_emsc_fdsn_event_v0 import EMSCProbeError, inspect_json_bytes
         try:
