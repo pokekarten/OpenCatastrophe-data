@@ -181,7 +181,8 @@ def measured_2020_gust_from_original_zip(blob: bytes, station_id: str) -> dict:
         raise OriginalDWDRejected("DWD original ZIP/product unreadable") from exc
     reader = csv.DictReader(io.StringIO(source, newline=""), delimiter=";", strict=True)
     fieldnames = [x.strip() for x in (reader.fieldnames or [])]
-    if set(fieldnames) != EXPECTED_COLUMNS or len(fieldnames) != 4:
+    if (set(fieldnames) not in (EXPECTED_COLUMNS, EXPECTED_COLUMNS | {"eor"})
+        or len(fieldnames) not in (4, 5)):
         raise OriginalDWDRejected("unexpected DWD hourly FX source schema")
     # DWD normally contains padded columns and sometimes an empty trailing
     # column; reject that silently misaligned structure in an actual run
@@ -209,6 +210,8 @@ def measured_2020_gust_from_original_zip(blob: bytes, station_id: str) -> dict:
             raise OriginalDWDRejected("unparseable original DWD measured FX_911") from exc
         if not 0 <= qn <= 10:
             raise OriginalDWDRejected("unsupported DWD QN_8 quality code")
+        if "eor" in fieldnames and record.get("eor", "").strip().lower() not in ("", "eor"):
+            raise OriginalDWDRejected("unexpected DWD original product end-of-record marker")
         qn_counts[str(qn)] = qn_counts.get(str(qn), 0) + 1
         # DWD missing value = -999; do not silently replace with zero.
         if gust == -999.0:
