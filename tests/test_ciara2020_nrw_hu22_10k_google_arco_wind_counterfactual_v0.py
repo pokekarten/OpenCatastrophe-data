@@ -10,6 +10,7 @@ import math
 from pathlib import Path
 import sys
 import tempfile
+import tomllib
 import unittest
 from unittest.mock import patch
 from contextlib import redirect_stdout
@@ -125,18 +126,19 @@ class CiaraHU22Original2020WindCounterfactualTests(unittest.TestCase):
             "public_original_source": "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3",
             "_internal_public_10x16_event_peak_gust_mps": uniform_grid(32.0),
         }
+        # A forged reported original matrix SHA PLUS an entirely synthetic
+        # 32m/s 160-cell peak grid must NOT get model-source admission:
+        # compare final weighted aggregate to independently accepted live receipt.
         with patch.object(g, "original_96h_grid", return_value=source) as mock:
-            result = m.run_live_counterfactual()
+            with self.assertRaisesRegex(m.CiaraCounterfactualBlocked, "first original live source"):
+                m.run_live_counterfactual()
         mock.assert_called_once_with(include_public_grid_peaks=True)
-        self.assertEqual(result["peak_wind_hazard_threshold_mps"]["30"]["public_2022_building_candidate_count"],10000)
-        self.assertEqual(result["peak_wind_hazard_threshold_mps"]["35"]["public_2022_building_candidate_count"],0)
-        self.assertTrue(result["wind_2020_to_2022_public_exposure_is_counterfactual"])
-        self.assertFalse(result["underlying_2020_real_RV_policy_positions_or_claims_observed"])
-        self.assertFalse(result["German_vulnerability_native_GUL_IL_RI_OEP_AEP_admitted"])
-        self.assertFalse(result["annual_stochastic_EP_or_capital_model_admitted"])
-        self.assertFalse(result["individual_sites_or_polygon_coordinates_published"])
-        self.assertNotIn("_internal_public_10x16_event_peak_gust_mps", result)
-        self.assertNotIn("SYN-NRW", json.dumps(result))
+        pure = m.summarize_exposure_by_public_source_grid(
+            m.load_source_cell_aggregates(), uniform_grid(32.0)
+        )
+        self.assertEqual(pure["peak_wind_hazard_threshold_mps"]["30"]["public_2022_building_candidate_count"],10000)
+        self.assertEqual(pure["peak_wind_hazard_threshold_mps"]["35"]["public_2022_building_candidate_count"],0)
+        self.assertNotIn("SYN-NRW", json.dumps(pure))
 
     def test_mismatching_live_source_sha_or_claim_admission_blocks(self):
         baseline = {
@@ -164,6 +166,30 @@ class CiaraHU22Original2020WindCounterfactualTests(unittest.TestCase):
                 with patch.object(g, "original_96h_grid", return_value=altered):
                     with self.assertRaises(m.CiaraCounterfactualBlocked):
                         m.run_live_counterfactual()
+
+    def test_real_public_2020_google_gust_2022_source_join_receipt_no_go(self):
+        with m.ACCEPTED_SOURCE_JOIN_TOML.open("rb") as fd:
+            evidence = tomllib.load(fd)
+        self.assertEqual(evidence["first_successful_original_live_github_run"], 43489088388)
+        self.assertEqual(evidence["source_original_2022_HU_derived_10k_archive_sha256"], a.SOURCE_ARTIFACT_SHA256)
+        self.assertEqual(evidence["source_original_2022_HU_10k_93cell_csv_sha256"], m.SOURCE_CELL_CSV_SHA256)
+        self.assertEqual(evidence["2020_google_arco_original_96h_160cell_decoded_sha256"], m.ORIGINAL_ERA5_MATRIX_SHA256)
+        self.assertEqual(evidence["public_2022_building_candidate_count"], 10000)
+        self.assertEqual(evidence["source_2022_occupied_0p25deg_grid_cells"], 93)
+        self.assertEqual(evidence["fictional_building_tiv_eur"], 4826029500)
+        self.assertEqual(evidence["historical_2020_google_era5_hourly_gust_frames"], 96)
+        self.assertAlmostEqual(evidence["candidate_weighted_2020_ciara_96h_peak_wind_mps"], 31.673449949645995)
+        self.assertAlmostEqual(evidence["fictional_tiv_weighted_2020_ciara_96h_peak_wind_mps"], 31.67299538469392)
+        self.assertEqual(
+            [evidence["threshold_mps"][str(v)]["public_2022_building_candidate_count"]
+             for v in (25, 30, 35, 40)], [10000, 10000, 0, 0]
+        )
+        for key in ("public_2022_building_occupancy_as_of_2020_verified",
+                    "real_RV_2020_insured_site_universe_observed",
+                    "2020_insurer_coverage_or_claims_observed",
+                    "German_wind_vulnerability_native_GUL_IL_RI_OEP_AEP_admitted",
+                    "annual_stochastic_EP_or_capital_model_admitted"):
+            self.assertFalse(evidence[key])
 
     def test_cli_dry_run_requires_no_public_cloud_or_source_archive(self):
         with patch.object(sys, "argv", ["joined", "--dry-run"]), \
