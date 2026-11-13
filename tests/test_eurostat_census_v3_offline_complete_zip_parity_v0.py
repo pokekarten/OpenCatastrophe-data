@@ -63,7 +63,7 @@ def frozen_directory(path):
 def synthetic_eocd_reference(path):
     # Synthetic ZIP's original tail directory, not real Eurostat bytes.
     data=Path(path).read_bytes()
-    pos=data.rfind(b"PK\\x05\\x06".replace(b"\\x05",b"\x05").replace(b"\\x06",b"\x06"))
+    pos=data.rfind(bytes((80,75,5,6)))
     assert pos>=0
     fields=struct.unpack("<IHHHHIIH",data[pos:pos+22])
     return fields[6],fields[5]
@@ -111,7 +111,7 @@ class V3CompleteOfflineZipTests(unittest.TestCase):
             with self.assertRaisesRegex(CSVParityBlocked,"directory"):
                 verify_fixture(p,digest,info)
             digest,info=write_source(p,comment=True)
-            with self.assertRaisesRegex(CSVParityBlocked,"EOCD|comment"):
+            with self.assertRaisesRegex(CSVParityBlocked,"central directory reference|EOCD|comment"):
                 verify_fixture(p,digest,info)
 
     def test_missing_target_row_and_wrong_country_block(self):
