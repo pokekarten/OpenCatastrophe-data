@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: PDOK INSPIRE Gewaspercelen bounded original metadata
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/pdok-inspire-gewaspercelen-metadata-v0.yml"
+      - "access/nl.rvo.brp-gewaspercelen.2025.inspire-collection.json"
+      - "scripts/probe_pdok_inspire_collection_v0.py"
+      - "tests/test_probe_pdok_inspire_collection_v0.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pdok-inspire-gewaspercelen-metadata-v0.yml"
+      - "access/nl.rvo.brp-gewaspercelen.2025.inspire-collection.json"
+      - "scripts/probe_pdok_inspire_collection_v0.py"
+      - "tests/test_probe_pdok_inspire_collection_v0.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pdok-inspire-gewaspercelen-metadata-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline-source-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Source-specific rights, source-identity and security regression
+        run: python -m unittest tests.test_probe_pdok_inspire_collection_v0 -v
+      - name: Verify all canonical source-access JSON projections
+        run: python -m scripts.render_public_views --check --scope access
+
+  one-reviewed-original-collection-get:
+    needs: offline-source-gate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: One exact public INSPIRE Collection GET, metadata receipt only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.probe_pdok_inspire_collection_v0 --live | tee -a "$GITHUB_STEP_SUMMARY"
