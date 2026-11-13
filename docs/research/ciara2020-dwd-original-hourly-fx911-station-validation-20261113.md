@@ -69,6 +69,50 @@ Commands:
 
     python research_runners/ciara2020_dwd_hourly_fx_original_station_observations_v0.py --live-dwd
 
+## Actual DWD historical observed-source result
+
+The **original** official DWD CDN/CDC hourly `FX_911` measured gust
+archives were acquired in genuine GitHub CI run
+[43499602678](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43499602678),
+live job **132144371691**. Four source ZIP archives were examined;
+one (station `03623`, ZIP SHA
+`d2503e4f4c1ff3860d7b9d0f73bd382cb9f08f62068772695878db7bc1ad98f6`)
+had insufficient valid 2020 hourly gusts and was **rejected**.
+Three distinct original observed stations passed all 96 calendar
+hours without `-999` missing values:
+
+| 2020 observed DWD station | Original ID | 2020 96h observed peak (m/s) | DWD-reported peak-hour label | Original archive ZIP SHA-256 |
+|---|---|---:|---|---|
+| Köln/Bonn | `02667` | **26.4** | `2020021008` | `e88536b7eebb6c7f94de63de56b1af85a0981fdd769e727f45f6d7db7c93ae78` |
+| Wuppertal | `15200` | **31.1** | `2020020922` | `748ffdbc8f6ebf04a014ebf3d8fdc177e9a903349cc5b36e19f4c425998bfaa0` |
+| Königswinter-Heiderhof | `00603` | **25.5** | `2020021009` | `4a61a6394344bba05a06553794ac1a2d5edb4c4e3ac39ae1f26407e5f4e2f62b` |
+
+All three accepted stations reported **96 original hours each, QN_8=3**
+in all 96. DWD documents QN_8=3 as **automatic check/correction**,
+not completed highest quality (QN=10). The station metadata
+coordinates may reflect *current* location and cannot yet substitute
+for historical 2020 instrument/geography metadata.
+**Do not attribute an hourly UTC interpretation** to these
+reference time labels before verifying station-specific documentation.
+
+Publisher station-list original SHA:
+`da71a04670608512719703cbfafa9367fbd8b21b74d2e2275a663c58f5775ed0`;
+original archive index SHA:
+`4299666e67be6bd7a2854a2bb291d7619f17f84122d306248485c6a0dbf5bcb0`.
+All three unmodified **ZIP byte** SHA-256 digests and the genuine
+peak/quality observations are frozen in
+`research/observations/ciara2020_dwd_original_fx911_three_stations_receipt_20261113.toml`.
+The live CLI rechecks its observed original archive identities,
+the 96-hour QN3 series, missing markers, peak magnitudes and
+three source references against the first independent live proof;
+source/quality drift raises NO-GO instead of silently passing.
+
+**This is independently observed station meteorology, NOT validation
+of insured building damage**. A future observed-to-reanalysis
+comparison needs exact 2020 station altitude/anemometer exposure,
+timestamp alignment and nearest ERA5 cell matching, not a naive
+comparison of maxima from different physical sites.
+
 ## Critical science and source-use gates
 
 1. Official station listing reports **current** station coordinates.
