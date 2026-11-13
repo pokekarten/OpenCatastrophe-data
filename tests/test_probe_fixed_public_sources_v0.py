@@ -61,6 +61,16 @@ def contract(source):
     }
 
 
+def gfz_day_fixture():
+    """Entirely synthetic GFZ 2024-01-01 definitive Kp day, no provider bytes."""
+    return {
+        "datetime": [f"2024-01-01T{hour:02}:00:00Z" for hour in range(0, 24, 3)],
+        "Kp": [1.0, 1.3, 1.7, 2.0, 0.0, 3.0, 9.0, 2.3],
+        "status": ["def"] * 8,
+        "meta": {"fixture_only": True},
+    }
+
+
 class FixedSourceProbesTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -144,10 +154,56 @@ class FixedSourceProbesTests(unittest.TestCase):
             verify_response(source, json.dumps(payload).encode())
 
     def test_gfz_noaa_structural_only(self):
-        a = verify_response("gfz.geomagnetic-kp", b'{"Kp":[1.0]}')
+        a = verify_response("gfz.geomagnetic-kp", json.dumps(gfz_day_fixture()).encode())
         self.assertIs(a["scientific_values_verified"], False)
+        self.assertEqual(a["record_count"], 8)
+        self.assertTrue(a["definitive_status_verified"])
         b = verify_response("noaa.swpc.real-time-solar-wind", b'[{"satellite": "x"}]')
         self.assertIs(b["sensor_lineage_verified"], False)
+
+    def test_gfz_definitive_kp_day_rejects_false_positive_json(self):
+        source = "gfz.geomagnetic-kp"
+        valid = gfz_day_fixture()
+        self.assertEqual(
+            verify_response(source, json.dumps(valid).encode())["record_count"], 8
+        )
+
+        def changed(field, position, value):
+            bad = gfz_day_fixture()
+            bad[field][position] = value
+            return bad
+
+        for bad in (
+            {"Kp": [1.0]},  # previously accepted any non-empty object
+            [],
+            changed("Kp", 0, "1.0"),
+            changed("Kp", 0, True),
+            changed("Kp", 0, None),
+            changed("Kp", 0, -0.1),
+            changed("Kp", 0, 9.1),
+            changed("Kp", 0, float("inf")),
+            changed("datetime", 0, "2024-01-02T00:00:00Z"),
+            changed("datetime", 1, "2024-01-01T00:00:00Z"),
+            changed("status", 0, "now"),
+            changed("status", 0, None),
+            dict(gfz_day_fixture(), Kp=[1.0]),
+            dict(gfz_day_fixture(), status=["def"] * 7),
+        ):
+            with self.subTest(bad=str(bad)[:65]), self.assertRaises(ProbeBlocked):
+                verify_response(source, json.dumps(bad).encode("utf-8"))
+
+    def test_gfz_probe_receipt_is_values_free_and_not_admitted(self):
+        source = "gfz.geomagnetic-kp"
+        self.write(source)
+        body = json.dumps(gfz_day_fixture()).encode("utf-8")
+        receipt = probe(source, root=self.root, opener=Client(Reply(body)))
+        self.assertEqual(receipt["record_count"], 8)
+        self.assertEqual(len(receipt["response_sha256"]), 64)
+        self.assertTrue(receipt["fixed_window_verified"])
+        self.assertFalse(receipt["model_input_approved"])
+        self.assertFalse(receipt["provider_bytes_persisted"])
+        self.assertNotIn("1.3", json.dumps(receipt))
+        self.assertNotIn("fixture_only", json.dumps(receipt))
 
     def test_dresden_pegelonline_strict_metadata_only(self):
         source = "wsv.pegelonline.rest-v2.dresden"
@@ -218,7 +274,9 @@ class FixedSourceProbesTests(unittest.TestCase):
     def test_probe_receipt_has_no_provider_values(self):
         source = "gfz.geomagnetic-kp"
         self.write(source)
-        body = b'{"Kp":[1.0],"secret":"never-emit-this"}'
+        synthetic = gfz_day_fixture()
+        synthetic["secret"] = "never-emit-this"
+        body = json.dumps(synthetic).encode("utf-8")
         client = Client(Reply(body))
         receipt = probe(source, root=self.root, opener=client)
         self.assertEqual(receipt["response_bytes"], len(body))
