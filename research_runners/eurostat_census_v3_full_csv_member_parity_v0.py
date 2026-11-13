@@ -23,6 +23,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import struct
 import sys
 import zlib
 
@@ -78,6 +79,59 @@ def _int_field(data: bytes) -> str:
     _require(number >= 0 or number in (-8888, -9999),
              "unexpected census negative value or disclosure sentinel")
     return str(number)
+
+
+def verify_original_zip_local_header(raw: bytes) -> dict:
+    """Check exact V3 original CSV member header, never an arbitrary ZIP entry.
+
+    The required first 30+filename+extra bytes must have been separately
+    acquired from the documented ORIGINAL provider ZIP at the fixed offset,
+    after approval of that operation. No network access is performed here.
+    """
+    _require(isinstance(raw, bytes) and 30 <= len(raw) <= 512,
+             "original ZIP local header must be 30..512 bounded bytes")
+    (signature, version, flags, method, mtime, mdate, crc,
+     compressed, plain, filename_size, extra_size) = struct.unpack_from(
+        "<IHHHHHIIIHH", raw, 0
+    )
+    _require(signature == 0x04034B50, "original source ZIP local header signature changed")
+    _require(version == 20 and method == 8,
+             "expected classic V3 ZIP DEFLATE member (version 20)")
+    _require(flags & ~(0x0808) == 0, "encrypted or unsupported ZIP general-purpose flags")
+    _require(0 < filename_size <= 160 and 0 <= extra_size <= 256,
+             "original ZIP header filename/extra size outside bounds")
+    _require(len(raw) == 30 + filename_size + extra_size,
+             "original ZIP local header byte count mismatch")
+    try:
+        name = raw[30:30 + filename_size].decode("utf-8")
+    except UnicodeError as exc:
+        raise CSVParityBlocked("original ZIP member name invalid UTF-8") from exc
+    _require(name == CSV_MEMBER, "wrong original CSV archive member name")
+    descriptor = bool(flags & 0x0008)
+    if descriptor:
+        _require(crc in (0, EXPECTED_ZIP_MEMBER_CRC32),
+                 "original ZIP local header CRC conflicts with central directory")
+        _require(compressed in (0, EXPECTED_COMPRESSED_BYTES)
+                 and plain in (0, EXPECTED_UNCOMPRESSED_BYTES),
+                 "original ZIP local header sizes conflict with central directory")
+    else:
+        _require(crc == EXPECTED_ZIP_MEMBER_CRC32
+                 and compressed == EXPECTED_COMPRESSED_BYTES
+                 and plain == EXPECTED_UNCOMPRESSED_BYTES,
+                 "original ZIP local header differs from original central directory")
+    return {
+        "original_source_archive": PROVIDER_ARCHIVE,
+        "original_member": CSV_MEMBER,
+        "local_header_offset": ZIP_MEMBER_LOCAL_HEADER_OFFSET,
+        "local_header_bytes": len(raw),
+        "absolute_compressed_payload_offset": ZIP_MEMBER_LOCAL_HEADER_OFFSET + len(raw),
+        "header_sha256": hashlib.sha256(raw).hexdigest(),
+        "general_purpose_flags": flags,
+        "uses_zip_data_descriptor": descriptor,
+        "original_member_crc32_match": True,
+        "original_provider_bytes_written_by_runner": False,
+        "model_input_approved": False,
+    }
 
 
 def verify_csv_deflate_member(
@@ -229,13 +283,21 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-deflate-member", required=True, type=Path,
                         help="pre-approved original ZIP CSV *compressed member* only")
+    parser.add_argument("--original-local-header", required=True, type=Path,
+                        help="separately authenticated exact <=512-byte ZIP local header at the fixed provider offset")
     args = parser.parse_args(argv)
     try:
         file = args.raw_deflate_member
+        header_path = args.original_local_header
+        if (header_path.is_symlink() or not header_path.is_file()
+                or not 30 <= header_path.stat().st_size <= 512):
+            raise CSVParityBlocked("original ZIP member local header missing or outside bound")
+        original_header = verify_original_zip_local_header(header_path.read_bytes())
         if file.is_symlink() or not file.is_file() or file.stat().st_size != EXPECTED_COMPRESSED_BYTES:
             raise CSVParityBlocked("input must be exact pre-acquired CSV member, not ZIP")
         with file.open("rb") as stream:
             result = verify_csv_deflate_member(stream)
+        result["original_zip_local_header"] = original_header
         print(json.dumps(result,sort_keys=True))
         return 0
     except (CSVParityBlocked,OSError) as exc:
