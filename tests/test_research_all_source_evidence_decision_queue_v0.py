@@ -25,7 +25,8 @@ class SourceEvidenceQueueTests(unittest.TestCase):
 
     def test_single_read_only_statement(self):
         self.assertTrue(self.body.lstrip().startswith("WITH\n"))
-        self.assertEqual(self.body.count(";"), 1)
+        # Ignore a semicolon used as a quoted SQL string delimiter.
+        self.assertEqual(len(re.findall(r";\\s*$", self.body, re.MULTILINE)), 1)
         self.assertTrue(self.body.rstrip().endswith(";"))
         self.assertIsNone(
             re.search(
