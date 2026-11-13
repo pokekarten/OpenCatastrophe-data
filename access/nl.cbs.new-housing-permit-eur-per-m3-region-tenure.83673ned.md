@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** rest
 
-**Status:** documented_only
+**Status:** probe_ready
 
 **Documentation url:** <https://www.cbs.nl/en-gb/our-services/open-data/statline-as-open-data>
 
@@ -64,7 +64,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - /ODataApi/OData/83673NED/RegioS
 - /ODataApi/OData/83673NED/Perioden
 
-**Parameter rules:** Documented ONLY, no direct HTTP in GitHub runner yet. Nine strictly fixed candidate URLs: TableInfos?$top=1; TypedDataSet?$top=1; DataProperties?$top=10; Eigendom?$top=3; RegioS?$top=5; Perioden?$top=1; TypedDataSet?$filter=Perioden%20eq%20%272026VJ06%27&amp;$top=1; Perioden?$filter=Key%20eq%20%272026VJ06%27&amp;$top=1; TypedDataSet?$filter=Perioden%20eq%20%272026VJ06%27%20and%20Eigendom%20eq%20%27A028868%27%20and%20RegioS%20eq%20%27NL01%20%20%27&amp;$top=1. No arbitrary URL/OData query, feed, pagination, private coordinates, bulk snapshots or automatic live dispatch. Need a new strict provider-specific approved script and offline test before status may become probe_ready.
+**Parameter rules:** Exactly NINE immutable anonymous direct HTTPS GET URLs on one opt-in --live run, on official CBS OData table 83673NED only: TableInfos?$top=1; TypedDataSet?$top=1; DataProperties?$top=10; Eigendom?$top=3; RegioS?$top=5; Perioden?$top=1; TypedDataSet?$filter=Perioden%20eq%20%272026VJ06%27&amp;$top=1; Perioden?$filter=Key%20eq%20%272026VJ06%27&amp;$top=1; TypedDataSet?$filter=Perioden%20eq%20%272026VJ06%27%20and%20Eigendom%20eq%20%27A028868%27%20and%20RegioS%20eq%20%27NL01%20%20%27&amp;$top=1. The reviewed source-specific script uses these exact literal URLs; no user-selectable host, path, table, period, tenure, region, dynamic query, OData feed, pagination, credentials, redirects, retries, private coordinates, bulk snapshot, schedule or automatic PR network execution. Each direct response &lt;=16384 original bytes and original shape/units/status/revision fail-closed.
 
 ## Response contract
 
@@ -86,9 +86,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** CBS official StatLine OData standard API is available for automated processing and capped at 10000 cells/request; the nine tiny source observations comply in size. Direct repository automated requests are DISABLED until an exact source-specific runner has been reviewed. No background polling, bulk crawl, data feed, retry, redirect or caller-selected table/region supported.
+**Rate limit notes:** CBS standard StatLine OData programmatic use limited to 10000 cells/request. Only nine fixed &lt;=10-row original public requests with max 16384 bytes each, manually opt-in exactly once via --live. No cron, no PR CI network, no retries or crawling, no live requests without signed source-specific agreement.
 
-**Mutability notes:** Exact CBS publication Modified 2026-08-20T02:00:00; latest 2026VJ06 12-month rolling period explicitly provisional, 2012VJ12 definitive. Future later revision/new rolling period may change the numeric values. Direct trusted runner must pin exact original SHA and byte scope, 200 status, no redirect, table version, region keys with TWO TRAILING SPACES, tenure and crosswalk, 50000 EUR threshold, VAT exclusion, 12-month window. No extrapolated historical values admitted.
+**Mutability notes:** CBS publisher Modified 2026-08-20T02:00:00 is pinned for this nine-query source adapter; if publication revision or any first/current numeric observation, two trailing spaces in native NL01 key, source schema or finality changes, abort and review new vintage rather than silently updating. Strict direct fetch must report HTTP 200, original final exact URL, application/json identity and full per-response byte counts and SHA256; no response bodies persisted. No full 2012-2026 table or actual insurer replacement costs.
 
 ## Rights and policy
 
@@ -106,17 +106,22 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ## Probe contract
 
-**Mode:** none
+**Mode:** provider_specific
 
-**Operation:** `null`
+**Operation:** nine_fixed_83673ned_odata_rows
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-_Empty array._
+- Exactly nine official direct CBS table 83673NED GETs using frozen paths/queries, anonymous direct HTTPS 200 without redirects, application/json with identity encoding, &lt;=16 KiB each
+- Exact official Modified 2026-08-20 publisher table, eight source properties mapping native _2 to EUR per m3 and _3 to EUR per m2
+- Official rental/owned and national/four-regions codebooks, with two trailing spaces in native NL01 source key
+- Separate final 2012VJ12 and provisional 2026VJ06 period status; three source-native historical/current rental/owner country rows
+- Nine full original response body byte lengths and SHA256 hashes with UTC, retained as safe typed summary only; no provider original bytes written
+- CC BY 4.0 product rights, &lt;=10000 CBS cells/request, rolling 12month pure permitted new housing, &gt;=50000 EUR threshold, no model input admission
 
-**Implementation decision:** document_only
+**Implementation decision:** build_adapter_now
 
 **Reviewed at:** 2026-11-13
 
@@ -127,4 +132,4 @@ _Empty array._
 - <https://www.cbs.nl/en-gb/our-services/open-data/statline-as-open-data>
 - <https://opendata.cbs.nl/ODataApi/OData/83673NED>
 
-**Notes:** Nine original small source-body observations via external read-only intermediary, not strict Github runner; private research Neon sample IDs \#85-93, API receipts \#32-40, seven product-scoped legal/use-case decisions. No original provider data bytes stored, no model input approval, no new live workflow. The exact CBS source URL and suffix-to-unit crosswalk are protected by offline synthetic tests.
+**Notes:** Nine bounded original source-body readings via read-only web intermediary on 2026-11-13, documented as private research Neon samples \#85–93 and API receipts \#32–40. Trust boundary of original intermediary return is NOT the strict GitHub direct provider runner. Added one provider-specific --live opt-in script with nine exact immutable requests and offline regressions; does not dispatch automatically from PR CI or join existing reviewed_18 allowlist; no actual direct runner execution has yet been attested. No source bytes/TIV/insurance portfolio/model approval.
