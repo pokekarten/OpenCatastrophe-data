@@ -146,7 +146,8 @@ def build_frozen_1024_cells():
     from shapely.ops import unary_union
     parent,_=frozen_roi_geometries()
     s,v=PRODUCTS["surface"],PRODUCTS["volume"]
-    if (s["origin"]!=v["origin"] or s["scale"]!=v["scale"]
+    if (max(abs(s["origin"][i]-v["origin"][i]) for i in (0,1))>1e-8
+        or max(abs(s["scale"][i]-v["scale"][i]) for i in (0,1))>1e-10
         or WINDOW_SIDE!=32):
         raise CellwiseBlocked("BUILT-S/V original native geographic grids diverged")
     lon0,lat0=s["origin"]
@@ -181,82 +182,103 @@ def build_frozen_1024_cells():
     return parent,tuple(cells)
 
 
-def compute_1024_cell_statistics(original_union, source_receipt:dict,
-                                  source_surface:tuple[int,...],
-                                  source_volume:tuple[int,...]):
-    """Only source-limited global aggregates; no original cell values emitted."""
+def area_by_paired_native_cells(original_union, cells,
+                                source_surface, source_volume):
+    """Pure synthetic-testable overlay; no original source or external I/O.
+
+    The caller independently proves pinned sources, window identity and
+    whole-source SHA/CRC before any result can become a research receipt.
+    """
     from shapely.strtree import STRtree
-    if (not isinstance(source_receipt,dict)
-        or source_receipt.get("roi_original_polygon_records_intersecting")!=417565
-        or abs(source_receipt.get("roi_original_polygon_areas_union_m2",0)-56791644.17)>0.005
-        or source_receipt.get("model_input_approved") is not False
-        or len(source_surface)!=CELL_COUNT or len(source_volume)!=CELL_COUNT
-        or not getattr(original_union,"is_valid",False)):
-        raise CellwiseBlocked("original BVV source union or GHSL 1024-cell prerequisite missing")
-    for key,values in (("surface",source_surface),("volume",source_volume)):
-        rule=ORIGINAL_GHSL[key]
-        if (any(type(v) is not int or v<0 or v>=0xffffffff for v in values)
-            or sum(values)!=rule["sum"]
-            or sum(v>0 for v in values)!=rule["positive"]
-            or sum(v==0 for v in values)!=rule["zero"]):
-            raise CellwiseBlocked("original native JRC cell data does not match frozen source counts")
-    roi,cells=build_frozen_1024_cells()
-    if abs(original_union.difference(roi).area)>0.1:
-        raise CellwiseBlocked("original cadastral union outside original frozen GHSL source ROI")
-    geo_parts=tuple(original_union.geoms) if original_union.geom_type=="MultiPolygon" else (original_union,)
-    if not geo_parts or len(geo_parts)>500000:
-        raise CellwiseBlocked("unreviewed original cadastral GEOS geometry component count")
-    tree=STRtree(geo_parts)
-    area_by_cell=[]
-    digest=hashlib.sha256()
-    # Source GeoTIFF scanline ordering: north -> south, west -> east.
-    for i,cell in enumerate(cells):
-        matches=tree.query(cell,predicate="intersects")
-        area=math.fsum(geo_parts[int(k)].intersection(cell).area for k in matches)
+    if (not getattr(original_union, "is_valid", False)
+        or len(cells)!=CELL_COUNT or len(source_surface)!=CELL_COUNT
+        or len(source_volume)!=CELL_COUNT):
+        raise CellwiseBlocked("invalid original spatial overlay object or 1,024 values")
+    components=tuple(original_union.geoms) if original_union.geom_type=="MultiPolygon" else (original_union,)
+    if not components or len(components)>500000:
+        raise CellwiseBlocked("unreviewed original cadastral GEOS component count")
+    index=STRtree(components)
+    areas=[]
+    sha=hashlib.sha256()
+    for k,cell in enumerate(cells):
+        if not cell.is_valid:
+            raise CellwiseBlocked("native projected grid cell invalid")
+        candidates=index.query(cell,predicate="intersects")
+        area=math.fsum(components[int(i)].intersection(cell).area for i in candidates)
         if not math.isfinite(area) or area<0 or area>cell.area+0.1:
-            raise CellwiseBlocked("original cadastral cell clipped area invalid")
-        area_by_cell.append(area)
-        # Pin *all* 1,024 original values without logging/persisting them.
-        # Little-endian tuple: BUILT-S m² UINT32, BUILT-V m³ UINT32,
-        # official recent footprint area * 1000 as uint64.
-        digest.update(struct.pack("<IIQ",source_surface[i],source_volume[i],
-                                  int(round(area*1000))))
-    total_area=math.fsum(area_by_cell)
-    if abs(total_area-original_union.area)>BVV_AREA_TOLERANCE_M2:
-        raise CellwiseBlocked("original official polygon union not conserved across 1,024 projected cells")
-    if abs(total_area-source_receipt["roi_original_polygon_areas_union_m2"])>BVV_AREA_TOLERANCE_M2:
-        raise CellwiseBlocked("official original full-source ROI aggregate differs from cell overlay")
-    both=sum(a>0 and v>0.000001 for a,v in zip(source_surface,area_by_cell))
-    ghsl_only=sum(a>0 and v<=0.000001 for a,v in zip(source_surface,area_by_cell))
-    bvv_only=sum(a==0 and v>0.000001 for a,v in zip(source_surface,area_by_cell))
+            raise CellwiseBlocked("cadastre Polygon clip area nonfinite or exceeds native grid cell")
+        areas.append(area)
+        if (type(source_surface[k]) is not int or type(source_volume[k]) is not int
+            or not 0<=source_surface[k]<0xffffffff
+            or not 0<=source_volume[k]<0xffffffff):
+            raise CellwiseBlocked("source native UINT32 cell value malformed")
+        sha.update(struct.pack("<IIQ",source_surface[k],source_volume[k],
+                               int(round(area*1000))))
+    both=sum(a>0 and v>0.000001 for a,v in zip(source_surface,areas))
+    ghsl_only=sum(a>0 and v<=0.000001 for a,v in zip(source_surface,areas))
+    bvv_only=sum(a==0 and v>0.000001 for a,v in zip(source_surface,areas))
     neither=CELL_COUNT-both-ghsl_only-bvv_only
-    if min(both,ghsl_only,bvv_only,neither)<0 or both+ghsl_only!=937:
-        raise CellwiseBlocked("original native cell support cross-tabulation drift")
+    if min(both,ghsl_only,bvv_only,neither)<0:
+        raise CellwiseBlocked("source native cell-support partition invalid")
     xs=tuple(float(x) for x in source_surface)
-    ys=tuple(float(y) for y in area_by_cell)
+    ys=tuple(float(y) for y in areas)
     mx=math.fsum(xs)/CELL_COUNT
     my=math.fsum(ys)/CELL_COUNT
-    sx=math.fsum((x-mx)**2 for x in xs)
-    sy=math.fsum((y-my)**2 for y in ys)
-    if sx<=0 or sy<=0:
-        raise CellwiseBlocked("original source 1024-cell variances cannot be zero")
-    corr=math.fsum((x-mx)*(y-my) for x,y in zip(xs,ys))/math.sqrt(sx*sy)
+    var_x=math.fsum((x-mx)**2 for x in xs)
+    var_y=math.fsum((y-my)**2 for y in ys)
+    if var_x<=0 or var_y<=0:
+        raise CellwiseBlocked("original cell source variances cannot be zero")
+    corr=math.fsum((x-mx)*(y-my) for x,y in zip(xs,ys))/math.sqrt(var_x*var_y)
     if not -1.000001<=corr<=1.000001:
-        raise CellwiseBlocked("original cross-epoch association math invalid")
+        raise CellwiseBlocked("cross-epoch cell association mathematics invalid")
     return {
-        "profile":"oc-ghsl-bvv-original-1024-cell-paired-cross-epoch-research-v0",
         "paired_native_original_cells":CELL_COUNT,
-        "paired_native_cell_tuple_sha256":digest.hexdigest(),
+        "paired_native_cell_tuple_sha256":sha.hexdigest(),
         "paired_sha256_binary_format":"row_major_le_uint32_surface_m2_uint32_volume_m3_uint64_bvv_area_m2_x1000",
-        "paired_ghsl_s_surface_cells_positive":937,
-        "paired_ghsl_s_surface_cells_zero":87,
+        "paired_ghsl_s_surface_cells_positive":both+ghsl_only,
+        "paired_ghsl_s_surface_cells_zero":bvv_only+neither,
         "paired_bvv_footprint_positive_cells":both+bvv_only,
         "paired_both_source_footprint_cells_positive":both,
         "paired_ghsl_positive_bvv_zero_cells":ghsl_only,
         "paired_ghsl_zero_bvv_positive_cells":bvv_only,
         "paired_both_zero_cells":neither,
         "paired_cellwise_exploratory_pearson_r":round(corr,6),
-        "paired_official_current_footprint_cell_areas_sum_m2":round(total_area,3),
+        "paired_official_current_footprint_cell_areas_sum_m2":round(math.fsum(areas),3),
+        "paired_native_cell_values_or_original_geometries_persisted":False,
+        "model_input_approved":False,
+    }
+
+
+def compute_1024_cell_statistics(original_union, source_receipt:dict,
+                                  source_surface:tuple[int,...],
+                                  source_volume:tuple[int,...]):
+    """Only source-limited global aggregates; no original cell values emitted."""
+    if (not isinstance(source_receipt,dict)
+        or source_receipt.get("roi_original_polygon_records_intersecting")!=417565
+        or abs(source_receipt.get("roi_original_polygon_areas_union_m2",0)-56791644.17)>0.005
+        or source_receipt.get("model_input_approved") is not False):
+        raise CellwiseBlocked("original BVV completed whole-source aggregate gate failed")
+    for product,values in (("surface",source_surface),("volume",source_volume)):
+        rule=ORIGINAL_GHSL[product]
+        if (len(values)!=CELL_COUNT or
+            any(type(v) is not int or not 0<=v<0xffffffff for v in values)
+            or sum(values)!=rule["sum"]
+            or sum(v>0 for v in values)!=rule["positive"]
+            or sum(v==0 for v in values)!=rule["zero"]):
+            raise CellwiseBlocked("reviewed source-native 1,024-cell JRC values changed")
+    roi,cells=build_frozen_1024_cells()
+    if not original_union.is_valid or original_union.difference(roi).area>0.1:
+        raise CellwiseBlocked("original official Polygon union leaves reviewed GHSL support")
+    paired=area_by_paired_native_cells(original_union,cells,source_surface,source_volume)
+    total_area=paired["paired_official_current_footprint_cell_areas_sum_m2"]
+    if (abs(total_area-original_union.area)>BVV_AREA_TOLERANCE_M2 or
+        abs(total_area-source_receipt["roi_original_polygon_areas_union_m2"])>BVV_AREA_TOLERANCE_M2):
+        raise CellwiseBlocked("exact original Polygon union area not conserved across native cells")
+    if paired["paired_ghsl_s_surface_cells_positive"]!=937:
+        raise CellwiseBlocked("original GHSL surface-positive cell count drift")
+    return {
+        "profile":"oc-ghsl-bvv-original-1024-cell-paired-cross-epoch-research-v0",
+        **paired,
         "paired_official_current_area_conservation_tolerance_m2":BVV_AREA_TOLERANCE_M2,
         "paired_ghsl_e2020_original_built_surface_total_m2":sum(source_surface),
         "paired_ghsl_e2020_original_built_volume_total_m3_context_only":sum(source_volume),
