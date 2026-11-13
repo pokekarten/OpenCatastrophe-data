@@ -178,3 +178,34 @@ The offline complete ZIP validator now independently reads the **last 22 bytes**
 All these values were already independently observed in original provider byte-range sample #60. No new original provider request or archive download was performed to obtain them. New **synthetic-only** tests exercise successful exact EOCD, altered declared central directory offset, ZIP comment and hidden trailer with the CSV unchanged. A matching EOCD is **not** an independently signed checksum of source data and cannot establish V3 CSV-to-TIFF population parity.
 
 CI evidence for the new EOCD commits must be checked separately; previously passing CI predates this added gate.
+
+
+### Offline HTTP acquisition-receipt consistency (not provider-authentication or rights clearance)
+
+Before processing a separately approved **complete** V3 archive, require a fixed schema receipt from the **actual authorized downloader** and verify its consistency against the ZIP already saved privately. New fully offline script [`research_runners/eurostat_census_v3_offline_http_receipt_v0.py`](../../research_runners/eurostat_census_v3_offline_http_receipt_v0.py) requires two **local** inputs and has **no network access**:
+
+```bash
+python -m unittest tests.test_eurostat_census_v3_offline_http_receipt_v0 -v
+python -m research_runners.eurostat_census_v3_offline_http_receipt_v0 \
+  --receipt-json /private/audit/reviewed-provider-full-get.json \
+  --preapproved-v3-zip /private/reviewed-original/Eurostat_Census-GRID_2021_V3.zip
+```
+
+The receipt must be **one small (2–4096 B) UTF-8 JSON object**, with the exact keys below and strict JSON duplicate-key rejection:
+
+| Exact key | Expected provenance rule |
+| --- | --- |
+| `schema` | `eurostat-gisco-census-2021-v3-offline-http-receipt-v0` |
+| `source_url`, `requested_url`, `final_url` | All equal the exact official [2021 V3 archive URL](https://gisco-services.ec.europa.eu/census/2021/Eurostat_Census-GRID_2021_V3.zip); no other domain, older release, mirror, query string or redirect |
+| `http_method`, `http_status`, `redirect_count` | `GET`, integer `200`, integer `0` |
+| `content_encoding`, `content_type` | `identity`, `application/zip` / `application/octet-stream` / `application/x-zip-compressed` |
+| `content_length_bytes`, `saved_bytes` | Both exact **566,125,577** integer bytes, matching the actual local file |
+| `local_file_sha256` | SHA-256 of locally saved **whole ZIP**, independently recomputed in 1-MiB bounded I/O chunks |
+| `retrieved_at_utc` | RFC3339 canonical UTC seconds `YYYY-MM-DDTHH:MM:SSZ`, not in the future and not before V3 publication on **30 May 2026** |
+| `source_access_review_reference` | Non-empty stable manual, source-specific legal and operational review reference; the string itself is **not proof** that such approval is valid |
+
+The script outputs only receipt/digest integrity flags, no original provider body, download credential or insured source data. A syntactically consistent receipt, even with a matching complete ZIP SHA, is **not a digitally signed provider attestation** and **does not itself validate the stated source legal permission**. An authorized downloader, separate approval record, original response headers, HTTPS/final-URL evidence and preferably an independently published original-provider checksum must be reviewed **outside** this script before labeling the file original/legally automatable. The transport consistency gate, original ZIP nine-member/EOCD structural gate, original V3 14-band CSV↔TIFF numeric gate, and commercial CAT-model admission remain independent.
+
+[Synthetic-only tests](../../tests/test_eurostat_census_v3_offline_http_receipt_v0.py) reject wrong exact source URL or release, redirects, HTTP 206/HEAD, gzip transformation, altered saved/expected byte count or SHA, non-ZIP content types, extra/missing/duplicate JSON keys, invalid/future/pre-release dates, and missing approval references. No real original ZIP or provider receipt was obtained by adding these tests.
+
+**Provider-service distinction, official evidence:** The [GISCO distribution v2 interface](https://gisco-services.ec.europa.eu/distribution/v2/) does expressly document scripted HTTP GETs, but it explicitly lists geographic **reference data themes** (coastlines, communes, countries, LAU, NUTS, postal codes, urban audit), **not** this separate [Census Grid V3 original static ZIP](https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution/population-grids). That generic distribution statement must **not** silently change the source-specific `access/eurostat.gisco.census-population-grid.2021.json` from `documented_only` to `allowed`. The dataset's distinct [CC BY 4.0 data licence](https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution) remains verified; the exact static ZIP service's commercial automation/rate/request approval remains **unknown**.
