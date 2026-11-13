@@ -157,3 +157,24 @@ The original bounded ZIP central-directory receipt in **private Neon #60** recor
 | read.me | 566,121,942 | 2,390 | 5,428 | `8653c53b` |
 
 This **directory-only** integrity check is O(nine entries) and does **not** inflate or independently recheck all non-CSV members. Those CRCs are frozen expected metadata, not proofs of those members' complete compressed data integrity. The full-archive SHA is still computed from a separately acquired local source ZIP, not independently supplied/signed by Eurostat. A new synthetic regression deliberately modifies an auxiliary README while preserving the original synthetic CSV bytes; **directory identity must fail**. The original source remains `documented_only` for automated acquisition, and the actual V3 numeric CSV ↔ TIFF match has **not** been performed.
+
+
+### Original ZIP End Of Central Directory (EOCD) pinned, no hidden trailer
+
+Independent primary original-source **Neon sample #60**, a hashed 32,768-byte tail of the original Eurostat V3 566,125,577-byte ZIP, recorded its real ZIP End Of Central Directory:
+
+| Source property | Frozen original value |
+| --- | ---: |
+| Original ZIP total length | **566,125,577 bytes** |
+| Original central directory offset | **566,124,446** |
+| Central directory byte length | **1,109** |
+| ZIP end-of-central-directory record | **22 bytes** |
+| Number of ZIP members | **9** |
+| Disk count and ZIP comment | Single disk, zero comment bytes |
+| EOCD accounting | `566124446 + 1109 + 22 == 566125577` |
+
+The offline complete ZIP validator now independently reads the **last 22 bytes** of any separately reviewed local V3 archive and checks classic EOCD signature, no ZIP64/segmented-volumes, zero comment, exactly nine entries, and **the exact original central-directory offset and length**, then cross-checks against the entire original nine-member CRC/offset/size identity table. This prevents a nominally 566 MB local archive with an arbitrary trailing comment, hidden appended payload, moved directory or changed total entry count from passing simply because Python `zipfile` can read it.
+
+All these values were already independently observed in original provider byte-range sample #60. No new original provider request or archive download was performed to obtain them. New **synthetic-only** tests exercise successful exact EOCD, altered declared central directory offset, ZIP comment and hidden trailer with the CSV unchanged. A matching EOCD is **not** an independently signed checksum of source data and cannot establish V3 CSV-to-TIFF population parity.
+
+CI evidence for the new EOCD commits must be checked separately; previously passing CI predates this added gate.
