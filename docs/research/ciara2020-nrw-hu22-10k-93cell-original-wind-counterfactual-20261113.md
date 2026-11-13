@@ -40,7 +40,34 @@ Live authentic 96-hour Google ERA5 source and counterfactual overlay:
     python -m pip install -r requirements-google-arco-2020-original-smoke.txt
     python research_runners/ciara2020_nrw_hu22_10k_google_arco_wind_counterfactual_v0.py --live-google
 
-A temporary branch-scoped GitHub CI job checks the full original Google 96h SHA plus the 93 source-cell aggregate SHA and runs 8 adversarial offline source/wind tests. Do not merge until both source job and all normal Python 3.11–3.14, Required, REUSE and dependency checks succeed.
+A temporary branch-scoped GitHub CI job checks the full original Google 96h SHA plus the 93 source-cell aggregate SHA and runs 9 adversarial offline source/wind tests. Do not merge until both source job and all normal Python 3.11–3.14, Required, REUSE and dependency checks succeed.
+
+## Actual first original 2020 wind × 2022 public 10k source-grid result
+
+The first independent original live wind join **succeeded** in
+[GitHub run 43489088388](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43489088388),
+source job **132105176207**. All 10,000 public 2022 building
+candidates and EUR 4,826,029,500 **fictional** original-derived TIV
+were conserved across the original 93 occupied grid cells.
+
+The candidate-weighted **2020 peak hourly gust** was
+**31.673449949645995 m/s**, and the fictional-TIV-weighted peak
+was **31.67299538469392 m/s**. The 93 occupied 0.25-degree
+source-cell maxima range **30.28105926513672 to
+34.43796157836914 m/s**. At 25/30m/s thresholds, **10,000**
+2022 public candidates and EUR 4.826bn **fictional** TIV were
+in cells where historical 2020 reanalysis gust peaks exceeded
+those thresholds; at 35/40m/s none were. Although only
+157 of the original 160 Google ERA5 grid cells had peaks >=30m/s,
+all 93 *building-candidate occupied* grid cells met 30m/s.
+**This is a weather counterfactual, not a damage estimate.**
+
+The immutable actual first-live outcome is frozen at
+research/observations/ciara2020_nrw_hu22_10k_public_2022_2020_gust_counterfactual_receipt_v0.toml.
+The live runner now rejects future wind overlays differing from
+that logged result in source SHA, population, weighted peaks or
+threshold statistics. No caller can pass a source SHA string
+plus substituted peak values without triggering a no-go.
 
 **Rights:** retain original NRW HU public building source/attribution conditions; public Google ARCO reanalysis data is governed by **Copernicus Licence** with acknowledgement to **Copernicus Climate Change Service (C3S) and Google Research**. The Google research code licence is not a reinsurance data licence.
 
