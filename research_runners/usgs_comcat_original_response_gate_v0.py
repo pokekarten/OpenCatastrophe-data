@@ -42,7 +42,13 @@ def _reject_nonfinite(value):
 
 
 def _finite_number(value):
-    return type(value) in (int, float) and math.isfinite(value)
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value)
+    except (OverflowError, ValueError):
+        # Very large JSON integers must fail closed, not crash the verifier.
+        return False
 
 
 def verify_original_response(
