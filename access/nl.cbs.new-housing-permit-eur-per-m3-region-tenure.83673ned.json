@@ -22,9 +22,7 @@
   },
   "request_contract": {
     "allowed_operations": [
-      "original_metadata_small_rows",
-      "first_2012_permit_cost_row",
-      "rolling_2026_june_rental_owner_exact_rows"
+      "nine_fixed_83673ned_odata_rows"
     ],
     "path_templates": [
       "/ODataApi/OData/83673NED/TableInfos",
