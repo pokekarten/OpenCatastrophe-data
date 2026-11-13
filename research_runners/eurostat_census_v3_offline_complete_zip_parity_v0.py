@@ -52,6 +52,29 @@ ZIP_NAMES = (
 )
 HASH_CHUNK = 1_048_576
 
+# Immutable original ZIP directory (header offset, compressed bytes, raw bytes,
+# CRC32, method) independently observed from source ZIP metadata in private
+# research Neon sample #60. Metadata only; no source asset bytes are in Git.
+V3_ZIP_MEMBER_IDENTITIES = {
+    "Eurostat_Census-GRID_2021_V3/": (0, 0, 0, 0x00000000, ZIP_STORED),
+    "Eurostat_Census-GRID_2021_V3/ESTAT_Census_2021_country.csv.zip":
+        (91, 203_478_177, 257_389_035, 0x84EE38B8, ZIP_DEFLATED),
+    "Eurostat_Census-GRID_2021_V3/ESTAT_Census_2021_LAND_SURFACE_V3.tiff":
+        (203_478_408, 5_751_483, 5_977_689, 0xB8D826F9, ZIP_DEFLATED),
+    CSV_MEMBER: (209_230_036, 49_110_575, 339_625_996, 0x54CDC404, ZIP_DEFLATED),
+    "Eurostat_Census-GRID_2021_V3/ESTAT_Census_2021_V3.gpkg":
+        (258_340_742, 221_469_461, 1_302_953_984, 0xFE282818, ZIP_DEFLATED),
+    "Eurostat_Census-GRID_2021_V3/ESTAT_Census_2021_V3.parquet":
+        (479_810_335, 55_211_012, 76_307_745, 0x205A238F, ZIP_DEFLATED),
+    "Eurostat_Census-GRID_2021_V3/ESTAT_Census_2021_V3.tiff":
+        (535_021_482, 30_762_675, 32_327_795, 0x1F5A582F, ZIP_DEFLATED),
+    "Eurostat_Census-GRID_2021_V3/ESTAT_Census_2021_V3_SDMX_Metadata.zip":
+        (565_784_289, 337_508, 343_891, 0x682BC27F, ZIP_DEFLATED),
+    "Eurostat_Census-GRID_2021_V3/read.me":
+        (566_121_942, 2_390, 5_428, 0x8653C53B, ZIP_DEFLATED),
+}
+
+
 
 def _require(value: bool, reason: str) -> None:
     if not value:
@@ -71,6 +94,7 @@ def verify_complete_local_v3_zip(
     *,
     expected_zip_bytes: int = ORIGINAL_ZIP_BYTES,
     expected_member_names: tuple[str, ...] = ZIP_NAMES,
+    expected_member_directory: dict[str, tuple[int, int, int, int, int]] = V3_ZIP_MEMBER_IDENTITIES,
     expected_csv_header_offset: int = ZIP_MEMBER_LOCAL_HEADER_OFFSET,
     expected_csv_compressed_bytes: int = EXPECTED_COMPRESSED_BYTES,
     expected_csv_uncompressed_bytes: int = EXPECTED_UNCOMPRESSED_BYTES,
@@ -95,6 +119,11 @@ def verify_complete_local_v3_zip(
              and len(set(expected_member_names)) == len(expected_member_names),
              "invalid original ZIP central-directory member contract")
 
+    _require(isinstance(expected_member_directory, dict)
+             and len(expected_member_directory) == len(expected_member_names)
+             and set(expected_member_directory) == set(expected_member_names),
+             "ZIP directory reference must match the complete source member list")
+
     archive_sha = _digest_file(local_zip)
     try:
         with ZipFile(local_zip, "r") as archive:
@@ -114,6 +143,10 @@ def verify_complete_local_v3_zip(
                          and "\\" not in item.filename
                          and ".." not in item.filename.split("/"),
                          "unsafe original ZIP path")
+                _require((item.header_offset, item.compress_size,
+                          item.file_size, item.CRC, item.compress_type)
+                         == expected_member_directory[item.filename],
+                         "original ZIP central-directory per-member metadata changed")
             member = archive.getinfo(CSV_MEMBER)
             _require(not member.is_dir() and member.compress_type == ZIP_DEFLATED,
                      "V3 CSV is not the exact raw ZIP DEFLATE member")
