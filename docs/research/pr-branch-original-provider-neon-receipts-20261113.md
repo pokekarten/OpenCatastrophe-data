@@ -63,6 +63,80 @@ Older smoke receipts or PR workflow job GREEN labels, by themselves, must
 not be treated as original provider response evidence: the actual source
 job step and nonempty original SHA were verified separately.
 
+## Actual Neon evidence advancement, verified on 2026-11-13
+
+The public-source proof gap has been **partially closed immediately without a
+schema migration**. As separately authorized source-research inserts, the
+existing private research Neon tables now contain:
+
+- **Source sample #124**: NOAA SWPC 2026 rolling RTSW **metadata only**,
+  pinned original response SHA, 1,719,377-byte response length, exact public
+  GitHub run 43489514680 and source commit. No spacecraft readings.
+- **Source sample #125**: DWD corrected 2021 RADKLIM RW archive **metadata
+  only**, exact 2,048-byte HTTP206 original compressed range, header proof,
+  run 43488656039 and unchanged original prefix digest. No rainfall arrays.
+- **Source sample #126**: GFZ definitive 2024-01-01 Kp **metadata only**,
+  original 361-byte HTTP200 response checksum, run 43491158483, eight-record
+  definitive day shape. Existing private original **observed-values sample #1**
+  remains distinct and was not overwritten.
+
+All three new metadata samples have **canonical SHA-256 of PostgreSQL JSONB
+text verified on the live database**, a matching independently recorded
+original provider response SHA-256, `research_only=true`,
+`source_byte_persistence_authorized=false` and
+`model_input_approved=false`.
+
+**14 exact product/use-case rights rows** were also inserted into the
+existing `research.source_usage_rights_v0` table: seven for GFZ definitive
+Kp, seven for NOAA SWPC rolling RTSW. The publisher originals are
+[GFZ CC BY 4.0](https://kp.gfz.de/en/about-kp) and
+[NOAA/NWS public-domain, third-party content and appropriate-use disclaimer](https://www.weather.gov/disclaimer).
+In particular, NOAA raw third-party spacecraft reuse and unbounded
+automated polling remain **unknown or conditional**, not approved; GFZ API
+bulk/recurring automation remains **unknown** separately from CC BY rights.
+Neither rights nor samples authorize CAT model use.
+
+At this live-audit snapshot: **126 samples / 43 source IDs**, **191
+product-specific rights rows / 24 source IDs**, **45 older smoke API
+observations**, two trusted-main original source Range receipts and two
+trusted-main metadata receipts.
+
+### Executed now: no-migration read-only fallback reconciliation
+
+The executable `research_runners/sql/insurance_source_pr_branch_live_metadata_readonly_v1.sql`
+is a single read-only SQL SELECT **actually executed against Neon main**.
+It joins existing metadata-only source proof samples #124/#125/#126 to
+source/use-case rights, canonical source inventory, prior strict-main Range
+and metadata registers. It returned **exactly three rows**:
+
+- DWD sample #125, **7** rights/use-case rows
+- GFZ sample #126, **7** rights/use-case rows
+- NOAA sample #124, **7** rights/use-case rows
+
+**All three rows** independently returned true for live PostgreSQL JSONB
+canonical SHA check, frozen original provider SHA match, exact GitHub run ID
+and public run URL, metadata rights and source inventory ID presence,
+while returning `metadata_only_no_admission=true`,
+`separately_trusted_main_range_exists=false`,
+`separately_trusted_main_metadata_exists=false`,
+`grants_cat_scientific_admission=false`, and raw redistribution not
+unconditionally allowed. This is an **immediate usable source proof join**,
+not a backdoor to source or trust admission.
+
+### Postgres DDL rehearsal blocked by Neon branch quota
+
+The planned strictly isolated Neon rehearsal branch could **not be created**
+because the Neon API replied **HTTP 422: branches limit exceeded**.
+We did **not** overwrite one of the user's existing research branches,
+delete any branch, weaken main-only trust checks or apply the new schema
+to the default branch. The future PR-branch-specific receipt table
+schema/seed remains a reviewed **proposal** with successful hosted Python
+static/offline regression, **not yet a PostgreSQL-executed migration**.
+
+The two paths are complementary: use the no-migration SELECT now, then
+reviewed source-specific proof table + seed only after a free Neon test
+branch is available and a database owner authorizes the migration.
+
 ## Proposed additive database artefacts (not applied)
 
 - research_runners/sql/insurance_source_strict_pr_branch_receipt_v1_schema.sql
