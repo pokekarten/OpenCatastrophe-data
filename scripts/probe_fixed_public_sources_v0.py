@@ -147,7 +147,6 @@ def _inspect_noaa_swpc_rtsw_mag(payload: object) -> dict:
         raise ProbeBlocked("NOAA RTSW response must be a bounded list of records")
     magnetic_fields = ("bx_gsm", "by_gsm", "bz_gsm", "bt")
     found_magnetic_value = False
-    source_names = set()
     for record in payload:
         if not isinstance(record, dict):
             raise ProbeBlocked("NOAA RTSW record is not an object")
@@ -163,13 +162,12 @@ def _inspect_noaa_swpc_rtsw_mag(payload: object) -> dict:
         if not isinstance(raw_time, str) or not 19 <= len(raw_time) <= 32:
             raise ProbeBlocked("NOAA RTSW timestamp shape missing")
         import re
-        if not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z?", raw_time):
+        if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]{1,6})?Z?", raw_time):
             raise ProbeBlocked("NOAA RTSW timestamp shape invalid")
         try:
             datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
         except ValueError as exc:
             raise ProbeBlocked("NOAA RTSW calendar timestamp invalid") from exc
-        source_names.add(source_name)
         for key in magnetic_fields:
             value = record[key]
             if value is None:
