@@ -55,6 +55,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Run exactly one approved provider request and report safe receipt only
-        run: >-
-          python -m scripts.probe_pdok_brp_2025_collection_v0 --live >>
-          "$GITHUB_STEP_SUMMARY"
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Original source bytes NEVER enter the log: the runner prints
+          # only source ID, digest/byte count, structural booleans and UTC.
+          python -m scripts.probe_pdok_brp_2025_collection_v0 --live | tee -a "$GITHUB_STEP_SUMMARY"
