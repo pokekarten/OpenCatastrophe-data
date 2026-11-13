@@ -51,6 +51,13 @@ ZIP_NAMES = (
     "Eurostat_Census-GRID_2021_V3/read.me",
 )
 HASH_CHUNK = 1_048_576
+# Exact original ZIP End Of Central Directory (EOCD), independently decoded
+# from original-provider bounded suffix in private Neon evidence sample #60.
+V3_CENTRAL_DIRECTORY_OFFSET = 566_124_446
+V3_CENTRAL_DIRECTORY_SIZE = 1_109
+EOCD_BYTES = 22
+EOCD_SIGNATURE = 0x06054B50
+
 
 # Immutable original ZIP directory (header offset, compressed bytes, raw bytes,
 # CRC32, method) independently observed from source ZIP metadata in private
@@ -95,6 +102,8 @@ def verify_complete_local_v3_zip(
     expected_zip_bytes: int = ORIGINAL_ZIP_BYTES,
     expected_member_names: tuple[str, ...] = ZIP_NAMES,
     expected_member_directory: dict[str, tuple[int, int, int, int, int]] = V3_ZIP_MEMBER_IDENTITIES,
+    expected_central_directory_offset: int = V3_CENTRAL_DIRECTORY_OFFSET,
+    expected_central_directory_size: int = V3_CENTRAL_DIRECTORY_SIZE,
     expected_csv_header_offset: int = ZIP_MEMBER_LOCAL_HEADER_OFFSET,
     expected_csv_compressed_bytes: int = EXPECTED_COMPRESSED_BYTES,
     expected_csv_uncompressed_bytes: int = EXPECTED_UNCOMPRESSED_BYTES,
@@ -123,6 +132,34 @@ def verify_complete_local_v3_zip(
              and len(expected_member_directory) == len(expected_member_names)
              and set(expected_member_directory) == set(expected_member_names),
              "ZIP directory reference must match the complete source member list")
+
+
+    _require(isinstance(expected_central_directory_offset, int)
+             and isinstance(expected_central_directory_size, int)
+             and 0 <= expected_central_directory_offset < expected_zip_bytes
+             and 0 < expected_central_directory_size < 100_000,
+             "invalid original ZIP central directory reference")
+    _require(expected_central_directory_offset + expected_central_directory_size
+             + EOCD_BYTES == expected_zip_bytes,
+             "ZIP central directory reference does not terminate at original archive EOF")
+    # Only classic single-disk, no-comment/non-ZIP64 V3 source is admitted.
+    # Unlike a generic ZipFile reader, this rejects prepended SFX content,
+    # hidden trailers and archive comment substitution at fixed original size.
+    with local_zip.open("rb") as handle:
+        handle.seek(-EOCD_BYTES, 2)
+        eocd = handle.read(EOCD_BYTES)
+    _require(len(eocd) == EOCD_BYTES, "ZIP EOCD footer truncated")
+    sig, disk, central_disk, entries_on_disk, entries_total, cdir_size, cdir_offset, comment_size = (
+        struct.unpack("<IHHHHIIH", eocd)
+    )
+    _require(sig == EOCD_SIGNATURE and disk == central_disk == 0,
+             "ZIP EOCD is absent, multi-volume or moved")
+    _require(comment_size == 0 and entries_on_disk == entries_total
+             and entries_total == len(expected_member_names),
+             "ZIP EOCD member count or comment changed")
+    _require(cdir_offset == expected_central_directory_offset
+             and cdir_size == expected_central_directory_size,
+             "ZIP EOCD central directory offset or length changed")
 
     archive_sha = _digest_file(local_zip)
     try:
@@ -208,6 +245,9 @@ def verify_complete_local_v3_zip(
         "entire_local_zip_sha256_computed": archive_sha,
         "entire_local_zip_source_bytes": expected_zip_bytes,
         "source_archive_member_count": len(expected_member_names),
+        "eocd_central_directory_offset": expected_central_directory_offset,
+        "eocd_central_directory_bytes": expected_central_directory_size,
+        "eocd_exact_archive_termination_verified": True,
         "local_zip_header_sha256": header["header_sha256"],
         "local_zip_csv_payload_offset": header["absolute_compressed_payload_offset"],
         "provider_origin_independently_authenticated": False,
