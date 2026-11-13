@@ -20,6 +20,7 @@ import json
 from math import asin, cos, isfinite, radians, sin, sqrt
 from pathlib import Path
 import re
+import tomllib
 import sys
 from urllib import error, request
 import zipfile
@@ -305,6 +306,69 @@ def live_dwd_2020_original_three_stations(*, opener=None) -> dict:
     }
 
 
+FROZEN_FIRST_REAL_DWD_SOURCE = (
+    Path(__file__).resolve().parents[1] /
+    "research/observations/ciara2020_dwd_original_fx911_three_stations_receipt_20261113.toml"
+)
+
+
+def verify_first_original_2020_station_receipt_against_live(live: dict) -> None:
+    """Protect genuine DWD archive/peak/QN3 source proof from silent drift."""
+    with FROZEN_FIRST_REAL_DWD_SOURCE.open("rb") as fp:
+        source = tomllib.load(fp)
+    if (source.get("schema") != SCHEMA
+        or source.get("status") != live.get("status")
+        or source.get("first_original_live_github_run_id") != 43499602678
+        or source.get("first_original_live_github_job_id") != 132144371691
+        or source.get("official_source_index") != INDEX
+        or source.get("source_rights_evidence") != DWD_RIGHTS
+        or source.get("original_hourly_parameter") != "FX_911"
+        or source.get("original_units") != "m/s"
+        or live.get("source_variable") != "FX_911"
+        or live.get("units") != "m/s"
+        or source.get("reported_station_count") != MAX_STATIONS
+        or live.get("station_count") != MAX_STATIONS
+        or source.get("reported_all_stations_96_original_hours") is not True
+        or source.get("station_QN8_10_highest_quality_met") is not False
+        or source.get("DWD_reference_timestamps_UTC_harmonization_verified") is not False
+        or source.get("actual_2020_real_RV_insurer_claims_observed") is not False
+        or source.get("German_wind_damage_function_calibrated") is not False
+        or source.get("native_Oasis_NextGen_GUL_IL_RI_OEP_AEP_admitted") is not False
+        or live.get("actual_2020_insurer_losses_or_building_vulnerability_calibrated") is not False
+        or live.get("native_NextGen_Oasis_GUL_IL_RI_OEP_AEP_admitted") is not False
+        or live.get("historic_reference_time_interpretation_verified_as_UTC") is not False):
+        raise OriginalDWDRejected("original DWD 2020 source/global scientific identity drift")
+    expected = source.get("stations", [])
+    actual = live.get("stations", [])
+    if len(expected) != MAX_STATIONS or len(actual) != MAX_STATIONS:
+        raise OriginalDWDRejected("actual DWD 2020 station-set population drift")
+    for pinned, observed in zip(expected, actual):
+        pairs = (
+            ("station_id", "station_id"),
+            ("original_archive_url", "original_DWD_historical_FX_zip_url"),
+            ("original_unmodified_zip_sha256", "provider_original_zip_sha256"),
+            ("current_publisher_latitude", "latitude_as_publisher_lists_today"),
+            ("current_publisher_longitude", "longitude_as_publisher_lists_today"),
+            ("distance_to_51N_7E_km", "distance_to_original_era5_51N_7E_km"),
+            ("published_2020_peak_hour_label", "measured_2020_Ciara_window_peak_hour_as_publisher_reports"),
+            ("observed_2020_96h_peak_gust_mps", "measured_2020_02_08_through_11_max_hourly_gust_mps"),
+            ("valid_2020_hour_count", "original_station_fx911_hourly_valid_count"),
+            ("missing_original_value_count", "original_station_fx911_missing_marker_count"),
+        )
+        if any(pinned.get(left) != observed.get(right) for left, right in pairs):
+            raise OriginalDWDRejected("DWD original 2020 archive/station/quality/wind peak parity drift")
+        if observed.get("DWD_QN8_quality_level_hour_counts") != {
+            "3": pinned.get("source_quality_QN8_3_hour_count")
+        } or observed.get("observed_station_max_gust_hours_full_96h") is not True:
+            raise OriginalDWDRejected("DWD observed 2020 QN8 or all-96h station support drift")
+    rejected = live.get("skipped_original_archives_due_to_insufficient_2020_gust_coverage")
+    if (len(rejected) != source.get("source_archives_rejected_for_insufficient_2020_hours")
+        or live.get("historical_station_archive_candidates_checked") != source.get("source_archives_inspected")
+        or rejected[0].get("original_station_id") != source.get("rejected_station_id")
+        or rejected[0].get("original_station_zip_sha256") != source.get("rejected_original_zip_sha256")):
+        raise OriginalDWDRejected("original DWD first rejected 2020 sparse station archive drift")
+
+
 def dry_run() -> dict:
     return {
         "schema": SCHEMA,
@@ -327,6 +391,8 @@ def main() -> int:
     args = parser.parse_args()
     try:
         result = live_dwd_2020_original_three_stations() if args.live_dwd else dry_run()
+        if args.live_dwd:
+            verify_first_original_2020_station_receipt_against_live(result)
         print(json.dumps(result, indent=2, sort_keys=True, ensure_ascii=True))
         return 0
     except (OriginalDWDRejected, OSError, ValueError) as exc:
