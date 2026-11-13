@@ -3,7 +3,6 @@
 """Entirely synthetic, offline negative controls for original ComCat receipt semantics."""
 from __future__ import annotations
 
-import copy
 import hashlib
 import json
 import unittest
@@ -105,6 +104,12 @@ class OriginalComCatGateTests(unittest.TestCase):
                 point.pop()
             with self.subTest(bad=bad), self.assertRaises(gate.ComCatOriginalBlocked):
                 self.verify(original_bytes(payload))
+
+    def test_extremely_large_integer_is_blocked_without_overflow(self):
+        payload = invented_feature_collection()
+        payload["features"][0]["properties"]["time"] = 10 ** 400
+        with self.assertRaises(gate.ComCatOriginalBlocked):
+            self.verify(original_bytes(payload))
 
     def test_missing_origin_time_and_update(self):
         for field in ("time", "updated"):
