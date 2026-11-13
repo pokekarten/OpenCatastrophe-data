@@ -40,6 +40,8 @@ WITH pinned AS (
       AND s.sample_json->>'official_publisher_revision' = '2026-08-20T02:00:00'
       AND s.sample_json->>'rolling_12_month_period' = '2026VJ06'
       AND s.sample_json->>'publication_status' = 'Voorlopig'
+      AND s.sample_json->'source_native_field_crosswalk'->>'GemiddeldeBouwkostenPerM_2' = 'EUR per m³ (cubic metre), NOT per square metre'
+      AND s.sample_json->'source_native_field_crosswalk'->>'GemiddeldeBouwkostenPerM_3' = 'EUR per m² (square metre), NOT per cubic metre'
       AND s.sample_json->>'raw_original_response_body_persisted' = 'false'
       AND s.sample_json->>'direct_trusted_repository_runner_executed' = 'false'
 ),
