@@ -8,6 +8,7 @@ import importlib.util
 import io
 import struct
 import unittest
+from unittest.mock import patch
 import zlib
 from research_runners import bvv_oberbayern_full_shp_roi_stream_v0 as p
 
@@ -93,6 +94,28 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
         q=self.new_parser(raw,roi=box(649900,5349900,650030,5350030))
         with self.assertRaisesRegex(p.FullSHPBlocked,"clockwise"):
             q.feed(raw)
+
+    @unittest.skipUnless(HAS_GEOMETRY,"optional pinned source job GEOS/PROJ unavailable")
+    def test_hierarchical_union_batches_bound_memory_beyond_first_two_shapes(self):
+        from shapely.geometry import box
+        raw=synthetic_source(count=6)
+        q=p.NativeSHPStream(expected_records=6,expected_bytes=len(raw),
+                            expected_header_sha=None,
+                            roi=box(649900,5349900,650030,5350030))
+        # Force tiny 2-shape batches to exercise multiple binary-carry
+        # merge levels using solely synthetic repeated overlapping shapes.
+        with patch.object(p,"MAX_PENDING_ROI_FEATURES",2):
+            for i in range(0,len(raw),37):
+                q.feed(raw[i:i+37])
+            self.assertLessEqual(len(q.roi_clipped_geometries),1)
+            result=q.finish()
+        self.assertEqual(result["roi_original_polygon_records_intersecting"],6)
+        self.assertEqual(result["roi_original_polygon_areas_sum_pre_union_m2"],1200.)
+        self.assertEqual(result["roi_original_polygon_areas_union_m2"],200.)
+        self.assertEqual(result["roi_original_polygon_overlap_area_m2"],1000.)
+        self.assertEqual(result["roi_geos_union_batches_completed"],3)
+        self.assertLessEqual(result["roi_geos_union_active_levels"],2)
+        self.assertFalse(result["model_input_approved"])
 
     def test_malformed_header_record_numbers_truncation_and_extra_bytes_block(self):
         raw=synthetic_source()
