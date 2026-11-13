@@ -115,7 +115,7 @@ class WindAreaAccumulator:
         }
 
 
-def original_96h_grid() -> dict:
+def original_96h_grid(*, include_public_grid_peaks: bool = False) -> dict:
     # No full original site/insurer records required for public hazard-only
     # grid; the separate source-pinned 10k insurance OED site join remains
     # NOT performed / NOT admitted by this single-event meteorology.
@@ -203,7 +203,7 @@ def original_96h_grid() -> dict:
         or accepted.get("building_vulnerability_fit_and_native_GUL_IL_RI_OEP_AEP_admitted") is not False):
         raise RealGridBlocked("new original 96h publisher field differs from independently verified first live-source receipt")
 
-    return {
+    result = {
         "schema": SCHEMA,
         "status": "PUBLIC_ORIGINAL_GOOGLE_ARCO_REAL_96H_160NODE_GUST_HAZARD_NO_LOSS",
         "original_publisher": "Google Research ARCO ERA5; underlying C3S/ECMWF",
@@ -223,6 +223,14 @@ def original_96h_grid() -> dict:
         "German_vulnerability_or_native_GUL_IL_RI_OEP_AEP_admitted": False,
         "annual_event_catalogue_or_annual_EP_admitted": False,
     }
+    if include_public_grid_peaks:
+        # Explicit opt-in, in-memory-only interface for separate source-pinned
+        # public HU22 fictitious OED aggregation. Do not print individual sites
+        # or alter the default original-source-only CLI evidence contract.
+        result["_internal_public_10x16_event_peak_gust_mps"] = [
+            list(row) for row in acc.peaks
+        ]
+    return result
 
 
 def main() -> int:
