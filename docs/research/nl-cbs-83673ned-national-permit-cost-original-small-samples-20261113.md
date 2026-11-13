@@ -130,15 +130,37 @@ These rights **do not generalize** to personal data, insurer data
 or other unrelated CBS products.
 
 New `access/nl.cbs.new-housing-permit-eur-per-m3-region-tenure.83673ned.json`
-is deliberately **`documented_only`**. It lists the exact original
-host, table, nine fixed URL choices, native codes and rights; it
-**does not authorize live network execution in GitHub yet** and
-is not added to the existing 18 strict provider allowlist.
-The associated synthetic tests protect this fail-closed status and
-the exact column/units crosswalk. A subsequent approved
-source-specific provider script must verify HTTP 200/no redirects,
-exact original source-body hashes and a frozen source revision before
-any `probe_ready` classification.
+is now **`probe_ready` only for nine exact, frozen URLs and the
+separately reviewed source-specific script** `scripts/probe_nl_cbs_83673ned_v0.py`.
+This is an *opt-in* scientific research connectivity test, **not** a
+general OData/API/feed entitlement or an insurer-model approval.
+The script is permitted to make nine small public direct GETs only
+after manual `--live` invocation; no network requests occur in PR CI,
+it is not added to the existing reviewed_18 allowlist, and no direct
+trusted original-provider run has yet been executed or attested.
+
+The runner now enforces HTTPS 200/no redirects, exact requested URL,
+source `application/json` with identity encoding, <=16KiB per
+response, no retries, exact publication vintage 2026-08-20, official
+region/tenure/period crosswalk, **correct €/m³ vs €/m² column units**,
+2012 definitive vs 2026 provisional, source-native first/current
+rent/owner figures and a rounded cost-dimensional sanity check.
+It emits only nine original-response body byte lengths/SHA256 hashes,
+UTC and typed numeric source summaries; **no provider original JSON
+body is retained**. The result explicitly does not claim a trusted
+GitHub Actions run or admit any insured building replacement cost.
+
+```sh
+# Offline synthetic provider responses only:
+python -m unittest tests.test_probe_nl_cbs_83673ned_v0 -v
+python -m unittest tests.test_cbs_83673ned_permit_cost_original_access_v0 -v
+python -m scripts.validate_source_access \
+  access/nl.cbs.new-housing-permit-eur-per-m3-region-tenure.83673ned.json
+
+# One authorized manual direct-source test, separate from PR CI:
+python -m scripts.probe_nl_cbs_83673ned_v0 --live
+```
+
 
 ```sh
 python -m unittest tests.test_cbs_83673ned_permit_cost_original_access_v0 -v
