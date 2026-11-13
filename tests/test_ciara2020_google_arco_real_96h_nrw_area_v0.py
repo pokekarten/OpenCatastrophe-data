@@ -65,7 +65,7 @@ class RealGoogleFullCiaraSourceTests(unittest.TestCase):
         feed(a, 0)
         with self.assertRaisesRegex(m.RealGridBlocked, "extra"):
             feed(a, 0)
-        with self.assertRaisesRegex(m.RealGridBlocked, "96"):
+        with self.assertRaisesRegex(m.RealGridBlocked, "parity"):
             a.finish(require_first_original_point=True)
 
     def test_corrupt_2020_hour_parity_and_injected_realwind_value_rejected(self):
