@@ -79,18 +79,7 @@ class SourceEvidenceQueueTests(unittest.TestCase):
         self.assertIn("native_geotiff_lzw_window%", self.query)
         self.assertIn("native_pixels_verified", self.query)
         self.assertIn("native_class_values_decoded", self.query)
-        self.assertIn("provider_response_sha256 ~ '^[0-9a-f]{64}
-        self.assertIn("COUNT(DISTINCT product_scope)", self.query)
-        self.assertIn("FILTER(WHERE use_case='commercial_cat_modelling')", self.query)
-        self.assertIn("FILTER(WHERE use_case='automated_api_access')", self.query)
-        self.assertIn("candidate_snapshot_stale", self.query)
-        self.assertIn("i.actual_sample_state='not_collected'", self.query)
-        self.assertIn("P2_reconcile_candidate_snapshot", self.query)
-
-
-if __name__ == "__main__":
-    unittest.main()
-", self.query)
+        self.assertIn("provider_response_sha256 ~ '^[0-9a-f]{64}$'", self.query)
         self.assertIn("native_pixel_receipts_classified_preview", self.query)
         self.assertIn("P2_validate_native_pixel_preview_provenance", self.query)
         self.assertIn("P2_review_native_observation_sample", self.query)
