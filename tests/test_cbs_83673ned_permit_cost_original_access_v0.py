@@ -18,13 +18,13 @@ class CBS83673PermitCostContractTests(unittest.TestCase):
     def setUp(self):
         self.c = validate_path(PATH)
 
-    def test_documented_only_transport_without_fake_provider_execution(self):
-        self.assertEqual(self.c["status"], "documented_only")
+    def test_probe_ready_only_for_nine_fixed_public_source_gets(self):
+        self.assertEqual(self.c["status"], "probe_ready")
         self.assertEqual(self.c["interface_type"], "rest")
-        self.assertEqual(self.c["probe_contract"]["mode"], "none")
-        self.assertIsNone(self.c["probe_contract"]["operation"])
-        self.assertEqual(self.c["probe_contract"]["expected_evidence"], [])
-        self.assertEqual(self.c["implementation_decision"], "document_only")
+        self.assertEqual(self.c["probe_contract"]["mode"], "provider_specific")
+        self.assertEqual(self.c["probe_contract"]["operation"], "nine_fixed_83673ned_odata_rows")
+        self.assertGreater(len(self.c["probe_contract"]["expected_evidence"]), 0)
+        self.assertEqual(self.c["implementation_decision"], "build_adapter_now")
         self.assertEqual(self.c["service_root"], "https://opendata.cbs.nl")
         self.assertEqual(self.c["authentication"]["mode"], "none")
 
@@ -45,7 +45,7 @@ class CBS83673PermitCostContractTests(unittest.TestCase):
         self.assertIn("A028868", rules)
         self.assertIn("NL01%20%20", rules)
         self.assertIn("$top=10", rules)
-        self.assertIn("No arbitrary URL", rules)
+        self.assertIn("no user-selectable host", rules)
 
     def test_correct_native_units_and_vintage_are_mandatory(self):
         sci = self.c["response_contract"]["scientific_semantics"]
@@ -69,9 +69,9 @@ class CBS83673PermitCostContractTests(unittest.TestCase):
         self.assertIn("not model-input admission", rights["notes"].lower())
         self.assertEqual(self.c["operational_constraints"]["retry_policy"], "none")
 
-    def test_incorrect_early_activation_before_a_runner_is_blocked(self):
+    def test_activated_probe_cannot_silently_be_disabled_while_retaining_operation(self):
         c = deepcopy(self.c)
-        c["status"] = "probe_ready"
+        c["status"] = "documented_only"
         with self.assertRaises(SourceAccessError):
             validate_contract(c)
 
