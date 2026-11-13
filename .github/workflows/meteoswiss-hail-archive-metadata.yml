@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: MeteoSwiss hail climatology archive metadata one-shot
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/meteoswiss-hail-archive-metadata.yml"
+      - "scripts/probe_meteoswiss_hail_archive_item_v0.py"
+      - "tests/test_probe_meteoswiss_hail_archive_item_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-archive-identity:
+    name: Enforce source metadata identity and negative guards offline
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python -m unittest tests.test_probe_meteoswiss_hail_archive_item_v0 -v
+
+  live-archive-metadata-only:
+    name: Exact official archive-ch GET; no data or linked assets
+    needs: offline-archive-identity
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: One source-fixed public metadata GET, hash/count receipt only
+        run: python -m scripts.probe_meteoswiss_hail_archive_item_v0 --live >> "$GITHUB_STEP_SUMMARY"
