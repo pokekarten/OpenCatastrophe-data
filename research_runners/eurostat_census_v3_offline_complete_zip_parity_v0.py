@@ -23,6 +23,7 @@ import json
 from pathlib import Path
 import struct
 import sys
+import zlib
 from zipfile import ZIP_DEFLATED, ZIP_STORED, BadZipFile, ZipFile
 
 from research_runners.eurostat_census_v3_full_csv_member_parity_v0 import (
@@ -96,6 +97,88 @@ def _digest_file(file: Path) -> str:
     return h.hexdigest()
 
 
+def verify_all_original_zip_member_contents(
+    local_zip: Path,
+    *,
+    expected_member_directory: dict[str, tuple[int, int, int, int, int]] = V3_ZIP_MEMBER_IDENTITIES,
+) -> dict:
+    """Optional *full-content* CRC/SHA pass on every archive member.
+
+    This is distinct from the ZIP central-directory metadata test. Every
+    non-directory member is decompressed through a 1-MiB read buffer, its
+    source CRC32 and uncompressed SHA256 are computed, and the member's
+    complete read must match the already-frozen size and CRC. A missing or
+    corrupted source payload fails closed. NO member bytes are retained,
+    exported or written by this function. Use only on a separately reviewed
+    already-local ZIP file; no provider network access.
+    """
+    _require(isinstance(local_zip, Path) and not local_zip.is_symlink()
+             and local_zip.is_file(), "full-content check requires a local regular ZIP")
+    _require(isinstance(expected_member_directory, dict)
+             and 1 <= len(expected_member_directory) <= len(ZIP_NAMES)
+             and all(isinstance(name, str) and len(values) == 5
+                     for name, values in expected_member_directory.items()),
+             "invalid frozen member contract for complete-content verification")
+    receipts = []
+    total_bytes = 0
+    try:
+        with ZipFile(local_zip, "r") as archive:
+            entries = archive.infolist()
+            _require(len(entries) == len(expected_member_directory)
+                     and len({item.filename for item in entries}) == len(entries)
+                     and {item.filename for item in entries} == set(expected_member_directory),
+                     "full-content check requires exact frozen ZIP member set")
+            for item in entries:
+                name = item.filename
+                header, compressed, size, expected_crc, method = expected_member_directory[name]
+                _require((item.header_offset, item.compress_size, item.file_size,
+                          item.CRC, item.compress_type)
+                         == (header, compressed, size, expected_crc, method),
+                         "full-content member metadata differs from frozen archive")
+                _require(not item.flag_bits & 1, "encrypted member prohibited")
+                _require(0 <= size <= 1_400_000_000,
+                         "single original ZIP member inflation ceiling exceeded")
+                digest = hashlib.sha256()
+                observed_bytes = 0
+                observed_crc = 0
+                if item.is_dir():
+                    _require(size == compressed == expected_crc == 0,
+                             "directory unexpectedly has nonempty original content")
+                else:
+                    # ZipExtFile additionally checks its own internal CRC when
+                    # EOF is reached; the separate running CRC is recorded too.
+                    with archive.open(item, "r") as member:
+                        while chunk := member.read(HASH_CHUNK):
+                            observed_bytes += len(chunk)
+                            _require(observed_bytes <= size,
+                                     "source member inflated beyond frozen length")
+                            digest.update(chunk)
+                            observed_crc = zlib.crc32(chunk, observed_crc)
+                _require(observed_bytes == size and observed_crc == expected_crc,
+                         "original ZIP member full-content CRC/size mismatch")
+                total_bytes += observed_bytes
+                receipts.append({
+                    "member_name": name,
+                    "member_uncompressed_bytes": observed_bytes,
+                    "member_uncompressed_sha256": digest.hexdigest(),
+                    "member_crc32_hex": f"{observed_crc:08x}",
+                    "member_full_content_integrity_verified": True,
+                })
+    except CSVParityBlocked:
+        raise
+    except (BadZipFile, OSError, EOFError, RuntimeError, ValueError, zlib.error) as exc:
+        raise CSVParityBlocked("original ZIP member payload could not pass complete integrity") from exc
+    return {
+        "all_original_zip_member_contents_verified": True,
+        "verified_member_count": len(receipts),
+        "total_uncompressed_member_bytes_verified": total_bytes,
+        "member_content_receipts": receipts,
+        "original_provider_bytes_written": False,
+        "source_legal_acquisition_approved_by_test": False,
+        "source_cat_model_input_approved": False,
+    }
+
+
 def verify_complete_local_v3_zip(
     local_zip: Path,
     *,
@@ -109,6 +192,7 @@ def verify_complete_local_v3_zip(
     expected_csv_uncompressed_bytes: int = EXPECTED_UNCOMPRESSED_BYTES,
     expected_csv_crc32: int = EXPECTED_ZIP_MEMBER_CRC32,
     expected_pixel_sha256: str = EXPECTED_TIFF_PIXEL_14_BAND_SHA256,
+    verify_all_members: bool = False,
 ) -> dict:
     """Process a preapproved original source ZIP read-only; synthetic overrides in tests.
 
@@ -241,6 +325,17 @@ def verify_complete_local_v3_zip(
                      (expected_csv_crc32, expected_csv_compressed_bytes,
                       expected_csv_uncompressed_bytes),
                      "ZIP data descriptor mismatches central directory")
+    _require(type(verify_all_members) is bool,
+             "verify_all_members must be explicitly true or false")
+    if verify_all_members:
+        result.update(verify_all_original_zip_member_contents(
+            local_zip, expected_member_directory=expected_member_directory))
+    else:
+        # Preserve the distinction between metadata and full-file verification.
+        result.update({
+            "all_original_zip_member_contents_verified": False,
+            "verified_member_count": 0,
+        })
     result.update({
         "entire_local_zip_sha256_computed": archive_sha,
         "entire_local_zip_source_bytes": expected_zip_bytes,
@@ -262,9 +357,12 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--preapproved-v3-zip", required=True, type=Path,
                         help="local 566125577-byte V3 provider ZIP obtained only after access review")
+    parser.add_argument("--verify-all-members", action="store_true",
+                        help="OPTIONAL stream every ZIP member and independently check whole member CRC/SHA")
     args = parser.parse_args(argv)
     try:
-        result = verify_complete_local_v3_zip(args.preapproved_v3_zip)
+        result = verify_complete_local_v3_zip(
+            args.preapproved_v3_zip, verify_all_members=args.verify_all_members)
         print(json.dumps(result, sort_keys=True))
         return 0
     except (CSVParityBlocked, OSError) as exc:
