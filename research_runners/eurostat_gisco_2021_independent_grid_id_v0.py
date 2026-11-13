@@ -54,6 +54,8 @@ def _source_attributes(raw: bytes, expected_sha256: str, required_fields: set[st
     try:
         data = json.loads(raw.decode("utf-8"),
                           object_pairs_hook=_unique_object)
+    except GISCOIdentityError:
+        raise
     except (UnicodeDecodeError, ValueError) as exc:
         raise GISCOIdentityError("invalid original provider JSON") from exc
     if not isinstance(data, list) or len(data) != 1:
