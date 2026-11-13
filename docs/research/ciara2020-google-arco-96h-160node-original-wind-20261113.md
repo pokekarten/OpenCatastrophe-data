@@ -98,6 +98,32 @@ GUL/IL/RI, annual OEP/AEP, or SCR.
 The [source/rights/scientific model no-go](rva-germany-wind-loss-calibration-source-review-20261106.md)
 remains active.
 
-**Online source values remain unconfirmed until the exact-HEAD
-CI live research job succeeds.** Do not merge based only on
-synthetic tests or earlier one-hour source smoke.
+## Actual public original-source result verified
+
+The first live original public source test **succeeded** on
+[GitHub CI run #43482459090](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43482459090),
+job 132082141178, with all six offline adversarial tests also green.
+Exactly 96 source hours and 160 geographically verified 0.25-degree
+grid nodes produced 15,360 original *decoded* ERA5 10fg values.
+The 160 per-gridpoint event maxima have min **28.9437313079834 m/s**,
+mean **31.712473654747008 m/s**, max **34.43796157836914 m/s**.
+Cell counts with event peak >=25/30/35/40m/s are **160/157/0/0**.
+
+Canonical SHA-256 of the 96×10×16 row-major float32 little-endian
+**decoded** wind-value matrix:
+`5fb7c41963a94f88ee3651b51bfa84cc2f4bf379e1ee6f4eb4a4fb597d37f932`.
+This is NOT the hash of 96 original compressed GCS chunks or any
+original GRIB file. The independently accepted earlier 2020-02-09
+12Z 51N/7E value hash **12d34d73cece12a90220ddbbb5b092e388a6b1e0d9b0c9dcf5004a01a7c3119c**
+matched the actual full original field.
+
+The unchanged first live-output proof is versioned as
+`research/observations/ciara2020_google_arco_real_96h_160node_nrw_gust_20261113.toml`,
+and the Python runner verifies future original full-grid replays
+against the exact independent first-live run SHA, min/mean/max,
+threshold counts and original 2020 source time/space coordinates.
+
+This establishes a *real original published Google ARCO 2020 weather
+hazard replay*, not real insurer model vulnerability or financial
+claims. The GitHub full Python3.11–3.14/REUSE/Required and research
+live source checks on this final PR commit must still pass before merge.
