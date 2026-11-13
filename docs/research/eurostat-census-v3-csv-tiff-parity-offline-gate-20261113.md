@@ -209,3 +209,22 @@ The script outputs only receipt/digest integrity flags, no original provider bod
 [Synthetic-only tests](../../tests/test_eurostat_census_v3_offline_http_receipt_v0.py) reject wrong exact source URL or release, redirects, HTTP 206/HEAD, gzip transformation, altered saved/expected byte count or SHA, non-ZIP content types, extra/missing/duplicate JSON keys, invalid/future/pre-release dates, and missing approval references. No real original ZIP or provider receipt was obtained by adding these tests.
 
 **Provider-service distinction, official evidence:** The [GISCO distribution v2 interface](https://gisco-services.ec.europa.eu/distribution/v2/) does expressly document scripted HTTP GETs, but it explicitly lists geographic **reference data themes** (coastlines, communes, countries, LAU, NUTS, postal codes, urban audit), **not** this separate [Census Grid V3 original static ZIP](https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution/population-grids). That generic distribution statement must **not** silently change the source-specific `access/eurostat.gisco.census-population-grid.2021.json` from `documented_only` to `allowed`. The dataset's distinct [CC BY 4.0 data licence](https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution) remains verified; the exact static ZIP service's commercial automation/rate/request approval remains **unknown**.
+
+
+### Optional full-byte-content validation of all nine ZIP members
+
+The previous offline ZIP verifier compared **all nine original central-directory CRC/size/offset records** but only **decompressed the original CSV member itself**. A corrupt non-CSV payload can retain identical metadata. The complete-local-ZIP runner now offers an explicit *opt-in* content-level pass:
+
+```bash
+# Both commands are wholly OFFLINE. The source ZIP must already have been
+# separately approved and acquired; this is not an authorization or downloader.
+python -m research_runners.eurostat_census_v3_offline_complete_zip_parity_v0 \
+  --preapproved-v3-zip /private/reviewed-original/Eurostat_Census-GRID_2021_V3.zip \
+  --verify-all-members
+```
+
+The new `--verify-all-members` flag streams and independently rehashes **every ZIP entry's *uncompressed contents*** in 1-MiB chunks, checks full decompression EOF (via `zipfile.ZipExtFile`'s CRC verification), frozen per-member uncompressed length and separately computed CRC32. It returns a **per-member SHA-256 / CRC32 / byte-count receipt** for each of the nine entries, with no original bytes or original numeric population cells in the output. The default, faster check still runs only the CSV contents and explicitly returns `all_original_zip_member_contents_verified=false` and `verified_member_count=0`, rather than falsely claiming every payload passed. A full check on the original source reads/decompresses roughly 2 GB of source-member content and is computationally expensive, but holds only bounded streaming buffers.
+
+This **fully checks bytes of non-CSV TIFF/GeoPackage/Parquet/readme/nested ZIP members**, not their semantic correctness, CRS or privacy model. Nested ZIP payloads are checked as *opaque bytes* and are not recursively parsed. External provider authenticity, legal acquisition authorization, scientific CAT input approval and full-data modeling remain **separate and false** even when every member's CRC and SHA is verified. The source ZIP archive's full SHA is still locally computed, never purported to be a signed Eurostat checksum.
+
+New pure synthetic tests prove (a) the optional pass emits a source-limited full-member receipt only after actually reading a complete member and (b) an **altered non-CSV ZIP payload with *unchanged original central-directory metadata*** passes the old metadata inspection but **fails** the new optional complete-content CRC test. No original Eurostat ZIP/data was downloaded or saved in Git to test this.
