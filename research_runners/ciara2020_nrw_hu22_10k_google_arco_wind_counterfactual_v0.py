@@ -28,7 +28,7 @@ import ciara2020_nrw_10k_era5_area_request_v0 as area
 import ciara2020_google_arco_real_96h_nrw_area_v0 as wind
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_CELL_CSV = ROOT / "research/observations/ciara2020_nrw_hu22_10k_93cell_source_aggregate_v0.csv"
+SOURCE_CELL_ENVELOPE = ROOT / "research/observations/ciara2020_nrw_hu22_10k_93cell_source_aggregate_v0.toml"
 SOURCE_CELL_CSV_SHA256 = "fe012f9e0a42b67ad7b73b49bb7ca24edd1be7c785db2321b3997ebc466315e7"
 SOURCE_COUNT_SIGNATURE_SHA256 = "de10099a9b79febb1a254bc765dc477a47589cb1f49ba75415bfe6b9723c2ebd"
 ORIGINAL_ERA5_MATRIX_SHA256 = "5fb7c41963a94f88ee3651b51bfa84cc2f4bf379e1ee6f4eb4a4fb597d37f932"
@@ -46,14 +46,43 @@ class CiaraCounterfactualBlocked(ValueError):
     """Source-identity, weather or science support mismatch."""
 
 
-def load_source_cell_aggregates(path: Path = SOURCE_CELL_CSV) -> dict[tuple[int, int], tuple[int, int]]:
-    """Validate exact public 2022 HU-derived 93-cell CSV bytes and population."""
+def read_source_cell_csv_bytes(path: Path = SOURCE_CELL_ENVELOPE) -> bytes:
+    """Unwrap an SPDX-licensed TOML envelope, preserving exact original CSV bytes.
+
+    Repository hygiene prohibits tracked .csv files. The 93 aggregate
+    source-derived records are preserved as an exact multiline literal
+    CSV payload in tracked TOML, not reencoded or modified.
+    """
     if (path.is_symlink() or not path.is_file()
         or not 100 <= path.stat().st_size < 10_000):
-        raise CiaraCounterfactualBlocked("source cell CSV must be one bounded regular file")
-    raw = path.read_bytes()
+        raise CiaraCounterfactualBlocked("93-cell source envelope must be one bounded regular TOML")
+    try:
+        envelope = tomllib.loads(path.read_text(encoding="utf-8"))
+    except (UnicodeError, ValueError) as exc:
+        raise CiaraCounterfactualBlocked("invalid original source 93-cell TOML envelope") from exc
+    if (envelope.get("schema") != "CIARA2020_HU22_10K_93_PUBLIC_GRID_CELL_AGGREGATES_ENVELOPE_V0"
+        or envelope.get("source_original_HU2022_derived_10k_zip_sha256") != area.SOURCE_ARTIFACT_SHA256
+        or envelope.get("source_count_signature_sha256") != SOURCE_COUNT_SIGNATURE_SHA256
+        or envelope.get("embedded_csv_content_sha256") != SOURCE_CELL_CSV_SHA256
+        or envelope.get("public_2022_building_candidates") != EXPECTED_SITES
+        or envelope.get("source_2022_NRW_counties") != EXPECTED_COUNTIES
+        or envelope.get("occupied_0p25_degree_cells") != EXPECTED_CELLS
+        or envelope.get("fictional_building_tiv_eur") != EXPECTED_TIV
+        or any(envelope.get(k) is not False for k in (
+            "real_insurer_RV_sites_or_2020_claims_observed",
+            "source_2022_buildings_as_of_2020_verified",
+            "German_wind_damage_vulnerability_or_native_GUL_IL_RI_OEP_AEP_admitted",
+        )) or not isinstance(envelope.get("csv"), str)):
+        raise CiaraCounterfactualBlocked("untrusted original HU22 93-cell aggregate envelope")
+    raw = envelope["csv"].encode("utf-8")
     if hashlib.sha256(raw).hexdigest() != SOURCE_CELL_CSV_SHA256:
-        raise CiaraCounterfactualBlocked("93-cell HU22 source bytes mismatch pinned SHA256")
+        raise CiaraCounterfactualBlocked("embedded 93-cell source CSV byte SHA-256 mismatch")
+    return raw
+
+
+def load_source_cell_aggregates(path: Path = SOURCE_CELL_ENVELOPE) -> dict[tuple[int, int], tuple[int, int]]:
+    """Validate exact 93-cell source-derived aggregate CSV bytes and population."""
+    raw = read_source_cell_csv_bytes(path)
     try:
         csv_reader = csv.DictReader(io.StringIO(raw.decode("utf-8"), newline=""), strict=True)
         if tuple(csv_reader.fieldnames or ()) != CSV_COLUMNS:
