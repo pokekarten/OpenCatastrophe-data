@@ -102,11 +102,7 @@ def verify_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
         or c["interface_type"] != "rest"
         or c["status"] != "probe_ready"
         or c["authentication"]["mode"] != "none"
-        or c["request_contract"]["allowed_operations"] != [
-            "original_metadata_small_rows",
-            "first_2012_permit_cost_row",
-            "rolling_2026_june_rental_owner_exact_rows",
-        ]
+        or c["request_contract"]["allowed_operations"] != ["nine_fixed_83673ned_odata_rows"]
         or c["request_contract"]["path_templates"] != exact_paths
         or c["probe_contract"]["mode"] != "provider_specific"
         or c["probe_contract"]["operation"] != "nine_fixed_83673ned_odata_rows"
