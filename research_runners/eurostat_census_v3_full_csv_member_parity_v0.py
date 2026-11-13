@@ -170,13 +170,21 @@ def verify_csv_deflate_member(
                  "original compressed member incomplete")
         compressed_digest.update(block)
         consumed_compressed += len(block)
-        try:
-            plain = reader.decompress(block, MAX_OUTPUT_PER_CHUNK)
-        except zlib.error as exc:
-            raise CSVParityBlocked("original raw deflate data invalid") from exc
-        _require(not reader.unconsumed_tail, "unsafe source compression ratio")
-        _require(not reader.unused_data, "unexpected extra ZIP member data")
-        consume_inflated(plain)
+        # A legitimate highly compressible census CSV block may inflate past
+        # MAX_OUTPUT_PER_CHUNK. Stream the DEFLATE tail through repeated bounded
+        # outputs rather than rejecting valid data or allocating unbounded RAM.
+        tail = block
+        while tail:
+            try:
+                plain = reader.decompress(tail, MAX_OUTPUT_PER_CHUNK)
+            except zlib.error as exc:
+                raise CSVParityBlocked("original raw deflate data invalid") from exc
+            remainder = reader.unconsumed_tail
+            _require(not reader.unused_data, "unexpected extra ZIP member data")
+            _require(bool(plain) or len(remainder) < len(tail),
+                     "original compressed member inflater made no progress")
+            consume_inflated(plain)
+            tail = remainder
     try:
         consume_inflated(reader.flush())
     except zlib.error as exc:
