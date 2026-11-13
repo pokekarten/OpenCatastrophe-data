@@ -119,3 +119,23 @@ Read-only current database result (2026-11-13):
 `offline_reference_preflight_ready` **does not equal** actual same-release population parity or permission to fetch the original source. It merely proves that all current *pre-existing* published metadata/byte-range evidence is internally consistent before the blocked full-member operation.
 
 **Service-maintenance caveat:** The original Eurostat website on **13 November 2026** displays a notice that Eurostat web services/APIs, Data Browser and related services are scheduled to be unavailable **14:00–23:00** (site-local time). This is a limitation on interpreting fresh service-probe failures; it does not establish any separate downtime or service terms for the GISCO static ZIP host. The present work makes **no** new bulk/provider live requests.
+
+
+### Alternative complete preapproved original ZIP — new strictly offline gate
+
+An additional [`research_runners/eurostat_census_v3_offline_complete_zip_parity_v0.py`](../../research_runners/eurostat_census_v3_offline_complete_zip_parity_v0.py) removes the risky manual step of carving a 49.1-MB raw DEFLATE member out of a 566.1-MB ZIP. If the **separate GISCO access review later explicitly authorizes acquisition** and the original ZIP has been obtained as a private local file, use:
+
+```bash
+python -m unittest tests.test_eurostat_census_v3_offline_complete_zip_parity_v0 -v
+# This command uses only an already-acquired, rights-reviewed LOCAL file:
+python -m research_runners.eurostat_census_v3_offline_complete_zip_parity_v0 \
+  --preapproved-v3-zip /private/reviewed-original/Eurostat_Census-GRID_2021_V3.zip
+```
+
+This new path **never opens a network connection or persists original bytes to Git/Neon**. The local original archive must be **exactly 566,125,577 bytes**, have **exactly nine frozen original ZIP central-directory filenames** (from original source evidence sample #60), no duplicate entries, no comment, no encrypted or unsafe paths, and an exact original `ESTAT_Census_2021_V3.csv` ZIP entry: **local offset 209,230,036, method 8, CRC32 `54cdc404`, compressed 49,110,575 B, uncompressed 339,625,996 B**.
+
+The script computes the full original **local** ZIP SHA-256 by reading the file in 1-MiB chunks, independently checks the ZIP local member header and any data descriptor against the source central directory, then seeks directly into the exact compressed CSV member and runs the same streaming source CRC/SHA/14-field single-cell parity procedure. The entire ZIP/CSV never enters RAM at once. The output is just the source-integrity/parity receipt and hashes, with **`provider_origin_independently_authenticated=false` and `provider_acquisition_rights_verified=false`**, since computing a digest of a local file does not prove a provider-signed official archive or clear service terms.
+
+[Synthetic, entirely offline ZIP tests](../../tests/test_eurostat_census_v3_offline_complete_zip_parity_v0.py) exercise a tiny newly constructed ZIP with correct same-release-like **synthetic values**; wrong central-directory file name, duplicate member, incorrect local-header magic/CRC/offset, absent target cell, reporting-country mismatch, ZIP comment and symlink input all fail closed. Test-only size and CRC overrides do not exist in the production command; the original V3 constants are fixed by default.
+
+**Important distinction:** a complete local ZIP SHA is not a previously published provider SHA unless it is independently attested with fixed original provider URL/HTTPS, content length, final redirects, HTTP identity and access timestamp. A source archive digest, a verified single-cell CSV/TIFF numerical match and legally approved NextGen/CAT model use are **three distinct gates**. None has been promoted by these synthetic tests.
