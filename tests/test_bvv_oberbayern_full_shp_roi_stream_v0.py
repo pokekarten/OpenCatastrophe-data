@@ -1,0 +1,131 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+"""Entirely synthetic native Shapefile stream and ROI geometry gate tests."""
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import io
+import struct
+import unittest
+import zlib
+from research_runners import bvv_oberbayern_full_shp_roi_stream_v0 as p
+
+HAS_GEOMETRY = (importlib.util.find_spec("shapely") is not None and
+                importlib.util.find_spec("pyproj") is not None)
+
+
+def synthetic_source(*, clockwise=True, count=2):
+    # No source or private buildings: two identical fake 20x10m polygons.
+    points=[(650000.,5350000.),(650000.,5350010.),
+            (650020.,5350010.),(650020.,5350000.),(650000.,5350000.)]
+    if not clockwise:
+        points=list(reversed(points))
+    raw=bytearray(100)
+    length=100+count*(8+128)
+    struct.pack_into(">I",raw,0,9994)
+    struct.pack_into(">I",raw,24,length//2)
+    struct.pack_into("<II",raw,28,1000,5)
+    struct.pack_into("<4d",raw,36,500000.,5200000.,800000.,5500000.)
+    for number in range(1,count+1):
+        body=bytearray(128)
+        struct.pack_into("<I",body,0,5)
+        struct.pack_into("<4d",body,4,650000.,5350000.,650020.,5350010.)
+        struct.pack_into("<II",body,36,1,5)
+        struct.pack_into("<I",body,44,0)
+        for j,(x,y) in enumerate(points):
+            struct.pack_into("<2d",body,48+j*16,x,y)
+        raw.extend(struct.pack(">II",number,64))
+        raw.extend(body)
+    return bytes(raw)
+
+
+class BavarianFullOriginalSyntheticTests(unittest.TestCase):
+    def new_parser(self,raw,roi=None):
+        return p.NativeSHPStream(expected_records=2,
+                                 expected_bytes=len(raw),expected_header_sha=None,
+                                 roi=roi)
+
+    def test_all_original_file_records_stream_without_disk(self):
+        raw=synthetic_source()
+        q=self.new_parser(raw)
+        for offset in range(0,len(raw),17):
+            q.feed(raw[offset:offset+17])
+        result=q.finish()
+        self.assertEqual(result["original_full_native_records_checked"],2)
+        self.assertEqual(result["original_full_decoded_shape_sha256"],hashlib.sha256(raw).hexdigest())
+        self.assertEqual(result["original_full_decoded_shape_crc32"],f"{zlib.crc32(raw):08x}")
+        self.assertEqual(result["original_max_content_bytes"],128)
+        self.assertFalse(result["model_input_approved"])
+        self.assertFalse(result["source_coordinates_geometries_or_bytes_persisted"])
+        self.assertNotIn("650000",str(result))
+
+    @unittest.skipUnless(HAS_GEOMETRY,"optional pinned source job GEOS/PROJ unavailable")
+    def test_projected_frozen_native_ghsl_grid_not_100m_equivalent(self):
+        q, bbox=p.frozen_roi_geometries()
+        self.assertTrue(q.is_valid)
+        self.assertGreater(q.area,100_000_000)
+        self.assertLess(q.area,2_000_000_000)
+        expected=(11.440416643747994,48.007916676356096,
+                  11.707083309358438,48.27458334194954)
+        for got, want in zip(bbox,expected):
+            self.assertAlmostEqual(got,want,places=9)
+
+    @unittest.skipUnless(HAS_GEOMETRY,"optional pinned source job GEOS/PROJ unavailable")
+    def test_polygon_union_eliminates_double_counting(self):
+        from shapely.geometry import box
+        raw=synthetic_source()
+        q=self.new_parser(raw,roi=box(649900,5349900,650030,5350030))
+        for offset in range(0,len(raw),29):
+            q.feed(raw[offset:offset+29])
+        x=q.finish()
+        self.assertEqual(x["roi_bbox_candidates"],2)
+        self.assertEqual(x["roi_original_polygon_records_intersecting"],2)
+        self.assertEqual(x["roi_original_polygon_areas_sum_pre_union_m2"],400.)
+        self.assertEqual(x["roi_original_polygon_areas_union_m2"],200.)
+        self.assertEqual(x["roi_original_polygon_overlap_area_m2"],200.)
+        self.assertFalse(x["ghsl_actual_accuracy_or_tiv_validated"])
+
+    @unittest.skipUnless(HAS_GEOMETRY,"optional pinned source job GEOS/PROJ unavailable")
+    def test_counterclockwise_native_shell_blocks_unreviewed_hole_topology(self):
+        from shapely.geometry import box
+        raw=synthetic_source(clockwise=False)
+        q=self.new_parser(raw,roi=box(649900,5349900,650030,5350030))
+        with self.assertRaisesRegex(p.FullSHPBlocked,"clockwise"):
+            q.feed(raw)
+
+    def test_malformed_header_record_numbers_truncation_and_extra_bytes_block(self):
+        raw=synthetic_source()
+        for offset,format_,value in ((0,">I",11),(24,">I",3),
+                                      (32,"<I",1),(100,">I",3),
+                                      (104,">I",9000)):
+            with self.subTest(offset=offset):
+                corrupted=bytearray(raw)
+                struct.pack_into(format_,corrupted,offset,value)
+                q=self.new_parser(bytes(corrupted))
+                with self.assertRaises(p.FullSHPBlocked):
+                    q.feed(bytes(corrupted))
+        q=self.new_parser(raw)
+        q.feed(raw[:-12])
+        with self.assertRaises(p.FullSHPBlocked):
+            q.finish()
+        with self.assertRaises(p.FullSHPBlocked):
+            self.new_parser(raw).feed(raw+b"EXTRA")
+
+    def test_network_rejects_http_200_wrong_origin_and_missing_range(self):
+        for code,url in ((200,p.URL),(206,"https://malicious.invalid/path")):
+            with self.assertRaises(p.FullSHPBlocked):
+                p.inspect_original_stream(io.BytesIO(),status=code,
+                                          response_url=url,headers={},roi=None)
+        with self.assertRaises(p.FullSHPBlocked):
+            p.inspect_original_stream(io.BytesIO(),status=206,
+                                     response_url=p.URL,headers={},roi=None)
+
+    def test_explicit_live_main_opt_in_required(self):
+        with self.assertRaises(SystemExit) as ctx:
+            p.main([])
+        self.assertNotEqual(ctx.exception.code,0)
+
+
+if __name__=="__main__":
+    unittest.main()
