@@ -5,7 +5,13 @@
 -- SELECT only. Run against the authorized Neon insurance DB, explicitly
 -- selecting the intended project and branch. No external HTTP, no DB writes.
 --
--- Every landscape candidate must appear once. These joins are research
+-- Preserve one row per (candidate source_id, exact reviewed product_scope), NOT
+-- one row per source_id: multiple scoped product/asset reviews for one source
+-- are legitimate and may have different rights or quality status. For example
+-- corrected JRC Global Surface Water Occurrence and its broader v1.5 product
+-- must not be flattened into one source-wide rights grant. Distinct source_id
+-- coverage must still match the canonical landscape count independently.
+-- These joins are research
 -- evidence ONLY; no recorded licence verdict, probe or sample here is a
 -- scientific admission, source-byte publication right, or a legal decision.
 -- Provider/download tests for bulk files must not be mislabelled as API tests.
@@ -76,6 +82,10 @@ candidate_state AS (
     WHERE m.admission_status = 'not_admitted'
 )
 SELECT *,
+       COUNT(*) OVER (PARTITION BY source_id) AS reviewed_product_scopes_for_source,
+       CASE WHEN COUNT(*) OVER (PARTITION BY source_id) > 1
+            THEN 'MULTIPLE_PRODUCT_SCOPES_REVIEW_EACH'
+            ELSE 'ONE_PRODUCT_SCOPE' END AS source_product_scope_gate,
        CASE
            WHEN commercial_cat_modelling = 'prohibited' THEN 'BLOCKED_COMMERCIAL_USE'
            WHEN commercial_cat_modelling = 'conditional' THEN 'REVIEW_COMMERCIAL_CONDITIONS'
