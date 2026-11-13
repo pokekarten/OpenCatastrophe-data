@@ -118,6 +118,22 @@ class OneCellCSVSourceParityTests(unittest.TestCase):
         self.assertTrue(run_fake(source,member,digest)
                         ["source_same_release_csv_tiff_14_band_parity"])
 
+    def test_highly_compressible_valid_full_member_is_streamed_safely(self):
+        # Repeated non-target census rows are deliberately synthetic and very
+        # compressible. Their single deflate input chunk expands to much more
+        # than MAX_OUTPUT_PER_CHUNK; this must NOT cause a false science failure.
+        ordinary = make_row(grid_id="CRS3035RES1000mN1000000E1000000")
+        source, member, digest = fake_member(lines=[
+            ordinary, make_row(), *([ordinary] * 35000)])
+        self.assertGreater(len(source), 2_097_152)
+        self.assertLess(len(member), 65_536)
+        receipt = run_fake(source, member, digest)
+        self.assertEqual(receipt["original_csv_row_count"], 35002)
+        self.assertEqual(receipt["target_row_match_count"], 1)
+        self.assertTrue(receipt["source_same_release_csv_tiff_14_band_parity"])
+        self.assertTrue(receipt["original_zip_member_crc32_matches"])
+        self.assertFalse(receipt["cat_model_input_approved"])
+
     def test_wrong_source_inflation_and_long_line_block(self):
         source,member,digest=fake_member()
         with self.assertRaises(CSVParityBlocked):
