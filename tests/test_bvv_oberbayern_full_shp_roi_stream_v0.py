@@ -148,15 +148,15 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
         from unittest.mock import patch
         chunks = []
         original = b"abcdefghijklmnopqrstuvwxyz0123456789"
-        reader = p.VerifiedOriginalSegmentStream()
         def fake_get(start, end):
             chunks.append((start, end))
             return original[start-100:end-99], ('"same-source"', "Fri, 13 Nov 2026 11:00:00 GMT")
-        reader._get_segment = fake_get
         with (patch.object(p, "START", 100),
               patch.object(p, "END", 135),
               patch.object(p, "READ_BYTES", 36),
               patch.object(p, "MAX_ORIGINAL_SEGMENT_BYTES", 9)):
+            reader = p.VerifiedOriginalSegmentStream()
+            reader._get_segment = fake_get
             pieces=[]
             while True:
                 block=reader.read(7)
@@ -171,19 +171,19 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
             self.assertEqual(reader.read(1),b"")
 
     def test_segment_truncation_and_source_mutation_fail_closed(self):
-        reader=p.VerifiedOriginalSegmentStream()
-        reader._get_segment=lambda start,end: (b"bad",("etag","date"))
         with (patch.object(p,"START",100),patch.object(p,"END",125),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8)):
+            reader=p.VerifiedOriginalSegmentStream()
+            reader._get_segment=lambda start,end: (b"bad",("etag","date"))
             with self.assertRaisesRegex(p.FullSHPBlocked,"size"):
                 reader.read(5)
-        reader=p.VerifiedOriginalSegmentStream()
         def changed_validator(start,end):
             etag='"source-v1"' if start==100 else '"source-v2"'
             return b"x"*(end-start+1),(etag,"date")
-        reader._get_segment=changed_validator
         with (patch.object(p,"START",100),patch.object(p,"END",115),
               patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8)):
+            reader=p.VerifiedOriginalSegmentStream()
+            reader._get_segment=changed_validator
             self.assertEqual(reader.read(8),b"x"*8)
             with self.assertRaisesRegex(p.FullSHPBlocked,"ETag"):
                 reader.read(8)
