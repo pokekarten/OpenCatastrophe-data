@@ -4,12 +4,16 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import struct
 import unittest
 from unittest.mock import patch
 
-from shapely.geometry import box
-from shapely.ops import unary_union
+HAS_SHAPELY=importlib.util.find_spec("shapely") is not None
+HAS_GEO=HAS_SHAPELY and importlib.util.find_spec("pyproj") is not None
+if HAS_SHAPELY:
+    from shapely.geometry import box
+    from shapely.ops import unary_union
 
 from research_runners import ghsl_bvv_original_1024_cell_pairwise_v0 as cells
 from research_runners.bvv_oberbayern_full_shp_roi_stream_v0 import NativeSHPStream
@@ -17,6 +21,7 @@ from tests.test_bvv_oberbayern_full_shp_roi_stream_v0 import synthetic_source
 
 
 class Original1024SyntheticTests(unittest.TestCase):
+    @unittest.skipUnless(HAS_GEO,"optional pinned test requires Shapely and pyproj")
     def test_original_1024_native_projected_grid_is_exact_same_source_roi(self):
         roi,grid=cells.build_frozen_1024_cells()
         self.assertEqual(len(grid),1024)
@@ -56,6 +61,7 @@ class Original1024SyntheticTests(unittest.TestCase):
         with self.assertRaisesRegex(cells.CellwiseBlocked,"NoData"):
             cells.decode_native_1024_original_values(bytes(b))
 
+    @unittest.skipUnless(HAS_GEO,"optional pinned test requires Shapely and pyproj")
     def test_paired_cell_areas_and_support_are_aggregated_without_raw_pixels(self):
         _,grid=cells.build_frozen_1024_cells()
         # two wholly invented projected footprints; never real buildings
@@ -77,6 +83,7 @@ class Original1024SyntheticTests(unittest.TestCase):
         self.assertTrue(all(type(v) in (str,int,float,bool) for v in out.values()))
         self.assertNotIn("geometry",out)
 
+    @unittest.skipUnless(HAS_GEO,"optional pinned test requires Shapely and pyproj")
     def test_paired_source_row_order_and_volume_are_both_in_sha(self):
         _,grid=cells.build_frozen_1024_cells()
         geo=grid[0].buffer(-20)
@@ -92,6 +99,7 @@ class Original1024SyntheticTests(unittest.TestCase):
         self.assertNotEqual(first["paired_native_cell_tuple_sha256"],
                             third["paired_native_cell_tuple_sha256"])
 
+    @unittest.skipUnless(HAS_GEO,"optional pinned test requires Shapely and pyproj")
     def test_unsupported_original_values_and_constant_geometries_fail(self):
         _,grid=cells.build_frozen_1024_cells()
         geo=grid[0].buffer(-20)
@@ -102,6 +110,7 @@ class Original1024SyntheticTests(unittest.TestCase):
         with self.assertRaises(cells.CellwiseBlocked):
             cells.area_by_paired_native_cells(geo,grid,(0,)*1023,(20,)+(0,)*1023)
 
+    @unittest.skipUnless(HAS_SHAPELY,"optional pinned test requires GEOS")
     def test_full_original_source_optional_union_callback_scalar_only(self):
         raw=synthetic_source(count=2)
         roi=box(649900,5349900,650030,5350030)
@@ -123,6 +132,7 @@ class Original1024SyntheticTests(unittest.TestCase):
         self.assertNotIn("650000",str(out))
         self.assertFalse(out["model_input_approved"])
 
+    @unittest.skipUnless(HAS_SHAPELY,"optional pinned test requires GEOS")
     def test_original_source_callback_cannot_return_geometry_or_change_provenance(self):
         raw=synthetic_source(count=2)
         roi=box(649900,5349900,650030,5350030)
