@@ -54,7 +54,8 @@ distribution:
 | `P1_retest_provider_with_trusted_runner` | 1 | Last external observation inconclusive (NOAA SWPC intermediary); other historical Actions may have verified the source separately |
 | `P1_review_bounded_first_source_sample` | 1 | JRC Global Surface Water V1.5: data reuse recorded as allowed, but still **no private Neon original sample** or vetted automated host terms |
 | `P2_reconcile_candidate_snapshot` | 5 | Private samples were recorded after the candidate-only `not_collected` snapshot |
-| `P2_review_native_observation_sample` | 8 | Some research sample/preview evidence, no source-native observed-values sample in this table |
+| `P2_review_native_observation_sample` | 7 | Metadata or WMS previews exist, but no source-native values in these sample records |
+| `P2_validate_native_pixel_preview_provenance` | 1 | DLR WSF 2019 already has two original-TIFF decoded 32×32 native pixel masks (#28/#29), but was labelled `geospatial_preview`; verify scientific pixel/sample scope, do **not** fetch redundant values |
 | `P2_scientific_native_sample_validation` | 11 | Research value evidence exists, independent scientific and consumer admission still open |
 | `P3_review_rights_and_exact_access` | 653 | Rights/access remain unresolved at the general registry level; not a claim of commercial prohibition |
 | `P4_commercial_use_restricted` | 10 | Product/permission restrictions, country and provider scope must be reviewed |
@@ -64,6 +65,15 @@ distribution:
 
 At the same snapshot:
 
+- **DLR WSF 2019** sample IDs **#28 and #29** are stored under
+  `sample_kind=geospatial_preview` despite a verified native-LZW TIFF
+  range and two decoded binary 32×32 windows (1,024 pixels each,
+  settlement=0 and 482 respectively); original run
+  [43226483288](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43226483288)
+  independently checked the source. The queue now recognizes
+  `native_geotiff_lzw_window` provenance and a strict provider digest,
+  rather than asking for redundant first native-pixel samples. These are
+  settlement classes, **not** individual building counts or TIV.
 - **74 samples from 38 distinct IDs** existed in
   `research.source_sample_v0`; all **74 JSONB sample SHA-256** checks passed.
   This is **not** proof that full provider-source binaries are persisted or
@@ -123,5 +133,6 @@ credentials or makes external provider requests.
 
 **Next:** inspect individual P1/P2 sources (especially the corrected JRC GSW
 Occurrence, NOAA SWPC trusted-runner retest and eight metadata-only sources);
-review legal automation and original byte/CRS/unit completeness *before*
+review the seven genuinely non-native sample/preview sources and the separate
+DLR WSF native-pixel evidence; review legal automation and original byte/CRS/unit completeness *before*
 changing any source's science or admission status.
