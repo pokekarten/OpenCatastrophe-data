@@ -54,7 +54,7 @@ def _open(req: request.Request, timeout: int):
     return request.build_opener(
         request.ProxyHandler({}), NoRedirect(),
         request.HTTPSHandler(context=ssl.create_default_context()),
-    ).open(req, timeout)
+    ).open(req, timeout=timeout)
 
 
 def verify_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
