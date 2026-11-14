@@ -25,3 +25,29 @@ The second command requires a public-network-enabled host such as GitHub Actions
 **Next scientific gate:** pin the precise official file metadata/release and observed source SHA-256, select a complete physical storm time window (Ciara/Sabine 2020), identify station-specific measured vs derived `FXI3S` availability, pair model grid support and station siting, and perform a held-out bias/tail check before ingesting any fitted response or annual loss model.
 
 **Observed live provider identity:** the official resource selected under catalogue title `HOR_departement_75_periode_2020-2024` links to the *different literal filename* `H_75_previous-2020-2024.csv.gz`, verified by an authenticated-by-none public CI metadata request on 2026-11-14. That filename is now frozen in the audit rather than inferred from the title; the file's actual observation period and format remain to be checked by source-byte execution.
+
+## Executed original provider evidence (14 November 2026)
+
+GitHub Actions original-source run: https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43632969638, exact input commit `524478e5e9f0881a604d96d683b4f95c90768337`. The targeted original-gust job and six offline tests **passed**. Original compressed bytes were downloaded into ephemeral CI memory, read, fully hashed and discarded; only non-location-specific aggregated counters and public asset digests are retained in the run log and this report. This proves the exact chosen original file could be acquired and parsed **on this run**, not that every station or variable is eligible for physical hazard calibration.
+
+| Original source receipt | Observed value |
+|---|---:|
+| Official catalogue title | `HOR_departement_75_periode_2020-2024` |
+| Actual source basename | `H_75_previous-2020-2024.csv.gz` |
+| Original resource UUID | `a77b4d44-d361-4e59-b6cc-cbbf435a2d89` |
+| Original compressed source bytes | 9,084,848 |
+| Decompressed UTF-8 semicolon CSV bytes | 87,595,960 |
+| Rows | 261,860 |
+| Unique station identifiers, not published | 6 |
+| Nonmissing `FF` | 130,061 |
+| Nonmissing `FXI` | 130,064 |
+| Nonmissing `FXI3S` | 130,068 |
+| `FXI3S` quality code 1 | 72,467 |
+| `FXI3S` quality code 9 | 57,601 |
+| Missing `FXI3S` quality code | 131,792 |
+| Validated `FXI3S` with `STATUS_FXI3S=1` (transfer-derived) | 10,025 |
+| Validated `FXI3S` with `STATUS_FXI3S=0` (not transfer-calculated) | 62,442 |
+
+Original compressed SHA-256: `8d0b0d7cded68110d1e755a085cd5b96956e80b822c81950969bd21ff97b9d76`. Original field-dictionary SHA-256: `1ff2c0febb4a040bf8b400e422bc2bf3e9b8c3e48bdda73a67b1790c532021da`. Dataset-catalogue JSON SHA-256 at request: `d7a205bcc20b115169e3a02a4ffa71cf54bc06d70c273165437e0682bce34277`.
+
+**Strict limitations:** only one Paris-region department and historical period; the quality counts do not establish independent, homogeneous measurement physics, event completeness, sensor heights, actual provider raw byte redistribution rights for Git, a matched Ciara loss observation, or frequency/return-period calibration. In particular, source `STATUS_FXI3S=0` is not an instrument-level provenance attestation. Preserve all `not_admitted` and `annual_ep_authorized=false` flags.
