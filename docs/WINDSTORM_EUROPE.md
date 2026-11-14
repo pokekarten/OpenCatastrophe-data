@@ -23,6 +23,7 @@ sind noch nicht als europäisch kalibriert nachgewiesen.
 - [Datenbestand und fachliche Lücken](research/windstorm-europe-data-and-completion-gaps-v0.md)
 - [Maschinenlesbarer Quellenindex](research/windstorm-europe-source-index-v0.toml)
 - [LUISA-2018-Raster- und Kurvenmischungs-Audit](research/windstorm-europe-luisa2018-raster-audit-v0.md)
+- [LUISA-Pixel- und Kyrill-Sensitivitätslauf](research/windstorm-europe-luisa-point-sensitivity-v0.md)
 - [Physische und finanzielle Modellschritte](research/germany-wind-executable-scenarios-v0.md)
 
 Der Kern wurde über PR #1586 auf `main` integriert, Commit
