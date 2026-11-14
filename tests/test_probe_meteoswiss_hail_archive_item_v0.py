@@ -38,11 +38,18 @@ def test_bytes(j):
 class MockResponse:
     status = 200
 
-    def __init__(self, data=None, media="application/geo+json", declared=None):
+    def __init__(self, data=None, media="application/geo+json", declared=None,
+                 final_url=None, encoding=None):
         self.body = data if data is not None else test_bytes(sample())
         self.headers = {"Content-Type": media}
         if declared is not None:
             self.headers["Content-Length"] = declared
+        if encoding is not None:
+            self.headers["Content-Encoding"] = encoding
+        self.final_url = p.URL if final_url is None else final_url
+
+    def geturl(self):
+        return self.final_url
 
     def read(self, count):
         return self.body[:count]
@@ -127,6 +134,32 @@ class MeteoSwissArchiveTests(unittest.TestCase):
         for media, size in (("text/html", None), ("application/json", "131073")):
             with self.subTest(media=media, size=size), self.assertRaises(p.ArchiveBlocked):
                 p.probe(MockOpener(MockResponse(media=media, declared=size)))
+
+    def test_reject_http_200_with_wrong_final_url(self):
+        with self.assertRaises(p.ArchiveBlocked):
+            p.probe(MockOpener(MockResponse(final_url="https://invalid.example/redirect")))
+
+    def test_reject_valid_json_with_mismatched_content_length(self):
+        body = test_bytes(sample())
+        for delta in (-1, 1):
+            with self.subTest(delta=delta), self.assertRaises(p.ArchiveBlocked):
+                p.probe(MockOpener(MockResponse(data=body, declared=str(len(body) + delta))))
+
+    def test_reject_unreviewed_compressed_body(self):
+        with self.assertRaises(p.ArchiveBlocked):
+            p.probe(MockOpener(MockResponse(encoding="gzip")))
+
+    def test_reject_hidden_exponent_overflow(self):
+        original = test_bytes(sample())
+        extra_field = original[:-1] + b', "ignored": 1e999}'
+        with self.assertRaises(p.ArchiveBlocked):
+            p.check_archive_metadata(extra_field)
+
+    def test_reject_blank_asset_href(self):
+        item = sample()
+        item["assets"]["synthetic-cog"]["href"] = "  "
+        with self.assertRaises(p.ArchiveBlocked):
+            p.check_archive_metadata(test_bytes(item))
 
     def test_redirect_not_allowed(self):
         with self.assertRaises(p.ArchiveBlocked):
