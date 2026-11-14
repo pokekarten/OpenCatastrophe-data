@@ -212,13 +212,36 @@ class StrictBranchReceiptContractTests(unittest.TestCase):
         self.assertIn("PR #1533",sql)
         self.assertIn("e72f8ab853f8b9d4639c0173bb8e70c4f16b53bd",sql)
         self.assertIn("'P1_review_cloudferro_service_terms_before_original_occurrence_sample'",sql)
-        self.assertIn("AND q.sample_rows=0",sql)
+        self.assertIn("AND q.native_or_observed_value_samples=0",sql)
+        self.assertIn("AND q.native_pixel_receipts_classified_preview=0",sql)
         self.assertIn("AND q.registry_commercial_verdict='allowed_verified'",sql)
         self.assertIn("AND q.record_type='landscape_candidate'",sql)
         # Publisher's Open Data rights do not imply automatic source-API approval.
         self.assertIn("do NOT authorize unconstrained CloudFerro",sql)
         self.assertNotIn("http.client",sql)
         self.assertNotIn("requests.get",sql)
+
+    def test_jrc_original_publisher_html_is_not_an_original_raster_proof(self):
+        sql = (ROOT / "insurance_707_source_original_pr_branch_priority_overlay_v1.sql").read_text()
+        for evidence in (
+            "jrc_verified_publisher_html AS (",
+            "jrc_publisher_html_original_receipts_not_tile_proofs",
+            "publisher_html_metadata_sample_id",
+            "43591889218", "132438178397",
+            "bf9f5a729bebb069492d1fc94e4d0db6cababd74",
+            "510b4bc273c743b8789afb3ffa57db31077e1f2ac617aca4869870c123995a08",
+            "d2ba746281468b520c5ac3b73db8f40f2d1438d471b2a08c385fbb71b6cfd3f7",
+            "s.sample_json->>'source_original_catalogue_bytes_hashed'='false'",
+            "s.sample_json->>'individual_tile_original_bytes_hashed'='false'",
+            "AND q.native_or_observed_value_samples=0",
+            "AND q.native_pixel_receipts_classified_preview=0",
+        ):
+            with self.subTest(evidence=evidence):
+                self.assertIn(evidence,sql)
+        # A signed page response is not the authentic Swift listing or a raster value.
+        self.assertIn("webpage is not the source catalogue or any TIFF",sql)
+        self.assertIn("false AS newly_grants_model_input_approval",sql)
+        self.assertIn("false AS newly_grants_trusted_main_status",sql)
 
     def test_queue_overlay_only_changes_historical_inconclusive_case(self):
         sql = (ROOT / "insurance_707_source_original_pr_branch_priority_overlay_v1.sql").read_text()
