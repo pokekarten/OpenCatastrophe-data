@@ -178,6 +178,13 @@ class JRCNativeWindowsComparisonTests(unittest.TestCase):
 
     def test_window_pixel_count_must_equal_decoded_values(self):
         tiff, gee = self.native_grids()
+        for raw in (None, [0, 0, 0, 0], b""):
+            with self.subTest(input_type=str(type(raw))), self.assertRaises(
+                jrc.JRCWindowComparisonBlocked
+            ):
+                jrc.compare_native_occurrence_windows_with_grid(
+                    raw, [0, 0, 0, 0], [1, 1, 1, 1], tiff, gee
+                )
         with self.assertRaisesRegex(
             jrc.JRCWindowComparisonBlocked, "do not fit supplied window"
         ):
