@@ -22,7 +22,7 @@ def windows_fixture():
         qn=3 if i<20 else 1
         result.append({
             "dwd_hourly_gust_qn":[[20.0+i,qn] for _ in range(count)],
-            "climk_72h_gust_mps":22.0+i,
+            "climk_per_storm_gust_mps":22.0+i,
             "era5_grid_node":[50.75,7.25],
             "sensor_height_m":10.0 if i<30 else 12.0,
             "station_elevation_m":100.0,
@@ -49,12 +49,13 @@ class ClimkEra5DWDTop50AuditTests(unittest.TestCase):
                          {"10.0":30,"12.0":20})
         self.assertEqual(result["historical_station_elevation_counts_m_above_sea_level_for_windows_with_observations"],
                          {"100.0":50})
-        primary=result["complete_72h_primary_metrics_descriptive_only"]
-        self.assertEqual(primary["complete_72h_event_pairs"],25)
-        self.assertAlmostEqual(primary["mean_error_era5_minus_dwd_mps"],2.0)
-        self.assertAlmostEqual(primary["root_mean_square_error_mps"],2.0)
-        qn3=result["complete_72h_QN8_3_sensitivity_metrics_descriptive_only"]
-        self.assertEqual(qn3["complete_72h_event_pairs"],20)
+        primary=result["complete_72h_unmatched_support_contrasts_descriptive_only"]
+        self.assertEqual(primary["paired_values"],25)
+        self.assertAlmostEqual(primary["mean_pairwise_difference_CLIMK_minus_DWD_mps"],2.0)
+        self.assertAlmostEqual(primary["root_mean_square_pairwise_difference_mps"],2.0)
+        self.assertIn("not error, bias, or skill",primary["interpretation"])
+        qn3=result["complete_72h_QN8_3_unmatched_support_contrasts_descriptive_only"]
+        self.assertEqual(qn3["paired_values"],20)
         self.assertFalse(result["partial_DWD_windows_imputed_or_used_in_primary_metrics"])
         self.assertFalse(result["sensor_height_adjustment_applied"])
 
