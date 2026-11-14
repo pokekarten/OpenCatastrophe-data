@@ -76,6 +76,10 @@ def main():
               'window_basis':'candidate: source date minus one day 01 UTC through following day 24 UTC',
               'exact_source_window_verified':False, 'scientific_validation_complete':False,
               'annual_catalogue_complete':False,
+              'event_era_station_positions_verified':False,
+              'current_fx_height_correction_status_verified':False,
+              'bias_calibration_eligible':False,
+              'station_metadata_review':'research/observations/knmi_wind_metadata_review.json',
               'common_complete_events':sum(r['all_stations_complete'] for r in rows), 'events':rows}
     args.output.write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps({'common_complete_events':result['common_complete_events'],
