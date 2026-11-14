@@ -169,6 +169,39 @@ class DWDOriginalStationsToERA5TwoGridCells(unittest.TestCase):
         with self.assertRaises(m.DWDGridComparisonBlocked):
             m.combine_original_2020_station_and_grid_peaks(dwd,weather)
 
+    def test_first_actual_dwd_measured_vs_two_google_source_peaks_are_immutable(self):
+        with m.FIRST_ACTUAL_SOURCE_COMPARISON.open("rb") as f:
+            first=tomllib.load(f)
+        self.assertEqual(first["first_genuine_source_comparison_github_run"],43603655228)
+        self.assertEqual(first["source_genuine_distinct_ERA5_025degree_nodes"],2)
+        self.assertEqual([x["station_id"] for x in first["stations"]],["02667","15200","00603"])
+        self.assertEqual([x["DWD_observed_2020_event_peak_FX911_mps"]
+                          for x in first["stations"]],[26.4,31.1,25.5])
+        self.assertEqual([x["descriptive_ERA5_minus_DWD_peak_difference_mps_not_model_bias"]
+                          for x in first["stations"]],[4.769416,1.037897,5.669416])
+        self.assertFalse(first["ERA5_bias_RMSE_skill_model_approved"])
+        self.assertFalse(first["actual_2020_real_RV_insurer_sites_claims_observed"])
+        weather=original_grid_fixture()
+        weather["_internal_public_10x16_event_peak_gust_mps"][7][6]=31.169416427612305
+        weather["_internal_public_10x16_event_peak_gust_mps"][5][6]=32.13789749145508
+        joined=m.combine_original_2020_station_and_grid_peaks(original_dwd_fixture(),weather)
+        self.assertIsNone(m.verify_first_original_station_era5_comparison_receipt(joined))
+        for field,value in (
+            ("google_era5_modelled_original_2020_96h_peak_10fg_mps",29.25),
+            ("dwd_original_zip_sha256","0"*64),
+            ("nearest_era5_grid_lat",51.0),
+            ("descriptive_peak_difference_era5_minus_dwd_mps_not_bias_or_skill",88.0),
+        ):
+            with self.subTest(field=field):
+                bad=deepcopy(joined)
+                bad["station_to_original_ERA5_peak_only"][0][field]=value
+                with self.assertRaises(m.DWDGridComparisonBlocked):
+                    m.verify_first_original_station_era5_comparison_receipt(bad)
+        bad=deepcopy(joined)
+        bad["matched_hour_errors_RMSE_or_model_skill_admitted"]=True
+        with self.assertRaises(m.DWDGridComparisonBlocked):
+            m.verify_first_original_station_era5_comparison_receipt(bad)
+
     def test_source_dry_run_without_call_to_era5_or_dwd(self):
         with patch.object(sys,"argv",["comp","--dry-run"]),\
              patch.object(m,"live_original_comparison",side_effect=AssertionError("NO NETWORK")):
