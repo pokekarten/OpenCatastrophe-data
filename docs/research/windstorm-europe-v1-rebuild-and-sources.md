@@ -97,7 +97,8 @@ observed building-level values or calibrate the existing point-building model.
 The exact land-use product used by the CLIMAAX workflow was also downloaded
 from the JRC's pinned `VER2026-07-15` directory. Its source, CC BY 4.0 notice,
 revision, size, SHA-256, raster transform and point-lookups are recorded in the
-[machine-readable raster audit](../windstorm_europe_luisa2018_raster_audit_v0.toml).
+[machine-readable raster audit](windstorm-europe-luisa2018-raster-audit-v0.md); its
+companion TOML manifest is `research/windstorm_europe_luisa2018_raster_audit_v0.toml`.
 The TIFF is 50 m in EPSG:3035, 130,000 × 92,000 pixels, one int32 band with
 zero nodata. It is about 1 GB and remains a local original, not a Git asset.
 London, Paris and Cologne fixture coordinates resolve to LUISA codes 1210,
