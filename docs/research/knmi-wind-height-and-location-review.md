@@ -59,3 +59,27 @@ Die vorhandenen Fenster bleiben als Abdeckungsprüfung nutzbar. Der
 Ereignis-Reader kennzeichnet die offene Stationsmetadatenprüfung nun
 explizit maschinenlesbar, damit spätere Auswertungen Vollständigkeit
 nicht mit Vergleichbarkeit verwechseln.
+
+## Präzisierung aus Anhang 5, Seiten 60–61
+
+Für Hoek van Holland entspricht die Stations-/Barometerposition ausdrücklich
+nicht der Windmastposition. Der Bericht nennt für den Windmast vor Ende 2012
+X=65492, Y=445057 und danach X=65292, Y=444475. Eine automatische
+Umrechnung/Zuordnung wird hier nicht vorgenommen: Bezugskoordinatensystem
+und genauer Übergangszeitpunkt müssen für den Ereignisvergleich bestätigt sein.
+
+Der Bericht unterscheidet zudem physische Höhe und für die Homogenisierung
+verwendete Rechenhöhe: Vlissingen 20 m über Land beziehungsweise 27 m über
+Meer, Hoek van Holland vor 20121101 14,45 m über Land beziehungsweise
+16,65 m über Meer. Für die damalige Aktualisierung wurden dennoch 27 m und
+15 m beibehalten, um die vorhandenen Reihen nicht zusätzlich inhomogen zu
+machen. Eine einzelne Zahl „Messhöhe“ beschreibt diese Verarbeitung daher
+unzureichend. Die Werte aus Anhang 2 dürfen keine automatische Korrektur steuern.
+
+## Zusätzliche technische Originalprüfung
+
+Der Intake lehnt jetzt doppelte Spaltennamen und Archive mit Endpunkten
+außerhalb der angeforderten Dekade ab. Alle zehn vorhandenen Originalarchive
+wurden mit dieser Dekadenprüfung erneut gelesen. Zehn lokale Tests bestehen,
+einschließlich falscher Dekade und doppelter FX-Spalte. Innere Datenlücken
+werden weiterhin berichtet und nicht als vollständige Messungen ausgegeben.

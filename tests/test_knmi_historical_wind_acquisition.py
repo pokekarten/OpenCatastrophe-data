@@ -30,3 +30,14 @@ class IntakeTests(unittest.TestCase):
     def test_missing_hour_counted(self):
         r=inspect(package('260,19991231,22,200\n260,19991231,24,200'),260)
         self.assertEqual(r['missing_hours_between_endpoints'],1)
+
+    def test_wrong_decade_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'requested period'):
+            inspect(package('260,19991231,24,200'),260,'1981-1990')
+
+    def test_duplicate_column_rejected(self):
+        out=io.BytesIO()
+        with zipfile.ZipFile(out,'w') as z:
+            z.writestr('sample.txt','# STN,YYYYMMDD,HH,FX,FX\n260,19991231,24,200,0')
+        with self.assertRaisesRegex(ValueError, 'Duplicate source columns'):
+            inspect(out.getvalue(),260)

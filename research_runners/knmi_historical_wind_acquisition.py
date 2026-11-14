@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 BASE = 'https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/'
 
 
-def inspect(raw, station):
+def inspect(raw, station, period=None):
     with zipfile.ZipFile(io.BytesIO(raw)) as archive:
         members = archive.infolist()
         if len(members) != 1 or members[0].file_size > 100_000_000:
@@ -22,6 +22,8 @@ def inspect(raw, station):
         lines = archive.read(members[0]).decode('utf-8-sig').splitlines()
     header = next(line for line in lines if line.startswith('# STN,'))
     fields = [v.strip() for v in header[2:].split(',')]
+    if len(fields) != len(set(fields)):
+        raise ValueError('Duplicate source columns')
     if not {'STN', 'YYYYMMDD', 'HH', 'FX'} <= set(fields):
         raise ValueError('Missing required fields')
     stamps, valid = set(), 0
@@ -44,6 +46,10 @@ def inspect(raw, station):
             valid += 1
     if not stamps:
         raise ValueError('Empty series')
+    if period is not None:
+        first, last = map(int, period.split('-'))
+        if min(stamps) != datetime(first, 1, 1, 1) or max(stamps) != datetime(last+1, 1, 1):
+            raise ValueError('Archive endpoints do not match requested period')
     expected = int((max(stamps)-min(stamps)).total_seconds()/3600)+1
     return {'rows': len(stamps), 'valid_fx': valid, 'missing_fx': len(stamps)-valid,
             'missing_hours_between_endpoints': expected-len(stamps),
@@ -77,7 +83,7 @@ def main():
                     raw = response.read(30_000_001)
                 if len(raw) > 30_000_000:
                     raise ValueError('Download exceeds 30 MB bound')
-                summary = inspect(raw, station)
+                summary = inspect(raw, station, period)
                 with target.open('xb') as stream:
                     stream.write(raw)
                 result.update(summary, bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest(), status='downloaded_and_parsed')
