@@ -63,7 +63,7 @@ class NOAAandGFZDirectProofTests(unittest.TestCase):
 
     def test_noaa_rolling_sensor_switching_and_gfz_historical_are_not_equated(self):
         self.assertIn("noaa_swpc_rtsw_mag_2026_multispacecraft", self.source)
-        self.assertIn("gfz_definitive_kp_2024_01_01_eight_3h_bins", self.source)
+        self.assertIn("GFZ definitive Kp 2024-01-01 8x3h", self.source)
         self.assertIn("s.sample_json->>'source_is_rolling'='true'", self.source)
         self.assertIn("s.sample_json->>'rolling_window_complete'='false'", self.source)
         self.assertIn("s.sample_json->>'sensor_lineage_verified'='false'", self.source)
