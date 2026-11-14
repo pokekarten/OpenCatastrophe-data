@@ -6,6 +6,7 @@ Input losses must be realised samples, not mean damage ratios. Years are an
 explicit equally weighted simulation population, including zero-event years.
 """
 import math
+from bisect import bisect_right
 
 
 def amount(value,label):
@@ -46,9 +47,10 @@ def aggregate(year_ids, occurrences, policies, treaty):
     for scope in ('gross','net'):
         annual=[r[scope+'_annual_eur'] for r in output]
         peaks=[r[scope+'_max_event_eur'] for r in output]
+        sorted_annual=sorted(annual);sorted_peaks=sorted(peaks)
         metrics[scope]={'sample_mean_annual_loss_eur':math.fsum(annual)/len(annual),
-            'empirical_ep':[{'threshold_eur':t,'AEP_strict':sum(v>t for v in annual)/len(annual),
-                             'OEP_strict':sum(v>t for v in peaks)/len(peaks)}
+            'empirical_ep':[{'threshold_eur':t,'AEP_strict':(len(annual)-bisect_right(sorted_annual,t))/len(annual),
+                             'OEP_strict':(len(peaks)-bisect_right(sorted_peaks,t))/len(peaks)}
                             for t in sorted(set([0.]+annual+peaks))]}
     return {'years':output,'occurrences':events,'metrics':metrics,
             'year_measure':'explicit equally weighted supplied simulation years, including zero-event years',

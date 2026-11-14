@@ -165,3 +165,41 @@ fictional schedule and zero-event years. JSON configs remain supported.
 Negative tests now verify invalid years, repeated occurrence IDs, invalid
 sample IDs, boolean storm indices, duplicate buildings and NaN coordinates
 fail before attempting to access external source files.
+
+## Empirical whole-year block scenarios
+
+Optional config section:
+
+```toml
+[year_block_resampling]
+simulation_years = 1000
+seed = 7
+```
+
+The supplied `year_ids` and `occurrences` become the source blocks. The model
+resamples whole years with equal weights and preserves each selected year's
+complete occurrence membership, including empty years. Year ordering and
+source occurrence ordering do not change the output. A separate reproducible
+seed selects source years; damage sampling still uses the model severity
+seed and target simulation-year identity. This keeps event membership
+within a year, not interannual dependence, stationarity or event timing.
+There is no timestamp/hours-clause reconstruction in this stage.
+
+The result includes the exact simulation-year→source-year mapping and explicit
+`source_calendar_completeness_verified=false` and
+`annual_frequency_calibrated=false` markers. Do not interpret resampling the
+fictional three-year example as a historical frequency estimate or assign
+return periods to its losses. Complete original event/year evidence remains
+required for annual risk calibration.
+
+A local original-Kyrill replay of the versioned example with 1000 resampled
+years and bootstrap seed 7 completed: 331 supplied Kyrill occurrences, with
+all other sampled years containing no event. This is an execution check of
+an explicitly assumed three-year population. Thirteen focused tests passed,
+including paired storms moving together, zero-event years, deterministic
+replay, input ordering, seed sensitivity and invalid year measures.
+
+The annual financial EP calculation now sorts annual totals/event maxima
+once and counts strict exceedances by binary search. This replaces repeated
+full scans per threshold, while preserving zero years, ties, strict `>`
+semantics and distinct AEP/OEP values.
