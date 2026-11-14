@@ -94,6 +94,16 @@ class JRCGSWOccurrenceHeaderTests(unittest.TestCase):
         self.assertFalse(rec["first_ifd_fully_within_prefix"])
         self.assertEqual(rec["first_ifd_entry_count_if_visible"],100)
 
+    def test_bigtiff_requires_eight_byte_aligned_first_directory(self):
+        raw = bytearray(big_tiff())
+        # 18 is classic word-aligned but invalid as a BigTIFF IFD offset.
+        struct.pack_into(">Q", raw, 8, 18)
+        with self.assertRaisesRegex(jrc.JRCHeaderBlocked, "unaligned"):
+            jrc.inspect_tiff_prefix(bytes(raw))
+        self.assertTrue(jrc.inspect_tiff_prefix(big_tiff())[
+            "first_ifd_fully_within_prefix"
+        ])
+
     def test_first_ifd_requires_terminal_next_pointer_inside_prefix(self):
         # The count and all IFD entries can fit, yet the 4/8 byte next-IFD
         # pointer is outside the exact 4096-byte original prefix.
