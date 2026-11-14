@@ -109,3 +109,36 @@ the source inventory describes Ciaran/Domingos deterministic scenarios and
 multiple footprint interpolation alternatives. Empty occurrence data do not
 supply an annual stochastic catalogue. CLIMK and the European response
 reference are already acquired building blocks for our own implementation.
+
+## Financial occurrences and supplied simulation years
+
+`research_runners/windstorm_europe_financial_years_v0.py` supplies the
+`aggregate(year_ids, occurrences, policies, treaty)` API. `year_ids` must
+explicitly include all equally weighted simulation years, including years
+without events. Each occurrence supplies a unique `(year_id, occurrence_id)`
+and `sampled_policy_ground_up_eur` mapping. Policies supply EUR deductible and
+limit; the treaty supplies EUR occurrence attachment and limit. One physical
+storm's cross-country policy samples must enter as one financial occurrence
+under the chosen hours-clause definition. Repeated IDs fail instead of
+applying treaty attachment separately by country.
+
+The module returns occurrence gross/ceded/net, annual sums and event maxima,
+mean annual losses over the supplied year measure, and empirical strict
+exceedance AEP/OEP. It supports a single occurrence excess-of-loss layer with
+unlimited annual reinstatements, without annual aggregate terms. These are
+explicit prototype contract assumptions, not actual insurance terms.
+
+This API requires realised policy loss samples. The scenario oracle above
+returns expected physical damage; feeding its means into nonlinear insurance
+terms would not establish expected insured loss. A calibrated conditional
+severity/dependence sampler is still required to connect the two stages.
+Likewise, the 50 selected CLIMK events cannot supply calibrated annual
+simulation years merely by assigning arbitrary probabilities.
+
+A tested two-country example combines EUR80 and EUR50 ground-up losses;
+EUR10 deductibles produce EUR110 gross occurrence loss. A EUR40 layer above
+EUR50 cedes EUR40. A second EUR20 insured event brings annual gross/net to
+EUR130/EUR90. Including a second zero-event year makes sample mean annual
+gross EUR65. At threshold EUR110, strict AEP is 0.5 and strict OEP is 0.
+These synthetic checks prove ordering and year aggregation, not frequency
+or financial calibration.
