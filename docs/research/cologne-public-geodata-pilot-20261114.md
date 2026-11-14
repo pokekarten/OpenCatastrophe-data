@@ -145,9 +145,25 @@ GetCapabilities instead advertises default **EPSG:25832**. Do not
 interpret the raw tree coordinates as RFC 7946 WGS84, visually align them
 with KGG polygons, or join them to building portfolios until a verified
 source CRS and explicit reprojection has passed an independent spatial
-challenge. The single-feature reader deliberately returns
+challenge. An additional bounded **original GML 3.2** GetFeature request for the tree
+layer with `SRSNAME=EPSG:4326` returned a Point whose geometry declares
+`srsName=urn:ogc:def:crs:EPSG::4326`, yet the `gml:pos` values were
+metre-like, not valid geographic degrees. This is an independent format
+confirmation of the numerical CRS mismatch; the declared GML CRS must not
+override the coordinate-range challenge. For the inspected tree Point, a
+test transformation from EPSG:25832 to EPSG:4326 yields approximately
+6.92931 E, 50.92123 N, plausibly in Cologne. That single successful
+transformation is **only a hypothesis check**, not proof of correct CRS
+for all features or permission to overlay model hazard data.
+
+The single-feature reader deliberately returns
 `coordinate_status=not_approved_geographic_crs_must_reproject_and_verify`
-for tree results; no model admission is made for either source.
+for tree results; no model admission is made for either source. The next
+spatial challenge should verify multiple well-distributed original tree
+points against independently authoritative Cologne geometry, then pin
+the provider's response/projection semantics and implement a reviewed
+explicit reprojection; never silently accept an `EPSG:4326` label whose
+coordinate magnitudes contradict it.
 
 These receipts are ephemeral observations at the date above, not frozen
 complete provider files and not an approved warehouse import.
