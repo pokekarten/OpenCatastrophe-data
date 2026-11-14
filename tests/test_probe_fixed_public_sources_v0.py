@@ -247,5 +247,19 @@ class FixedSourceProbesTests(unittest.TestCase):
             reviewed_probe("attacker.invalid", self.root)
 
 
+    def test_non_200_provider_status_never_counts_as_api_success(self):
+        """Live-provider failures must not produce a successful receipt."""
+        source = "gfz.geomagnetic-kp"
+        self.write(source)
+        for status in (204, 301, 404, 429, 503):
+            with self.subTest(status=status):
+                reply = Reply(b'{"Kp":[1.0]}')
+                reply.status = status
+                client = Client(reply)
+                with self.assertRaisesRegex(ProbeBlocked, "provider status not 200"):
+                    probe(source, root=self.root, opener=client)
+                self.assertEqual(len(client.requests), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

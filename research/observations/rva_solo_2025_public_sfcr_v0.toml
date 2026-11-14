@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Independently checked public issuer observation, not insurer exposure or risk calibration.
+schema_version = "RVA_PUBLIC_SOLO_SFCR_PROFILE_V0"
+calibration_status = "NOT_CALIBRATED"
+
+[[profiles]]
+profile_id = "RVA_DE_2025"
+entity = "R+V Allgemeine Versicherung AG"
+entity_kind = "solo_direct_insurer"
+report_year = 2025
+currency = "EUR"
+lob_measure = "gross_written_premium_eur_million"
+
+[profiles.source]
+url = "https://www.ruv.de/dam/jcr:9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf"
+document = "SFCR 2025"
+reported_by = "R+V Allgemeine Versicherung AG"
+reporting_perimeter = "solo_regulated_entity"
+reviewed_at = "2026-11-04"
+source_data_use = "public_financial_benchmark_only"
+
+[profiles.basis]
+denominator_measure = "gross_written_premium"
+denominator_eur_million = "5992.306"
+scope = "all solo underwriting lines, not group, not property TIV"
+
+[[profiles.lob_rows]]
+code = "fire_and_other_property"
+value = "2223.182"
+
+[[profiles.lob_rows]]
+code = "general_liability"
+value = "775.540"
+
+[[profiles.lob_rows]]
+code = "motor_liability"
+value = "838.404"
+
+[[profiles.lob_rows]]
+code = "other_motor"
+value = "666.813"
+
+[[profiles.lob_rows]]
+code = "credit_surety"
+value = "606.963"
+
+[[profiles.lob_rows]]
+code = "income_protection_disability"
+value = "281.620"
+
+[[profiles.lob_rows]]
+code = "insurance_with_profit_participation"
+value = "190.467"
+
+[[profiles.lob_rows]]
+code = "legal_protection"
+value = "216.715"
+
+[[profiles.lob_rows]]
+code = "transport"
+value = "47.279"
+
+[[profiles.lob_rows]]
+code = "misc_financial_loss"
+value = "132.442"
+
+[[profiles.lob_rows]]
+code = "nonprop_transport_reinsurance"
+value = "3.962"
+
+[[profiles.lob_rows]]
+code = "nonprop_property_reinsurance"
+value = "8.918"

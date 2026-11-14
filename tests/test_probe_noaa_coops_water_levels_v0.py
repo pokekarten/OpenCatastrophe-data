@@ -67,6 +67,45 @@ class NOAACoopsProbeTests(unittest.TestCase):
         self.assertNotIn("data", summary)
         self.assertNotIn("height", summary)
 
+    def test_partial_day_coverage_is_not_silently_full_or_zero(self):
+        summary = inspect_json_bytes(encode(payload()))
+        self.assertEqual(summary["expected_six_minute_slots"], 240)
+        self.assertEqual(summary["missing_six_minute_slots"], 238)
+        self.assertEqual(summary["missing_before_first_observation"], 0)
+        self.assertEqual(summary["missing_between_observations"], 0)
+        self.assertEqual(summary["missing_after_last_observation"], 238)
+        self.assertFalse(summary["full_utc_day_covered"])
+        self.assertFalse(summary["missing_measurements_inferred_as_zero"])
+
+    def test_full_day_and_interior_missing_slots_have_separate_counts(self):
+        value = payload()
+        template = value["data"][0].copy()
+        value["data"] = [
+            {**template, "t": f"2026-01-01 {slot // 10:02d}:{(slot % 10) * 6:02d}"}
+            for slot in range(240)
+        ]
+        full = inspect_json_bytes(encode(value))
+        self.assertEqual(full["observation_rows"], 240)
+        self.assertEqual(full["missing_six_minute_slots"], 0)
+        self.assertTrue(full["full_utc_day_covered"])
+        self.assertFalse(full["quality_scientifically_assessed"])
+
+        # A sparse day is still structurally valid, but its gaps must be explicit.
+        value["data"].pop(120)
+        missing = inspect_json_bytes(encode(value))
+        self.assertEqual(missing["missing_six_minute_slots"], 1)
+        self.assertEqual(missing["missing_between_observations"], 1)
+        self.assertFalse(missing["full_utc_day_covered"])
+
+        value["data"].pop(0)
+        value["data"].pop()
+        edges = inspect_json_bytes(encode(value))
+        self.assertEqual(edges["missing_six_minute_slots"], 3)
+        self.assertEqual(edges["missing_before_first_observation"], 1)
+        self.assertEqual(edges["missing_between_observations"], 1)
+        self.assertEqual(edges["missing_after_last_observation"], 1)
+        self.assertFalse(edges["missing_measurements_inferred_as_zero"])
+
     def test_mock_network_emits_receipt_only(self):
         raw = encode(payload())
         calls = []

@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GTSM original Zenodo-to-author station catalogue crosscheck
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/gtsm-original-author-catalogue.yml"
+      - "scripts/gtsm_era5_e_author_catalogue_overlap_v0.py"
+      - "scripts/gtsm_era5_e_author_catalogue_original_v0.py"
+      - "scripts/gtsm_era5_e_author_family_return_qa_v0.py"
+      - "tests/test_gtsm_era5_e_author_family_return_qa_v0.py"
+      - "scripts/gtsm_era5_e_return_level_qa_v0.py"
+      - "tests/test_gtsm_era5_e_author_catalogue_overlap_v0.py"
+      - "scripts/gtsm_era5_e_original_receipt_v0.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gtsm-author-catalogue-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  two-pinned-originals:
+    name: Aggregate author-catalogue ID and geolocation overlap
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact PR commit without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Install fixed scientific NetCDF reader
+        run: |
+          python -m pip install --no-input --disable-pip-version-check -r requirements-glofas-acquisition.txt
+          python -m pip check
+      - name: Synthetic source-ID, name-family and coordinate overlap tests
+        run: python -m unittest tests.test_gtsm_era5_e_author_catalogue_overlap_v0 tests.test_gtsm_era5_e_author_family_return_qa_v0 -v
+      - name: Match only exact GitHub blob and original Zenodo NetCDF in memory
+        run: python scripts/gtsm_era5_e_author_catalogue_original_v0.py

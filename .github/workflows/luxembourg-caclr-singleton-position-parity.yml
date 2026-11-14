@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg ACT CACLR singleton address coordinates across 2026 vintages
+
+on:
+  pull_request:
+    paths:
+      - "research_runners/lu_caclr_singleton_position_parity_v0.py"
+      - "tests/test_lu_caclr_singleton_position_parity_v0.py"
+      - "docs/research/lu-caclr-singleton-position-parity-20261104.md"
+      - ".github/workflows/luxembourg-caclr-singleton-position-parity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lu-caclr-singleton-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-caclr-position-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - name: Checkout exact workflow head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install explicitly pinned WKB geometry engine
+        run: python -m pip install --disable-pip-version-check --no-input 'shapely==2.1.2'
+      - name: Run wholly fictional GPKG binary and parity safety tests
+        run: python -m unittest tests.test_lu_caclr_singleton_position_parity_v0 -v
+      - name: Compare two immutable official originals in ephemeral runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          april="$RUNNER_TEMP/lu-address-apr2026.zip"
+          november="$RUNNER_TEMP/lu-address-nov2026.csv"
+          trap 'rm -f "$april" "$november"' EXIT
+          curl --fail --location --silent --show-error --retry 0 \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 180 --max-filesize 25165824 -o "$april" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20260401-011010/addresses-20260401.zip'
+          curl --fail --location --silent --show-error --retry 0 \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 180 --max-filesize 32000000 -o "$november" \
+            'https://download.data.public.lu/resources/adresses-georeferencees-bd-adresses/20261102-033122/addresses.csv'
+          python -m research_runners.lu_caclr_singleton_position_parity_v0 \
+            --april-addresses-zip "$april" --november-addresses-csv "$november"
+          # The only output is aggregate metric distance bins and strong hashes.

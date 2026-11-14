@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** rest
 
-**Status:** documented_only
+**Status:** probe_ready
 
 **Documentation url:** <https://data.ca.gov/docs/developer-documentation>
 
@@ -57,7 +57,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /api/3/action/package_show
 
-**Parameter rules:** One documented public CKAN read-only package_show for fixed dataset id=1fdaea07-4bcd-4795-aa88-cd72b98e8a03. One original metadata-only response was independently obtained at 2026-11-01T18:01:22Z (16,916 bytes, SHA-256 1998a87aff518a059162d9c4faff3ce3c2e145f007323c6a91cf3fb3617927f8). This contract remains documentation-only and does not authorize future automated requests, any CKAN resource download, ArcGIS feature /query, bulk pagination, address/APN retrieval, caller-controlled URLs, redirects, parameters or headers.
+**Parameter rules:** Exactly one maintainer-triggered, read-only CKAN Action package_show metadata GET for fixed id=1fdaea07-4bcd-4795-aa88-cd72b98e8a03; immutable route, exactly one request, descriptive user agent, at most 65,536 original response bytes, timeout 30 seconds, no redirect/retry/authentication. Require original package ID/name, public/cc-by fields, frozen modified date and all eleven original resource IDs/formats. Respond to any drift with BLOCKED and review. No following returned resource URLs, ArcGIS queries, CSV/GeoJSON/ZIP downloads, feature IDs, address/APN/individual inspection reads, bulk harvesting, pagination, caller-selected host/URLs, parameters or headers. The historical 2026-11-01 body receipt is a reference only; this contract authorizes a bounded future \*metadata\* probe, not third-party source data retention.
 
 ## Response contract
 
@@ -79,7 +79,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** The state CKAN developer documentation says public read-only datasets require no API token and describes programmatic reuse; no published service-specific automated commercial-query quota was established. One bounded metadata-only response has been captured, but this record cannot be used as a schedule or unrestricted automation permission.
+**Rate limit notes:** Provider documentation on 2026-11-12 lists 60 anonymous requests/minute/IP and asks automated clients to identify with descriptive User-Agent. This workflow deliberately allows ONE manual fixed metadata request only (not weekly polling), no retries, no bulk and no additional data resources. Separate review required before any higher cadence, feature access, raw sample retention or commercial bulk use.
 
 **Mutability notes:** The package is mutable and includes resource IDs and metadata_modified; as captured at 2026-11-01T18:01:22Z the original UTF-8 JSON body length is 16916 bytes and SHA-256 is 1998a87aff518a059162d9c4faff3ce3c2e145f007323c6a91cf3fb3617927f8. Exact-byte replays may change and must fail closed against this snapshot rather than silently replace it.
 
@@ -91,32 +91,39 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Terms url:** <https://data.ca.gov/docs/developer-documentation>
 
-**Commercial automation status:** unknown
+**Commercial automation status:** allowed
 
 **Redistribution status:** unknown
 
-**Notes:** The official CKAN package metadata and portal label this DINS package public and cc-by/Creative Commons Attribution; state developer documentation explicitly describes anonymous read-only package metadata access. This verifies only the public cataloguing metadata and a source-published licence label. It does NOT resolve exact ArcGIS feature service policies, sensitive address/APN output, attribution version terms, commercial bulk automation, external asset redistribution or scientific admission. Public data availability does not bypass privacy rules.
+**Notes:** The official state developer docs explicitly allow public anonymous CKAN reads, describe automated access and a 60/minute/IP limit, and require a descriptive User-Agent for automation. CAL FIRE's exact DINS package page labels metadata public, no restrictions on public use and Creative Commons Attribution. 'allowed' here applies only to one bounded CKAN package metadata GET under these provider conditions; NOT to ArcGIS service, individual inspection details, personal/address/APN attributes, bulk commercial mining, raw feature redistribution or insurance/CAT modelling. Any upstream contributor rights exceptions still require asset-specific review.
 
 ## Probe contract
 
-**Mode:** none
+**Mode:** metadata_get
 
-**Operation:** `null`
+**Operation:** dins_package_show_catalogue
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-_Empty array._
+- exact fixed CKAN package_show URL, one anonymous GET and descriptive User-Agent
+- 200 application/json original response, &lt;=65536 bytes, no redirect/retry
+- strict 11-resource public package metadata and 2026-10-21 reviewed snapshot identity
+- retrieval UTC, request and original response SHA-256, contract/code identity
+- no provider response text, URLs, addresses, contacts or original raw bytes retained
+- research-only, model_input_approved=false, external_bytes_persisted=false
 
-**Implementation decision:** document_only
+**Implementation decision:** build_adapter_now
 
-**Reviewed at:** 2026-11-01
+**Reviewed at:** 2026-11-12
 
 ## Evidence urls
 
 - <https://publish.data.ca.gov/api/3/action/package_show?id=1fdaea07-4bcd-4795-aa88-cd72b98e8a03>
 - <https://publish.data.ca.gov/dataset/cal-fire-damage-inspection-dins-data>
 - <https://data.ca.gov/docs/developer-documentation>
+- <https://data.ca.gov/docs/open-data-policy>
+- <https://handbook.data.ca.gov/conditions-of-use/>
 
-**Notes:** Unlike the DINS ArcGIS POSTFIRE FeatureServer T0 contract this entry records a separate CKAN catalogue interface. One original metadata-only body was obtained and hashed with a SHA-256 implementation verified against standard empty/abc vectors. The 11 resource identifiers/formats and source receipt are recorded in docs/research/calfire-dins-ckan-original-metadata-receipt-20261101.md. Neither raw catalogue bytes, provider feature records nor URLs returned by the provider have been committed, and no model data are admitted.
+**Notes:** Authoritative state CKAN metadata route and individual provider DINS package were reviewed 2026-11-12. Exactly one manually dispatched bounded public metadata canary is enabled; original historical 16,916-byte SHA receipt and strict eleven-resource preflight are retained. A changed public package version must fail closed rather than silently update. Asset downloading, independent scientific damage modelling, commercial bulk and address/parcel access remain separate blocked gates; no data admission or Neon write.

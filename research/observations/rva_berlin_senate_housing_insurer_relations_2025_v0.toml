@@ -1,0 +1,130 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Bounded issuer-to-corporate-account observation from official Berlin Senate inquiry.
+schema_version = "BERLIN_SENATE_2025_PUBLIC_HOUSING_BUILDING_INSURER_RELATIONSHIPS_V0"
+source_document_number = "Drucksache 19/22033"
+source_official_url = "https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-22033.pdf"
+source_issuing_authority = "Senatsverwaltung fuer Stadtentwicklung Bauen und Wohnen Berlin"
+source_statement_date = "2025-04-01"
+source_received_by_parliament = "2025-04-03"
+source_question_ids = [2, 3, 4, 10]
+source_page_pdf_zero_based_for_relationships = 2
+source_original_document_sha256_verified = false
+source_relationships_derived_from_public_company_submissions = true
+public_named_berlin_housing_entities = 6
+source_relationships_observed_as_of_2025 = true
+confirmed_rva_named_housing_company_count = 3
+no_rva_named_other_insurer_company_count = 3
+risk_geography = "Berlin public housing entities; no verified insured site-level or administrative district footprints"
+policy_structure = "building_insurance_overarching_blanket_company_contract_not_one_policy_per_building"
+wbm_separate_commercial_master_policy = true
+wbm_pure_commercial_2025_rva_carrier_identified_by_this_senate_answer = false
+degewo_rva_coinsurance_fraction_observed = false
+insured_policies_for_either_rva_company_count_observed = false
+number_of_insured_properties_observed = false
+corporate_owner_dwelling_count_equal_insured_properties = false
+rva_specific_storm_hail_claims_observed = false
+company_tiv_or_coverage_deductibles_at_site_observed = false
+named_competitor_means_exclusive_no_rva_insurance_any_time = false
+company_2026_renewal_or_current_carrier_observed = false
+natcat_OEP_AEP_or_RI_terms_observed = false
+model_real_rva_exposure_site_admitted = false
+market_coverage_terms_across_lwu = ["fire", "tap_water", "storm_hail", "elemental", "vandalism"]
+cover_summary_is_not_per_object_schedule = true
+premium_example_lower_bound_2019_eur_per_dwelling_not_rva_specific = 100
+premium_example_upper_bound_2024_eur_per_dwelling_not_rva_specific = 200
+premium_example_2019_below_bound_and_2024_above_bound = true
+premium_range_is_not_contract_renewal_or_tiv = true
+industry_note = "Senate reports unspecified LWU exemplar below EUR100 in 2019 and above EUR200 in 2024 per residential UNIT; not per building and not a measured company tariff."
+market_value_note = "Senate records that buildings are insured under a blanket company contract. A known corporate building insurer relationship is NOT a known insured address, TIV, contract count, or share of joint building insurance."
+source_rights_scope = "manual public government small factual transcription only, cite PDF and do not copy original PDF bytes"
+
+[[housing_companies]]
+legal_name = "degewo AG"
+rva_allgemeine_explicitly_named = true
+insurance_relation_type = "named_member_of_coinsurance_consortium"
+named_insurers = ["Allianz AG","R+V Allgemeine Versicherung AG"]
+source_question_number = 2
+public_summary = "Question 2: degewo building insurance consortium Allianz and R+V Allgemeine"
+other_insurer_comparator = false
+carrier_observation_date = "2025-04-01"
+risk_addresses_known = false
+insured_building_count_known = false
+covered_property_tiv_known = false
+carrier_2026_still_current_confirmed = false
+individual_building_is_separate_insurance_contract = false
+
+[[housing_companies]]
+legal_name = "GESOBAU AG"
+rva_allgemeine_explicitly_named = true
+insurance_relation_type = "named_building_insurance_contract_counterparty"
+named_insurers = ["R+V Allgemeine Versicherung AG"]
+source_question_number = 2
+public_summary = "Question 2: GESOBAU building insurance contract with R+V Allgemeine"
+other_insurer_comparator = false
+carrier_observation_date = "2025-04-01"
+risk_addresses_known = false
+insured_building_count_known = false
+covered_property_tiv_known = false
+carrier_2026_still_current_confirmed = false
+individual_building_is_separate_insurance_contract = false
+
+[[housing_companies]]
+legal_name = "WBM Wohnungsbaugesellschaft Berlin-Mitte mbH"
+rva_allgemeine_explicitly_named = true
+insurance_relation_type = "named_building_insurance_contract_counterparty"
+named_insurers = ["R+V Allgemeine Versicherung AG"]
+source_question_number = 2
+public_summary = "Question 2: WBM building insurance contract with R+V Allgemeine; WBM separately insured pure commercial properties"
+other_insurer_comparator = false
+carrier_observation_date = "2025-04-01"
+risk_addresses_known = false
+insured_building_count_known = false
+covered_property_tiv_known = false
+carrier_2026_still_current_confirmed = false
+individual_building_is_separate_insurance_contract = false
+
+[[housing_companies]]
+legal_name = "Gewobag Wohnungsbau-Aktiengesellschaft Berlin"
+rva_allgemeine_explicitly_named = false
+insurance_relation_type = "other_insurers_named_no_rva_named"
+named_insurers = ["ERGO","Generali"]
+source_question_number = 2
+public_summary = "Question 2: Gewobag building insurance with ERGO and Generali"
+other_insurer_comparator = true
+carrier_observation_date = "2025-04-01"
+risk_addresses_known = false
+insured_building_count_known = false
+covered_property_tiv_known = false
+carrier_2026_still_current_confirmed = false
+individual_building_is_separate_insurance_contract = false
+
+[[housing_companies]]
+legal_name = "HOWOGE Wohnungsbaugesellschaft mbH"
+rva_allgemeine_explicitly_named = false
+insurance_relation_type = "other_insurers_named_no_rva_named"
+named_insurers = ["Westfälische Provinzial Versicherung AG"]
+source_question_number = 2
+public_summary = "Question 2: HOWOGE building insurance with Westfälische Provinzial"
+other_insurer_comparator = true
+carrier_observation_date = "2025-04-01"
+risk_addresses_known = false
+insured_building_count_known = false
+covered_property_tiv_known = false
+carrier_2026_still_current_confirmed = false
+individual_building_is_separate_insurance_contract = false
+
+[[housing_companies]]
+legal_name = "STADT UND LAND Wohnbauten-Gesellschaft mbH"
+rva_allgemeine_explicitly_named = false
+insurance_relation_type = "other_insurers_named_no_rva_named"
+named_insurers = ["Allianz AG"]
+source_question_number = 2
+public_summary = "Question 2: STADT UND LAND building insurance contract with Allianz"
+other_insurer_comparator = true
+carrier_observation_date = "2025-04-01"
+risk_addresses_known = false
+insured_building_count_known = false
+covered_property_tiv_known = false
+carrier_2026_still_current_confirmed = false
+individual_building_is_separate_insurance_contract = false

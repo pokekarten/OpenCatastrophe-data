@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: CAL FIRE DINS CKAN original metadata one-shot
+
+on:
+  pull_request:
+    paths:
+      - "scripts/probe_calfire_dins_ckan_catalogue_v0.py"
+      - "tests/test_probe_calfire_dins_ckan_catalogue_v0.py"
+      - "access/us.calfire.dins.ckan-package-catalogue.json"
+      - "access/us.calfire.dins.ckan-package-catalogue.md"
+      - ".github/workflows/calfire-dins-ckan-metadata.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/probe_calfire_dins_ckan_catalogue_v0.py"
+      - "tests/test_probe_calfire_dins_ckan_catalogue_v0.py"
+      - ".github/workflows/calfire-dins-ckan-metadata.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contract-and-synthetic:
+    name: Validate exact public contract and fail-closed tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run negative tests with no network
+        run: >-
+          python -m unittest
+          tests.test_preflight_calfire_dins_ckan_catalogue_v0
+          tests.test_probe_calfire_dins_ckan_catalogue_v0 -v
+  live-metadata-only:
+    name: One exact official CKAN catalogue GET on trusted main only
+    needs: offline-contract-and-synthetic
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Perform one original fixed metadata read, receipt only
+        run: python -m scripts.probe_calfire_dins_ckan_catalogue_v0 --live >> "$GITHUB_STEP_SUMMARY"

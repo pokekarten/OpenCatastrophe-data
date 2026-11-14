@@ -1,0 +1,192 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Observed insurer-reported treaty families and annual protection usage. NEVER an actual treaty wording.
+schema_version = "RVA_SOLO_PUBLIC_OUTWARD_NATCAT_2021_2025_V0"
+target_legal_entity = "R+V Allgemeine Versicherung AG"
+accounting_basis = "HGB_issuer_direct_business_reinsurance_technical_result"
+currency = "EUR"
+assessed_at = "2026-11-04"
+source_status = "PUBLIC_ISSUER_PARAGRAPH_RESEARCH_NO_SOURCE_PDF_BYTE_RECEIPT"
+financial_terms_status = "UNKNOWN_NOT_APPROVED"
+insurer_specific_gross_or_net_cat_loss_observed = false
+company_geocoded_sites_or_tiv_observed = false
+real_treaty_attachments_or_limits_observed = false
+native_cat_loss_model_admitted = false
+note = "The signed annual direct-business outward reinsurance technical result is not a peril-specific ceded NatCat claim. Separate 2021 claim-heavy sign from treaty economics, inwards and company groups. Parent external retrocession does not establish actual ultimate layer order."
+
+[[years]]
+year = 2021
+source_url = "https://www.ruv.de/dam/jcr:ecf3969a-7a87-4a22-955a-81b52ac33bb9/2021-allgemeine.pdf"
+report_perimeter = "solo_RV_Allgemeine_self_written_direct"
+reinsurance_treaty_families_observed = ["excess_of_loss", "quota_share"]
+quota_treaty_explicitly_stated = true
+quota_not_mentioned_is_proof_absent = false
+supplementary_internal_natcat_xl_counterparty = "R+V Versicherung AG"
+parent_retrossession_to_external_reinsurers_disclosed = true
+reported_natcat_large_loss_protection_in_force = true
+reported_natcat_large_loss_protection_used = true
+signed_outward_technical_result_direct_eur_million = "470.6"
+signed_outward_result_is_ceded_cat_loss_only = false
+signed_outward_result_is_a_treaty_premium_or_claim = false
+year_context = "2021 Volker/Wolfgang/Xero/Bernd: issuer explicitly attributes increased ceded technical recovery to June/July weather and reports parent NatCat protection invoked. Entire EUR 470.6m annual outward technical result cannot be allocated to Bernd or one treaty."
+original_source_pdf_sha256_verified_here = false
+exact_attachment_eur_observed = false
+exact_exhaustion_eur_observed = false
+exact_treaty_quota_observed = false
+aggregate_or_occurrence_basis_known = false
+inuring_order_known = false
+reinstatements_known = false
+non_cat_claims_ceded_aggregation_known = false
+
+
+[[years]]
+year = 2022
+source_url = "https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf"
+report_perimeter = "solo_RV_Allgemeine_self_written_direct"
+reinsurance_treaty_families_observed = ["excess_of_loss", "unspecified_other_treaties"]
+quota_treaty_explicitly_stated = false
+quota_not_mentioned_is_proof_absent = false
+supplementary_internal_natcat_xl_counterparty = "R+V Versicherung AG"
+parent_retrossession_to_external_reinsurers_disclosed = true
+reported_natcat_large_loss_protection_in_force = true
+reported_natcat_large_loss_protection_used = false
+signed_outward_technical_result_direct_eur_million = "-59.8"
+signed_outward_result_is_ceded_cat_loss_only = false
+signed_outward_result_is_a_treaty_premium_or_claim = false
+year_context = "HGB says excess contracts and supplementary parental NatCat XL; does not state a quota treaty in the cited passage. That omission does NOT prove absence. NatCat large-loss protection reported unused."
+original_source_pdf_sha256_verified_here = false
+exact_attachment_eur_observed = false
+exact_exhaustion_eur_observed = false
+exact_treaty_quota_observed = false
+aggregate_or_occurrence_basis_known = false
+inuring_order_known = false
+reinstatements_known = false
+non_cat_claims_ceded_aggregation_known = false
+
+
+[[years]]
+year = 2023
+source_url = "https://www.ruv.de/dam/jcr:781b9b4f-3574-44c3-8183-24d4dde18195/2023-allgemeine.pdf"
+report_perimeter = "solo_RV_Allgemeine_self_written_direct"
+reinsurance_treaty_families_observed = ["excess_of_loss", "quota_share"]
+quota_treaty_explicitly_stated = true
+quota_not_mentioned_is_proof_absent = false
+supplementary_internal_natcat_xl_counterparty = "R+V Versicherung AG"
+parent_retrossession_to_external_reinsurers_disclosed = true
+reported_natcat_large_loss_protection_in_force = true
+reported_natcat_large_loss_protection_used = false
+signed_outward_technical_result_direct_eur_million = "-116.6"
+signed_outward_result_is_ceded_cat_loss_only = false
+signed_outward_result_is_a_treaty_premium_or_claim = false
+year_context = "HGB reports quota+excess families, parent NatCat XL and that top-level NatCat protection was not invoked."
+original_source_pdf_sha256_verified_here = false
+exact_attachment_eur_observed = false
+exact_exhaustion_eur_observed = false
+exact_treaty_quota_observed = false
+aggregate_or_occurrence_basis_known = false
+inuring_order_known = false
+reinstatements_known = false
+non_cat_claims_ceded_aggregation_known = false
+
+
+[[years]]
+year = 2024
+source_url = "https://www.ruv.de/dam/jcr:71a5e2d0-4f86-4e5f-a716-f3f3f6aa5102/Allgemeine-2024.pdf"
+report_perimeter = "solo_RV_Allgemeine_self_written_direct"
+reinsurance_treaty_families_observed = ["excess_of_loss", "quota_share"]
+quota_treaty_explicitly_stated = true
+quota_not_mentioned_is_proof_absent = false
+supplementary_internal_natcat_xl_counterparty = "R+V Versicherung AG"
+parent_retrossession_to_external_reinsurers_disclosed = true
+reported_natcat_large_loss_protection_in_force = true
+reported_natcat_large_loss_protection_used = false
+signed_outward_technical_result_direct_eur_million = "-153.5"
+signed_outward_result_is_ceded_cat_loss_only = false
+signed_outward_result_is_a_treaty_premium_or_claim = false
+year_context = "HGB 2024 P11-P13 specifies excess/quota, parental Cat XL, external retro and unused annual NatCat cover; 2024 Condor merger affects scope."
+original_source_pdf_sha256_verified_here = false
+exact_attachment_eur_observed = false
+exact_exhaustion_eur_observed = false
+exact_treaty_quota_observed = false
+aggregate_or_occurrence_basis_known = false
+inuring_order_known = false
+reinstatements_known = false
+non_cat_claims_ceded_aggregation_known = false
+
+
+[[years]]
+year = 2025
+source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf"
+report_perimeter = "solo_RV_Allgemeine_self_written_direct"
+reinsurance_treaty_families_observed = ["excess_of_loss", "quota_share"]
+quota_treaty_explicitly_stated = true
+quota_not_mentioned_is_proof_absent = false
+supplementary_internal_natcat_xl_counterparty = "R+V Versicherung AG"
+parent_retrossession_to_external_reinsurers_disclosed = true
+reported_natcat_large_loss_protection_in_force = true
+reported_natcat_large_loss_protection_used = false
+signed_outward_technical_result_direct_eur_million = "-166.1"
+signed_outward_result_is_ceded_cat_loss_only = false
+signed_outward_result_is_a_treaty_premium_or_claim = false
+year_context = "HGB 2025 says quota/excess, additional parent NatCat XL and external retro protection unused; do not infer risk tower terms or reinsurance premium."
+original_source_pdf_sha256_verified_here = false
+exact_attachment_eur_observed = false
+exact_exhaustion_eur_observed = false
+exact_treaty_quota_observed = false
+aggregate_or_occurrence_basis_known = false
+inuring_order_known = false
+reinstatements_known = false
+non_cat_claims_ceded_aggregation_known = false
+
+
+# Original 2022 issuer report retrospectively reports the 2021 company's
+# gross CURRENT-YEAR insured catastrophe-event EXPENSE across its business.
+# This is not a single Bernd flood loss, not direct connected-building loss,
+# not a 1:200 PML, and not a ceded/net loss.
+[historical_solo_gross_natcat_shock_2021]
+source_report_year = 2022
+source_url = "https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf"
+original_report_pdf_page = 9
+event_year = 2021
+gross_current_year_elemental_loss_expense_eur_million = "949.8"
+reporting_entity = "R+V Allgemeine Versicherung AG"
+single_bernd_event_value = false
+property_building_only_loss = false
+all_solo_yearly_natcat_treaty_cession_observed = false
+precise_hazard_event_catalogue_observed = false
+underlying_source_pdf_bytes_verified_here = false
+note = "2021 natural-hazard extraordinary annual gross current-year claim expense; includes June-July events Volker/Wolfgang/Xero/Bernd. Not one event and not a payout after any RI layer."
+
+# Excerpts from issuer ORIGINAL 2022/2023/2025 HGB direct-book
+# current-underwriting-year gross claim expense (TEUR), not balance-sheet
+# all-year gross expenses / paid cash / CAT-only building claims.
+[[connected_building_current_underwriting_year_claims]]
+year = 2021
+gross_current_year_claims_teuro = 804326
+source_report_year = 2022
+source_url = "https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf"
+source_pdf_page = 10
+[[connected_building_current_underwriting_year_claims]]
+year = 2022
+gross_current_year_claims_teuro = 493862
+source_report_year = 2022
+source_url = "https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf"
+source_pdf_page = 10
+[[connected_building_current_underwriting_year_claims]]
+year = 2023
+gross_current_year_claims_teuro = 539986
+source_report_year = 2023
+source_url = "https://www.ruv.de/dam/jcr:781b9b4f-3574-44c3-8183-24d4dde18195/2023-allgemeine.pdf"
+source_pdf_page = 10
+[[connected_building_current_underwriting_year_claims]]
+year = 2024
+gross_current_year_claims_teuro = 696566
+source_report_year = 2025
+source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf"
+source_pdf_page = 10
+[[connected_building_current_underwriting_year_claims]]
+year = 2025
+gross_current_year_claims_teuro = 601698
+source_report_year = 2025
+source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf"
+source_pdf_page = 10

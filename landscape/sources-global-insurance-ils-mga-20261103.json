@@ -1,0 +1,285 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of original company-, syndicate-, MGA-, reinsurance- and ILS-facing public source products needed to calibrate data-grounded synthetic risk portfolios. Existing EIOPA, OECD SDMX, GLEIF and national regulator identity registers remain canonical elsewhere; this shard does not admit source bytes or commercial extraction.",
+  "review_date": "2026-11-03",
+  "entries": [
+    {
+      "candidate_id": "artemis.cat-bond-ils.deal-directory.2026",
+      "name": "Artemis catastrophe bond and ILS deal directory",
+      "provider": "Artemis.bm",
+      "categories": [
+        "insurance",
+        "ils",
+        "cat_bonds",
+        "reinsurance",
+        "transaction_reference"
+      ],
+      "spatial_scope": "Global issuance with strong concentration in disclosed catastrophe markets; deal-specific territories",
+      "temporal_scope": "Historical issue list since the 1990s; dynamic transaction table checked 2026-11-03",
+      "resolution_or_granularity": "Public deal-page issuer, sponsor/cedent, covered perils and territories, size, currency and issue date; transaction disclosure varies",
+      "potential_roles": [
+        "ils_transaction_discovery",
+        "cedent_ils_counterparty_bridge",
+        "peril_region_cover_constraint",
+        "public_cat_bond_size_benchmark"
+      ],
+      "authoritative_url": "https://www.artemis.bm/deal-directory/",
+      "access_class_hint": "public_html_research_only_no_bulk_api_or_redistribution_rights_established",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Specialist third-party directory rather than original securities filings. Verify issued versus announced/settled status and exact as-of timestamp; a bond notional is not insured TIV, underlying event loss or an investor fund's holdings. Rights, automated extraction and re-publication remain blocked until publisher terms are checked; resolve deals against official issuer filings and sponsors."
+    },
+    {
+      "candidate_id": "bm.bma.insurance-registration-statistics.2026m09",
+      "name": "BMA insurance registration statistics September 2026",
+      "provider": "Bermuda Monetary Authority",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "regulatory_market_statistics",
+        "captives",
+        "ils"
+      ],
+      "spatial_scope": "Bermuda registered insurers, reinsurers and related market categories",
+      "temporal_scope": "Monthly files, September 2026 edition published 2026-10-19",
+      "resolution_or_granularity": "Regulatory reporting-level counts and registration categories; exact file tables and historical comparability require review",
+      "potential_roles": [
+        "bermuda_reinsurance_market_context",
+        "insurance_entity_census_crosscheck",
+        "ils_spv_market_structure_reference"
+      ],
+      "authoritative_url": "https://www.bma.bm/documents-centre/statstics/documents-insurance",
+      "access_class_hint": "public_official_document_download_asset_identity_and_terms_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Different from the already registered BMA regulated-entity directory: this is the periodic insurance registration statistics product. The landing page lists a September 2026 publication. Counts are not company-level gross exposure, total placed capacity or claims; avoid conflating special-purpose insurance entities with traditional reinsurers."
+    },
+    {
+      "candidate_id": "ca.fsra.ontario.mga-pc-market-review.2023",
+      "name": "Ontario FSRA P&C insurer-MGA relationships 2023 review",
+      "provider": "Financial Services Regulatory Authority of Ontario (FSRA)",
+      "categories": [
+        "insurance",
+        "mga",
+        "delegated_authority",
+        "premiums",
+        "regulatory_market_research"
+      ],
+      "spatial_scope": "Ontario, Canada P&C insurers and contracted MGAs in surveyed population",
+      "temporal_scope": "2023 business reference year; official retrospective published in 2024",
+      "resolution_or_granularity": "Survey aggregates of insurer-MGA relationships, delegated P&C direct premiums and policy counts; not names of all individual contracting pairs",
+      "potential_roles": [
+        "mga_market_penetration_benchmark",
+        "insurer_mga_delegation_rate_prior",
+        "synthetic_mga_premium_weight_calibration"
+      ],
+      "authoritative_url": "https://www.fsrao.ca/industry/property-and-casualty-and-general-insurance/publications",
+      "access_class_hint": "public_regulator_report_download_not_original_questionnaire_or_counterparty_level",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Regulatory survey provides observed MGA premium/relationship scale for a bounded Ontario calibration. Insurers supplied responses and the regulator did not independently verify all survey figures. Avoid extrapolating this market share to every country or translating MGA-sourced written premium into MGA-retained CAT exposure. Publication-year/version and rights review pending."
+    },
+    {
+      "candidate_id": "ch.finma.insurance-market-report.2025",
+      "name": "FINMA insurance market report 2025",
+      "provider": "Swiss Financial Market Supervisory Authority (FINMA)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "premiums",
+        "market_share",
+        "regulated_groups"
+      ],
+      "spatial_scope": "Swiss direct life, non-life and reinsurance market, including Swiss operations of selected branches",
+      "temporal_scope": "Financial year 2025; report updated 2026-08-20",
+      "resolution_or_granularity": "Official insurer market-share tables and premiums by sector, with report-specific entity labels and CHF units",
+      "potential_roles": [
+        "swiss_insurer_market_share_prior",
+        "company_synthetic_gwp_constraint",
+        "switzerland_nonlife_lob_context"
+      ],
+      "authoritative_url": "https://www.finma.ch/en/documentation/finma-publications/reports/insurance-reports/",
+      "access_class_hint": "public_regulator_pdf_report_terms_exact_file_sha_and_table_extraction_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinct from the existing FINMA insurer-group authorisation registry. Market share and GWP refer to defined Swiss business sectors, not worldwide group exposure or building-level insured value. Match legal entities to GLEIF separately, preserve reporting sector and fiscal year; check PDF table extraction and current merger history before use."
+    },
+    {
+      "candidate_id": "ecb.ico.insurance-operations.sdmx",
+      "name": "ECB ICO Insurance Corporations Operations statistics",
+      "provider": "European Central Bank (ECB)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "premiums",
+        "claims",
+        "sdmx",
+        "euro_area"
+      ],
+      "spatial_scope": "Euro area resident insurance corporations; separate euro area, country and company-type aggregations by series",
+      "temporal_scope": "Published time-series; exact observations and releases must be pinned at extraction",
+      "resolution_or_granularity": "SDMX2.1 CSV dataset ICO with premiums, claims and acquisition expenses across life, non-life, reinsurance and composite company types",
+      "potential_roles": [
+        "euro_area_reinsurance_premium_scale",
+        "nonlife_company_type_market_benchmark",
+        "gross_net_macro_sanity_check"
+      ],
+      "authoritative_url": "https://data.ecb.europa.eu/methodology/insurance-corporations",
+      "access_class_hint": "public_ecb_sdmx21_csv_dataflow_version_and_terms_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "ECB ICO is a separate statistical data product from the already registered EIOPA Solvency II statistics; underlying supervisory data may overlap and must not be treated as independent observations. It is aggregate market data, not risk locations, group ownership or company-level treaty details. Keep frequency, residency basis, unit and valuation conventions."
+    },
+    {
+      "candidate_id": "lloyds.market-directory.coverholders.2026",
+      "name": "Lloyd's market directory: coverholders, agents and active syndicates 2026",
+      "provider": "Lloyd's of London",
+      "categories": [
+        "insurance",
+        "mga",
+        "coverholder",
+        "syndicate",
+        "delegated_authority",
+        "entity_registry"
+      ],
+      "spatial_scope": "Lloyd's international market participants; actual legal/territorial permissions differ by record",
+      "temporal_scope": "Live directory and active 2026 year-of-account syndicate list",
+      "resolution_or_granularity": "Searchable coverholder/agent/broker/management records and active syndicate identifiers; classes of business vary by entity",
+      "potential_roles": [
+        "mga_coverholder_entity_discovery",
+        "syndicate_managing_agent_crosswalk",
+        "delegated_underwriting_business_class_prior"
+      ],
+      "authoritative_url": "https://www.lloyds.com/market-resources/market-directory",
+      "access_class_hint": "public_interactive_directory_no_bulk_automated_reuse_rights_established",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Lloyd's directory distinguishes coverholder, broker, managing agent, syndicate and open market correspondent; these roles must not be collapsed into insurance carriers. A coverholder's authorisation does not disclose binding authority limit, cedent allocation or actual insured risks. Match identities and effective dates; verify browser export/automation terms."
+    },
+    {
+      "candidate_id": "lloyds.statistics.insights-hub",
+      "name": "Lloyd's Statistics Insights Hub market and syndicate dashboards",
+      "provider": "Lloyd's of London",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "syndicate",
+        "market_statistics",
+        "capital",
+        "premium"
+      ],
+      "spatial_scope": "Lloyd's market and active syndicates by class of business",
+      "temporal_scope": "Historical and current data, accessed product by product",
+      "resolution_or_granularity": "Market Profile premiums/claims, Financial Performance syndicate statements and Capital Explorer syndicate capacity; data access requires sign-up",
+      "potential_roles": [
+        "syndicate_class_premium_prior",
+        "reinsurance_treaty_capacity_context",
+        "synthetic_syndicate_business_mix_benchmark"
+      ],
+      "authoritative_url": "https://www.lloyds.com/market-resources/insights-hub/statistics",
+      "access_class_hint": "insights_hub_signup_access_permissions_export_rights_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Market Profile, Financial Performance and Capital Explorer are distinct named products behind an access workflow, not an open raw data dump. Do not claim automatic API or commercial bulk rights. Capacity is not insured sum, premiums do not identify CAT geography and related public syndicate accounts may overlap."
+    },
+    {
+      "candidate_id": "lloyds.syndicate-annual-accounts.2025",
+      "name": "Lloyd's 2025 syndicate annual reports and accounts with iXBRL",
+      "provider": "Lloyd's of London and individual syndicate managing agents",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "syndicate",
+        "financial_reporting",
+        "ixbrl",
+        "premiums"
+      ],
+      "spatial_scope": "Individual Lloyd's syndicates, with geography/line detail only where voluntarily disclosed",
+      "temporal_scope": "2025 annual year ended 2025-12-31, individual publication dates in 2026",
+      "resolution_or_granularity": "Public syndicate-level gross and net premiums, reinsurance, claims and business/financial disclosures in HTML, PDF or iXBRL depending on record",
+      "potential_roles": [
+        "syndicate_gross_net_premium_calibration",
+        "ceded_reinsurance_context",
+        "public_cat_loss_challenge",
+        "managing_agent_identity_join"
+      ],
+      "authoritative_url": "https://www.lloyds.com/syndicatereports",
+      "access_class_hint": "public_individual_syndicate_reports_ixbrl_scope_disclaimer_and_terms_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Regulator/reporting-scope data provide individual-syndicate calibration beyond country averages. The issuer notes that iXBRL tagging is not covered by the audited financial statement opinions, so numerical extracts must be reconciled to signed accounts. Business class geography, gross/net and reported CAT losses are not ground-up event loss catalogs or actual treaty towers."
+    },
+    {
+      "candidate_id": "oecd.global-insurance-market-trends.2026",
+      "name": "OECD Global Insurance Market Trends 2026 report",
+      "provider": "Organisation for Economic Co-operation and Development (OECD)",
+      "categories": [
+        "insurance",
+        "market_statistics",
+        "premium",
+        "claims",
+        "cross_country",
+        "benchmark"
+      ],
+      "spatial_scope": "67 jurisdictions in 2026 edition according to full report, including OECD and selected non-OECD markets",
+      "temporal_scope": "Published 2026-11-02 on 2025 insurance market performance",
+      "resolution_or_granularity": "Published country/jurisdiction analyses of premium growth, penetration, claims and business composition; derived from OECD GIS data",
+      "potential_roles": [
+        "global_market_2025_vintage_benchmark",
+        "country_nonlife_penetration_constraint",
+        "market_coverage_gap_diagnostics"
+      ],
+      "authoritative_url": "https://www.oecd.org/en/publications/global-insurance-market-trends-2026_c8be6585-en.html",
+      "access_class_hint": "public_report_data_tables_and_reuse_scope_exact_vintage_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Complement to the already registered OECD DSD_INS SDMX class and underwriting dataflows, not an independent alternative source of underlying reported numbers. Preserve 2025 reference year, 2026 publication vintage, jurisdiction coverage and indicators; note that report-wide penetration includes life and non-life and cannot be converted directly into property CAT premium."
+    },
+    {
+      "candidate_id": "sg.mas.insurance-company-returns.2025",
+      "name": "MAS Singapore insurer-level annual insurance company returns",
+      "provider": "Monetary Authority of Singapore (MAS)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "insurer_financials",
+        "legal_entity",
+        "premiums",
+        "asia"
+      ],
+      "spatial_scope": "Singapore incorporated insurers and licensed branches, including inward/outward reinsurance participants",
+      "temporal_scope": "Annual company reporting; selected 2025 filings where currently published, differing fiscal year ends and revisions",
+      "resolution_or_granularity": "Company-code and insurer-name indexed links to annual life and general insurance returns, with insurer-specific financial line items",
+      "potential_roles": [
+        "singapore_reinsurer_entity_and_branch_crosswalk",
+        "company_nonlife_premium_priors",
+        "regional_insurance_market_anchor"
+      ],
+      "authoritative_url": "https://www.mas.gov.sg/statistics/insurance-statistics/insurance-company-returns",
+      "access_class_hint": "public_individual_company_returns_download_terms_as_of_and_original_asset_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Company-level reporting is far more useful for a synthetic portfolio than market totals. MAS warns that insurer-attributed content may be amended and not all companies have filed by the same date. Distinguish branch vs locally incorporated entity, life vs P&C vs reinsurance and Singapore vs worldwide business. Review terms and preserve original file, company code, period and currency."
+    }
+  ]
+}

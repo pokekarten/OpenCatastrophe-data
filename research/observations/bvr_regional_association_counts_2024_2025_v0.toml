@@ -1,0 +1,127 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Publisher BVR aggregate accounting indicators; not company insured risk or official Land distribution.
+schema_version = "BVR_2024_2025_REGIONAL_ASSOCIATION_COUNTS_V0"
+publisher = "Bundesverband der Deutschen Volksbanken und Raiffeisenbanken (BVR)"
+source_url = "https://berichte.bvr.de/jahresbericht-2025/ergebnisse/regionale-statistik/"
+reporting_period = "2024-12-31_to_2025-12-31"
+observation_type = "BVR_reporting_panel_region_association_and_institution_category"
+scope = "BVR_member_cooperative_institutions_and_regional_associations"
+year_2025 = 2025
+year_2024 = 2024
+associations_are_german_states = false
+all_cooperative_banks_are_ruv_partners = false
+membership_is_homeowner_population = false
+banks_are_ruv_insured_property_locations = false
+branch_counts_are_insured_locations = false
+derived_carrier_state_weights_admitted = false
+original_source_html_bytes_sha256_recorded = false
+license_class = "public_original_aggregate_numeric_report_rights_review_before_bulk_republication"
+notes = "2025 issuer table says 'Zweigstellen', a separate statistical concept from 'Bankstellen' (which includes bank head offices). Genoverband and Weser-Ems overlap multiple Länder; Sparda and PSD are not state-specific regional categories. Association counts MUST NOT be used as state-level company portfolio weights without an independent geography/partner-market mapping."
+[official_total_2025]
+banks = 646
+branch_offices = 6167
+members = 17542193
+[official_total_2024]
+banks = 672
+branch_offices = 6311
+members = 17643092
+[regional_subtotal_2025]
+banks = 614
+branch_offices = 5833
+members = 14052067
+[regional_subtotal_2024]
+banks = 638
+branch_offices = 5951
+members = 14017283
+
+[[categories]]
+category_id = "Baden-Wuerttemberg"
+category_type = "regional_audit_association"
+legal_state_count_or_nuts3_population_observed = false
+ruv_insurance_contracts_in_category_observed = false
+ruv_residential_policies_in_category_observed = false
+bank_offices_2025 = 1126
+bank_offices_2024 = 1145
+cooperative_banks_2025 = 115
+cooperative_banks_2024 = 121
+members_2025 = 3555260
+members_2024 = 3551086
+
+[[categories]]
+category_id = "Bayern"
+category_type = "regional_audit_association"
+legal_state_count_or_nuts3_population_observed = false
+ruv_insurance_contracts_in_category_observed = false
+ruv_residential_policies_in_category_observed = false
+bank_offices_2025 = 1443
+bank_offices_2024 = 1494
+cooperative_banks_2025 = 175
+cooperative_banks_2024 = 180
+members_2025 = 2557974
+members_2024 = 2551873
+
+[[categories]]
+category_id = "Genoverband"
+category_type = "regional_audit_association"
+legal_state_count_or_nuts3_population_observed = false
+ruv_insurance_contracts_in_category_observed = false
+ruv_residential_policies_in_category_observed = false
+bank_offices_2025 = 3020
+bank_offices_2024 = 3070
+cooperative_banks_2025 = 277
+cooperative_banks_2024 = 290
+members_2025 = 7364367
+members_2024 = 7349400
+
+[[categories]]
+category_id = "Weser-Ems"
+category_type = "regional_audit_association"
+legal_state_count_or_nuts3_population_observed = false
+ruv_insurance_contracts_in_category_observed = false
+ruv_residential_policies_in_category_observed = false
+bank_offices_2025 = 244
+bank_offices_2024 = 242
+cooperative_banks_2025 = 47
+cooperative_banks_2024 = 47
+members_2025 = 574466
+members_2024 = 564924
+
+[[categories]]
+category_id = "Sparda-Banken"
+category_type = "national_institution_category"
+legal_state_count_or_nuts3_population_observed = false
+ruv_insurance_contracts_in_category_observed = false
+ruv_residential_policies_in_category_observed = false
+bank_offices_2025 = 297
+bank_offices_2024 = 297
+cooperative_banks_2025 = 11
+cooperative_banks_2024 = 11
+members_2025 = 3008214
+members_2024 = 3064399
+
+[[categories]]
+category_id = "PSD-Banken"
+category_type = "national_institution_category"
+legal_state_count_or_nuts3_population_observed = false
+ruv_insurance_contracts_in_category_observed = false
+ruv_residential_policies_in_category_observed = false
+bank_offices_2025 = 27
+bank_offices_2024 = 32
+cooperative_banks_2025 = 11
+cooperative_banks_2024 = 12
+members_2025 = 447393
+members_2024 = 501107
+
+[[categories]]
+category_id = "Sonstige-genossenschaftliche-Institute"
+category_type = "national_institution_category"
+legal_state_count_or_nuts3_population_observed = false
+ruv_insurance_contracts_in_category_observed = false
+ruv_residential_policies_in_category_observed = false
+bank_offices_2025 = 10
+bank_offices_2024 = 31
+cooperative_banks_2025 = 10
+cooperative_banks_2024 = 11
+members_2025 = 34519
+members_2024 = 60303

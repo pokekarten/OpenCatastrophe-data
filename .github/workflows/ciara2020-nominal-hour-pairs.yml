@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Ciara 2020 DWD ERA5 nominal hourly pairs
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  original-hourly-pairs:
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-nominal-hour-pairs-v0'
+    name: Original DWD and ERA5 nominal UTC hourly aggregate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact PR source without retained credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up pinned Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install pinned original public Zarr reader dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-google-arco-2020-original-smoke.txt
+          python -m pip check
+      - name: Run offline pairing and source-boundary tests
+        run: |
+          python -m unittest tests.test_ciara2020_dwd_historic_sites_era5_utc_peak_v1 -v
+          python research_runners/ciara2020_dwd_historic_sites_era5_utc_peak_v1.py --dry-run
+      - name: Replay original DWD station archives, historical sites and ERA5 hours
+        run: python research_runners/ciara2020_dwd_historic_sites_era5_utc_peak_v1.py --live-nominal-hour-pairs

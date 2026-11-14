@@ -132,6 +132,7 @@ def inspect_json_bytes(raw: bytes) -> dict[str, Any]:
     if type(observations) is not list or not 1 <= len(observations) <= 240:
         raise COOPSProbeError("expected at most one day of 6-minute observations")
     previous: datetime | None = None
+    first: datetime | None = None
     for item in observations:
         if type(item) is not dict:
             raise COOPSProbeError("observation must be an object")
@@ -146,18 +147,41 @@ def inspect_json_bytes(raw: bytes) -> dict[str, Any]:
                 or instant.minute % 6 != 0
                 or (previous is not None and instant <= previous)):
             raise COOPSProbeError("observation outside frozen UTC day or time ordering")
+        if first is None:
+            first = instant
         previous = instant
         _finite(item.get("v"), field="water-level height")
         if type(item.get("f")) is not str or not item["f"].strip():
             raise COOPSProbeError("provider data flags missing")
         if type(item.get("q")) is not str or not item["q"].strip():
             raise COOPSProbeError("provider quality flag missing")
+    # A valid six-minute timestamp is not evidence that all 240 expected
+    # UTC slots were observed. Count leading, interior and trailing gaps;
+    # never silently interpret absent measurements as zero water level.
+    assert first is not None and previous is not None  # non-empty series checked above
+    first_slot = first.hour * 10 + first.minute // 6
+    last_slot = previous.hour * 10 + previous.minute // 6
+    missing_before = first_slot
+    missing_between = last_slot - first_slot + 1 - len(observations)
+    missing_after = 239 - last_slot
+    missing_total = 240 - len(observations)
+    if min(missing_before, missing_between, missing_after) < 0 or (
+        missing_before + missing_between + missing_after != missing_total
+    ):
+        raise COOPSProbeError("inconsistent six-minute source coverage")
     return {
         "station_id": "9414290",
         "utc_day": "2026-01-01",
         "datum": "MLLW",
         "unit": "m",
         "observation_rows": len(observations),
+        "expected_six_minute_slots": 240,
+        "missing_six_minute_slots": missing_total,
+        "missing_before_first_observation": missing_before,
+        "missing_between_observations": missing_between,
+        "missing_after_last_observation": missing_after,
+        "full_utc_day_covered": missing_total == 0,
+        "missing_measurements_inferred_as_zero": False,
         "provider_quality_flags_present": True,
         "quality_scientifically_assessed": False,
     }

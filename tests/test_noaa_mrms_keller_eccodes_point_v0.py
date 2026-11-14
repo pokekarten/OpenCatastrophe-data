@@ -1,0 +1,334 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+"""Deterministic synthetic-only ecCodes four-cell science boundary tests."""
+
+from __future__ import annotations
+
+import copy
+from types import SimpleNamespace
+import unittest
+from unittest.mock import patch
+
+from research_runners import noaa_mrms_keller_eccodes_point_v0 as k
+
+
+def geo() -> dict:
+    return {
+        "geometry_checked": True,
+        "nx": 7000, "ny": 3500,
+        "latitude_first_deg": 54.995,
+        "longitude_first_east_0_360_deg": 230.005,
+        "latitude_increment_deg": 0.01,
+        "longitude_increment_deg": 0.01,
+        "i_eastward": True,
+        "j_northward": False,
+    }
+
+
+def receipt() -> dict:
+    return {
+        "reference_utc": "2021-04-29T01:36:39+00:00",
+        "grid_geography": geo(),
+        "compressed_sha256": "f" * 64,
+        "gzip_crc32_checked": True,
+        "decoded_grib_bytes": 90747,
+    }
+
+
+class FakeEcCodes:
+    __version__ = "test-only"
+
+    def __init__(self):
+        self.released = False
+        self.override = {}
+        self.expected_lat = 32.92
+        self.expected_lon = -97.29
+        self.nearest = [
+            SimpleNamespace(index=2207 * 7000 + 3270, lat=32.925,
+                            lon=262.705, distance=0.73, value=60.0),
+            SimpleNamespace(index=2207 * 7000 + 3271, lat=32.925,
+                            lon=262.715, distance=0.73, value=65.0),
+            SimpleNamespace(index=2208 * 7000 + 3270, lat=32.915,
+                            lon=262.705, distance=0.73, value=63.0),
+            SimpleNamespace(index=2208 * 7000 + 3271, lat=32.915,
+                            lon=262.715, distance=0.73, value=67.0),
+        ]
+
+    def codes_new_from_message(self, data: bytes) -> object:
+        return object()
+
+    def codes_get(self, handle: object, key: str):
+        expected = {
+            "discipline": 209, "parameterCategory": 3, "parameterNumber": 28,
+            "numberOfPoints": 24500000, "Ni": 7000, "Nj": 3500,
+            "scanningMode": 0, "gridType": "regular_ll",
+            "missingValue": 9.999e20,
+        }
+        return self.override.get(key, expected[key])
+
+    def codes_grib_find_nearest(self, handle: object, lat: float, lon: float,
+                                is_lsm: bool, npoints: int):
+        assert (lat, lon, is_lsm, npoints) == (
+            self.expected_lat, self.expected_lon, False, 4
+        )
+        return self.nearest
+
+    def codes_release(self, handle: object) -> None:
+        self.released = True
+
+
+def decode(fake: FakeEcCodes, data: dict | None = None,
+           product: str = k.PRODUCT):
+    with (patch.object(k, "audit_original", return_value=data or receipt()),
+          patch.object(k, "inflate_gzip_capped", return_value=b"GRIB-test-only")):
+        return k.decode_original_keller(
+            b"synthetic-never-source-bytes", fake, product=product
+        )
+
+
+class KellerEcCodesFourCellTests(unittest.TestCase):
+    def test_four_neighbours_are_extracted_as_radar_data_not_ground_truth(self):
+        fake = FakeEcCodes()
+        result = decode(fake)
+        self.assertTrue(fake.released)
+        self.assertEqual(result["source_grid_nx"], 7000)
+        self.assertEqual(result["independent_reported_hail_diameter_mm"], 63.5)
+        self.assertEqual(result["valid_neighbour_count"], 4)
+        self.assertEqual(result["decoded_local_min_radar_mesh_mm"], 60.0)
+        self.assertEqual(result["decoded_local_max_radar_mesh_mm"], 67.0)
+        self.assertEqual(
+            set(r["decoded_radar_mesh_mm"] for r in result["four_nearest_radar_cells"]),
+            {60.0, 63.0, 65.0, 67.0},
+        )
+        self.assertTrue(result["report_point_has_four_near_equal_neighbours"])
+        self.assertFalse(result["physical_model_skill_established"])
+        self.assertFalse(result["source_or_model_admitted"])
+        self.assertFalse(result["annual_hail_frequency_estimated"])
+        self.assertFalse(result["insured_losses_or_tiv_inferred"])
+        self.assertFalse(result["original_source_bytes_committed_or_uploaded"])
+
+    def test_fixed_time_windows_distinguish_independent_readings(self):
+        for product, time, delta, kind, parameter in (
+            ("mesh_keller_2021", "2021-04-29T01:36:39+00:00", -21,
+             "instantaneous_2min_before_report", 28),
+            ("mesh_keller_2021_after", "2021-04-29T01:38:38+00:00", 98,
+             "instantaneous_2min_after_report", 28),
+            ("mesh_keller_2021_max30", "2021-04-29T01:38:00+00:00", 60,
+             "rolling_30min_max_after_report", 29),
+        ):
+            with self.subTest(product=product):
+                data = receipt()
+                data["reference_utc"] = time
+                fake = FakeEcCodes()
+                fake.override["parameterNumber"] = parameter
+                result = decode(fake, data, product=product)
+                self.assertEqual(result["source_relative_to_report_seconds"], delta)
+                self.assertEqual(result["source_radar_product_semantics"], kind)
+                self.assertEqual(
+                    result["source_is_rolling_max_not_an_additional_event"],
+                    parameter == 29,
+                )
+                self.assertFalse(result["source_or_model_admitted"])
+                self.assertFalse(result["annual_hail_frequency_estimated"])
+
+    def test_wrong_window_parameter_and_unpinned_dynamic_source_fail(self):
+        with self.assertRaisesRegex(k.PointDecodeError, "unreviewed"):
+            decode(FakeEcCodes(), product="latest")
+        for product, parameter in (
+            ("mesh_keller_2021_after", 29),
+            ("mesh_keller_2021_max30", 28),
+        ):
+            data = receipt()
+            data["reference_utc"] = k.KELLER_REPORT_WINDOW[product][0]
+            fake = FakeEcCodes()
+            fake.override["parameterNumber"] = parameter
+            with self.assertRaisesRegex(k.PointDecodeError, "definition drift"):
+                decode(fake, data, product=product)
+
+    def test_research_pins_for_bracketing_and_max_source_are_fixed(self):
+        pins = k.SOURCE_OBJECTS
+        self.assertEqual(pins["mesh_keller_2021_after"]["compressed_size"], 54575)
+        self.assertEqual(pins["mesh_keller_2021_after"]["compressed_sha256"],
+                         "f9dbacf40c9d68e222830aa3b50588231d8897e0a1745e16f348ef81c0f2fba3")
+        self.assertEqual(pins["mesh_keller_2021_max30"]["compressed_size"], 72464)
+        self.assertEqual(pins["mesh_keller_2021_max30"]["compressed_sha256"],
+                         "441cdeb5d6ba6406a4727b6a8c475be5f35920df398bcdfb7347e562999a25c2")
+
+    def test_second_independent_2024_arlington_storm_metadata(self):
+        self.assertEqual(
+            set(k.ARLINGTON_PRODUCT_SEMANTICS),
+            {"mesh_arlington_2024", "mesh_arlington_2024_max30"},
+        )
+        self.assertEqual(
+            k.SOURCE_OBJECTS["mesh_arlington_2024"]["compressed_sha256"],
+            "7dcca72784d7715a43dca5353726aaf2cee4066d2728500d0f3d0bce3d86397f",
+        )
+        self.assertEqual(
+            k.SOURCE_OBJECTS["mesh_arlington_2024_max30"]["compressed_sha256"],
+            "ddef94cad19ff39621b74563631ae0c9cf205fdf71abaa48c4b6d7715b75a806",
+        )
+        self.assertEqual(k._expected_four_indices(geo(), 32.71, -97.10),
+                         {row * 7000 + col
+                          for row in (2228, 2229) for col in (3289, 3290)})
+
+    def test_arlington_2024_is_a_separate_preliminary_report_case(self):
+        for product, time, offset, expected_param, rolling in (
+            ("mesh_arlington_2024", "2024-05-28T00:42:43+00:00", -17, 28, False),
+            ("mesh_arlington_2024_max30", "2024-05-28T00:44:00+00:00", 60, 29, True),
+        ):
+            with self.subTest(product=product):
+                fake = FakeEcCodes()
+                fake.expected_lat = 32.71
+                fake.expected_lon = -97.10
+                fake.override["parameterNumber"] = expected_param
+                fake.nearest = [
+                    SimpleNamespace(
+                        index=row * 7000 + col,
+                        lat=32.715 if row == 2228 else 32.705,
+                        lon=262.895 if col == 3289 else 262.905,
+                        distance=0.72,
+                        value=36.0 if col == 3289 else 52.0,
+                    )
+                    for row in (2228, 2229) for col in (3289, 3290)
+                ]
+                data = receipt()
+                data["reference_utc"] = time
+                result = decode(fake, data, product=product)
+                self.assertTrue(fake.released)
+                self.assertEqual(result["schema_version"],
+                                 "noaa-mrms-arlington-eccodes-four-cell-v0")
+                self.assertEqual(result["independent_ground_report_ncei_id"], 1186553)
+                self.assertEqual(result["independent_report_utc"],
+                                 "2024-05-28T00:43:00Z")
+                self.assertEqual(result["independent_reported_hail_diameter_mm"], 82.55)
+                self.assertEqual(result["independent_report_latitude_deg"], 32.71)
+                self.assertEqual(result["independent_report_longitude_deg"], -97.10)
+                self.assertEqual(result["source_relative_to_report_seconds"], offset)
+                self.assertEqual(
+                    result["source_is_rolling_max_not_an_additional_event"], rolling
+                )
+                self.assertTrue(result["preliminary_public_report_not_instrument_calibration"])
+                self.assertFalse(result["ncei_event_id_original_csv_verified"])
+                self.assertFalse(result["source_or_model_admitted"])
+                self.assertFalse(result["annual_hail_frequency_estimated"])
+
+    def test_arlington_source_swap_and_2021_report_reuse_blocked(self):
+        fake = FakeEcCodes()
+        fake.expected_lat, fake.expected_lon = 32.71, -97.10
+        fake.override["parameterNumber"] = 28
+        data = receipt()
+        data["reference_utc"] = "2021-04-29T01:36:39+00:00"
+        with self.assertRaisesRegex(k.PointDecodeError, "source UTC"):
+            decode(fake, data, product="mesh_arlington_2024")
+        fake = FakeEcCodes()
+        fake.expected_lat, fake.expected_lon = 32.71, -97.10
+        fake.override["parameterNumber"] = 29
+        data["reference_utc"] = "2024-05-28T00:42:43+00:00"
+        with self.assertRaisesRegex(k.PointDecodeError, "definition drift"):
+            decode(fake, data, product="mesh_arlington_2024")
+
+    def test_missing_radar_neighbours_not_converted_to_zero(self):
+        fake = FakeEcCodes()
+        fake.nearest[0].value = 9.999e20
+        result = decode(fake)
+        self.assertEqual(result["missing_neighbour_count"], 1)
+        self.assertIsNone(result["four_nearest_radar_cells"][0]["decoded_radar_mesh_mm"])
+        self.assertEqual(result["decoded_local_min_radar_mesh_mm"], 63.0)
+        self.assertEqual(result["decoded_local_max_radar_mesh_mm"], 67.0)
+
+    def test_missing_all_radar_values_does_not_fake_no_hail(self):
+        fake = FakeEcCodes()
+        for point in fake.nearest:
+            point.value = 9.999e20
+        result = decode(fake)
+        self.assertEqual(result["valid_neighbour_count"], 0)
+        self.assertIsNone(result["decoded_local_min_radar_mesh_mm"])
+        self.assertIsNone(result["decoded_local_max_radar_mesh_mm"])
+
+    def test_wrong_parameter_and_grid_are_blocked_even_if_source_hash_valid(self):
+        for key, value in (("parameterNumber", 29), ("gridType", "rotated_ll"),
+                           ("Ni", 3500), ("numberOfPoints", 9999),
+                           ("scanningMode", 0x40)):
+            with self.subTest(key=key):
+                fake = FakeEcCodes()
+                fake.override[key] = value
+                with self.assertRaisesRegex(k.PointDecodeError, "definition drift"):
+                    decode(fake)
+                self.assertTrue(fake.released)
+
+    def test_position_and_duplicate_index_disagreements_blocked(self):
+        for variant in ("out_of_neighbourhood", "duplicate", "distance", "coordinate"):
+            with self.subTest(variant=variant):
+                fake = FakeEcCodes()
+                if variant == "out_of_neighbourhood":
+                    fake.nearest[1].index += 3500
+                elif variant == "duplicate":
+                    fake.nearest[1].index = fake.nearest[0].index
+                elif variant == "distance":
+                    fake.nearest[1].distance = 100.0
+                else:
+                    fake.nearest[1].lat = 30.0
+                with self.assertRaises(k.PointDecodeError):
+                    decode(fake)
+
+    def test_noaa_source_missing_and_no_coverage_are_not_zero_hail(self):
+        fake = FakeEcCodes()
+        fake.nearest[0].value = -1.0  # NOAA MESH original missing marker
+        fake.nearest[1].value = -3.0  # NOAA MESH original no-coverage marker
+        result = decode(fake)
+        self.assertEqual(result["missing_neighbour_count"], 2)
+        self.assertEqual(result["source_missing_neighbour_count"], 1)
+        self.assertEqual(result["source_no_coverage_neighbour_count"], 1)
+        self.assertEqual(result["grib_encoded_missing_neighbour_count"], 0)
+        self.assertEqual(result["valid_neighbour_count"], 2)
+        self.assertEqual(result["decoded_local_min_radar_mesh_mm"], 63.0)
+        self.assertEqual(result["decoded_local_max_radar_mesh_mm"], 67.0)
+        self.assertEqual(
+            [r["value_status"] for r in result["four_nearest_radar_cells"]][:2],
+            ["source_missing", "source_no_coverage"],
+        )
+        self.assertTrue(all(
+            r["decoded_radar_mesh_mm"] is None
+            for r in result["four_nearest_radar_cells"][:2]
+        ))
+        self.assertFalse(result["physical_model_skill_established"])
+
+    def test_noaa_zero_is_a_valid_value_but_not_evidence_of_no_storm(self):
+        fake = FakeEcCodes()
+        fake.nearest[1].value = 0.0
+        result = decode(fake)
+        self.assertEqual(result["valid_neighbour_count"], 4)
+        self.assertEqual(result["four_nearest_radar_cells"][1]["decoded_radar_mesh_mm"], 0.0)
+        self.assertEqual(result["four_nearest_radar_cells"][1]["value_status"], "decoded_radar_mesh_mm")
+        self.assertFalse(result["physical_model_skill_established"])
+
+    def test_out_of_range_value_rejected_not_labeled_intensity(self):
+        for invalid in (-99.0, -999.0, -2.0, 1001.0):
+            with self.subTest(invalid=invalid):
+                fake = FakeEcCodes()
+                fake.nearest[1].value = invalid
+                with self.assertRaisesRegex(k.PointDecodeError, "unphysical"):
+                    decode(fake)
+
+    def test_source_timestamp_or_grid_is_not_trusted_from_comments(self):
+        fake = FakeEcCodes()
+        wrong = receipt()
+        wrong["reference_utc"] = "2021-04-29T02:00:00+00:00"
+        with self.assertRaisesRegex(k.PointDecodeError, "UTC"):
+            decode(fake, wrong)
+        wrong = receipt()
+        wrong["grid_geography"] = {"geometry_checked": False}
+        with self.assertRaises(k.PointDecodeError):
+            decode(FakeEcCodes(), wrong)
+
+    def test_rounded_report_is_four_cell_corner_not_unique_nearest(self):
+        ids = k._expected_four_indices(geo())
+        self.assertEqual(
+            ids, {row * 7000 + col
+                  for row in (2207, 2208) for col in (3270, 3271)}
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

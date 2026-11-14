@@ -1,0 +1,462 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+schema_version = "RVA_SPATIAL_RISK_SOURCE_DEEPDIVE_V0"
+target_company = "R+V Allgemeine Versicherung AG"
+record_date = "2026-11-04"
+records_are_public_candidates_only = true
+source_count = 28
+company_addresses_observed = false
+company_tiv_observed = false
+historical_company_regional_shares_observed = false
+actual_contract_coverage_observed = false
+cat_model_inputs_approved = false
+remark = "Catalogue is original-provider identification, not original-asset byte/rights admission; prior company observation receipts remain canonical."
+
+[[sources]]
+id = "destatis.zensus.heated.1km.2026"
+publisher = "Destatis"
+url = "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/Publikationen/Downloads-Publikationen/Sonderauswertungen/datensatzbeschreibung_gebaeude_nach_baujahr_typ_energie.html"
+kind = "physical_building_attribute"
+years = "census_2022;product_2026-02-26"
+geography = "DE_1km"
+intended_scenario_use = "Residential property age/type/heating proxies, conditional on suppressed-cell semantics"
+rights_gate = "publisher_open_terms_asset_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "This is the publisher DATA DESCRIPTION page; confirm actual ZIP asset and codebook before reading numeric 1km grid. Heating source is not heating system damage or insured portfolio."
+
+[[sources]]
+id = "destatis.zensus.age.100m.2022"
+publisher = "Destatis"
+url = "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html"
+kind = "physical_building_attribute"
+years = "census_2022"
+geography = "DE_100m_1km_10km"
+intended_scenario_use = "Building age and height-adjacent vulnerability prior per raster cell"
+rights_gate = "publisher_open_terms_asset_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Publisher ZIP bundles multiple resolutions with separate metadata and suppression; cannot infer exact building risk site address or R+V geographic quota."
+
+[[sources]]
+id = "destatis.zensus.ownership.100m.2026"
+publisher = "Destatis"
+url = "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/Publikationen/Downloads-Publikationen/Sonderauswertungen/datensatzbeschreibung_gebaeude_nach_eigentumsform.html?templateQueryString=Zensus"
+kind = "physical_building_attribute"
+years = "census_2022;codebook_2026-02-26"
+geography = "DE_100m"
+intended_scenario_use = "Ownership-type scenario sensitivity in residential building insurance"
+rights_gate = "publisher_open_terms_asset_review_pending"
+priority = "P1"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Publisher describes OWNERSHIP and a separate dataset; owner-type cell distribution not insurer take-up, and suppressed small counts require unknown status."
+
+[[sources]]
+id = "bavaria.lod2.open.citygml"
+publisher = "Bayerische Vermessungsverwaltung"
+url = "https://geodaten.bayern.de/opengeodata/OpenDataDetail.html?pn=lod2"
+kind = "physical_roof_geometry"
+years = "2026_weekly_updates_claimed"
+geography = "DE_BY_2km_tiles"
+intended_scenario_use = "Hail/wind roof-shape and building footprint/height archetype for Bavaria prototype"
+rights_gate = "publisher_CC_BY_4.0_claim_asset_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Official source says CC BY 4.0 and EPSG:25832, 2x2km tiles; roof type not observed material, construction standard, insured value or R+V insured site."
+
+[[sources]]
+id = "nrw.lod2.open.citygml"
+publisher = "Geobasis Nordrhein-Westfalen"
+url = "https://www.opengeodata.nrw.de/produkte/geobasis/3dg/lod2_gml/"
+kind = "physical_roof_geometry"
+years = "2025-2026_publisher_listing"
+geography = "DE_NW"
+intended_scenario_use = "Second independent roof-and-building geometry test region with actual 2021 Bernd footprint"
+rights_gate = "publisher_open_terms_asset_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Open download product; check detailed per-resource license, tiled archive and CRS. A 2026 building cannot be assumed present in the 2021 insured book."
+
+[[sources]]
+id = "saxony.lod2.open.citygml"
+publisher = "GeoSN Sachsen"
+url = "https://www.geodaten.sachsen.de/downloadbereich-digitale-3d-stadtmodelle-4875.html"
+kind = "physical_roof_geometry"
+years = "2025-2026_publisher"
+geography = "DE_SN_2km_tiles"
+intended_scenario_use = "Third geography/vulnerability stress for historical storm and hail"
+rights_gate = "publisher_open_terms_asset_review_pending"
+priority = "P1"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Free access offered as 2x2 km tiles; confirm per-tile provenance/CRS and licence; CityGML roof not actual insured or roof material."
+
+[[sources]]
+id = "bw.lod2.open.citygml"
+publisher = "LGL Baden-Württemberg"
+url = "https://www.lglbw.de/Produkte/3D-Produkte/3D-Gebaeudemodelle/LoD2/"
+kind = "physical_roof_geometry"
+years = "2026_publisher"
+geography = "DE_BW"
+intended_scenario_use = "Residential vs commercial roof/building-class footprint in the 2024 southern flood region"
+rights_gate = "publisher_open_terms_asset_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Publisher identifies Open GeoData for CityGML; roof-form assignment accuracy ~90%; building roof and height not structural vulnerability or 2024 address truth."
+
+[[sources]]
+id = "adv.hu-de.restricted.2026"
+publisher = "LDBV Bayern / ZSHH / AdV"
+url = "https://www.lvg.bayern.de/vermessung/zshh/hu-de.html"
+kind = "licensing_negative_control"
+years = "2026"
+geography = "DE_nationwide"
+intended_scenario_use = "Counterexample: nationwide official 2D footprints are not necessarily free"
+rights_gate = "license_or_fee_required"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Roughly 59m official building footprints, quoted minimum license fee €4,000 and test ZIP only test use; do NOT treat national asset as bulk-open data."
+
+[[sources]]
+id = "bkg.lod2-de.restricted.2026"
+publisher = "BKG"
+url = "https://gdz.bkg.bund.de/index.php/default/3d-gebaudemodelle-lod2-deutschland-lod2-de.html"
+kind = "licensing_negative_control"
+years = "2026-04"
+geography = "DE_nationwide"
+intended_scenario_use = "Compare 16-state land-open sources versus restricted national central product"
+rights_gate = "license_or_eligible_user_required"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Full national BKG 2026 LoD2 access restricted to eligible parties; nationwide publication of metadata not proof of free original 96GB CityGML use."
+
+[[sources]]
+id = "nrw.solar.roof.category.municipality"
+publisher = "LANUK NRW / Geobasis NRW"
+url = "https://www.opengeodata.nrw.de/produkte/umwelt_klima/energie/solarkataster/photovoltaik/"
+kind = "pv_roof_potential"
+years = "2026-03-12_municipal_excel"
+geography = "DE_NW_municipality"
+intended_scenario_use = "Municipal rooftop-PV POTENTIAL by building category to challenge PV/risk-cost additions"
+rights_gate = "publisher_DL_DE_ZERO_2.0_claim_asset_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Official Excel 1.4 MB lists modeled PV potential by building class; not observed installations and not R+V PV endorsement selection."
+
+[[sources]]
+id = "nrw.solar.potential.geometry"
+publisher = "LANUK NRW / Geobasis NRW"
+url = "https://www.opengeodata.nrw.de/produkte/umwelt_klima/energie/solarkataster/photovoltaik/"
+kind = "pv_roof_potential"
+years = "2025-06_GEODATABASE_ZIP"
+geography = "DE_NW_2km_or_admin_geometries"
+intended_scenario_use = "Roof-surface geometry and exposure scenario archetypes for hail-damage sensitive PV roof assets"
+rights_gate = "publisher_DL_DE_ZERO_2.0_claim_asset_review_pending"
+priority = "P1"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Multi-hundred-MB GDB and municipal shapefile ZIP candidates; no original bytes acquired; potential roofs are not installed solar panels."
+
+[[sources]]
+id = "bnetza.mastr.public.xml"
+publisher = "Bundesnetzagentur"
+url = "https://www.marktstammdatenregister.de/MaStR/Datendownload"
+kind = "pv_installed_public_registry"
+years = "2026-11-03_snapshot;other_pinned_quarters"
+geography = "DE_registry_geography"
+intended_scenario_use = "Separate actually REGISTERED generation-unit counts/capacity by district and solar category"
+rights_gate = "publisher_DL_DE_BY_2.0_claim_asset_privacy_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Official public full ZIP is ~3.2GB, XML revised 2025-10-01; do not bulk download without schema/privacy and scope review. Public unit does not prove rooftop siting or building match."
+
+[[sources]]
+id = "immo.nhk2010.legal"
+publisher = "Bundesministerium der Justiz / ImmoWertV"
+url = "https://www.gesetze-im-internet.de/immowertv_2022/anlage_4.html"
+kind = "reinstatement_cost_archetype"
+years = "2010_cost_basis;regulation_2022"
+geography = "DE_building_archetypes"
+intended_scenario_use = "Legal schedule of replacement-construction cost baseline by house, multifamily, office, workshop, warehouse and other class"
+rights_gate = "public_law_reuse_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "NHK 2010 is valuation MODEL COST €/m2 gross floor area, not insurer reinstatement TIV; modernise with suitable construction cost index, floor-area and quality; exclude land."
+
+[[sources]]
+id = "thuenen.agraratlas.v1.2022"
+publisher = "Johann Heinrich von Thünen-Institut / Zenodo"
+url = "https://zenodo.org/records/14197441"
+kind = "agrarian_modelled_municipality"
+years = "1999_2003_2007_2010_2016_2020;published_2024"
+geography = "DE_municipality_code_based_on_2010_AGS"
+intended_scenario_use = "Farm rural composition and cattle/pig/poultry herd and cropping weights for agricultural shed/hail/wind scenario"
+rights_gate = "zenodo_record_individual_license_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Original 3 files animals_heads, animals_lu, crops 66MB, estimated municipal agricultural levels (not validated observed municipal data). Original AGS 2010 coding requires time-valid crosswalk; missing-value rules are source-specific."
+
+[[sources]]
+id = "destatis.agri.atlas.2020"
+publisher = "Destatis / Länderstatistik"
+url = "https://www.destatis.de/DE/Service/Statistik-Visualisiert/atlas-agrarstatistik.html"
+kind = "agrarian_grid"
+years = "2010_2016_2020"
+geography = "DE_5km_10km"
+intended_scenario_use = "Independent farming and livestock 5/10km share sensitivity cross-check"
+rights_gate = "portal_download_and_reuse_review_pending"
+priority = "P1"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Agrarian atlas density maps are not known counts of barns or R+V-specific farms; compare to Thünen carefully due to shared surveys."
+
+[[sources]]
+id = "regionalstatistik.sme.52111-01-02-4"
+publisher = "Statistische Ämter des Bundes und der Länder"
+url = "https://www.regionalstatistik.de/genesis/online?bypass=true&code=52111-01-02-4&levelid=1648536769031&levelindex=0&operation=table"
+kind = "sme_employer_counts"
+years = "2019-2024"
+geography = "DE_approx_490_kreise_and_urban_districts"
+intended_scenario_use = "County number of business branches in employment size classes; commercial/industrial use prior"
+rights_gate = "statistikportal_DL_DE_BY_2.0_claim_table_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Branch establishment count not building count or covered R+V commercial TIV. Validate administrative key, suppression, sector taxonomy and exact 2024 row vintage."
+
+[[sources]]
+id = "bavaria.fluvial.hq100.wms"
+publisher = "LfU Bayern"
+url = "https://www.lfu.bayern.de/umweltdaten/geodatendienste/index_detail.htm?id=4cab2c12-fa7e-49c3-97ba-f4f33af3a598&profil=WMS"
+kind = "fluvial_hazard_scenario"
+years = "2025-2026_service"
+geography = "DE_BY_risk_rivers"
+intended_scenario_use = "Separate HQ frequent/100/extreme flood footprint scenario for 2024 R+V southern flood"
+rights_gate = "service_accessible_rights_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Actual WMS host is www.lfu.bayern.de/gdi/wms/wasser/ueberschwemmungsgebiete?; HQ100 scenario return period not event flood footprint; risk river selection and levee protection cause unrepresented hazard."
+
+[[sources]]
+id = "bavaria.fluvial.depth.wms"
+publisher = "LfU Bayern"
+url = "https://www.lfu.bayern.de/umweltdaten/geodatendienste/index_detail.htm?id=a860f261-738d-4fff-a9f6-2e2c88c0ce34&profil=WMS"
+kind = "fluvial_hazard_scenario"
+years = "2025-2026_service"
+geography = "DE_BY_risk_rivers"
+intended_scenario_use = "Water depth classes for HQ frequent/100/extreme; distinct from polygon presence for building vulnerability"
+rights_gate = "service_accessible_rights_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "WMS visual classes not exact per-building flood depth measurement in June 2024. Historical events need dated event surfaces, not static return-period map."
+
+[[sources]]
+id = "rlp.fluvial.hq.depth.wfs"
+publisher = "LfU Rheinland-Pfalz"
+url = "https://wasserportal.rlp-umwelt.de/kartendienste"
+kind = "fluvial_hazard_scenario"
+years = "2024_2025_updated_scenarios"
+geography = "DE_RP"
+intended_scenario_use = "HQ10/100/extreme flood polygon and depth/velocity layers for 2021 Bernd scenario cross-check"
+rights_gate = "service_accessible_rights_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Portal has WFS polygon outlines and WMS depths; distinguish 2024/2025 rebuilt flood hazard maps from historical 2021 Ahr pre-event hazard, HQ return periods not observed Bernd loss."
+
+[[sources]]
+id = "rlp.pluvial.sri7.sri10"
+publisher = "LfU Rheinland-Pfalz"
+url = "https://wasserportal.rlp-umwelt.de/kartendienste"
+kind = "pluvial_hazard_scenario"
+years = "2024_2026_service"
+geography = "DE_RP"
+intended_scenario_use = "Surface runoff water depths/velocity for SRI7 1h, SRI10 1h and SRI10 4h"
+rights_gate = "service_accessible_rights_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Different pluvial scenario intensity-duration is not stochastic event annual rate and not hydraulic river flood. Historical 2021 pluvial correlation needs dedicated modelling."
+
+[[sources]]
+id = "nrw.fluvial.hq100"
+publisher = "Landesamt für Natur, Umwelt und Klima NRW"
+url = "https://open.nrw/dataset/6d73fa0c-2cc3-49ef-b05b-13e540cd30a9"
+kind = "fluvial_hazard_scenario"
+years = "2024-2026_publisher"
+geography = "DE_NW"
+intended_scenario_use = "Official HQ100 flood extent/depth and flow-speed class for Ahr-region crosswalk and synthetic NRW building pilot"
+rights_gate = "service_accessible_rights_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Publisher map represents hazard scenarios in NRW, not actual July 2021 flood extent. Exact data service/layer license and time vintage remain to verify."
+
+[[sources]]
+id = "dwd.konrad3d.operational"
+publisher = "DWD"
+url = "https://www.dwd.de/DE/leistungen/opendata/neuigkeiten/opendata_juli2024_2.html"
+kind = "convective_nowcasting"
+years = "since_2024-07_operational"
+geography = "DE_nationwide"
+intended_scenario_use = "Convective storm-cells, lightning and hail nowcasting candidate with shared severe-weather event IDs"
+rights_gate = "dwd_original_product_rights_review_pending"
+priority = "P1"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Open KONRAD3D path /weather/radar/konrad3d/; no demonstrated archive covering 2023 Bavarian hail nor calibrated historical hail-size intensity; do not imply a multiyear ELT."
+
+[[sources]]
+id = "dwd.wind.hourly.historical"
+publisher = "DWD Climate Data Center"
+url = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/historical/"
+kind = "historical_hazard_station"
+years = "historic_1937_2025_varies_by_station"
+geography = "DE_station"
+intended_scenario_use = "Historic station-level wind signal and event meteorological challenge for windstorm replay"
+rights_gate = "dwd_original_product_rights_review_pending"
+priority = "P1"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Station wind observations cannot alone provide location windfield, sub-hourly peak wind gust or stochastic event frequency; station coverage not uniform."
+
+[[sources]]
+id = "essl.eswd.report.api"
+publisher = "European Severe Storms Laboratory"
+url = "https://eswd.eu/de/signup"
+kind = "hail_severe_weather_report"
+years = "recent_and_historical_conditional"
+geography = "EU_point_reports"
+intended_scenario_use = "Candidate severe-hail report locations for 2023 Benediktbeuern, 2024 Frieda"
+rights_gate = "restricted_25_reports_noncommercial_account_other_licensing_review"
+priority = "P1"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "ESWD public/registered access conditions restrict record count to 25 per query for some noncommercial accounts; commercial automated CAT ingestion not permitted without separate review; hazard report != insured R+V claim."
+
+[[sources]]
+id = "rv.group.saarland.2024-05"
+publisher = "R+V Versicherung"
+url = "https://www.ruv.de/newsroom/pressemitteilungen/2024-05-24-hochwasser"
+kind = "rv_group_event_loss_snapshot"
+years = "2024-05-24"
+geography = "DE_SL_BW_RP"
+intended_scenario_use = "New independently dated ~EUR20m preliminary May 2024 group-customer flood estimate separate from June 2024 south Germany"
+rights_gate = "publisher_press_use_review_pending"
+priority = "P0"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Preliminary 2024-05-24 estimate (~€20m) across Saarland, parts of BW/RLP; group insured customers not solo. Not same event as separate 2024-06-06 BY/BW ~€100m, do not add as final annual costs."
+
+[[sources]]
+id = "vTV.solo.report.2025"
+publisher = "Vereinigte Tierversicherung Gesellschaft a.G."
+url = "https://www.ruv.de/ueber-uns/unternehmen/geschaeftsberichte"
+kind = "rv_group_affiliate_scope"
+years = "2025"
+geography = "DE_livestock_related"
+intended_scenario_use = "Affiliate control for livestock-focused line; prevents linking solo R+V Allgemeine property with separate mutual insurer headcounts"
+rights_gate = "publisher_issuer_report_review_pending"
+priority = "P1"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Independent insurer entity: its ~€115m GWP in 2025 is not R+V Allgemeine property premium and does not identify stables or covered R+V building risks."
+
+[[sources]]
+id = "kravag.2025.affiliates"
+publisher = "KRAVAG Versicherungen"
+url = "https://www.kravag.de/ueber-uns/unternehmen/geschaeftsberichte"
+kind = "rv_group_affiliate_scope"
+years = "2025"
+geography = "DE_motor_transport"
+intended_scenario_use = "Separate KRAVAG Allgemeine/Logistic/Sach portfolio controls from R+V Allgemeine"
+rights_gate = "publisher_issuer_report_review_pending"
+priority = "P1"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Different legal insurers and motor/logistics focus; cannot add contracts as standalone R+V Allgemeine 2025 building exposures or group hail building claims."
+
+[[sources]]
+id = "mastr.geo.versioned.pv.secondary"
+publisher = "Bundesnetzagentur"
+url = "https://www.marktstammdatenregister.de/MaStR/Einheit/Einheiten/ErweiterteOeffentlicheEinheitenuebersicht"
+kind = "pv_installed_public_registry"
+years = "2026"
+geography = "DE_geo_online_query"
+intended_scenario_use = "Smaller official public query rather than 3.2GB full bulk XML for regional PV risk plausibility"
+rights_gate = "publisher_public_terms_and_privacy_review_pending"
+priority = "P1"
+original_dataset_bytes_sha256_verified = false
+real_rv_insured_building_identity_observed = false
+source_dataset_automatically_mined_or_ingested = false
+source_approved_for_cat_model = false
+limitation = "Browsable filtered public unit directory can differ from daily XML; public PV location not proof building linkage, point geocode or insured R+V policy."

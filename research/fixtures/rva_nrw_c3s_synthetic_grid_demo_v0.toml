@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+schema = "RVA_NRW_SYNTHETIC_ERA5_STYLE_GRID_DEMO_NOT_SOURCE_C3S_V0"
+spatial_status = "INVENTED_RECTANGULAR_GRID_NOT_AUTHENTICATED_C3S"
+
+[grid]
+grid_id = "SYNTH-NRW-025DEG-NOT-C3S"
+west_lon_e6 = 5500000
+south_lat_e6 = 50000000
+width_e6 = 250000
+height_e6 = 250000
+num_lon = 20
+num_lat = 13
+crs = "EPSG:4326"

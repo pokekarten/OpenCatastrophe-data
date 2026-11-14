@@ -1,0 +1,71 @@
+<!-- SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+# Germany wind hazard map export
+
+The runner exports original SHA-256-verified CLIMK-WINDS v2 ERA5 gust cells
+as GeoJSON polygons suitable for QGIS. Install netCDF4 and numpy using the
+repository's acquisition environment. Each feature retains the same
+`areaperil_id = native_row * 269 + native_col + 1` as the Oasis hazard tile.
+
+```sh
+python research_runners/climk_germany_hazard_geojson_v0.py \
+  --storm-index 0 --output /tmp/kyrill-germany.geojson
+```
+
+Open the output as a vector layer in QGIS and use graduated styling on
+`gust_mps`. Missing gusts are null and must receive a distinct missing-data
+style. The original storm label, date, units, source digest and attribution
+are included in collection metadata. Native cell boundaries use coordinate
+midpoints. The selection uses centres within 5–16 E and 47–56 N, a bounding
+box including neighbouring countries; it is not a clipped German boundary.
+
+This is a physical hazard map. To build a spatial CAT scenario, join exposure
+points to these polygons and preserve the area-peril ID when constructing
+Oasis keys. Supply explicit building classes and a separately justified
+vulnerability function before calculating losses. The existing one-cell
+Kyrill native GUL demonstration uses fictional exposure and an authored,
+uncalibrated curve. Broader maps do not validate that curve. CLIMK's selected
+50 storms supply scenarios without annual event frequencies; annual AAL,
+OEP and AEP require an additional defensible occurrence catalogue.
+
+## Building point crosswalk
+
+`research_runners/climk_building_hazard_join_v0.py` accepts a local CSV with
+exact columns `building_id,longitude,latitude` (1–10,000 unique building IDs).
+It regenerates the hazard from the SHA-verified original NetCDF rather than
+trusting an edited GeoJSON. It exports each building's area-peril ID and gust,
+with explicit `matched`, `missing_weather` or `outside_exported_grid` status.
+Cell ownership includes the west/south edge and excludes the east/north edge.
+Coordinates must be finite WGS84 longitude/latitude; duplicates fail.
+
+```sh
+python research_runners/climk_building_hazard_join_v0.py \
+  --buildings /private/building-points.csv --storm-index 0 \
+  --output /private/kyrill-building-hazard.json
+```
+
+The output contains building identifiers and belongs in the same controlled
+local storage as the input portfolio. It does not infer building replacement
+values, taxonomy or vulnerability from coordinates. Preserve missing and
+out-of-grid statuses before passing matched records into Oasis lookup keys.
+
+## Executed spatial crosswalk example (2026-11-14)
+
+The source-verified Kyrill map was exercised with three explicitly fictional
+point markers and one outside-domain marker. These are coordinate probes,
+not observed buildings or insured properties. The resulting source gusts were:
+
+| Synthetic marker | Longitude | Latitude | Oasis area-peril ID | Gust m/s |
+|---|---:|---:|---:|---:|
+| Cologne | 6.96 | 50.94 | 22713 | 33.411881663861934 |
+| Hamburg | 10.00 | 53.55 | 20035 | 29.192090650343737 |
+| Munich | 11.58 | 48.14 | 25690 | 33.97645061592783 |
+| Outside domain | 0 | 0 | null | null |
+
+The three interior markers resolve to three distinct native source cells.
+The outside-domain marker is explicitly excluded. Regression tests cover
+shared-edge ownership, missing weather versus a true zero gust, duplicate
+building IDs, NaN/infinite/out-of-range coordinates and overlapping cells.
+These checks establish spatial lookup behavior; building values and damage
+functions remain separate inputs to a future loss calculation.

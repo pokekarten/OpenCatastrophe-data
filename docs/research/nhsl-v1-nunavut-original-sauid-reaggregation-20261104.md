@@ -1,0 +1,122 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Original NHSL v1.0 Nunavut SAUID reaggregation: archetypes ↔ settled areas
+
+**Date:** 2026-11-04. **Status:** cross-layer **numeric conservation demonstrated on original files** in a bounded read-only, in-memory independent SQLite B-tree audit; Python reproduction script and synthetic tests added. **Source not admitted.** This is not an insured exposure portfolio, an OED file or a native CAT model run.
+
+## Original provider data and reproducibility identity
+
+The source is [OpenDRR/NHSL v1.0, Natural Resources Canada](https://github.com/OpenDRR/national-human-settlement/releases/tag/v1.0). **Exact original ZIPs** (published assets, downloaded byte-for-byte via read-only bounded HTTP ranges; their source bytes were **not committed**) were separately pinned in [our original binary audit](nhsl-v1-original-dictionary-and-nunavut-zip-byte-proof-20261104.md):
+
+| Source asset | Source ZIP length | SHA-256 |
+| --- | ---: | --- |
+| [Nunavut settled areas `s_nu.zip`](https://github.com/OpenDRR/national-human-settlement/releases/download/v1.0/nhsl_physical_exposure_indicators_s_nu.zip) | 73,663 B | `8da41815457b3a163de09be24691ffaf972c4b34ced69dfacabc00723275032b` |
+| [Nunavut building archetypes `b_nu.zip`](https://github.com/OpenDRR/national-human-settlement/releases/download/v1.0/nhsl_physical_exposure_indicators_b_nu.zip) | 113,156 B | `c5b3e15bf1050712aba4d6b627f1a40bf616d4cfde8cf28f77967c9973ea0bdb` |
+
+Both original ZIPs were reassembled from bounded source ranges, decompressed **in memory** using a byte-oriented DEFLATE reader, read as SQLite files with a bounded independent B-tree and record decoder, including the actual feature table data pages. No original `Sauid` values, raw rows, geospatial geometries, policy/customer identities or ZIP contents were stored in the GitHub repository. The original numeric proof below was calculated from those actual GPKG source rows, **not invented synthetic test fixtures**.
+
+## Primary original cross-layer findings
+
+The original **polygon table** `nhsl_physical_exposure_indicators_s_nu` has 103 settled-area features. The original **archetype table** `nhsl_physical_exposure_indicators_b_nu` has 2,087 archetype features, grouped into exactly 103 distinct `Sauid` groups.
+
+- **103/103 polygon SAUIDs matched** to at least one building-archetype row.
+- **0** polygon groups without an archetype group and **0** archetype SAUID groups lacking a polygon.
+- **All seven comparable stock/value variables** agree per SAUID at a 0.02 CAD value tolerance and 0.000001 building/ft² count/area tolerance.
+- **0/103 SAUIDs** exceeded the tolerance for **any** of these seven variables. This covers 103 independent *groups*, not individual roof geolocations.
+
+| Original field pair, polygon ↔ archetype | Polygon aggregate over Nunavut | Archetype aggregate over Nunavut | Max absolute SAUID discrepancy |
+| --- | ---: | ---: | ---: |
+| `Et_BldgNum` ↔ `E_BldgNum` | 6,307 estimated buildings | 6,307 | 0 |
+| `Et_BldgArea` ↔ `E_BldgArea` | 32,616,779 ft² | 32,616,779 ft² | 0 |
+| `Et_StrValue` ↔ `E_StrValue` | ~1,413,830,627.38 CAD | ~1,413,830,627.38 CAD | 0.000001001 CAD |
+| `Et_NStrValue` ↔ `E_NStrValue` | ~4,558,687,374.28 CAD | ~4,558,687,374.28 CAD | 0.000001014 CAD |
+| `Et_BldgValue` ↔ `E_BldgValue` | ~5,972,518,001.67 CAD | ~5,972,518,001.67 CAD | 0.000001014 CAD |
+| `Et_ContValue` ↔ `E_ContValue` | 1,058,566,591 CAD | 1,058,566,591 CAD | 0 |
+| `Et_AssetValue` ↔ `E_AssetValue` | ~7,031,084,592.67 CAD | ~7,031,084,592.67 CAD | 0.000001014 CAD |
+
+The tiny residuals are from SQLite binary floating-point representation and summation ordering; they are not observed differences in roof locations or policy cover. The exact source field values may have sub-cent precision; **the tolerance is a QC test threshold, not permission to round/modify the original records**.
+
+**Provenance qualification:** The original run used an independent in-memory SQLite binary-table reader during research. The *new Python executable* below has passed/will be checked under repository CI on fully **synthetic** fixtures; this research run has **not yet claimed** that exact Python implementation ran on the original provider ZIPs. The original binary reader walked the SQLite table records; a separate native SQLite `PRAGMA integrity_check` for the provider ZIPs remains to be independently recorded.
+
+## Python native-SQLite reproduction (source ZIPs never enter Git)
+
+New [`scripts/nhsl_v1_original_sauid_reconcile_v0.py`](../../scripts/nhsl_v1_original_sauid_reconcile_v0.py) uses our [pinned release binary preflight](../../scripts/nhsl_v1_original_binary_preflight_v0.py) to require original provider byte lengths, exact SHA-256, ZIP CRC/member IDs and native read-only SQLite `integrity_check`. It then groups the actual archetype fields `E_*` by `Sauid` and compares each of seven fields to the corresponding polygon `Et_*` at the same `Sauid`, with explicit mismatch counts, group completeness and residuals. Its JSON receipt **never includes individual SAUID IDs, locations or source rows**, and `admission_status` stays `not_admitted` even when all values reconcile.
+
+```bash
+# Download only from the two official original v1.0 release URLs outside Git,
+# e.g. to /tmp using curl --fail --location --max-filesize 1000000.
+python scripts/nhsl_v1_original_sauid_reconcile_v0.py \
+  --polygon-zip /tmp/nhsl_physical_exposure_indicators_s_nu.zip \
+  --archetype-zip /tmp/nhsl_physical_exposure_indicators_b_nu.zip
+
+python -m unittest discover -s tests \
+  -p 'test_nhsl_v1_original_sauid_reconcile_v0.py' -v
+```
+
+Tests include invented multi-archetype group matching, deliberate 0.04 CAD mismatch, count mismatches, orphan/duplicate SAUIDs, swapped assignments, NULL/NaN/negative/text values, and empty inputs. The script **fails closed** on original byte identity failure or reconciliation errors; for a real conservation mismatch it emits a JSON failure receipt and exits nonzero.
+
+## Why this matters for OpenCatastrophe / NextGen
+
+This establishes a dependable **aggregate-preserving exposure taxonomy**: we can move among NHSL's settlement-area inventory and its *distribution of building archetypes* without unintentionally creating/destroying replacement-cost totals. The archetype classes can later be joined to documented earthquake/flood vulnerability functions, whereas the settlement-area polygons can be used for uncertainty-aware hazard support. The original source defines `BldgLon`/`BldgLat` as settled-area centroids, **not individual address/risk locations**. Estimated replacement values in **2019 CAD** are **not insured BuildingTIV or ContentsTIV**.
+
+**Still missing before portfolio/model use:** (1) original native SQLite provider-file integrity check with CLI receipt, (2) centroid-versus-polygon geometry uncertainty assessment, (3) vulnerability/engineering-taxonomy mappings with references, (4) scenario-specific **synthetic insurance terms and insuring fraction** with an explicit methodology, (5) an original-licence/third-party and modeling-fitness review. Do not move this candidate's model-admission flag or infer actual insurer policy cover from the above consistency results.
+
+
+## Trusted-main replay of exact provider bytes
+
+A narrowly scoped [GitHub Actions original-source proof](../../.github/workflows/nhsl-nunavut-original-sauid-conservation.yml) follows the existing repository's reviewed-main download pattern. PR review runs **only synthetic unit tests**, without original provider egress. **On the first reviewed merge to `main`** changing the workflow itself (or a later manual `workflow_dispatch` on main), it:
+
+1. Uses SHA-pinned read-only GitHub Actions and Python setup, and stores downloaded original ZIPs only in the runner's temporary directory with cleanup.
+2. Downloads **only the exact two fixed original provider v1.0 Nunavut archive URLs** (no user-selectable URL/ref/source), subject to a 1 MB per-file and 90-second per-request cap.
+3. Calls the new Python validator, which independently checks **exact SHA-256, ZIP metadata/CRC, native `PRAGMA integrity_check` and seven cross-layer quantities**, all with a no-go admission receipt.
+4. **Fails closed** if any actual source value, SAUID count, grouping, ZIP identity or scientific tolerance changes; prints *only aggregate* values and exact source hashes, no GPKG/CSV/SAUID/site rows or source artifacts. `contents: read`, checkout credentials not persisted.
+
+The **original native SQLite run is not yet confirmed here**. CI success on PR-head is *not* equivalent to a successful trusted-main original-source run: after merging, inspect the exact GitHub Actions workflow result and retain the run URL/log-reported receipt before claiming native SQLite source proof. A source-side 403/429, zip drift or 0.02-CAD mismatch is a scientific/access blocker to report, **not** a reason to weaken the gate.
+
+
+## Original native SQLite geometry declaration blocker and bounded correction
+
+**Original main-run evidence (2026-11-04):** The first [trusted-main original provider workflow, run 41893082085](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41893082085), **failed** immediately after the original-file downloads in the existing GPKG structural gate with `BLOCKED: polygon: wrong feature table or geometry family`. The PR-head synthetic-only CI was green; it **had not covered the original publisher's generic geometry metadata**.
+
+A separate independent byte-level read of the source GeoPackage SQLite metadata table `gpkg_geometry_columns` resolved the ambiguity:
+
+| Actual original v1.0 GeoPackage | `geometry_type_name` | `column_name` | Internal `srs_id` |
+| --- | --- | --- | ---: |
+| Nunavut polygons `s_nu.gpkg` | **`GEOMETRY`** | `geom_poly` | **4326** |
+| Nunavut building archetypes `b_nu.gpkg` | **`GEOMETRY`** | `geom_point` | **4326** |
+
+Both original archives therefore declare a **generic GeoPackage geometric supertype** in their GPKG metadata, rather than `POLYGON`/`POINT`. This does **not** establish that their encoded feature geometry types are wrong. The original geometry header also specifies its SRS: `4326` here is a GeoPackage feature SRS identifier, **not** the live ArcGIS MapServer's EPSG:3857 display CRS.
+
+### Fail-closed fix
+
+The pinned source-file [GPKG checker](../../scripts/nhsl_v1_original_binary_preflight_v0.py) will accept `geometry_type_name=GEOMETRY` **only with an additional per-feature check**: every feature must have a non-empty `GP` header, version and flags valid, SRS matching `gpkg_geometry_columns`, well-formed WKB byte order and a supported ISO WKB base type. Polygon GPKG permits only **Polygon (3)** or **MultiPolygon (6)**; archetype GPKG only **Point (1)** or **MultiPoint (4)**. Any mismatch, missing geometry, empty/reserved flags, corrupt header or unsupported type fails closed. **Full coordinate bounds and polygon topology are still out of scope** and cannot be inferred from this type-level check.
+
+New synthetic regression fixtures cover `GEOMETRY` metadata with both valid and deliberately wrong **actual** WKB geometry types. This is not an exemption from scientific source validation and does not convert NHSL archetypes into real insured rooftops.
+
+**Evidence ceiling:** This correction must pass the exact-PR-head synthetic CI and then the reviewed-main original provider workflow before the **native SQLite source-check receipt** may be marked successful. The earlier independent 103↔2,087 numerical original-file proof remains separate and unchanged.
+
+
+## Confirmed trusted-main original-source proof — 2026-11-04 19:10 UTC
+
+**Status update, superseding the earlier pending/blocked notes above:** The reviewed [WKB geometry fix PR #1309](https://github.com/pokekarten/OpenCatastrophe-data/pull/1309) was **merged** after passing all Python 3.11–3.14/REUSE/GIS and new synthetic geometry rejection tests. The next **trusted-main** original source run, [GitHub Actions run **41894323152**](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41894323152), was **completed successfully** on exact merged commit `a750a705bec95cbc00226dd9c04db3a6ee1679bb`.
+
+This run (unlike PR-head synthetic CI) actually fetched both original NHSL v1.0 Nunavut ZIPs and passed the native Python binary preflight, including **pinned SHA-256, member CRC/size, SQLite `PRAGMA integrity_check`, GPKG header/SRS, per-feature WKB geometry family validation and seven SAUID cross-layer stock/value conservation tests**. The original official `gpkg_geometry_columns.geometry_type_name=GEOMETRY` was handled by verifying the actual WKB families instead of trusting its generic metadata label.
+
+**Exact machine-readable aggregate receipt printed by the main job**, excluding provider source rows:
+
+| Evidence | Native original-source result |
+| --- | --- |
+| Original ZIP byte checks | both pinned SHA-256 verified |
+| Original matched settled-area SAUID groups | **103 / 103** |
+| Original archetype features | **2,087** |
+| Estimated building count | **6,307** |
+| Total modeled floor area | **32,616,779 ft²** |
+| Original modelled replacement costs incl. contents | **7,031,084,592.666673 CAD, base year 2019** |
+| Seven per-SAUID conservation checks | **all within declared tolerances** |
+| Original SQLite integrity / WKB type checks | **passed** |
+| `source_admitted` / `oed_insured_locations_exportable` | **false / false** |
+
+**Scientific interpretation:** source-native structural/numeric reproducibility is now established for these exact **Nunavut v1.0** files. Neither the original source, the validated conservation, nor the runner receipt establishes individual surveyed roof coordinates, earthquake/flood loss accuracy, insurance uptake/limits, commercial insurer portfolio composition, or permission to label replacement cost as insured TIV. A geometry type/SRS check is **not** a full geographic topology/centroid accuracy validation. These remain separate scientific and admission tasks.

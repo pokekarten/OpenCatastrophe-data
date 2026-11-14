@@ -20,23 +20,22 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - fema.usa-structures
 
-**Provider:** Federal Emergency Management Agency
+**Provider:** Federal Emergency Management Agency / ORNL / USGS, distributed as an Esri U.S. Federal Datasets ArcGIS public view
 
 **Interface type:** arcgis_rest
 
 **Status:** documented_only
 
-**Documentation url:** <https://catalog.data.gov/dataset/usa-structures-4749e>
+**Documentation url:** <https://gis-fema.hub.arcgis.com/datasets/fedmaps::usa-structures/about>
 
-**Service root:** <https://services.arcgis.com/VhMjCzR3cIjEkh7L>
+**Service root:** <https://services2.arcgis.com/FiaPA4ga0iQKduv3>
 
-**Api version:** `null`
+**Api version:** ArcGIS public hosted FeatureServer VIEW; Esri item 0ec8512ad21e4bb987d7e848d14e7e24; layer id 0 (USA_Structures_A observed 2026-11-13)
 
 ## Access scope
 
 - metadata
 - catalogue
-- sample
 
 ## Authentication
 
@@ -53,14 +52,12 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 ### Allowed operations
 
 - usa_structures_service_metadata
-- bounded_structure_query
 
 ### Path templates
 
-- /arcgis/rest/services/USA_Structures/FeatureServer
-- /arcgis/rest/services/USA_Structures/FeatureServer/0/query
+- /arcgis/rest/services/USA_Structures_View/FeatureServer
 
-**Parameter rules:** This static contract records the currently discoverable USA Structures ArcGIS service shape only. Callers may not supply a host, arbitrary path, free-form where clause, output-field list, geometry, pagination state, headers or unrestricted query parameters. Before executable probing is enabled, a separate review must bind the ArcGIS item/service to FEMA's current authoritative USA Structures release and freeze one exact low-byte metadata or feature query with deterministic ordering and result limit.
+**Parameter rules:** Documentation-only metadata binding. Exact original Esri public-item GET https://www.arcgis.com/sharing/rest/content/items/0ec8512ad21e4bb987d7e848d14e7e24?f=json and corresponding fixed FeatureServer metadata GET (?f=pjson) were independently retrieved 2026-11-13 and matched item ID and service URL. THIS access contract does not grant execution, query, export or bulk data access. Do not use old services.arcgis.com/VhMjCzR3cIjEkh7L/USA_Structures: its separate Esri item a51353d9b1d14b2ea3dc2f2eefb220d3 advertises a regional local projection 3452, not the US-wide published view. The public national view uses EPSG:3857 and layer id 0. No user-supplied query, headers, paging, object IDs, polygon geometries, attribute queries or feature extraction; an executable metadata probe requires separate review.
 
 ## Response contract
 
@@ -68,9 +65,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - application/json
 
-**Format:** ArcGIS REST JSON service metadata or a future bounded feature-query response for the USA Structures building-footprint inventory.
+**Format:** Two original metadata-only JSON documents (public Esri item identity + fixed national FeatureServer view metadata); item id 0ec8512ad21e4bb987d7e848d14e7e24, matching serviceItemId, national WKID 3857 extent, observed layer 0 USA_Structures_A. No features or source asset bytes.
 
-**Scientific semantics:** USA Structures is a modeled national building-footprint inventory for structures larger than 450 square feet, assembled for emergency-management and flood-mitigation use. It is not parcel, ownership, insured-value or claims truth and does not meet National Map Accuracy standards for large-scale cartographic use. Any catastrophe-risk consumer must preserve release/vintage, geometry/source lineage and attribution fields and must not infer occupancy, value, construction characteristics, completeness or structure-level insurance exposure beyond what the exact reviewed release documents.
+**Scientific semantics:** The Esri U.S. Federal Datasets public view references FEMA/ORNL/USGS USA Structures greater than 450 sq ft and is not the same entity as the original FEMA catalog FEMA-0209 publication or the unrelated historical narrow regional service. The hub advertises a September 13 2026 data currency; ArcGIS public view/item are mutable and do not independently establish a fixed release archive, exact country coverage or valid structure count. Local initial extent is not national coverage, and the national fullExtent may include world-wrap regions. Modelled structures are NOT parcel, insured value, policy, reconstruction cost, ownership, surveyed footprint or claims truth. Occupancy, population, address and local quality limitations require per-field and per-vintage review; no CAT source/model admission.
 
 ## Operational constraints
 
@@ -78,27 +75,27 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Max probe bytes:** `65536`
 
-**Max sample bytes:** `262144`
+**Max sample bytes:** `65536`
 
 **Retry policy:** none
 
-**Rate limit notes:** No repository-specific rate-limit assumption is made. The discoverable ArcGIS service advertises a 2000-record maximum, but this contract does not authorize pagination, bulk extraction or harvesting; any future executable operation must be separately bounded far below that ceiling.
+**Rate limit notes:** The public feature service advertises a maxRecordCount of 2000, which is a server page maximum and NOT a commercial extraction permission or a request budget. No numerical automated-access entitlement verified. Metadata observation only: two fixed original small JSON reads were performed independently; no feature query, export, follow-up URL or bulk download permitted by this contract.
 
-**Mutability notes:** The public catalogue and ArcGIS service are mutable discovery/access surfaces. Reproducible use must bind the exact FEMA release/vintage separately from the live service URL and record retrieval UTC, normalized request identity, trusted execution-code SHA, response byte count and SHA-256 for any future receipt.
+**Mutability notes:** 2026-11-13 original REST metadata observations: public Esri item original body 9601 bytes SHA-256 90b735393979db65b83896bea85beee13b368cccc31a747e0a826c3807d4822d; corresponding national FeatureServer metadata original body 4164 bytes SHA-256 d755bc79c1e3c3b52eb8abc60130b87cbd94840ec899b14e227ebd5130049ba7. Former regional service original body 4815 bytes SHA-256 950a0bcf61dd665ac71a168ec473e1d588554e94d4ddea9aa05bf33bfb660100, item a51353d9b1d14b2ea3dc2f2eefb220d3. Hashes are of transient original response bytes, not of original building features, historic release assets or complete dataset. Mutable item and view must be independently revalidated before any future execution.
 
 ## Rights and policy
 
-**Dataset rights status:** not_reviewed
+**Dataset rights status:** verified
 
 **Api terms status:** unknown
 
-**Terms url:** <https://www.usa.gov/government-works>
+**Terms url:** <https://www.arcgis.com/home/item.html?id=0ec8512ad21e4bb987d7e848d14e7e24>
 
 **Commercial automation status:** unknown
 
 **Redistribution status:** unknown
 
-**Notes:** The federal data catalog currently marks USA Structures as public and points to the U.S. government-works licence reference, but this slice does not establish that the discovered ArcGIS service/item is the exact current FEMA release endpoint or that separate ArcGIS/API terms permit automated commercial extraction and redistribution. Public access is therefore not converted into execution or publication permission.
+**Notes:** 2026-11-13 original Esri federal item metadata owned by Esri_US_Federal_Data is public and its per-item HTML licenseInfo explicitly states Creative Commons Attribution CC BY 4.0. Official FEMA hub references that precise published Esri item. This verifies the published item license label only; the original federal Data.gov FEMA-0209 catalogue separately lists U.S. government-works. No blanket licensing is inferred for constituent third-party attributes, address/population components, the historical wrong regional service, unlimited feature exports, bulk commercial API access, redistribution of complete raw building geometries, or downstream insurer CAT data. Separate service conditions, attribution/source-of-truth, redistribution and scientific review still required. Metadata-only observation/persistence is research-only; no model input admission.
 
 ## Probe contract
 
@@ -114,13 +111,15 @@ _Empty array._
 
 **Implementation decision:** document_only
 
-**Reviewed at:** 2026-08-11
+**Reviewed at:** 2026-11-13
 
 ## Evidence urls
 
-- <https://catalog.data.gov/dataset/usa-structures-4749e>
+- <https://gis-fema.hub.arcgis.com/datasets/fedmaps::usa-structures/about>
+- <https://www.arcgis.com/sharing/rest/content/items/0ec8512ad21e4bb987d7e848d14e7e24?f=json>
+- <https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/USA_Structures_View/FeatureServer?f=pjson>
+- <https://services.arcgis.com/VhMjCzR3cIjEkh7L/arcgis/rest/services/USA_Structures/FeatureServer?f=pjson>
+- <https://catalog.data.gov/dataset/usa-structures>
 - <https://gis-fema.hub.arcgis.com/pages/usa-structures>
-- <https://services.arcgis.com/VhMjCzR3cIjEkh7L/arcgis/rest/services/USA_Structures/FeatureServer>
-- <https://www.usa.gov/government-works>
 
-**Notes:** Static access contract only. Current federal metadata identifies USA Structures as FEMA dataset FEMA-0209 and reports a 2025-04-01 data-modified timestamp; current ArcGIS discovery exposes a USA_Structures FeatureServer with JSON query support. This contract deliberately remains documented_only because the exact authoritative binding between the current FEMA release and the discovered ArcGIS item/service, plus API automation/redistribution terms, has not been independently proven. No provider bytes, source admission, scientific-fit claim or publication authorization is created.
+**Notes:** Research identity correction: on 2026-11-13 the previous services.arcgis.com/VhMjCzR3cIjEkh7L route was proven to be a DIFFERENT ArcGIS service item and regional projection. The authoritative FEMA Hub points to the Esri U.S. Federal Datasets public item 0ec8512ad21e4bb987d7e848d14e7e24 and its nationwide full-extent view at services2.arcgis.com/FiaPA4ga0iQKduv3. Both exact provider metadata original responses were read and SHA-256 fingerprinted without collecting feature data. Keep documented_only; view is mutable, API terms and feature-data rights/admission remain unresolved. See docs/research/fema-usa-structures-2026-original-item-service-identity-20261113.md.

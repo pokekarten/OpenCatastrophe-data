@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# This is an original-verified NRW potential-research aggregate, NOT R+V insured roof assets.
+schema_version = "NRW_OFFICIAL_ROOF_PV_MUNICIPALITY_AGGREGATE_20260312_V0"
+source_publisher = "LANUK NRW / OpenGeodata NRW"
+source_url = "https://www.opengeodata.nrw.de/produkte/umwelt_klima/energie/solarkataster/photovoltaik/Dach-PV-nach-Gebaeudekategorien-Gemeindeebene_Excel.xlsx"
+source_product_listed_date = "2026-03-12"
+verified_original_source_sha256 = "a9730f844159781c0747a4eb816f88382924239d0cc1874ea69d7a70ce912071"
+verified_original_source_bytes = 1506519
+original_xlsx_raw_committed_to_repo = false
+publisher_license_listing = "Datenlizenz Deutschland Zero 2.0"
+source_rows_original_8digit_AGS_verified_and_unique_each_sheet = 396
+geographical_scope = "North_Rhine_Westphalia_municipality_aggregates"
+source_origins_do_not_prove_independent_from_state_LoD2 = true
+original_numeric_precision_rounded_to_source_unit_0_001 = true
+technical_potential_not_current_installations = true
+historic_annual_Bestand_column_meaning_confirmed_by_publisher = false
+municipality_AGS_boundary_year_confirmed = false
+building_category_value_basis_licensed_for_model = false
+company_RV_actual_insured_roofs_or_pv_observed = false
+company_RV_insured_PV_replacement_cost_observed = false
+company_RV_property_concentration_observed = false
+model_input_admitted = false
+note = "Original 2026 NRW public technical roof PV opportunity, not true insurer risk sites or insured sum. 1990-2025 Bestand columns are source headers; 2025 column is not asserted to be cumulative installed PV. Six class numeric aggregates plus separate publisher Insgesamt, avoid double count. Worksheet floats exhibit harmless decimal lexical residuals <=0.0001 original unit; source never forced to balance. Aggregates rounded to three decimal places in unit, no municipality record exported."
+
+[[measures]]
+sheet_name = "Bestand Leistung"
+source_unit = "kW"
+is_2025_labeled_Bestand_column = true
+selected_original_year_label = 2025
+[measures.category_totals]
+residential_buildings = "5957954.178"
+commerce_industry = "3649059.748"
+public_buildings = "400382.497"
+agriculture = "1825018.335"
+other_buildings = "227033.517"
+unassigned = "789050.679"
+overall = "12848498.954"
+
+[[measures]]
+sheet_name = "Bestand Ertrag"
+source_unit = "kWh"
+is_2025_labeled_Bestand_column = true
+selected_original_year_label = 2025
+[measures.category_totals]
+residential_buildings = "5290663310.064"
+commerce_industry = "3240365056.224"
+public_buildings = "355539657.336"
+agriculture = "1620616281.480"
+other_buildings = "201605763.096"
+unassigned = "700677002.952"
+overall = "11409467071.152"
+
+[[measures]]
+sheet_name = "Potenzial Leistung"
+source_unit = "kW"
+is_2025_labeled_Bestand_column = false
+[measures.category_totals]
+residential_buildings = "41654518.126"
+commerce_industry = "25300151.824"
+public_buildings = "4488901.655"
+agriculture = "9058205.432"
+other_buildings = "2805121.991"
+unassigned = "1002103.170"
+overall = "84309002.198"
+
+[[measures]]
+sheet_name = "Potenzial Ertrag"
+source_unit = "kWh"
+is_2025_labeled_Bestand_column = false
+[measures.category_totals]
+residential_buildings = "32997670528.744"
+commerce_industry = "21084493097.682"
+public_buildings = "3624658941.606"
+agriculture = "7082135214.501"
+other_buildings = "2253329842.415"
+unassigned = "821456974.884"
+overall = "67863744599.832"

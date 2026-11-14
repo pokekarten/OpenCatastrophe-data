@@ -1,0 +1,463 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission research discovery of differentiated original national European building register, footprint, INSPIRE service and viewer products for a 51-country coverage audit. These metadata leads do not admit data for commercial CAT model use.",
+  "review_date": "2026-11-08",
+  "entries": [
+    {
+      "candidate_id": "pl.gugik.egib-building-parcels.2026",
+      "name": "Poland GUGiK EGiB official building geometries national GeoParquet / county GPKG",
+      "provider": "Head Office of Geodesy and Cartography Poland (GUGiK)",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Poland; nationwide aggregate of registered county cadastral WFS services",
+      "temporal_scope": "New download offer announced 2026-02-04; federated WFS announced 2026-07-16; original asset release dates vary by county",
+      "resolution_or_granularity": "Country and voivodeship GeoParquet, voivodeship and county GeoPackage, federated county WFS for EGiB building geometry",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://www.gov.pl/web/gugik/budynki-z-egib-dostepne-do-pobrania-w-serwisie-wwwgeoportalgovpl",
+      "access_class_hint": "official_public_bulk_download_original_asset_licence_and_county_coverage_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "EGiB cadastral building feature products are DISTINCT from the already catalogued BDOT10k generalized topographic buildings and 3D models. WFS is federated across county services and may have incomplete local availability. Neither geometry nor EGiB ID is evidence of actual policyholder, occupancy, construction quality or TIV. Freeze county/voivodeship release, CRS, IDs and official file conditions."
+    },
+    {
+      "candidate_id": "sk.gku.inspire-hvd-buildings.2026",
+      "name": "Slovakia official HVD INSPIRE Buildings nationwide open downloads",
+      "provider": "Geodetic and Cartographic Institute Bratislava (GKÚ) / ÚGKK Slovakia",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Slovakia nationwide",
+      "temporal_scope": "Official download list updated 2026-02-02; verify individual GML/GPKG/GDB vintage",
+      "resolution_or_granularity": "Official INSPIRE HVD Buildings files in GML, GeoPackage, ESRI File Geodatabase; country download",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://www.skgeodesy.sk/geoportal-en/inspire/download-data/",
+      "access_class_hint": "official_public_bulk_data_cc_by_4_0_listed_exact_file_vintage_hash_not_audited",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Source publicly lists CC BY 4.0 for the Buildings product and provides links incl. https://opendata.skgeodesy.sk/static/INSPIRE/Buildings/inspire_bu_gpkg.zip. Distinct from Slovakia WMTS base maps. Validate full national geometry/count, building vs building-part identifiers, height availability, and exact source attribution before adoption."
+    },
+    {
+      "candidate_id": "hr.dgu.inspire-buildings-wfs-atom.2026",
+      "name": "Croatia DGU digital cadastral map building WFS and INSPIRE ATOM download",
+      "provider": "Državna geodetska uprava (DGU), Croatia",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Croatia, nationwide INSPIRE cadastral buildings subject to actual coverage",
+      "temporal_scope": "Official portal inspected 2026-11-08; individual update vintage unknown",
+      "resolution_or_granularity": "INSPIRE WFS for digital cadastral map Buildings; separate ATOM feed for INSPIRE BU-core2d",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://geoportal.dgu.hr/cms/en/data-and-services/",
+      "access_class_hint": "official_anonymous_wfs_and_atom_individual_dgu_terms_need_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "DGU specifically identifies anonymous INSPIRE Buildings WFS https://api.uredjenazemlja.hr/services/inspire/bu/wfs and ATOM https://geoportal.dgu.hr/services/atom/bu-core2d/xml. Building geometries derive from cadastral maps and are not independent of the same official cadastre and EUBUCCO government input. Check WFS paging, GML schema, rights and cadastral completeness."
+    },
+    {
+      "candidate_id": "fi.syke.ryhti-completed-buildings.2026",
+      "name": "Finland Ryhti completed building records and building INSPIRE OGC API",
+      "provider": "Finnish Environment Institute (SYKE) / Ryhti built environment system",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Finland nationally, completed building records; separate still-progressing data products",
+      "temporal_scope": "Daily completed-building files per Ryhti 2026 provider page; content depends on ongoing deployment",
+      "resolution_or_granularity": "Open completed-building CSV/JSON .gz packages updated daily plus OGC API Features and INSPIRE BU building WMS",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://ryhti.syke.fi/en/front-page/services/",
+      "access_class_hint": "official_open_daily_csv_json_and_ogc_api_feature_exact_schema_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "New national building-record feed is distinct from the existing National Land Survey Finland topographic INSPIRE buildings. Official package URLs include open_building.csv.gz and open_building.json.gz. Verify building ID join, completion status, geocodes, area/height fields, live coverage, source update date and legal open licence for downstream insurer modelling."
+    },
+    {
+      "candidate_id": "is.natt.is50v.buildings",
+      "name": "Iceland official IS 50V buildings national vector base map layer",
+      "provider": "Natural Science Institute of Iceland (Náttúrufræðistofnun Íslands)",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Iceland, national topographic coverage",
+      "temporal_scope": "Continuously maintained official IS50V; tile release dates vary",
+      "resolution_or_granularity": "1:50,000 vector base map includes buildings layer, coordinates ISN2004/Lambert EPSG:3057",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://www.natt.is/en/resources/geospatial-data/base-map-data",
+      "access_class_hint": "official_public_vector_download_provided_generalized_topography_not_cadastral",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "IS50V is a generalized cartographic buildings layer not a complete cadastral inventory of every annex, unit or insurable asset. Confirm actual building polygon/point classes, edition, source licence and scale-related omissions. Distinct from private commercial Iceland addresses and EUBUCCO (which does not cover Iceland)."
+    },
+    {
+      "candidate_id": "ie.tailte.high-value-buildings",
+      "name": "Ireland Tailte Éireann High Value Dataset Buildings",
+      "provider": "Tailte Éireann / Irish national open data catalogue",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Republic of Ireland; provider HVD scope and 26-county coverage to be checked",
+      "temporal_scope": "Public HVD catalogue current 2026; exact layer update not inspected",
+      "resolution_or_granularity": "Official high-value INSPIRE Buildings dataset/service catalogue; vector distribution capabilities require validation",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://data.gov.ie/dataset/high-value-dataset-buildings1",
+      "access_class_hint": "official_hvd_metadata_open_access_actual_download_and_licence_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Do not confuse this product with commercial GeoDirectory address/point records or the linked Building Groups HVD. Inspect actual endpoint, geometry definitions, rights and nationwide completeness; not automatically all island of Ireland (Northern Ireland has separate OSNI sources)."
+    },
+    {
+      "candidate_id": "lv.vzd.inspire-buildings",
+      "name": "Latvia State Land Service INSPIRE Buildings open service",
+      "provider": "Latvian State Land Service (Valsts zemes dienests, VZD)",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Latvia; INSPIRE cadastral building scope and completeness to validate",
+      "temporal_scope": "Official open-data portal catalogue 2026; per-feature dates not inspected",
+      "resolution_or_granularity": "Buildings INSPIRE data and separate WFS dataset; download/OGC endpoints in dataset resources",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://data.gov.lv/dati/dataset/ekas-inspire",
+      "access_class_hint": "official_public_insipre_catalogue_exact_original_wfs_and_licence_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Separate this from the open Latvian cadastral *text* building attributes and Riga municipal buildings polygons; test exact geometry fields, building-vs-building-part, API limitations, availability and use conditions. Not independently surveyed against EUBUCCO if both reuse cadastre."
+    },
+    {
+      "candidate_id": "cy.dls.inspire-buildings",
+      "name": "Cyprus Department of Lands and Surveys INSPIRE buildings dataset",
+      "provider": "Cyprus Department of Lands and Surveys / national open data portal",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Republic of Cyprus; exact cadastral service geographical scope to review",
+      "temporal_scope": "Current INSPIRE public record; original feature update date unknown",
+      "resolution_or_granularity": "Government INSPIRE Buildings metadata and DLS REST building layers",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://www.data.gov.cy/el/dataset/ktiria-inspire",
+      "access_class_hint": "official_buildings_dataset_service_exact_download_licence_and_coverage_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher provides cadastral buildings source, but review exact full-island coverage, INSPIRE 2D schema, DLS terms, and disputed areas before assuming nationwide completeness. A public web map is not itself proof of unrestricted original bulk geometry distribution."
+    },
+    {
+      "candidate_id": "pt.dgt.bge-buildings",
+      "name": "Portugal Base Geográfica de Edifícios (BGE) official building geographic base",
+      "provider": "Portuguese national open data portal / Direção-Geral do Território",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Portugal; mainland and island geographic coverage must be verified in chosen asset",
+      "temporal_scope": "Publisher resource current catalogue; vintage and maintenance frequency need review",
+      "resolution_or_granularity": "Geographical buildings base; actual downloadable layers and polygon schema need original-file verification",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://dados.gov.pt/pt/datasets/base-geografica-de-edificios/",
+      "access_class_hint": "official_public_dataset_catalogue_extract_and_product_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinct from DGT cadastral *parcels* and the Portuguese address/census building records. A cadastral parcel is NOT a building polygon and its market value is not TIV. Check exact building class, regional coverage including Madeira/Azores and file format before admission."
+    },
+    {
+      "candidate_id": "hu.lechner.buildings",
+      "name": "Hungary Lechner National Spatial Data Ecosystem Buildings",
+      "provider": "Lechner Knowledge Center (Lechner Tudásközpont)",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Hungary; national spatial-data source subject to access/licence checks",
+      "temporal_scope": "Catalogue current 2026; chosen product/release vintage not inspected",
+      "resolution_or_granularity": "Official Buildings dataset metadata/service; possible Geoshop conditions",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://data.lechnerkozpont.hu/en/datasets/buildings",
+      "access_class_hint": "official_national_catalogue_access_terms_licence_bulk_availability_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The web catalogue describes a Buildings product but not automatically a freely redistributable national GeoPackage. Confirm map vs download, precise building feature schema, rights and INSPIRE transformations. This is not the same as Hungarian parcels or address registry."
+    },
+    {
+      "candidate_id": "al.asig.cadastral-buildings",
+      "name": "Albania ASIG/ASHK cadastral building geospatial layer",
+      "provider": "State Authority for Geospatial Information (ASIG) and State Cadastre Agency (ASHK)",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Albania; only cadastral zones or blocks processed in the relevant agency system",
+      "temporal_scope": "Publisher update announcement; date and coverage differ by cadastral zone",
+      "resolution_or_granularity": "National Geoportal layer Cadastral Buildings (ALBSCAD), cadastral blocks and parcels",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://geoportal.asig.gov.al/en/node/3372",
+      "access_class_hint": "official_public_geoportal_building_layer_bulk_api_and_reuse_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher explicitly says building layer is updated for processed cadastral zones/blocks; NOT proof of nationwide completeness. Confirm public WFS/download, per-feature licence, state update and geometries. Use OSM/Overture in documented missing areas and do not mix cadastral parcels with buildings."
+    },
+    {
+      "candidate_id": "mk.arec.inspire-buildings-ogc",
+      "name": "North Macedonia INSPIRE Buildings OGC Features service",
+      "provider": "Agency for Real Estate Cadastre / national spatial data infrastructure North Macedonia",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "North Macedonia; exact geographic service coverage and object count to verify",
+      "temporal_scope": "OGC endpoint current 2026; data vintage not inspected",
+      "resolution_or_granularity": "INSPIRE Buildings OGC Features service conformance endpoint",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://gisserver.gdi.mk/arcgis/rest/services/INSPIRE/Buildings/OGCFeatureServer/conformance?f=html",
+      "access_class_hint": "official_ogc_feature_service_metadata_original_collection_rights_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "A conformance page does NOT prove anonymous data retrieval or rights. Inspect collections, /items paging and original INSPIRE provider licence, then characterize polygons, part IDs and country coverage. Avoid conflating parcel outlines or all building parts with unique insurable locations."
+    },
+    {
+      "candidate_id": "rs.rgz.inspire-buildings-wfs",
+      "name": "Serbia GeoSrbija official INSPIRE Buildings WFS metadata",
+      "provider": "Republic Geodetic Authority (RGZ) / GeoSrbija",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Serbia; national INSPIRE Buildings coverage to check",
+      "temporal_scope": "Official metadata available in 2026; original updates differ",
+      "resolution_or_granularity": "INSPIRE Buildings WFS service metadata record, original endpoint must be followed",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://metakatalog.geosrbija.rs/geonetwork/srv/api/records/a2d6936c-2b95-42cf-b55f-d5fbff7da19d",
+      "access_class_hint": "official_national_wfs_metadata_exact_endpoint_access_and_licence_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Metadata record confirms an INSPIRE Buildings WFS source but does not establish unconditional nationwide polygon access or redistribution rights. Verify actual service capabilities, pagination, coordinate order, update vintage and compliance. Kosovo coverage is separate and must not be inferred here."
+    },
+    {
+      "candidate_id": "ge.napr.nsdi-registered-buildings",
+      "name": "Georgia NSDI national geoportal Registered Building layer",
+      "provider": "National Agency of Public Registry (NAPR) Georgia",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Georgia; registered buildings layer in official National Spatial Data Infrastructure",
+      "temporal_scope": "Official national geoportal presented 2025, expanded 2026; per-layer vintage unknown",
+      "resolution_or_granularity": "Registered Building layer and cadastral services in NSDI, with separate discovery/download controls",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://nsdi.gov.ge/en/geoportal",
+      "access_class_hint": "official_building_layer_catalogue_public_view_download_and_licence_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NSDI geoportal lists Registered Building as land-cadastre dataset; this does not mean universal or free full-building polygon downloads. Check original distribution API, feature geometry, cadastre ID, jurisdiction (incl. contested territories), rights and missingness. Do not infer insurer ownership or TIV."
+    },
+    {
+      "candidate_id": "li.statistik.gwr-building-register",
+      "name": "Liechtenstein official Building and Dwelling Register public data",
+      "provider": "Amt für Statistik Liechtenstein / opendata.swiss",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Principality of Liechtenstein; national register scope",
+      "temporal_scope": "Public register current; exact time range and extract refresh need review",
+      "resolution_or_granularity": "Official building/dwelling register open-data metadata, building characteristics/identity; geometry precision needs validation",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://opendata.swiss/en/dataset/gebaude-und-wohnungsregister-liechtenstein",
+      "access_class_hint": "official_public_register_scope_building_geometry_and_licence_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "A dwelling or address record does not necessarily correspond to one footprint; field-level public availability and Geocat coverage must be verified. Liechtenstein is NOT in EUBUCCO EU27+UK+NO+CH, and Swiss building registers cannot be treated as Liechtenstein coverage."
+    },
+    {
+      "candidate_id": "ad.iea.buildings-historic.1995",
+      "name": "Andorra historic building situation polygon inventory (1995 imagery)",
+      "provider": "Institut d'Estudis Andorrans / Government of Andorra environment/carto units",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Andorra nationwide, older 1:5000 building structures",
+      "temporal_scope": "Aerial imagery 1995, map prepared 2000; not current exposure",
+      "resolution_or_granularity": "Topologically structured building polygons, types incl public, construction, ruins and shelter; ESRI Shapefile/MiraMon/DXF available",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://www.iea.ad/situacio-d-edificis",
+      "access_class_hint": "public_download_historic_shapefile_reuse_licence_and_original_dataset_integrity_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Strong historical reference, NOT a modern nationwide active-structure census. Source explicitly based on 1995 imagery; buildings may have changed drastically. Review datum NTF/Lambert Zone III, 1:5000 generalization and exact archive licence before use. Never map 'construction/ruin' to current insurable asset."
+    },
+    {
+      "candidate_id": "md.ipcbi.geoserver-cadastral",
+      "name": "Moldova Cadastral Agency WMS/WFS GeoServer building-layer candidate",
+      "provider": "Public Institution Cadastre of Immovable Property (IP CBI), Moldova",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Moldova; GeoServer workspaces, actual buildings geometry layer needs direct verification",
+      "temporal_scope": "Live public GeoServer page 2026, original dataset time unstated",
+      "resolution_or_granularity": "National cadastral GeoServer with anonymous OGC WMS/WFS services and multiple workspaces/layers",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://map.cadastru.md/geoserver/index.html",
+      "access_class_hint": "official_anonymous_geoserver_buildings_layer_and_reuse_not_yet_demonstrated",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "This source identifies an official cadastral service, NOT a verified complete Buildings layer or licensed national download. Inspect advertised WFS FeatureTypes and exact provider layer/class, geometry CRS, paging and rights. Treat any secondary Source Cooperative Cladiri mirror as derived from the same cadastre, not independent survey."
+    },
+    {
+      "candidate_id": "sm.gov.catasto-building-map-service",
+      "name": "San Marino state cadastral geospatial map services",
+      "provider": "Republic of San Marino Secretariat for Territory / Ufficio Catasto",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Republic of San Marino, national map-services scope",
+      "temporal_scope": "Live 2026 official cadastral/urban-planning service, building layer date unknown",
+      "resolution_or_granularity": "Government ArcGIS MapServer for cadastral cartography and separately public buildings/places layers",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://mappeonline.pa.sm/arcgis/rest/services/Cartografia/catasto_GR/MapServer",
+      "access_class_hint": "official_gis_mapserver_view_only_licence_and_download_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Government layers demonstrate cartographic data, not confirmed reusable, nationwide actual individual building polygons. Separate MapServer image tiles, FeatureServer query and cadastral parcel access before assuming export. No construction-year/insured-value evidence."
+    },
+    {
+      "candidate_id": "ba.fgu.federation-cadastre-metadata",
+      "name": "Bosnia and Herzegovina FBiH cadastral buildings metadata and web services",
+      "provider": "Federation of Bosnia and Herzegovina Federal Geodetic Administration (FGU)",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "europe"
+      ],
+      "spatial_scope": "Federation of Bosnia and Herzegovina only; Republika Srpska and Brčko not covered",
+      "temporal_scope": "Current cadastral metadata service, precise timestamp unknown",
+      "resolution_or_granularity": "Official FBiH cadastral database metadata and Katastar.ba web services; buildings layer schema needs proof",
+      "potential_roles": [
+        "building_geometry_source_review",
+        "national_coverage_gap_assessment"
+      ],
+      "authoritative_url": "https://www.katastar.ba/servisi",
+      "access_class_hint": "official_federation_only_web_services_bulk_and_commercial_rights_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "This provider covers ONLY FBiH and must not be labeled nationwide BiH exposure. State entities have separate cadastral authorities. Verify original building layer availability, completeness, service terms and geom before any downstream use; other parts of BiH require a distinct provider review."
+    }
+  ]
+}

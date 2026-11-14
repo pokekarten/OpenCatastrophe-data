@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Genuine 2020 original measured DWD FX911 and independently SHA-verified
+# original 2020 publicly distributed Google ARCO ERA5 10fg peaks.
+# Three measured station observations -> ONLY TWO atmospheric grid nodes.
+# Time reference and historical instrument/geography NOT yet harmonized.
+schema = "CIARA2020_DWD_FX911_STATION_TO_GOOGLE_ARCO_ERA5_GRID_PEAK_RESEARCH_V0"
+status = "RESEARCH_ONLY_THREE_MEASURED_DWD_STATION_PEAKS_VS_TWO_MODELLED_ERA5_CELL_PEAKS"
+source_event_start_date = "2020-02-08"
+source_event_end_date = "2020-02-11"
+first_genuine_source_comparison_github_pr = 1570
+first_genuine_source_comparison_github_run = 43603655228
+first_genuine_source_comparison_github_job = 132473533297
+DWD_source = "Deutscher Wetterdienst CDC hourly extreme_wind historical FX_911"
+DWD_source_licence = "CC BY 4.0, DWD attribution"
+ERA5_source = "Google Research public ARCO ERA5 original 10fg reanalysis"
+ERA5_source_licence = "Copernicus Licence, C3S and Google Research attribution"
+ERA5_original_2020_96x160_decoded_float32_le_sha256 = "5fb7c41963a94f88ee3651b51bfa84cc2f4bf379e1ee6f4eb4a4fb597d37f932"
+source_genuine_DWD_stations = 3
+source_genuine_distinct_ERA5_025degree_nodes = 2
+source_DWD_original_2020_hour_values_total = 288
+publisher_current_locations_not_verified_historical_2020 = true
+2020_DWD_hour_reference_and_ERA5_window_UTC_harmonized = false
+station_2020_instrument_height_exposure_verified = false
+ERA5_bias_RMSE_skill_model_approved = false
+actual_2020_real_RV_insurer_sites_claims_observed = false
+native_GUL_IL_RI_OEP_AEP_or_annual_EP_approved = false
+
+[[stations]]
+station_id = "02667"
+name = "Koeln/Bonn"
+publisher_current_lat = 50.8645
+publisher_current_lon = 7.1575
+nearest_era5_grid_lat = 50.75
+nearest_era5_grid_lon = 7.25
+distance_to_grid_km = 14.295
+original_DWD_zip_sha256 = "e88536b7eebb6c7f94de63de56b1af85a0981fdd769e727f45f6d7db7c93ae78"
+DWD_original_observed_hourly_gust_count = 96
+DWD_QN_8 = 3
+DWD_observed_2020_event_peak_FX911_mps = 26.4
+original_google_era5_2020_event_peak_10fg_mps = 31.169416427612305
+descriptive_ERA5_minus_DWD_peak_difference_mps_not_model_bias = 4.769416
+
+[[stations]]
+station_id = "15200"
+name = "Wuppertal"
+publisher_current_lat = 51.2531
+publisher_current_lon = 7.2157
+nearest_era5_grid_lat = 51.25
+nearest_era5_grid_lon = 7.25
+distance_to_grid_km = 2.412
+original_DWD_zip_sha256 = "748ffdbc8f6ebf04a014ebf3d8fdc177e9a903349cc5b36e19f4c425998bfaa0"
+DWD_original_observed_hourly_gust_count = 96
+DWD_QN_8 = 3
+DWD_observed_2020_event_peak_FX911_mps = 31.1
+original_google_era5_2020_event_peak_10fg_mps = 32.13789749145508
+descriptive_ERA5_minus_DWD_peak_difference_mps_not_model_bias = 1.037897
+
+[[stations]]
+station_id = "00603"
+name = "Koenigswinter-Heiderhof"
+publisher_current_lat = 50.7293
+publisher_current_lon = 7.204
+nearest_era5_grid_lat = 50.75
+nearest_era5_grid_lon = 7.25
+distance_to_grid_km = 3.972
+original_DWD_zip_sha256 = "4a61a6394344bba05a06553794ac1a2d5edb4c4e3ac39ae1f26407e5f4e2f62b"
+DWD_original_observed_hourly_gust_count = 96
+DWD_QN_8 = 3
+DWD_observed_2020_event_peak_FX911_mps = 25.5
+original_google_era5_2020_event_peak_10fg_mps = 31.169416427612305
+descriptive_ERA5_minus_DWD_peak_difference_mps_not_model_bias = 5.669416

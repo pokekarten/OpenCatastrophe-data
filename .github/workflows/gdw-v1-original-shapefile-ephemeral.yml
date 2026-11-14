@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GDW v1 Original Shapefile Ephemeral Source Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/gdw-v1-original-shapefile-ephemeral.yml"
+      - "research_runners/gdw_v1_shapefile_archive_preflight_v0.py"
+      - "tests/test_gdw_v1_shapefile_archive_preflight_v0.py"
+  # Follow the existing exact-original source audit pattern: no original bytes
+  # on untrusted PRs. First live acquisition is a reviewed main workflow push.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/gdw-v1-original-shapefile-ephemeral.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gdw-v1-shp-ephemeral-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  gdw-original-structure:
+    name: Fixed original GDW v1 Shapefile integrity and structure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact reviewed source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python runtime
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+
+      - name: Fail-closed synthetic ZIP and GDW_ID tests
+        run: python -m unittest tests.test_gdw_v1_shapefile_archive_preflight_v0 -v
+
+      - name: Inspect exact original published GDW v1 Shapefile ZIP without exporting bytes
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          original="$RUNNER_TEMP/GDW_v1_0_shp.zip"
+          trap 'rm -f "$original"' EXIT
+          # One bounded, anonymous, fixed 2024 version-1 Figshare source file;
+          # redirects are permitted to the provider's temporary HTTPS object store.
+          # No retries, caller-controlled URL, authorization or raw artifact upload.
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 240 --retry 0 \
+            --max-filesize 69745749 \
+            --output "$original" \
+            'https://ndownloader.figshare.com/files/47913754'
+          # The source runner checks the exact original publisher length+MD5,
+          # computes SHA-256, ZIP CRC, both shapefile layer structures,
+          # point/polygon record counts and GDW_ID relationship. It emits
+          # only aggregate results; no coordinates, IDs or source bytes.
+          python research_runners/gdw_v1_shapefile_archive_preflight_v0.py \
+            --original-zip "$original"
+          echo "GDW v1 ephemeral original archive checked; zero provider artifacts uploaded."

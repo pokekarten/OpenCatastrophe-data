@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# 2020 Ciara/Sabine modelled wind hazard discovery metadata.
+# NO original ERA5 bytes, insurer claim rows, source credentials or EP values.
+
+schema = "EIOPA_CIARA2020_ERA5_10FG_HOURLY_POINT_CONTRACT_V0"
+as_of = "2026-11-07"
+event_name = "CIARA_SABINE_2020"
+event_start_utc = "2020-02-08T00:00:00Z"
+event_end_utc_inclusive = "2020-02-11T23:00:00Z"
+expected_time_steps = 96
+source_dataset = "reanalysis-era5-single-levels-timeseries"
+source_licence = "CC-BY"
+source_doi = "10.24381/1cf1ad76"
+source_landing_url = "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-timeseries?tab=download"
+source_product_guide_url = "https://confluence.ecmwf.int/pages/viewpage.action?pageId=514296174"
+source_cds_api_instructions_url = "https://cds.climate.copernicus.eu/how-to-api"
+source_cds_license_manually_accepted = false
+source_cds_token_present_in_repo = false
+original_source_csv_acquired = false
+original_source_csv_sha256 = "NOT_ACQUIRED"
+requested_point_description = "Single illustrative public ERA5 gridpoint near Cologne; NOT a region or R+V insured location"
+requested_latitude_degrees = 51.0
+requested_longitude_degrees = 7.0
+actual_era5_gridpoint_rounded_to_nearest_0p25 = "NOT_MEASURED_YET"
+source_spatial_resolution_degrees = 0.25
+wind_variable_name = "10m_wind_gust_since_previous_post_processing"
+ecmwf_short_name = "10fg"
+ecmwf_parameter_id = 49
+wind_units = "m/s"
+wind_metric = "10_METRE_MAXIMUM_3_SECOND_GUST_SINCE_PREVIOUS_POSTPROCESSING"
+wind_source_kind = "ERA5_REANALYSIS_MODELED_NOT_OBSERVED_DWD_STATION"
+daily_aggregated_dataset_allowed = false
+daily_2026_plus_one_hour_bug_assumed_resolved = false
+derived_era5_daily_statistics_dataset_approved = false
+hourly_native_event_gust_max_observed = false
+2020_matching_insured_Claim_event_available_reference = "EIOPA_CIARA_SABINE_FEB_2020_NUTS2_ONLY"
+1990_Daria_can_be_joined_as_same_event = false
+insurer_site_specific_loss_or_tiv_observed = false
+regional_nuts2_2020_exposure_denominator_reconciled = false
+hazard_values_from_csv_staged_into_model = false
+gross_net_OEP_AEP_admitted = false

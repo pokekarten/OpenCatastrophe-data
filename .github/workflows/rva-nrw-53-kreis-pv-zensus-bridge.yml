@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: R+V NRW 53 Kreis installed-PV versus official Zensus building ages pilot
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-nrw-53-kreis-pv-zensus-bridge.yml"
+      - "research_runners/rva_nrw_53kreis_pv_zensus_physical_source_bridge_v0.py"
+      - "tests/test_rva_nrw_53kreis_pv_zensus_physical_source_bridge_v0.py"
+      - "research/observations/rva_nrw_53_kreis_census2022_pv2026_source_bridge_v0.toml"
+      - "docs/research/rva-nrw-53kreis-original-pv-vs-zensus-20261105.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rva-nrw-53kreis-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-sources-53-county-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Offline Zensus 53 Kreis original-source negative tests
+        run: python -m unittest discover -s tests -p "test_rva_nrw_53kreis_pv_zensus_physical_source_bridge_v0.py" -v
+      - name: Verify pinned sources and all 396 NRW municipality to 53 Landkreis totals
+        run: python -m research_runners.rva_nrw_53kreis_pv_zensus_physical_source_bridge_v0 --county-rows

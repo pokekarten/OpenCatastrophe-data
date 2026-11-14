@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+schema_version = "WBM_2026_RIB_PUBLIC_TENDER_205349_ACCESS_OBSERVATION_V0"
+observation_date = "2026-11-05"
+procurement_title = "Industrielle Sachversicherung für reine Gewerbeobjekte"
+buyer_internal_reference = "VV 2026-0069"
+tender_id_rib = "205349"
+tender_platform_id_rib = "2"
+source_notice_publication_number_that_links_rib = "286307-2026"
+source_notice_reference_is_same_as_award_formal_BT04_confirmed = false
+official_rib_landing_url = "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/205349"
+observed_with = "Exa public webpage fetch, rendered text"
+public_rendered_page_says_announcement_not_found = true
+public_rendered_page_says_no_longer_publicly_available = true
+direct_downloaded_tender_document_count = 0
+any_tender_attachment_original_file_bytes_obtained = false
+raw_rib_response_html_sha256_available = false
+full_insurance_technical_specification_obtained = false
+signed_final_coinsurance_policy_or_annex_obtained = false
+nine_individual_building_geocodes_or_insured_TIVs_obtained = false
+policy_share_percentage_verified_from_signed_contract = false
+actual_insurer_portfolio_or_CAT_exposure_admitted = false
+data_access_status = "PUBLIC_RIB_LISTING_RENDERED_UNAVAILABLE_RECHECK_BY_READ_ONLY_RUNNER"
+
+[official_procurement_access_policy]
+url = "https://www.berlin.de/vergabeplattform/ueber-die-vergabeplattform/download-von-unterlagen/"
+source_operator = "Land Berlin official procurement platform"
+general_public_access_to_live_tender_documents_described = true
+expired_tender_documents_guaranteed_still_downloadable = false
+registration_may_be_required_for_editable_documents_questions_and_bids = true
+
+[official_buyer]
+name = "WBM Wohnungsbaugesellschaft Berlin-Mitte mbH"
+official_tenders_page = "https://www.wbm.de/unternehmen/ausschreibungen/"
+public_procurement_contact_email = "vergabe@wbm.de"
+uses_berlin_procurement_platform = true
+buyer_has_provided_risk_schedules_to_this_research = false
+
+[award_september]
+publication_number = "668506-2026"
+BT04_index_uuid = "0988b2e4-9489-4b3b-9487-cd3a2a624cf5"
+contract_label_HDI_50 = "Status Quo 50% Beteiligung"
+contract_label_Helvetia_40 = "40% Beteiligung Status Quo"
+contract_label_RV_10 = "10% Beteiligung"
+contract_labels_are_a_signed_policy_share_schedule = false
+public_001_eur_contract_value_is_usable_premium_or_tiv = false
+
+[april_competition]
+publication_number = "286307-2026"
+BT04_index_uuid = "7df98c35-4cae-41ff-8385-141125426a4a"
+tender_portal_address_observed_in_published_notice = true
+april_conditions_proven_applicable_to_september_award = false

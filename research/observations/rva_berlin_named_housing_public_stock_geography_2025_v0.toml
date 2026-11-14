@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Corporate 2025 dwellings, 2025 government WFS opportunity; not policy schedules.
+schema_version = "BERLIN_RVA_NAMED_HOUSING_ACCOUNTS_2025_PUBLIC_STOCK_OPPORTUNITIES_V0"
+associated_insurer_relationship_observation = "rva_berlin_senate_housing_insurer_relations_2025_v0.toml"
+source_date_company_stocks = "2025-12-31"
+insurer_relationship_date = "2025-04-01"
+company_stocks_and_insurer_contracts_are_same_point_in_time = false
+source_webpage_asset_sha256_verified = false
+source_rights_reuse_corporate_pages_reviewed = false
+source_corporate_dwellings_are_not_actual_insured_buildings = true
+known_company_insured_property_schedule = false
+known_2025_rva_policy_count_for_named_clients = false
+known_rva_company_client_gross_tiv = false
+known_joint_degewo_rva_consortium_cession = false
+known_2026_rva_policy_renewal = false
+specific_client_loss_experience_by_peril_observed = false
+real_rva_site_geocodes_observed = false
+can_merge_stock_into_1060546_insurer_solo_connected_building_contracts = false
+geospatial_join_approved = false
+limitations = "Corporate dwelling count, owned/managed distinctions, separate commercial cover, legal entity and source vintage not aligned with individual building coverage. Separate named account scenario only."
+
+[[corporate_stock]]
+entity = "WBM Wohnungsbaugesellschaft Berlin-Mitte mbH"
+source_url = "https://gb.wbm.de/"
+reference_year = 2025
+residential_dwelling_units = 34498
+residential_dwelling_count_is_exact_as_published = true
+residential_floor_area_m2 = 2159600
+commercial_floor_area_m2 = 314000
+corporate_stock_coverage_basis = "company_corporate_2025_report_excludes_actual_insurer_schedule"
+named_building_insurer_2025_senate = "R+V Allgemeine Versicherung AG"
+actual_rva_insured_building_list_observed = false
+actual_rva_policy_contracts_observed = false
+unit_is_individual_physical_building = false
+
+[[corporate_stock]]
+entity = "GESOBAU AG"
+source_url = "https://www.gesobau.de/ueber-uns/gesobau-in-zahlen/"
+reference_year = 2025
+residential_dwelling_units = 48800
+residential_dwelling_count_is_exact_as_published = false
+additional_third_party_managed_dwelling_units_approx = 700
+commercial_units_approx = 800
+corporate_stock_coverage_basis = "roughly_48800_own_dwellings_and_distinct_third_party_management"
+named_building_insurer_2025_senate = "R+V Allgemeine Versicherung AG"
+actual_rva_insured_building_list_observed = false
+actual_rva_policy_contracts_observed = false
+unit_is_individual_physical_building = false
+
+[[corporate_stock]]
+entity = "degewo AG"
+source_url = "https://www.degewo.de/wir-sind-degewo/presse"
+reference_year = 2025
+residential_dwelling_lower_bound_exclusive = 83000
+residential_dwelling_count_is_exact_as_published = false
+corporate_stock_coverage_basis = "company_manages_more_than_83000_dwellings_approx_2025"
+named_building_insurer_2025_senate = "R+V Allgemeine Versicherung AG plus Allianz AG as consortium"
+actual_rva_insured_building_list_observed = false
+actual_rva_policy_contracts_observed = false
+unit_is_individual_physical_building = false
+
+[berlin_official_wfs]
+publisher = "Senatsverwaltung fuer Stadtentwicklung Bauen und Wohnen Berlin"
+source_url = "https://daten.berlin.de/datensaetze/wohnungsbestand-der-landeseigenen-wohnungsunternehmen-wfs-4c4e0115"
+official_technical_data_description_url = "https://gdi.berlin.de/data/lwu/docs/Datenformatbeschreibung_LWU.pdf"
+reference_date = "2025-12-31"
+portal_last_update = "2026-04-07"
+license = "Datenlizenz Deutschland Zero 2.0"
+geometry = "polygon_of_cadastral_parcel_not_individual_building"
+threshold_min_residential_units_per_address = 4
+published_polygon_attributes = ["gisid", "typ"]
+published_polygon_contains_company_owner_id = false
+published_polygon_contains_legal_insurer = false
+published_polygon_contains_insured_tiv = false
+parcel_can_include_housing_stock_of_other_landlords = true
+original_wfs_data_bytes_acquired = false
+source_WFS_feature_type_schema_live_tested = false
+company_specific_portfolio_join_possible_from_current_fields = false
+all_residential_company_dwellings_included_in_wfs = false
+individual_parcel_is_a_wbm_or_gesobau_or_degewo_insured_building = false
+codebook_note = "Public 2025 spatial mask of all state-owned landlords' parcels with 4+ units per address, no owner attribution. Do not map individual insured R+V sites or interpolate unseen private domiciles."

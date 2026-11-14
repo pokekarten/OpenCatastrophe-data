@@ -26,6 +26,8 @@ RECORDS = {
     "nl.deltares.gtsm-era5-e.extreme-sea-level-stats.v2": 14671593,
     "waleedgeo.gfsm.global-flood-susceptibility.v1": 20568218,
     "emdat.llm-geodis.2026.v7": 18935447,
+    "google.groundsource.flash-flood-reports.v1": 18647054,
+    "dlr.gfz.s1s2.landslide-reference.v3": 17007637,
 }
 
 LLM_GEODIS_SOURCE = "emdat.llm-geodis.2026.v7"
@@ -82,6 +84,40 @@ LLM_GEODIS_V7_PUBLISHED_SIZES = {
     "synthetic_EMDAT_locations.csv": 104253,
 }
 # Published byte lengths from original Zenodo v7 API metadata; data bytes not fetched.
+
+
+# Fixed, provider-original metadata identities. These are research/discovery
+# candidates, NOT data-byte receipts, redistribution licences or model admissions.
+# Published file digests come from the publisher API and were NOT recomputed.
+PINNED_DISCOVERIES = {
+    "google.groundsource.flash-flood-reports.v1": {
+        "conceptrecid": "18647053",
+        "version_index": 0,
+        "files": {
+            "groundsource_2026.parquet": (
+                667122400, "cd1b5de6508f7aad8e1d1d0dd4cecea6"
+            ),
+        },
+    },
+    "dlr.gfz.s1s2.landslide-reference.v3": {
+        "conceptrecid": "15284357",
+        "version_index": 2,
+        "files": {
+            "S1S2_dataset.pdf": (
+                1234322, "da3851dab8b411d2dab788bdc178027c"
+            ),
+            "README.txt": (
+                1255, "a3369fba3f7d73dbe2562a13699e5b9c"
+            ),
+            "s1s2_landslide_reference_data.zip": (
+                5991736566, "ca50582a596ad6a88ada97488f037692"
+            ),
+        },
+    },
+}
+# NOTE: the DLR v3 Zenodo record states cc-by-4.0 while its associated paper
+# contradictorily calls the data "CC-BY-NC-4.0". This metadata parser DOES NOT
+# decide the licence or approve commercial use; external rights stay blocked.
 
 class MetadataPreflightError(ValueError):
     """Fail-closed source metadata or identity error."""
@@ -291,6 +327,47 @@ def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> di
             if item["size_bytes"] != LLM_GEODIS_V7_PUBLISHED_SIZES[key]:
                 raise MetadataPreflightError("LLM-GeoDis v7 published source byte length mismatch")
 
+
+    if source_id in PINNED_DISCOVERIES:
+        # Strict original-version and original-file manifest check for the two
+        # bounded discovery candidates. Other historical source behavior stays
+        # unchanged. Do NOT infer rights or model readiness from this result.
+        pin = PINNED_DISCOVERIES[source_id]
+        conceptrecid = pin["conceptrecid"]
+        if (str(record.get("conceptrecid")) != conceptrecid
+                or record.get("conceptdoi") != f"10.5281/zenodo.{conceptrecid}"
+                or record.get("status") != "published"):
+            raise MetadataPreflightError("pinned Zenodo concept/status mismatch")
+        relation = require_dict(metadata.get("relations"), "metadata.relations").get("version")
+        if not isinstance(relation, list) or len(relation) != 1:
+            raise MetadataPreflightError("pinned Zenodo version relation missing")
+        entry = require_dict(relation[0], "metadata.relations.version[0]")
+        parent = require_dict(entry.get("parent"), "version parent")
+        if (type(entry.get("index")) is not int
+                or entry["index"] != pin["version_index"]
+                or entry.get("is_last") is not True
+                or parent.get("pid_type") != "recid"
+                or parent.get("pid_value") != conceptrecid):
+            raise MetadataPreflightError("pinned Zenodo version/concept mismatch")
+        if license_id.casefold() != "cc-by-4.0":
+            raise MetadataPreflightError("pinned record license mismatch")
+        expected = pin["files"]
+        if seen != set(expected):
+            raise MetadataPreflightError("pinned original file set mismatch")
+        for item in inventory:
+            source_key = item["key"]
+            expected_size, expected_md5 = expected[source_key]
+            if (item["size_bytes"] != expected_size
+                    or item["publisher_checksum"] != "md5:" + expected_md5):
+                raise MetadataPreflightError("pinned original size/checksum mismatch")
+        for source_file in files:
+            source_key = source_file["key"]
+            links = require_dict(source_file.get("links"), "file links")
+            url = links.get("self") or links.get("content") or links.get("download")
+            if url != f"https://zenodo.org/api/records/{record_id}/files/{source_key}/content":
+                raise MetadataPreflightError("pinned original file URL/key mismatch")
+        version_evidence = f"zenodo_relation_index_{pin['version_index']}"
+
     return {
         "schema_version": "zenodo-cat-metadata-preflight-v0",
         "metadata_api_shape": metadata_api_shape,
@@ -298,7 +375,7 @@ def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> di
         "original_zenodo_record_id": record_id,
         "original_doi": doi,
         "record_title": title,
-        "record_version": "v7" if source_id == LLM_GEODIS_SOURCE else (metadata.get("version") if isinstance(metadata.get("version"), str) else None),
+        "record_version": ("v7" if source_id == LLM_GEODIS_SOURCE else (f"v{PINNED_DISCOVERIES[source_id]['version_index'] + 1}" if source_id in PINNED_DISCOVERIES else (metadata.get("version") if isinstance(metadata.get("version"), str) else None))),
         "version_evidence": version_evidence,
         "declared_record_license": license_id,
         "record_access_status": access,

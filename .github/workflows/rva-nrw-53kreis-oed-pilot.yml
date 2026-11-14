@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: R+V NRW 53-Kreis conditional OED research validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-nrw-53kreis-oed-pilot.yml"
+      - "research_runners/export_rva_nrw_53kreis_oed_pilot_v0.py"
+      - "research_runners/validate_rva_nrw_53kreis_oed_pilot_ods_v0.py"
+      - "research_runners/rva_2025_oed_staging_v0.py"
+      - "research/observations/rva_nrw_53_kreis_census2022_pv2026_source_bridge_v0.toml"
+      - "research/observations/zensus2022_400_kreis_original_building_aggregates_v0.toml"
+      - "research/observations/zensus2022_400_kreis_original_building_age_cohorts_v0.toml"
+      - "research/observations/rva_solo_hgb_property_2019_2025_v0.toml"
+      - "tests/test_export_rva_nrw_53kreis_oed_pilot_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nrw-source-and-oed:
+    name: Public-source NRW conditional OED schema + audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Verify original-source and fictional sample invariants
+        run: |
+          python -m unittest discover -s tests -p 'test_export_rva_nrw_53kreis_oed_pilot_v0.py' -v
+          python -m compileall -q research_runners/export_rva_nrw_53kreis_oed_pilot_v0.py research_runners/validate_rva_nrw_53kreis_oed_pilot_ods_v0.py
+      - name: Install pinned Oasis OED validator
+        run: |
+          python -m pip install --disable-pip-version-check --no-input ods-tools==5.0.8
+          python -m pip check
+      - name: Validate both original-source-derived fictional NRW scenarios in official OED 5.0.8
+        run: python research_runners/validate_rva_nrw_53kreis_oed_pilot_ods_v0.py

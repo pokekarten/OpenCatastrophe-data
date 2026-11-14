@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GDW v1 Original FileGDB Native Geometry Audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/gdw-v1-original-filegdb-quality.yml"
+      - "research_runners/gdw_v1_original_filegdb_quality_v0.py"
+      - "tests/test_gdw_v1_original_filegdb_quality_v0.py"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/gdw-v1-original-filegdb-quality.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gdw-v1-original-gdb-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-filegdb:
+    name: Exact alternate GDW original FileGDB/GEOS diagnostic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned original GIS readers
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            "fiona==1.10.1" "shapely==2.1.2"
+          python -m pip check
+          python -c 'import fiona; assert "OpenFileGDB" in fiona.supported_drivers'
+      - name: Run zero-original-byte fail-closed fixture checks
+        run: python -m unittest tests.test_gdw_v1_original_filegdb_quality_v0 -v
+      - name: Inspect fixed original GDW 1.0 Geodatabase ZIP in ephemeral storage
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          original="$RUNNER_TEMP/GDW_v1_0_gdb.zip"
+          trap 'rm -f "$original"' EXIT
+          # Fixed original provider Figshare v1 archive, anonymous only.
+          # HTTPS redirects may lead to provider CDN, never to HTTP.
+          # No credentials, user-supplied URLs, retries, caches or uploads.
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 240 --retry 0 \
+            --max-filesize 57476758 \
+            --output "$original" \
+            'https://ndownloader.figshare.com/files/47913742'
+          python research_runners/gdw_v1_original_filegdb_quality_v0.py \
+            --original-zip "$original"
+          echo "GDW native GDB original inspection complete: source geometry/IDs never exported."

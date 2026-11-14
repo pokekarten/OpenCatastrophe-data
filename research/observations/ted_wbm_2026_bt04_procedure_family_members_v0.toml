@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+schema_version = "TED_WBM_2026_OFFICIAL_INDEX_PROCEDURE_FAMILY_MEMBERS_V0"
+observation_date = "2026-11-05"
+official_source = "https://api.ted.europa.eu/v3/notices/search"
+github_actions_run_id = 42107358126
+source_scope = "exact_known_BT04_procedure_uuid"
+publisher_index_contains_only_anchor_notice_for_each_family = true
+source_index_is_original_eforms_xml = false
+complete_original_xml_replayed_for_this_family_comparison = false
+absence_of_indexed_siblings_proves_no_other_legal_notices = false
+absence_of_indexed_siblings_proves_no_private_procurement_documents = false
+april_15_percent_minimum_governs_september_award_verified = false
+signed_50_40_10_coinsurance_or_risk_locations_verified = false
+actual_insured_CAT_exposure_admitted = false
+
+[april_competition_family]
+BT04 = "7df98c35-4cae-41ff-8385-141125426a4a"
+known_notice_number = "286307-2026"
+indexed_notice_count = 1
+indexed_notice_numbers = ["286307-2026"]
+official_search_api_json_bytes = 7165
+official_search_api_json_sha256 = "0c7bf85dd4f39b41f8cb5c88b5b4226bded0793f702e9e4fda41bfe017e3f1ec"
+
+[september_award_family]
+BT04 = "0988b2e4-9489-4b3b-9487-cd3a2a624cf5"
+known_notice_number = "668506-2026"
+indexed_notice_count = 1
+indexed_notice_numbers = ["668506-2026"]
+official_search_api_json_bytes = 7165
+official_search_api_json_sha256 = "a5a967083d3c20d564b35ce8e264b00ff5f917fc78aba29a0ff76f1a5b3a17cf"

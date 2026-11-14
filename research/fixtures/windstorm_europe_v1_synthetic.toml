@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Fictional locations, values, resistance classes, contracts and year schedule.
+profile = "windstorm-europe-research-v1"
+annual_schedule_basis = "explicit_user_scenario_not_calibrated"
+seed = 2026
+bounds = [-5, 45, 16, 56]
+hazard_source = "ERA5_StormFootprint_Database_Europe_Winter_1995-2015.nc"
+year_ids = [1, 2, 3]
+
+[responses.weak]
+path = "CURVES_feuerstein_koks.csv"
+sha256 = "d960e67ab726815974feb08e5850054d7fac2873ea5bb3b02956e6262da7fd81"
+kind = "construction_percent_deterministic"
+column = "weakest outbuilding"
+
+[responses.strong]
+path = "CURVES_feuerstein_koks.csv"
+sha256 = "d960e67ab726815974feb08e5850054d7fac2873ea5bb3b02956e6262da7fd81"
+kind = "construction_percent_deterministic"
+column = "strong brick structure"
+
+[[buildings]]
+building_id = "synthetic-London"
+policy_id = "London"
+country = "GB"
+dependence_group = "London"
+response_id = "weak"
+longitude = -0.12
+latitude = 51.5
+building_value_eur = 1000000
+
+[[buildings]]
+building_id = "synthetic-Paris"
+policy_id = "Paris"
+country = "FR"
+dependence_group = "Paris"
+response_id = "strong"
+longitude = 2.35
+latitude = 48.86
+building_value_eur = 1000000
+
+[[buildings]]
+building_id = "synthetic-Cologne"
+policy_id = "Cologne"
+country = "DE"
+dependence_group = "Cologne"
+response_id = "weak"
+longitude = 6.96
+latitude = 50.94
+building_value_eur = 1000000
+
+[policies.London]
+deductible_eur = 1000
+limit_eur = 1000000
+[policies.Paris]
+deductible_eur = 1000
+limit_eur = 1000000
+[policies.Cologne]
+deductible_eur = 1000
+limit_eur = 1000000
+[treaty]
+attachment_eur = 10000
+limit_eur = 100000
+
+[[occurrences]]
+year_id = 1
+occurrence_id = "KYRILL-synthetic-schedule"
+sample_id = 0
+storm_index = 0

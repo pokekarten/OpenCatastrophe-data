@@ -24,13 +24,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** rest
 
-**Status:** documented_only
+**Status:** probe_ready
 
-**Documentation url:** <https://figshare.com/articles/dataset/Global_Dam_Watch_database_version_1_0/25988293>
+**Documentation url:** <https://docs.figshare.com/v2/>
 
 **Service root:** <https://api.figshare.com>
 
-**Api version:** v2
+**Api version:** Figshare API v2; frozen public article 25988293, version 1
 
 ## Access scope
 
@@ -51,13 +51,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ### Allowed operations
 
-- gdw_v10_archive_metadata
+- gdw_v10_archive_metadata_version1
 
 ### Path templates
 
-- /v2/articles/25988293
+- /v2/articles/25988293/versions/1
 
-**Parameter rules:** Static documentation contract only. The archival metadata identity is fixed to Figshare public article 25988293 for Global Dam Watch database version 1.0. A future reviewed implementation may resolve only this fixed public article metadata record. Callers must not supply a host, article ID, version, file ID, file name, path, query, headers, redirect target or download URL. This contract does not authorize /download, /files, version-file listing, Range requests or ZIP retrieval. Figshare is archival/access infrastructure and must not be represented as a native Global Dam Watch scientific query API.
+**Parameter rules:** One explicit opted-in anonymous GET of https://api.figshare.com/v2/articles/25988293/versions/1 only, no redirect, caller ID/URL/version/host/path/query/headers, pagination, follow-up download or retry. Exact original v1 provider metadata was separately retrieved with HTTP 200 on 2026-11-04; the reviewed parser must verify all three fixed metadata identities including item-level size and BOTH MD5 values. Verification does not permit file download or source promotion.
 
 ## Response contract
 
@@ -65,9 +65,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - application/json
 
-**Format:** Figshare public article metadata JSON for the fixed Global Dam Watch v1.0 archival record.
+**Format:** Figshare original public version-1 article metadata JSON: original release file identity contains two alternate GIS archives (GDW_v1_0_gdb.zip and GDW_v1_0_shp.zip) AND a separately published final technical document (GDW_TechDoc_v1_0.pdf). These are 3 archival files, not 3 independent scientific datasets.
 
-**Scientific semantics:** Global Dam Watch v1.0 is a global river-barrier and reservoir reference database. The published release contains a barrier point layer and an associated reservoir polygon layer; these are distinct scientific objects linked by identifiers/location, and not every barrier has an associated reservoir polygon. The two release ZIPs are alternate Geodatabase and Shapefile delivery representations, not independent scientific releases. The published v1.0 inventory reports 41,145 barrier points and 35,295 associated reservoir polygons. Presence in the database does not establish dam-failure probability, structural fragility, reservoir operating state, current asset status, downstream inundation or catastrophe-model fitness.
+**Scientific semantics:** Figshare v1 metadata identifies the Global Dam Watch dataset, two alternative GIS archive formats and a separately published final 15-page TechDoc. Original v1 manual identifies 41,145 WGS84 barrier points, 35,295 associated reservoir polygons linked by GDW_ID; 5,850 point-only barrier records legitimately lack a polygon. Original numeric missing values use -99 and missing elevations -9999; blank text is unknown. These are source-defined conventions for a separately reviewed future import, not measured zero, independently verified source archive bytes, dam-failure probabilities, hydraulic inundation, site-specific insured exposure or model readiness.
 
 ## Operational constraints
 
@@ -79,9 +79,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** No repository-specific numeric Figshare API rate-limit assumption is made. Figshare publicly documents API v2 and public article metadata endpoints, but this contract remains documentation-only and authorizes no live probe. Any future metadata receipt must remain a single fixed-record lookup under the reviewed public API/access policy and current operational guidance.
+**Rate limit notes:** Figshare official API documentation recommends at most one request per second and reserves throttle/block rights. This contract permits one explicitly invoked fixed metadata GET without pagination, redirects, retry, file retrieval or a scheduled acquisition loop.
 
-**Mutability notes:** The scientific release is pinned to Global Dam Watch version 1.0, Figshare article 25988293 and version DOI 10.6084/m9.figshare.25988293.v1. The public metadata service is an access route, not scientific byte identity. Any later selected file must separately freeze the exact Figshare file identity and representation, retrieval UTC, byte count and SHA-256 before scientific, admission or publication use.
+**Mutability notes:** Original version-specific Figshare v1 public article JSON retrieved 2026-11-04 and reported article total 127,938,795 bytes comprising final PDF (716,288 bytes, file 47913739), Geodatabase ZIP (57,476,758 bytes, 47913742) and Shapefile ZIP (69,745,749 bytes, 47913754). Provider-supplied and computed MD5 fields agreed for each file; these are metadata declarations, not independently recalculated byte receipts. Any version or metadata drift must fail closed. Original ZIP/GIS file acquisition requires distinct review, exact SHA-256, attribute/geometry quality gates and full final v1 TechDoc rights check.
 
 ## Rights and policy
 
@@ -95,23 +95,28 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** allowed
 
-**Notes:** The exact Global Dam Watch v1.0 Figshare dataset record states CC BY 4.0, and the peer-reviewed data paper likewise identifies GDW v1.0 as available under CC BY 4.0. Figshare's public Data Access Policy and API guidance allow public metadata/data access and API mining subject to the content licence. These verified rights and service permissions are ceilings, not repository execution or publication approval: this contract deliberately remains documented_only with no live probe or file request. Any persisted sample still requires exact asset identity, provenance, required attribution and repository review before bytes are committed or published.
+**Notes:** Final publisher v1.0 TechDoc (July 2024, Figshare file 47913739, section 4.1) and original Figshare v1 item both explicitly state CC BY 4.0. The final technical document also asks users to refrain from full original-format mirror/rehosting on third-party websites without authors' written permission. This is an author request, not proof of a different legal licence; project publication policy remains metadata-only with no original provider files in Git. Figshare's public Data Access Policy and API guidance support bounded anonymous metadata access and responsible rate usage. A live source-specific parser receipt, exact original archive bytes, derivative/publication decision and model rights remain separate stages.
 
 ## Probe contract
 
-**Mode:** none
+**Mode:** metadata_get
 
-**Operation:** `null`
+**Operation:** gdw_v10_archive_metadata_version1
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-_Empty array._
+- fixed Figshare article-version v1 original metadata endpoint returns HTTP 200 without redirect
+- strict bounded JSON, response byte count and SHA-256, retrieval UTC and probe code SHA-256
+- article id 25988293, version 1, DOI 10.6084/m9.figshare.25988293.v1, CC BY 4.0
+- two GIS archives plus one separately listed final TechDoc PDF with exact reviewed file names/ids/sizes, matching provider declared supplied/computed MD5
+- provider article total declared 127938795 bytes, no file-link resolution or download
+- no original GIS/PDF file bytes persisted, CAT admission or database write
 
-**Implementation decision:** document_only
+**Implementation decision:** build_adapter_now
 
-**Reviewed at:** 2026-08-12
+**Reviewed at:** 2026-11-04
 
 ## Evidence urls
 
@@ -122,5 +127,8 @@ _Empty array._
 - <https://info.figshare.com/user-guide/figshare-policies/>
 - <https://info.figshare.com/user-guide/how-to-use-the-figshare-api/>
 - <https://docs.figshare.com/>
+- <https://docs.figshare.com/v2/>
+- <https://api.figshare.com/v2/articles/25988293/versions/1>
+- <https://ndownloader.figshare.com/files/47913739>
 
-**Notes:** Static metadata/access boundary only for \#173/\#244. No provider request, external byte, file/download authority, adapter, Agent Action dispatch, admission promotion or publication decision is introduced. Future byte acquisition must select one exact v1.0 release representation and file only after a separate asset-specific review; do not infer dam safety, failure likelihood, hazard intensity or loss from inclusion in the inventory.
+**Notes:** Provider's exact public v1 metadata was independently inspected on 2026-11-04 (HTTP 200) and lists 3 files: 2 alternate GIS archive formats plus a separate final technical PDF. Exact original file IDs, provider declared byte sizes, matching supplied/computed MD5, licence, DOI and total size are frozen in the new probe. This is independent provider metadata evidence, not a successful execution receipt from the reviewed Python probe itself, not a checked archive SHA-256, and not source admission or acquisition permission. Freeze one original GIS archive separately only after review. See PR \#1233. The final v1.0 Technical Documentation (not pre-release delta) was also reviewed through the public documentation interface: WGS84, GDW_ID pairing, numeric/elevation missing-value sentinels and the author request against whole original-data rehosting were confirmed. Actual GIS file bytes remain unacquired.

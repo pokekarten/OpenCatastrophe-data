@@ -1,0 +1,877 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Original public County-level source aggregate and time-mismatched PV risk indicator; never insurer risk sites.
+schema_version = "RVA_NRW_53_KREIS_REAL_2022_BUILDINGS_2026_DERIVED_PV_CONTEXT_V0"
+geography = "North_Rhine_Westphalia_53_official_Census_counties"
+original_census_date = "2022-05-15"
+secondary_mastr_registry_date = "2026-10-02"
+original_2026_NRW_potential_publisher_date = "2026-03-12"
+original_census_publisher_sha256 = "82da8578a4657e20752b436a756ed27846c77f96e3f7333bdea7f4fe29a8b551"
+secondary_MaStR_derived_pinned_sha256 = "32678e605fb6cc9c80e6b9dbce01b8ba2fcfc2f88fea4fcde8ddf97e1478b7dd"
+official_NRW_roof_potential_sha256 = "a9730f844159781c0747a4eb816f88382924239d0cc1874ea69d7a70ce912071"
+secondary_source_attribution = "solarzahlen.de. Quelle: Marktstammdatenregister, Bundesnetzagentur (dl-de/by-2-0), Daten geändert"
+secondary_source_is_primary_BNetzA_XML = false
+source_data_are_public_county_aggregates = true
+nrw_original_census_county_rows = 53
+nrw_secondary_pv_municipality_rows = 396
+no_individual_municipality_or_pv_operator_rows = true
+company_RV_insurer_county_policies_observed = false
+company_RV_insured_pv_geography_or_TIV_observed = false
+same_year_insurer_covariate_universes = false
+insured_pv_policy_coverage_vulnerability_or_loss_known = false
+native_cat_and_RI_model_admitted = false
+notes = "Actual public original 2022 county building/age aggregates vs secondary 2026 MaStR-derived municipal active PV generating units aggregated to county by first 5 digits of AGS. Ecological unit density is NOT fraction of roofs, probability of installed PV at R+V insured buildings or insurer market share. Statistical ages refer to building, not roof renewal. Publisher Cell-Key non-additivity retained."
+national_NRW_active_PV_generating_units = 1180822
+national_NRW_balcony_PV_generating_units = 302851
+national_NRW_building_PV_generating_units = 876684
+national_NRW_freefield_PV_generating_units = 1259
+national_NRW_other_PV_generating_units = 28
+national_NRW_zensus2022_published_buildings_with_living_space = 4042220
+
+[[kreise]]
+AGS_Kreis = "05111"
+municipality_rows = 1
+active_PV_generating_units = 12060
+building_PV_generating_units = 8305
+balcony_PV_generating_units = 3751
+freefield_PV_generating_units = 4
+other_PV_generating_units = 0
+all_PV_installed_kWp = "163128.300"
+zensus2022_published_buildings_with_living_space = 74932
+zensus2022_residential_buildings = 73385
+zensus2022_mixeduse_buildings_with_living_space = 1549
+zensus2022_pre1950_age_cells = 20571
+zensus2022_2000plus_age_cells = 9818
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "110.834"
+
+[[kreise]]
+AGS_Kreis = "05112"
+municipality_rows = 1
+active_PV_generating_units = 13779
+building_PV_generating_units = 8587
+balcony_PV_generating_units = 5183
+freefield_PV_generating_units = 9
+other_PV_generating_units = 0
+all_PV_installed_kWp = "142926.100"
+zensus2022_published_buildings_with_living_space = 82785
+zensus2022_residential_buildings = 81586
+zensus2022_mixeduse_buildings_with_living_space = 1198
+zensus2022_pre1950_age_cells = 28760
+zensus2022_2000plus_age_cells = 7858
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "103.727"
+
+[[kreise]]
+AGS_Kreis = "05113"
+municipality_rows = 1
+active_PV_generating_units = 16091
+building_PV_generating_units = 9872
+balcony_PV_generating_units = 6214
+freefield_PV_generating_units = 5
+other_PV_generating_units = 0
+all_PV_installed_kWp = "146664.500"
+zensus2022_published_buildings_with_living_space = 91289
+zensus2022_residential_buildings = 89928
+zensus2022_mixeduse_buildings_with_living_space = 1360
+zensus2022_pre1950_age_cells = 30365
+zensus2022_2000plus_age_cells = 8154
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "108.140"
+
+[[kreise]]
+AGS_Kreis = "05114"
+municipality_rows = 1
+active_PV_generating_units = 10135
+building_PV_generating_units = 6851
+balcony_PV_generating_units = 3276
+freefield_PV_generating_units = 8
+other_PV_generating_units = 0
+all_PV_installed_kWp = "128259.500"
+zensus2022_published_buildings_with_living_space = 47132
+zensus2022_residential_buildings = 46157
+zensus2022_mixeduse_buildings_with_living_space = 973
+zensus2022_pre1950_age_cells = 12327
+zensus2022_2000plus_age_cells = 5604
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "145.358"
+
+[[kreise]]
+AGS_Kreis = "05116"
+municipality_rows = 1
+active_PV_generating_units = 12049
+building_PV_generating_units = 8289
+balcony_PV_generating_units = 3758
+freefield_PV_generating_units = 2
+other_PV_generating_units = 0
+all_PV_installed_kWp = "140145.900"
+zensus2022_published_buildings_with_living_space = 57340
+zensus2022_residential_buildings = 56344
+zensus2022_mixeduse_buildings_with_living_space = 998
+zensus2022_pre1950_age_cells = 15203
+zensus2022_2000plus_age_cells = 6349
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "144.559"
+
+[[kreise]]
+AGS_Kreis = "05117"
+municipality_rows = 1
+active_PV_generating_units = 6237
+building_PV_generating_units = 4110
+balcony_PV_generating_units = 2123
+freefield_PV_generating_units = 4
+other_PV_generating_units = 0
+all_PV_installed_kWp = "58647.800"
+zensus2022_published_buildings_with_living_space = 31841
+zensus2022_residential_buildings = 31389
+zensus2022_mixeduse_buildings_with_living_space = 455
+zensus2022_pre1950_age_cells = 9078
+zensus2022_2000plus_age_cells = 3543
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "129.079"
+
+[[kreise]]
+AGS_Kreis = "05119"
+municipality_rows = 1
+active_PV_generating_units = 7377
+building_PV_generating_units = 4175
+balcony_PV_generating_units = 3201
+freefield_PV_generating_units = 1
+other_PV_generating_units = 0
+all_PV_installed_kWp = "66061.400"
+zensus2022_published_buildings_with_living_space = 39267
+zensus2022_residential_buildings = 38716
+zensus2022_mixeduse_buildings_with_living_space = 550
+zensus2022_pre1950_age_cells = 11243
+zensus2022_2000plus_age_cells = 4379
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "106.323"
+
+[[kreise]]
+AGS_Kreis = "05120"
+municipality_rows = 1
+active_PV_generating_units = 4166
+building_PV_generating_units = 2686
+balcony_PV_generating_units = 1478
+freefield_PV_generating_units = 1
+other_PV_generating_units = 1
+all_PV_installed_kWp = "41633.700"
+zensus2022_published_buildings_with_living_space = 21065
+zensus2022_residential_buildings = 20667
+zensus2022_mixeduse_buildings_with_living_space = 402
+zensus2022_pre1950_age_cells = 6511
+zensus2022_2000plus_age_cells = 1777
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "127.510"
+
+[[kreise]]
+AGS_Kreis = "05122"
+municipality_rows = 1
+active_PV_generating_units = 6788
+building_PV_generating_units = 4651
+balcony_PV_generating_units = 2134
+freefield_PV_generating_units = 3
+other_PV_generating_units = 0
+all_PV_installed_kWp = "62874.100"
+zensus2022_published_buildings_with_living_space = 33718
+zensus2022_residential_buildings = 32966
+zensus2022_mixeduse_buildings_with_living_space = 756
+zensus2022_pre1950_age_cells = 12573
+zensus2022_2000plus_age_cells = 4377
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "137.938"
+
+[[kreise]]
+AGS_Kreis = "05124"
+municipality_rows = 1
+active_PV_generating_units = 9265
+building_PV_generating_units = 6231
+balcony_PV_generating_units = 3030
+freefield_PV_generating_units = 4
+other_PV_generating_units = 0
+all_PV_installed_kWp = "101262.900"
+zensus2022_published_buildings_with_living_space = 55637
+zensus2022_residential_buildings = 54552
+zensus2022_mixeduse_buildings_with_living_space = 1085
+zensus2022_pre1950_age_cells = 18136
+zensus2022_2000plus_age_cells = 4875
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "111.994"
+
+[[kreise]]
+AGS_Kreis = "05154"
+municipality_rows = 16
+active_PV_generating_units = 34433
+building_PV_generating_units = 26920
+balcony_PV_generating_units = 7450
+freefield_PV_generating_units = 61
+other_PV_generating_units = 2
+all_PV_installed_kWp = "583294.600"
+zensus2022_published_buildings_with_living_space = 97521
+zensus2022_residential_buildings = 95341
+zensus2022_mixeduse_buildings_with_living_space = 2183
+zensus2022_pre1950_age_cells = 17607
+zensus2022_2000plus_age_cells = 18444
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "276.043"
+
+[[kreise]]
+AGS_Kreis = "05158"
+municipality_rows = 10
+active_PV_generating_units = 25730
+building_PV_generating_units = 18210
+balcony_PV_generating_units = 7510
+freefield_PV_generating_units = 10
+other_PV_generating_units = 0
+all_PV_installed_kWp = "272394.900"
+zensus2022_published_buildings_with_living_space = 100339
+zensus2022_residential_buildings = 98684
+zensus2022_mixeduse_buildings_with_living_space = 1655
+zensus2022_pre1950_age_cells = 15180
+zensus2022_2000plus_age_cells = 12845
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "181.485"
+
+[[kreise]]
+AGS_Kreis = "05162"
+municipality_rows = 8
+active_PV_generating_units = 31151
+building_PV_generating_units = 23186
+balcony_PV_generating_units = 7936
+freefield_PV_generating_units = 29
+other_PV_generating_units = 0
+all_PV_installed_kWp = "426544.100"
+zensus2022_published_buildings_with_living_space = 111336
+zensus2022_residential_buildings = 109728
+zensus2022_mixeduse_buildings_with_living_space = 1607
+zensus2022_pre1950_age_cells = 15656
+zensus2022_2000plus_age_cells = 18918
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "208.252"
+
+[[kreise]]
+AGS_Kreis = "05166"
+municipality_rows = 9
+active_PV_generating_units = 28091
+building_PV_generating_units = 20659
+balcony_PV_generating_units = 7422
+freefield_PV_generating_units = 10
+other_PV_generating_units = 0
+all_PV_installed_kWp = "338398.400"
+zensus2022_published_buildings_with_living_space = 87752
+zensus2022_residential_buildings = 85926
+zensus2022_mixeduse_buildings_with_living_space = 1830
+zensus2022_pre1950_age_cells = 18877
+zensus2022_2000plus_age_cells = 13131
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "235.425"
+
+[[kreise]]
+AGS_Kreis = "05170"
+municipality_rows = 13
+active_PV_generating_units = 37652
+building_PV_generating_units = 27660
+balcony_PV_generating_units = 9957
+freefield_PV_generating_units = 34
+other_PV_generating_units = 1
+all_PV_installed_kWp = "517571.500"
+zensus2022_published_buildings_with_living_space = 118546
+zensus2022_residential_buildings = 116337
+zensus2022_mixeduse_buildings_with_living_space = 2212
+zensus2022_pre1950_age_cells = 20257
+zensus2022_2000plus_age_cells = 18622
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "233.327"
+
+[[kreise]]
+AGS_Kreis = "05314"
+municipality_rows = 1
+active_PV_generating_units = 12245
+building_PV_generating_units = 7399
+balcony_PV_generating_units = 4843
+freefield_PV_generating_units = 3
+other_PV_generating_units = 0
+all_PV_installed_kWp = "92954.800"
+zensus2022_published_buildings_with_living_space = 57982
+zensus2022_residential_buildings = 56885
+zensus2022_mixeduse_buildings_with_living_space = 1100
+zensus2022_pre1950_age_cells = 14115
+zensus2022_2000plus_age_cells = 6958
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "127.609"
+
+[[kreise]]
+AGS_Kreis = "05315"
+municipality_rows = 1
+active_PV_generating_units = 24365
+building_PV_generating_units = 16644
+balcony_PV_generating_units = 7716
+freefield_PV_generating_units = 5
+other_PV_generating_units = 0
+all_PV_installed_kWp = "275389.900"
+zensus2022_published_buildings_with_living_space = 142726
+zensus2022_residential_buildings = 139848
+zensus2022_mixeduse_buildings_with_living_space = 2878
+zensus2022_pre1950_age_cells = 32738
+zensus2022_2000plus_age_cells = 20655
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "116.615"
+
+[[kreise]]
+AGS_Kreis = "05316"
+municipality_rows = 1
+active_PV_generating_units = 6981
+building_PV_generating_units = 4815
+balcony_PV_generating_units = 2162
+freefield_PV_generating_units = 4
+other_PV_generating_units = 0
+all_PV_installed_kWp = "63151.400"
+zensus2022_published_buildings_with_living_space = 31147
+zensus2022_residential_buildings = 30735
+zensus2022_mixeduse_buildings_with_living_space = 407
+zensus2022_pre1950_age_cells = 7439
+zensus2022_2000plus_age_cells = 4390
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "154.590"
+
+[[kreise]]
+AGS_Kreis = "05334"
+municipality_rows = 10
+active_PV_generating_units = 31643
+building_PV_generating_units = 22313
+balcony_PV_generating_units = 9306
+freefield_PV_generating_units = 24
+other_PV_generating_units = 0
+all_PV_installed_kWp = "343873.200"
+zensus2022_published_buildings_with_living_space = 126361
+zensus2022_residential_buildings = 124000
+zensus2022_mixeduse_buildings_with_living_space = 2357
+zensus2022_pre1950_age_cells = 30800
+zensus2022_2000plus_age_cells = 17020
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "176.581"
+
+[[kreise]]
+AGS_Kreis = "05358"
+municipality_rows = 15
+active_PV_generating_units = 23985
+building_PV_generating_units = 18018
+balcony_PV_generating_units = 5930
+freefield_PV_generating_units = 37
+other_PV_generating_units = 0
+all_PV_installed_kWp = "414908.500"
+zensus2022_published_buildings_with_living_space = 79823
+zensus2022_residential_buildings = 78433
+zensus2022_mixeduse_buildings_with_living_space = 1389
+zensus2022_pre1950_age_cells = 13978
+zensus2022_2000plus_age_cells = 12794
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "225.724"
+
+[[kreise]]
+AGS_Kreis = "05362"
+municipality_rows = 10
+active_PV_generating_units = 31818
+building_PV_generating_units = 23817
+balcony_PV_generating_units = 7977
+freefield_PV_generating_units = 24
+other_PV_generating_units = 0
+all_PV_installed_kWp = "512306.900"
+zensus2022_published_buildings_with_living_space = 124156
+zensus2022_residential_buildings = 122439
+zensus2022_mixeduse_buildings_with_living_space = 1711
+zensus2022_pre1950_age_cells = 16914
+zensus2022_2000plus_age_cells = 20252
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "191.831"
+
+[[kreise]]
+AGS_Kreis = "05366"
+municipality_rows = 11
+active_PV_generating_units = 21787
+building_PV_generating_units = 18113
+balcony_PV_generating_units = 3644
+freefield_PV_generating_units = 30
+other_PV_generating_units = 0
+all_PV_installed_kWp = "351732.100"
+zensus2022_published_buildings_with_living_space = 65414
+zensus2022_residential_buildings = 64050
+zensus2022_mixeduse_buildings_with_living_space = 1361
+zensus2022_pre1950_age_cells = 12809
+zensus2022_2000plus_age_cells = 12548
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "276.898"
+
+[[kreise]]
+AGS_Kreis = "05370"
+municipality_rows = 10
+active_PV_generating_units = 27668
+building_PV_generating_units = 21586
+balcony_PV_generating_units = 6063
+freefield_PV_generating_units = 19
+other_PV_generating_units = 0
+all_PV_installed_kWp = "333248.700"
+zensus2022_published_buildings_with_living_space = 86082
+zensus2022_residential_buildings = 84593
+zensus2022_mixeduse_buildings_with_living_space = 1487
+zensus2022_pre1950_age_cells = 14854
+zensus2022_2000plus_age_cells = 17890
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "250.761"
+
+[[kreise]]
+AGS_Kreis = "05374"
+municipality_rows = 13
+active_PV_generating_units = 22587
+building_PV_generating_units = 17134
+balcony_PV_generating_units = 5429
+freefield_PV_generating_units = 24
+other_PV_generating_units = 0
+all_PV_installed_kWp = "254029.400"
+zensus2022_published_buildings_with_living_space = 77452
+zensus2022_residential_buildings = 76107
+zensus2022_mixeduse_buildings_with_living_space = 1341
+zensus2022_pre1950_age_cells = 17046
+zensus2022_2000plus_age_cells = 11010
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "221.221"
+
+[[kreise]]
+AGS_Kreis = "05378"
+municipality_rows = 8
+active_PV_generating_units = 22939
+building_PV_generating_units = 16082
+balcony_PV_generating_units = 6849
+freefield_PV_generating_units = 8
+other_PV_generating_units = 0
+all_PV_installed_kWp = "191796.800"
+zensus2022_published_buildings_with_living_space = 75548
+zensus2022_residential_buildings = 74335
+zensus2022_mixeduse_buildings_with_living_space = 1211
+zensus2022_pre1950_age_cells = 12360
+zensus2022_2000plus_age_cells = 11574
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "212.871"
+
+[[kreise]]
+AGS_Kreis = "05382"
+municipality_rows = 19
+active_PV_generating_units = 51931
+building_PV_generating_units = 38797
+balcony_PV_generating_units = 13120
+freefield_PV_generating_units = 14
+other_PV_generating_units = 0
+all_PV_installed_kWp = "495156.700"
+zensus2022_published_buildings_with_living_space = 171528
+zensus2022_residential_buildings = 169065
+zensus2022_mixeduse_buildings_with_living_space = 2465
+zensus2022_pre1950_age_cells = 24542
+zensus2022_2000plus_age_cells = 29467
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "226.185"
+
+[[kreise]]
+AGS_Kreis = "05512"
+municipality_rows = 1
+active_PV_generating_units = 6221
+building_PV_generating_units = 4011
+balcony_PV_generating_units = 2208
+freefield_PV_generating_units = 2
+other_PV_generating_units = 0
+all_PV_installed_kWp = "74164.700"
+zensus2022_published_buildings_with_living_space = 24512
+zensus2022_residential_buildings = 24190
+zensus2022_mixeduse_buildings_with_living_space = 319
+zensus2022_pre1950_age_cells = 6915
+zensus2022_2000plus_age_cells = 3084
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "163.634"
+
+[[kreise]]
+AGS_Kreis = "05513"
+municipality_rows = 1
+active_PV_generating_units = 6195
+building_PV_generating_units = 3670
+balcony_PV_generating_units = 2522
+freefield_PV_generating_units = 2
+other_PV_generating_units = 1
+all_PV_installed_kWp = "72016.900"
+zensus2022_published_buildings_with_living_space = 39896
+zensus2022_residential_buildings = 39300
+zensus2022_mixeduse_buildings_with_living_space = 600
+zensus2022_pre1950_age_cells = 14157
+zensus2022_2000plus_age_cells = 3888
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "91.989"
+
+[[kreise]]
+AGS_Kreis = "05515"
+municipality_rows = 1
+active_PV_generating_units = 15087
+building_PV_generating_units = 11797
+balcony_PV_generating_units = 3280
+freefield_PV_generating_units = 10
+other_PV_generating_units = 0
+all_PV_installed_kWp = "196846.000"
+zensus2022_published_buildings_with_living_space = 57451
+zensus2022_residential_buildings = 56339
+zensus2022_mixeduse_buildings_with_living_space = 1114
+zensus2022_pre1950_age_cells = 7194
+zensus2022_2000plus_age_cells = 11567
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "205.340"
+
+[[kreise]]
+AGS_Kreis = "05554"
+municipality_rows = 17
+active_PV_generating_units = 52169
+building_PV_generating_units = 44404
+balcony_PV_generating_units = 7721
+freefield_PV_generating_units = 43
+other_PV_generating_units = 1
+all_PV_installed_kWp = "1003513.700"
+zensus2022_published_buildings_with_living_space = 108382
+zensus2022_residential_buildings = 106113
+zensus2022_mixeduse_buildings_with_living_space = 2272
+zensus2022_pre1950_age_cells = 13518
+zensus2022_2000plus_age_cells = 24648
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "409.699"
+
+[[kreise]]
+AGS_Kreis = "05558"
+municipality_rows = 11
+active_PV_generating_units = 29138
+building_PV_generating_units = 23710
+balcony_PV_generating_units = 5395
+freefield_PV_generating_units = 32
+other_PV_generating_units = 1
+all_PV_installed_kWp = "508697.800"
+zensus2022_published_buildings_with_living_space = 64232
+zensus2022_residential_buildings = 62718
+zensus2022_mixeduse_buildings_with_living_space = 1517
+zensus2022_pre1950_age_cells = 7362
+zensus2022_2000plus_age_cells = 14581
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "369.131"
+
+[[kreise]]
+AGS_Kreis = "05562"
+municipality_rows = 10
+active_PV_generating_units = 36985
+building_PV_generating_units = 25030
+balcony_PV_generating_units = 11933
+freefield_PV_generating_units = 20
+other_PV_generating_units = 2
+all_PV_installed_kWp = "423262.200"
+zensus2022_published_buildings_with_living_space = 140768
+zensus2022_residential_buildings = 138707
+zensus2022_mixeduse_buildings_with_living_space = 2061
+zensus2022_pre1950_age_cells = 34441
+zensus2022_2000plus_age_cells = 17591
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "177.810"
+
+[[kreise]]
+AGS_Kreis = "05566"
+municipality_rows = 24
+active_PV_generating_units = 57325
+building_PV_generating_units = 46418
+balcony_PV_generating_units = 10841
+freefield_PV_generating_units = 65
+other_PV_generating_units = 1
+all_PV_installed_kWp = "881634.600"
+zensus2022_published_buildings_with_living_space = 130018
+zensus2022_residential_buildings = 127227
+zensus2022_mixeduse_buildings_with_living_space = 2793
+zensus2022_pre1950_age_cells = 19445
+zensus2022_2000plus_age_cells = 28757
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "357.012"
+
+[[kreise]]
+AGS_Kreis = "05570"
+municipality_rows = 13
+active_PV_generating_units = 32836
+building_PV_generating_units = 25995
+balcony_PV_generating_units = 6800
+freefield_PV_generating_units = 40
+other_PV_generating_units = 1
+all_PV_installed_kWp = "603404.300"
+zensus2022_published_buildings_with_living_space = 77673
+zensus2022_residential_buildings = 75808
+zensus2022_mixeduse_buildings_with_living_space = 1869
+zensus2022_pre1950_age_cells = 13764
+zensus2022_2000plus_age_cells = 14471
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "334.672"
+
+[[kreise]]
+AGS_Kreis = "05711"
+municipality_rows = 1
+active_PV_generating_units = 15791
+building_PV_generating_units = 11800
+balcony_PV_generating_units = 3974
+freefield_PV_generating_units = 17
+other_PV_generating_units = 0
+all_PV_installed_kWp = "190767.600"
+zensus2022_published_buildings_with_living_space = 63859
+zensus2022_residential_buildings = 62711
+zensus2022_mixeduse_buildings_with_living_space = 1150
+zensus2022_pre1950_age_cells = 14364
+zensus2022_2000plus_age_cells = 9173
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "184.782"
+
+[[kreise]]
+AGS_Kreis = "05754"
+municipality_rows = 13
+active_PV_generating_units = 36865
+building_PV_generating_units = 29449
+balcony_PV_generating_units = 7349
+freefield_PV_generating_units = 65
+other_PV_generating_units = 2
+all_PV_installed_kWp = "556319.900"
+zensus2022_published_buildings_with_living_space = 93734
+zensus2022_residential_buildings = 91393
+zensus2022_mixeduse_buildings_with_living_space = 2343
+zensus2022_pre1950_age_cells = 12757
+zensus2022_2000plus_age_cells = 18760
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "314.176"
+
+[[kreise]]
+AGS_Kreis = "05758"
+municipality_rows = 9
+active_PV_generating_units = 23255
+building_PV_generating_units = 17144
+balcony_PV_generating_units = 6078
+freefield_PV_generating_units = 31
+other_PV_generating_units = 2
+all_PV_installed_kWp = "287370.400"
+zensus2022_published_buildings_with_living_space = 68571
+zensus2022_residential_buildings = 66716
+zensus2022_mixeduse_buildings_with_living_space = 1852
+zensus2022_pre1950_age_cells = 18907
+zensus2022_2000plus_age_cells = 10721
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "250.018"
+
+[[kreise]]
+AGS_Kreis = "05762"
+municipality_rows = 10
+active_PV_generating_units = 20098
+building_PV_generating_units = 16501
+balcony_PV_generating_units = 3538
+freefield_PV_generating_units = 59
+other_PV_generating_units = 0
+all_PV_installed_kWp = "354647.600"
+zensus2022_published_buildings_with_living_space = 42860
+zensus2022_residential_buildings = 41762
+zensus2022_mixeduse_buildings_with_living_space = 1093
+zensus2022_pre1950_age_cells = 11035
+zensus2022_2000plus_age_cells = 5618
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "384.998"
+
+[[kreise]]
+AGS_Kreis = "05766"
+municipality_rows = 16
+active_PV_generating_units = 30479
+building_PV_generating_units = 22566
+balcony_PV_generating_units = 7864
+freefield_PV_generating_units = 49
+other_PV_generating_units = 0
+all_PV_installed_kWp = "395417.200"
+zensus2022_published_buildings_with_living_space = 95099
+zensus2022_residential_buildings = 92871
+zensus2022_mixeduse_buildings_with_living_space = 2231
+zensus2022_pre1950_age_cells = 22838
+zensus2022_2000plus_age_cells = 11703
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "237.290"
+
+[[kreise]]
+AGS_Kreis = "05770"
+municipality_rows = 11
+active_PV_generating_units = 31985
+building_PV_generating_units = 25423
+balcony_PV_generating_units = 6506
+freefield_PV_generating_units = 55
+other_PV_generating_units = 1
+all_PV_installed_kWp = "485496.000"
+zensus2022_published_buildings_with_living_space = 87460
+zensus2022_residential_buildings = 84507
+zensus2022_mixeduse_buildings_with_living_space = 2956
+zensus2022_pre1950_age_cells = 22664
+zensus2022_2000plus_age_cells = 13485
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "290.681"
+
+[[kreise]]
+AGS_Kreis = "05774"
+municipality_rows = 10
+active_PV_generating_units = 33991
+building_PV_generating_units = 28439
+balcony_PV_generating_units = 5463
+freefield_PV_generating_units = 88
+other_PV_generating_units = 1
+all_PV_installed_kWp = "584637.900"
+zensus2022_published_buildings_with_living_space = 75983
+zensus2022_residential_buildings = 74785
+zensus2022_mixeduse_buildings_with_living_space = 1196
+zensus2022_pre1950_age_cells = 8982
+zensus2022_2000plus_age_cells = 15500
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "374.281"
+
+[[kreise]]
+AGS_Kreis = "05911"
+municipality_rows = 1
+active_PV_generating_units = 11259
+building_PV_generating_units = 7161
+balcony_PV_generating_units = 4093
+freefield_PV_generating_units = 5
+other_PV_generating_units = 0
+all_PV_installed_kWp = "117838.300"
+zensus2022_published_buildings_with_living_space = 59490
+zensus2022_residential_buildings = 58572
+zensus2022_mixeduse_buildings_with_living_space = 920
+zensus2022_pre1950_age_cells = 16832
+zensus2022_2000plus_age_cells = 5276
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "120.373"
+
+[[kreise]]
+AGS_Kreis = "05913"
+municipality_rows = 1
+active_PV_generating_units = 20523
+building_PV_generating_units = 13617
+balcony_PV_generating_units = 6896
+freefield_PV_generating_units = 10
+other_PV_generating_units = 0
+all_PV_installed_kWp = "215452.500"
+zensus2022_published_buildings_with_living_space = 97442
+zensus2022_residential_buildings = 95968
+zensus2022_mixeduse_buildings_with_living_space = 1474
+zensus2022_pre1950_age_cells = 24784
+zensus2022_2000plus_age_cells = 12798
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "139.745"
+
+[[kreise]]
+AGS_Kreis = "05914"
+municipality_rows = 1
+active_PV_generating_units = 6422
+building_PV_generating_units = 4258
+balcony_PV_generating_units = 2157
+freefield_PV_generating_units = 6
+other_PV_generating_units = 1
+all_PV_installed_kWp = "67400.700"
+zensus2022_published_buildings_with_living_space = 30615
+zensus2022_residential_buildings = 29996
+zensus2022_mixeduse_buildings_with_living_space = 618
+zensus2022_pre1950_age_cells = 8487
+zensus2022_2000plus_age_cells = 2841
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "139.082"
+
+[[kreise]]
+AGS_Kreis = "05915"
+municipality_rows = 1
+active_PV_generating_units = 10932
+building_PV_generating_units = 7496
+balcony_PV_generating_units = 3429
+freefield_PV_generating_units = 6
+other_PV_generating_units = 1
+all_PV_installed_kWp = "128926.300"
+zensus2022_published_buildings_with_living_space = 39914
+zensus2022_residential_buildings = 39312
+zensus2022_mixeduse_buildings_with_living_space = 602
+zensus2022_pre1950_age_cells = 11241
+zensus2022_2000plus_age_cells = 5676
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "187.804"
+
+[[kreise]]
+AGS_Kreis = "05916"
+municipality_rows = 1
+active_PV_generating_units = 4004
+building_PV_generating_units = 2401
+balcony_PV_generating_units = 1603
+freefield_PV_generating_units = 0
+other_PV_generating_units = 0
+all_PV_installed_kWp = "38745.600"
+zensus2022_published_buildings_with_living_space = 24692
+zensus2022_residential_buildings = 24324
+zensus2022_mixeduse_buildings_with_living_space = 365
+zensus2022_pre1950_age_cells = 9102
+zensus2022_2000plus_age_cells = 1966
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "97.238"
+
+[[kreise]]
+AGS_Kreis = "05954"
+municipality_rows = 9
+active_PV_generating_units = 17242
+building_PV_generating_units = 11090
+balcony_PV_generating_units = 6133
+freefield_PV_generating_units = 18
+other_PV_generating_units = 1
+all_PV_installed_kWp = "182095.700"
+zensus2022_published_buildings_with_living_space = 66105
+zensus2022_residential_buildings = 64683
+zensus2022_mixeduse_buildings_with_living_space = 1420
+zensus2022_pre1950_age_cells = 17479
+zensus2022_2000plus_age_cells = 7852
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "167.763"
+
+[[kreise]]
+AGS_Kreis = "05958"
+municipality_rows = 12
+active_PV_generating_units = 27658
+building_PV_generating_units = 21003
+balcony_PV_generating_units = 6586
+freefield_PV_generating_units = 67
+other_PV_generating_units = 2
+all_PV_installed_kWp = "396097.500"
+zensus2022_published_buildings_with_living_space = 74592
+zensus2022_residential_buildings = 72699
+zensus2022_mixeduse_buildings_with_living_space = 1890
+zensus2022_pre1950_age_cells = 16953
+zensus2022_2000plus_age_cells = 9255
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "281.572"
+
+[[kreise]]
+AGS_Kreis = "05962"
+municipality_rows = 15
+active_PV_generating_units = 24631
+building_PV_generating_units = 16388
+balcony_PV_generating_units = 8209
+freefield_PV_generating_units = 31
+other_PV_generating_units = 3
+all_PV_installed_kWp = "271158.400"
+zensus2022_published_buildings_with_living_space = 95602
+zensus2022_residential_buildings = 93366
+zensus2022_mixeduse_buildings_with_living_space = 2238
+zensus2022_pre1950_age_cells = 23696
+zensus2022_2000plus_age_cells = 10020
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "171.419"
+
+[[kreise]]
+AGS_Kreis = "05966"
+municipality_rows = 7
+active_PV_generating_units = 12528
+building_PV_generating_units = 9612
+balcony_PV_generating_units = 2899
+freefield_PV_generating_units = 17
+other_PV_generating_units = 0
+all_PV_installed_kWp = "148874.300"
+zensus2022_published_buildings_with_living_space = 37427
+zensus2022_residential_buildings = 36692
+zensus2022_mixeduse_buildings_with_living_space = 734
+zensus2022_pre1950_age_cells = 7207
+zensus2022_2000plus_age_cells = 5923
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "256.820"
+
+[[kreise]]
+AGS_Kreis = "05970"
+municipality_rows = 11
+active_PV_generating_units = 19510
+building_PV_generating_units = 13382
+balcony_PV_generating_units = 6103
+freefield_PV_generating_units = 24
+other_PV_generating_units = 1
+all_PV_installed_kWp = "212200.300"
+zensus2022_published_buildings_with_living_space = 77335
+zensus2022_residential_buildings = 75945
+zensus2022_mixeduse_buildings_with_living_space = 1387
+zensus2022_pre1950_age_cells = 19949
+zensus2022_2000plus_age_cells = 8640
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "173.039"
+
+[[kreise]]
+AGS_Kreis = "05974"
+municipality_rows = 14
+active_PV_generating_units = 34887
+building_PV_generating_units = 27901
+balcony_PV_generating_units = 6884
+freefield_PV_generating_units = 101
+other_PV_generating_units = 1
+all_PV_installed_kWp = "580862.200"
+zensus2022_published_buildings_with_living_space = 84271
+zensus2022_residential_buildings = 82442
+zensus2022_mixeduse_buildings_with_living_space = 1826
+zensus2022_pre1950_age_cells = 16575
+zensus2022_2000plus_age_cells = 14912
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "331.087"
+
+[[kreise]]
+AGS_Kreis = "05978"
+municipality_rows = 10
+active_PV_generating_units = 29853
+building_PV_generating_units = 20908
+balcony_PV_generating_units = 8925
+freefield_PV_generating_units = 19
+other_PV_generating_units = 1
+all_PV_installed_kWp = "368672.000"
+zensus2022_published_buildings_with_living_space = 95518
+zensus2022_residential_buildings = 93984
+zensus2022_mixeduse_buildings_with_living_space = 1537
+zensus2022_pre1950_age_cells = 20949
+zensus2022_2000plus_age_cells = 12491
+ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings = "218.891"

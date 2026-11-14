@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: BVV HU-BY original first64 SHP rings GEOS research
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "research_runners/by_hausumringe_oberbayern_first64_geos_v0.py"
+      - "tests/test_by_hausumringe_oberbayern_first64_geos_v0.py"
+      - ".github/workflows/by-hausumringe-first64-geos-original.yml"
+  push:
+    branches: [main]
+    paths:
+      - "research_runners/by_hausumringe_oberbayern_first64_geos_v0.py"
+      - "tests/test_by_hausumringe_oberbayern_first64_geos_v0.py"
+      - ".github/workflows/by-hausumringe-first64-geos-original.yml"
+permissions:
+  contents: read
+jobs:
+  first64-open-original-rings:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout reviewed source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned independent GEOS topology engine
+        run: |
+          python -m pip install --no-input --disable-pip-version-check --only-binary=:all: "shapely==2.1.2"
+      - name: Synthetic first64 source framing, GEOS self-crossing and SHA gate tests
+        run: python -m unittest tests.test_by_hausumringe_oberbayern_first64_geos_v0 -v
+      - name: One original public BVV 49KiB source range with GEOS checks in RAM
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: python -m research_runners.by_hausumringe_oberbayern_first64_geos_v0 --live

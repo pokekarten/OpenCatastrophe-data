@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: WISC synthetic NetCDF-4 to Oasis hazard tile
+
+on:
+  pull_request:
+    paths:
+      - "research_runners/wisc_netcdf_oasis_tile_v0.py"
+      - "tests/test_wisc_netcdf_oasis_tile_v0.py"
+      - "docs/research/wisc-oasis-hazard-tile-v0.md"
+      - ".github/workflows/wisc-oasis-netcdf4-synthetic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wisc-synthetic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  netcdf4-synthetic:
+    name: NetCDF-4 synthetic binary into 4 Oasis CSV outputs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact research source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install bounded synthetic NetCDF-4 validation dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            "netCDF4==1.7.3" "xarray==2025.1.2" "oasislmf==2.5.8"
+          python -m pip check
+          command -v csvtobin
+
+      - name: Execute real NetCDF-4 to native Oasis footprint binary validation
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_wisc_netcdf_oasis_tile_v0.py' -v
+          python -m compileall -q research_runners/wisc_netcdf_oasis_tile_v0.py
+
+      - name: Record research-only runner summary
+        if: success()
+        run: |
+          {
+            echo "## WISC synthetic-to-Oasis tile conversion passed"
+            echo ""
+            echo "- Test uses only an invented 2 x 3 geographic array written as NetCDF-4 at runtime."
+            echo "- Original Copernicus WISC bytes were not downloaded or admitted."
+            echo "- Four output CSV types: events, footprint, intensity bins, area-peril centroid mapping."
+            echo "- The synthetic footprint CSV is accepted by the native OasisLMF 2.5.8 csvtobin footprint converter with validation enabled."
+            echo "- No occurrence series, vendor vulnerability, native CAT run or annual EP proof."
+          } >> "$GITHUB_STEP_SUMMARY"
