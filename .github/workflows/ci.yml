@@ -17,6 +17,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  cbs-83673ned-2026-regional-two-original:
+    # Exactly two public CBS StatLine 2026VJ06 regional 5-row GETs.
+    # Only this trusted same-repo research PR branch, no generic PR/fork/main job.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/20261113-cbs-83673ned-landsdelen-two-receipts' && github.event.pull_request.head.repo.full_name == github.repository
+    name: CBS 83673NED 2026 2x5 original regional public responses
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact original research PR without token persistence
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up pinned Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Test fail-closed rights, native regional codes and original SHA without network
+        run: python -m unittest tests.test_probe_nl_cbs_83673ned_2026_regional_two_v0 -v
+      - name: Read exactly two original public CBS 2026 regional bodies, record hash only
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '### CBS StatLine 83673NED CC BY 4.0 · two 2026 regional 5-row originals' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Source 2026VJ06 provisional rolling new-dwelling permit means, NOT insurer rebuilding cost, TIV, CAT loss or source raw JSON persistence.' >> "$GITHUB_STEP_SUMMARY"
+          python -m scripts.probe_nl_cbs_83673ned_2026_regional_two_v0 --live-two | tee -a "$GITHUB_STEP_SUMMARY"
+
   check:
     name: Python ${{ matrix.python-version }}
     needs: [eu-flood-spatial]
