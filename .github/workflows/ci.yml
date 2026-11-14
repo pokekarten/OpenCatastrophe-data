@@ -272,8 +272,8 @@ jobs:
     # Original 3 DWD measured stations + nine true-Feb2020 metadata SHA
     # proofs + original 96h x 160 public Google ARCO ERA5 reanalysis gust.
     # 3 stations map to only 2 grid cells, NO insurer loss/bias/skill.
-    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-nominal-hour-pairs-v0'
-    name: Ciara2020 historic DWD-ERA5 nominal UTC hourly diagnostics
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-historic-dwd-sites-era5-utc-peak-v1-20261114'
+    name: Ciara2020 historic DWD 2020 site and UTC to original ERA5 2-cell peaks
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -298,8 +298,6 @@ jobs:
           python research_runners/ciara2020_dwd_historic_sites_era5_utc_peak_v1.py --dry-run
       - name: Re-read DWD official 2020 FX911 station ZIPs and history plus genuine 96h ERA5
         run: python research_runners/ciara2020_dwd_historic_sites_era5_utc_peak_v1.py --live-historic-site-peaks
-      - name: Pair original DWD and ERA5 nominal UTC hours and emit aggregate diagnostics only
-        run: python research_runners/ciara2020_dwd_historic_sites_era5_utc_peak_v1.py --live-nominal-hour-pairs
 
   eu-flood-spatial:
     name: EU flood spatial A1
