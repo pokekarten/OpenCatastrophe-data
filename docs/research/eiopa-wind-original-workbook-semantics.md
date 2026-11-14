@@ -37,3 +37,16 @@ zählt tatsächlich befüllte Zeilen. Er inventarisiert Kategorien, liefert
 aber weder eine fachliche Zulassung noch eine automatische Schadenaggregation.
 Die lokale Ausgabe `/dev/shm/eiopa-wind-inventory.json` enthält das vollständige
 Inventar. `openpyxl` ist für den Reader erforderlich.
+
+## Originalabgleich der Ciara-Summen
+
+Der zusätzliche Reader `research_runners/eiopa_lob_reconciliation.py`
+prüft ALL gegen die alternativ vorhandenen Komponenten. Beim Originallauf
+stimmen alle 15 Länder-/Restgruppen innerhalb eines Eurocents überein.
+Die 39 Zeilen sind damit keine 39 unabhängigen Schadenbeträge: ALL darf
+nicht zusätzlich zu RES/COM beziehungsweise RES+COM summiert werden.
+Das bestätigt die arithmetische Darstellung, nicht Marktdeckung oder
+Expositionsnenner. Fehlende Event-IDs werden explizit markiert; ein
+fehlender Schlüssel darf nicht automatisch durch einen fremden ersetzt werden.
+Die lokale vollständige Auswertung liegt unter
+`/dev/shm/eiopa-ciara-lob-reconciliation.json`.
