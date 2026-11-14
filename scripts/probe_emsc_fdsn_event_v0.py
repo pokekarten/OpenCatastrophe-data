@@ -9,7 +9,7 @@ event export or model ingestion is provided.
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import math
@@ -96,6 +96,9 @@ def inspect_json_bytes(raw: bytes) -> dict[str, Any]:
     feature = features[0]
     if type(feature) is not dict or feature.get("type") != "Feature":
         raise EMSCProbeError("provider event is not a GeoJSON Feature")
+    event_id = feature.get("id")
+    if type(event_id) is not str or not event_id.strip():
+        raise EMSCProbeError("event must have a non-empty event identity")
     geometry = feature.get("geometry")
     if type(geometry) is not dict or geometry.get("type") != "Point":
         raise EMSCProbeError("one-event geometry must be a Point")
@@ -109,6 +112,18 @@ def inspect_json_bytes(raw: bytes) -> dict[str, Any]:
     properties = feature.get("properties")
     if type(properties) is not dict or type(properties.get("source_id")) is not str or not properties["source_id"].strip():
         raise EMSCProbeError("event must have a non-empty provider source_id")
+    if "unid" in properties and properties["unid"] != event_id:
+        raise EMSCProbeError("provider event identity differs from GeoJSON feature ID")
+    event_time = properties.get("time")
+    if (type(event_time) is not str or "T" not in event_time
+            or not (event_time.endswith("Z") or event_time.endswith("+00:00"))):
+        raise EMSCProbeError("event must carry an explicit UTC time")
+    try:
+        parsed_time = datetime.fromisoformat(event_time.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise EMSCProbeError("invalid event UTC timestamp") from exc
+    if parsed_time.utcoffset() != timedelta(0):
+        raise EMSCProbeError("event time must use UTC")
     return {"event_count": 1, "format": "geojson_feature_collection", "geometry": "Point"}
 
 
@@ -133,7 +148,9 @@ def probe(
     contract_path: Path = CONTRACT_PATH,
 ) -> dict[str, Any]:
     verify_frozen_contract(contract_path)
-    req = request.Request(PROBE_URL, headers={"Accept": "application/json"}, method="GET")
+    req = request.Request(PROBE_URL, headers={
+        "Accept": "application/json", "Accept-Encoding": "identity",
+    }, method="GET")
     try:
         with open_request(req, TIMEOUT_SECONDS) as response:
             if response.geturl() != PROBE_URL:
@@ -144,7 +161,16 @@ def probe(
             media_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             if media_type != "application/json":
                 raise EMSCProbeError("unexpected EMSC response media type")
+            if response.headers.get("Content-Encoding", "identity").strip().lower() != "identity":
+                raise EMSCProbeError("unexpected EMSC response encoding")
+            declared = response.headers.get("Content-Length")
+            if declared is not None:
+                if (type(declared) is not str or not declared.isascii()
+                        or not declared.isdecimal() or int(declared) > MAX_RESPONSE_BYTES):
+                    raise EMSCProbeError("invalid EMSC declared Content-Length")
             raw = response.read(MAX_RESPONSE_BYTES + 1)
+            if declared is not None and len(raw) != int(declared):
+                raise EMSCProbeError("EMSC response length mismatch")
     except EMSCProbeError:
         raise
     except (error.HTTPError, error.URLError, OSError, TimeoutError) as exc:
