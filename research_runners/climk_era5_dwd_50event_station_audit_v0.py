@@ -6,8 +6,10 @@ The CLIMK source contains the 50 ERA5 storms selected by its LI3D severity
 ranking, not a complete or frequency-calibrated event set. This reader pairs
 each row's 3-day footprint value with DWD FX_911 observations in the three
 calendar days centred on the published Storm_Dates midpoint. Only complete
-72-hour station windows enter the primary aggregate metrics. Two DWD stations
-map to one CLIMK ERA5 grid node; this is not independent spatial validation.
+72-hour station windows enter the primary aggregate metrics. The two long-record
+stations map to one CLIMK ERA5 grid node; the shorter third station adds one
+separate node with only seven complete cases. This is not independent spatial
+validation.
 """
 from __future__ import annotations
 
@@ -32,7 +34,7 @@ from scripts.inspect_climk_winds_era5_v0 import (
 )
 
 SCHEMA = "CLIMK_ERA5_TOP50_DWD_ORIGINAL_STATION_72H_EXPLORATION_V0"
-STATIONS = ("02667", "00603")
+STATIONS = ("02667", "00603", "15200")
 MAX_UNCOMPRESSED = 25_000_000
 MAX_ZIP_MEMBERS = 40
 MAX_METADATA_BYTES = 250_000
@@ -300,13 +302,13 @@ def _climk_station_windows(source: bytes, station_id: str,
                 # Source metadata can change inside a selected 72-hour storm
                 # window. Resolve every hour against its applicable historical
                 # row and require a single consistent value over the window.
-                geo_rows = _covering_by_hour(historical_rows["geographie"], begin,
-                                             WINDOW_HOURS, "von_datum", "bis_datum")
                 # DWD's station archive may not contain matching instrument
                 # history before the first hourly measurements. Windows lacking
                 # any DWD measurements remain countable with source-era metadata
                 # only if it exists; otherwise report it as uncovered below.
                 try:
+                    geo_rows = _covering_by_hour(historical_rows["geographie"], begin,
+                                                 WINDOW_HOURS, "von_datum", "bis_datum")
                     device_rows = _covering_by_hour(historical_rows["geraete"], begin,
                                                     WINDOW_HOURS, "Von_Datum", "Bis_Datum")
                     parameter_rows = _covering_by_hour(historical_rows["parameter"], begin,
