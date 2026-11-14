@@ -82,5 +82,5 @@ a change to the CLIMK source gust or portfolio TIV.
   calibrated or validated against claims/building observations.
 - Exposure is fictional. No real insurer locations, coverage conditions,
   deductibles, limits, policy terms, insured loss, IL or RI are modeled.
-- This run does not close the scientific validation or production readiness
-  of the FFBK, RIM or OpenCatastrophe models.
+- This run does not establish scientific validation or production readiness
+  for a broader catastrophe model.
