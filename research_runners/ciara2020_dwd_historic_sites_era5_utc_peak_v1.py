@@ -35,9 +35,60 @@ DATE_END=datetime(2020,2,11,23,tzinfo=timezone.utc)
 ERA5_HRES_TIME_DOC="https://confluence.ecmwf.int/pages/viewpage.action?pageId=155343959"
 ORIGINAL_DWD_HISTORIC_RECEIPT=historic.ORIGINAL_RESEARCH
 EXPECTED=("02667","15200","00603")
+STATION_GRID={"02667":(7,6),"15200":(5,6),"00603":(7,6)}
 
 class HistoricSiteGridBlocked(ValueError):
     """Original source or historic 2020 station-to-grid scientific NO-GO."""
+
+
+def summarize_nominal_hourly_pairs(measured: dict, era5_hourly: dict) -> dict:
+    """Aggregate same UTC hour-ending labels; retain no event-level values.
+
+    These are descriptive diagnostics only: matching labels do not prove that
+    the point sensor's FX911 and ERA5 10fg have physically identical sampling.
+    """
+    if (not isinstance(measured,dict) or not isinstance(era5_hourly,dict)
+        or set(measured)!=set(EXPECTED) or set(era5_hourly)!=set(EXPECTED)):
+        raise HistoricSiteGridBlocked("exactly the three historically attested station IDs required")
+    rows=[]
+    for station in EXPECTED:
+        obs=measured[station].get("_internal_observed_hourly_fx911_mps")
+        qns=measured[station].get("_internal_observed_hourly_qn8")
+        model=era5_hourly[station]
+        if not isinstance(obs,dict) or not isinstance(qns,dict) or not isinstance(model,list) or len(model)!=96:
+            raise HistoricSiteGridBlocked("original paired hourly source support missing")
+        paired=[]
+        for index, modeled in enumerate(model):
+            hour=(DATE_START+timedelta(hours=index)).strftime("%Y%m%d%H")
+            if hour not in obs:
+                continue
+            observed=obs[hour]
+            qn=qns.get(hour)
+            if (type(observed) not in (int,float) or not math.isfinite(observed)
+                or not 0<=observed<=150 or type(modeled) not in (int,float)
+                or not math.isfinite(modeled) or not 0<=modeled<=150
+                or type(qn) is not int or not 0<=qn<=10):
+                raise HistoricSiteGridBlocked("invalid original hourly station/model pair")
+            paired.append((float(observed),float(modeled),qn))
+        if len(paired)<48:
+            raise HistoricSiteGridBlocked("fewer than 48 same-label UTC hourly pairs")
+        def metrics(pairs):
+            if not pairs:
+                return None
+            errors=[m-o for o,m,_ in pairs]
+            return {"n":len(pairs),"mean_ERA5_minus_DWD_mps":sum(errors)/len(errors),
+                    "MAE_mps":sum(abs(x) for x in errors)/len(errors),
+                    "RMSE_mps":math.sqrt(sum(x*x for x in errors)/len(errors))}
+        rows.append({"station_id":station,"matched_nominal_UTC_hour_labels":len(paired),
+                     "all_QN8_3_metrics_descriptive_only":metrics([p for p in paired if p[2]==3]),
+                     "all_valid_QN8_metrics_descriptive_only":metrics(paired)})
+    return {"status":"SAME_UTC_HOUR_LABEL_DESCRIPTIVE_ONLY_NOT_PHYSICAL_EQUIVALENCE",
+            "hour_interval_convention":"DWD FX911 highest gust during previous hour; ERA5 10fg hourly field indexed by UTC hour-ending validity",
+            "exact_aggregation_and_sensor_model_support_equivalence_proven":False,
+            "station_to_ERA5_cell_mapping":"2020 historical sites from source-attested DWD metadata; nearest native Google ARCO ERA5 cell",
+            "sensor_height_or_terrain_adjustment_applied":False,
+            "bias_or_model_skill_admitted":False,
+            "stations":rows}
 
 
 def _peak_utc_hour(source_text: str) -> tuple[str,str,str]:
@@ -266,11 +317,37 @@ def live_original_historical_site_peak_replay() -> dict:
     return result
 
 
+def live_original_nominal_hour_pair_replay() -> dict:
+    """Read original DWD and ERA5 hourly fields; print aggregate metrics only."""
+    measured=dwd.live_dwd_2020_original_three_stations(include_internal_hourly=True)
+    by_id={s["station_id"]:s for s in measured["stations"]}
+    if set(by_id)!=set(EXPECTED):
+        raise HistoricSiteGridBlocked("live DWD candidate selection differs from the three attested historic stations")
+    weather=era5.original_96h_grid(include_internal_station_hourly=True)
+    metadata=historic.live_feb2020_attestation()
+    site_result=research_historical_site_grid_crosswalk(measured,weather,metadata)
+    verify_first_historical_site_original_live_receipt(site_result)
+    hourly=weather.get("_internal_station_era5_hourly_10fg_mps")
+    result=summarize_nominal_hourly_pairs(by_id,hourly)
+    return {"schema":"CIARA2020_DWD_FX911_ERA5_10FG_NOMINAL_UTC_HOURLY_PAIR_DIAGNOSTIC_V0",
+            "source_replay":"original DWD FX911 archives + original public Google ARCO ERA5 10fg",
+            "DWD_original_archives_sha256_verified":True,
+            "historical_2020_site_device_and_parameter_metadata_verified":True,
+            "ERA5_original_96_hourly_fields_and_decoded_source_receipt_verified":True,
+            "historically_attested_station_count":site_result["actual_source_verified_2020_DWD_station_count"],
+            "unique_historic_nearest_ERA5_cells":site_result["actual_source_verified_2020_ERA5_unique_grid_cells"],
+            **result,
+            "raw_DWD_or_ERA5_hourly_pairs_written":False,
+            "real_insured_loss_or_vulnerability_calibrated":False,
+            "annual_frequency_or_EP_admitted":False}
+
+
 def main() -> int:
     p=argparse.ArgumentParser(description=__doc__)
     mode=p.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry-run",action="store_true")
     mode.add_argument("--live-historic-site-peaks",action="store_true")
+    mode.add_argument("--live-nominal-hour-pairs",action="store_true")
     args=p.parse_args()
     try:
         if args.dry_run:
@@ -282,8 +359,10 @@ def main() -> int:
                 "2020_historic_sensor_site_replayed":False,
                 "loss_model_approved":False,
             }
-        else:
+        elif args.live_historic_site_peaks:
             output=live_original_historical_site_peak_replay()
+        else:
+            output=live_original_nominal_hour_pair_replay()
         print(json.dumps(output,indent=2,sort_keys=True,ensure_ascii=True))
         return 0
     except (HistoricSiteGridBlocked,prior.DWDGridComparisonBlocked,

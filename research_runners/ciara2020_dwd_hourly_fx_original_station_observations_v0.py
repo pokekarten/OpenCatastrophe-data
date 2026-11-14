@@ -195,7 +195,7 @@ def measured_2020_gust_from_original_zip(
         (EVENT_START + timedelta(hours=i)).strftime("%Y%m%d%H")
         for i in range(HOURS)
     }
-    valid, invalid, qn_counts, all_seen = {}, 0, {}, set()
+    valid, quality, invalid, qn_counts, all_seen = {}, {}, 0, {}, set()
     for row in reader:
         record = {k.strip(): v.strip() for k, v in row.items()
                   if k is not None and v is not None}
@@ -224,6 +224,7 @@ def measured_2020_gust_from_original_zip(
             raise OriginalDWDRejected("original DWD station gust invalid/outside physical bound")
         else:
             valid[day] = gust
+            quality[day] = qn
     if len(valid) < MIN_REPORTED_HOURS:
         raise OriginalDWDRejected("original DWD 2020 FX_911 hour coverage too sparse")
     if any(day not in expected_timestamps for day in valid):
@@ -245,10 +246,14 @@ def measured_2020_gust_from_original_zip(
         # In-memory only. Callers must keep observed source rows out of
         # public receipts; this opt-in exists for aggregate paired analysis.
         result["_internal_observed_hourly_fx911_mps"] = dict(sorted(valid.items()))
+        result["_internal_observed_hourly_qn8"] = dict(sorted(
+            (day, int(record_qn)) for day, record_qn in quality.items()
+        ))
     return result
 
 
-def live_dwd_2020_original_three_stations(*, opener=None) -> dict:
+def live_dwd_2020_original_three_stations(*, opener=None,
+                                         include_internal_hourly=False) -> dict:
     station_bytes = _get_publisher_bytes(STATION_LIST, MAX_STATION_LIST, opener)
     html = _get_publisher_bytes(INDEX, MAX_INDEX, opener)
     stations = station_candidates(station_bytes)
@@ -262,7 +267,10 @@ def live_dwd_2020_original_three_stations(*, opener=None) -> dict:
         original_url = links[station["station_id"]]
         zip_blob = _get_publisher_bytes(original_url, MAX_ZIP, opener)
         try:
-            measured = measured_2020_gust_from_original_zip(zip_blob, station["station_id"])
+            measured = measured_2020_gust_from_original_zip(
+                zip_blob, station["station_id"],
+                include_internal_hourly=include_internal_hourly,
+            )
         except OriginalDWDRejected as exc:
             # A historical archive *covers the date range* but the original
             # 2020 hourly gust product can be too sparse. Record that

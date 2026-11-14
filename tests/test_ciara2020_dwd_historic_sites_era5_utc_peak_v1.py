@@ -4,6 +4,7 @@
 from __future__ import annotations
 from contextlib import redirect_stdout
 from copy import deepcopy
+from datetime import timedelta
 from io import StringIO
 import json
 from pathlib import Path
@@ -72,6 +73,26 @@ def accepted_real_peak_grid():
 
 
 class Historical2020SiteCorrectedGustResearch(unittest.TestCase):
+    def test_nominal_hourly_pairing_aggregates_without_claiming_method_equivalence(self):
+        observed={}; quality={}; model=[]
+        for i in range(96):
+            stamp=(m.DATE_START+timedelta(hours=i)).strftime("%Y%m%d%H")
+            observed[stamp]=20.0
+            quality[stamp]=3 if i%2==0 else 2
+            model.append(22.0)
+        measured={station:{"_internal_observed_hourly_fx911_mps":observed,
+                           "_internal_observed_hourly_qn8":quality}
+                  for station in m.EXPECTED}
+        result=m.summarize_nominal_hourly_pairs(
+            measured,{station:model for station in m.EXPECTED})
+        self.assertFalse(result["exact_aggregation_and_sensor_model_support_equivalence_proven"])
+        self.assertFalse(result["bias_or_model_skill_admitted"])
+        for row in result["stations"]:
+            self.assertEqual(row["matched_nominal_UTC_hour_labels"],96)
+            self.assertEqual(row["all_valid_QN8_metrics_descriptive_only"]["RMSE_mps"],2.0)
+            self.assertEqual(row["all_QN8_3_metrics_descriptive_only"]["n"],48)
+            self.assertEqual(row["all_QN8_3_metrics_descriptive_only"]["MAE_mps"],2.0)
+
     def test_first_real_2020_station_source_record_and_no_damage(self):
         with m.ORIGINAL_DWD_HISTORIC_RECEIPT.open("rb") as f:
             accepted=tomllib.load(f)
