@@ -35,6 +35,10 @@ from scripts.inspect_climk_winds_era5_v0 import (
 
 SCHEMA = "CLIMK_ERA5_TOP50_DWD_ORIGINAL_STATION_72H_EXPLORATION_V0"
 STATIONS = ("02667", "00603", "15200")
+CLIMK_PARAMETER_DESCRIPTION = (
+    "absolute_maxwindgusts; daily maximum wind gust derived from hourly gust data, "
+    "within selected storm footprint; m/s"
+)
 MAX_UNCOMPRESSED = 25_000_000
 MAX_ZIP_MEMBERS = 40
 MAX_METADATA_BYTES = 250_000
@@ -436,7 +440,9 @@ def analyze_sources(climk_bytes: bytes, dwd_archives: dict[str, bytes],
         "CLIMK_storm_date_label_semantics": "midpoint label of a 3-day LI3D event window",
         "comparison_window": "Storm_Dates minus one UTC calendar day through plus one day, inclusive (72 labels)",
         "DWD_parameter": "FX_911; highest gust of the previous hour; source metadata says UTC",
-        "CLIMK_parameter": "absolute_maxwindgusts; maximum 3-second gust associated with the 72-hour footprint; m/s",
+        "CLIMK_parameter": CLIMK_PARAMETER_DESCRIPTION,
+        "CLIMK_gust_duration_averaging_specified_by_publication_or_variable_metadata": False,
+        "CLIMK_3_second_equivalence_assumed": False,
         "exact_DWD_and_CLIMK_temporal_support_equivalence_proven": False,
         "event_window_overlap_pairs_within_selected_top50": overlap_count,
         "DWD_and_ERA5_input_independence_proven": False,

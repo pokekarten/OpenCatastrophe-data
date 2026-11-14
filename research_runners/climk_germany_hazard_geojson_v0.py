@@ -73,7 +73,9 @@ def export(original: bytes, storm_index: int, bounds=(5.0,47.0,16.0,56.0)) -> di
         'selection':'native cell centres inside requested bounding box; not country-boundary clipped',
         'bounds_west_south_east_north':[west,south,east,north],
         'geometry':'native grid centre midpoints; longitude latitude WGS84',
-        'gust_measure':'source absolute_maxwindgusts; 72h footprint maximum 3-second gust; m/s',
+        'gust_measure':'source absolute_maxwindgusts; daily maximum wind gust derived from hourly gust data, within selected storm footprint; m/s',
+        'gust_duration_averaging':'not specified in CLIMK-WINDS paper or source variable metadata; do not infer 3-second averaging',
+        'vulnerability_curve_compatibility':'unit matches m/s; gust duration/averaging equivalence not established',
         'cell_count':len(features),'missing_cells':missing,
         'missing_value_policy':'null, never zero','calibrated_loss_model':False,
         'annual_frequency_established':False}}

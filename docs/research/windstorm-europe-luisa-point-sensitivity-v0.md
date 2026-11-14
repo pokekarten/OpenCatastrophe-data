@@ -76,8 +76,16 @@ python research_runners/windstorm_europe_luisa_point_sensitivity_v0.py \
 
 The run used CLIMK storm index 0 (Kyrill), bounds WGS84 `[-5,45,16,56]`,
 three public city-centre coordinates, and 50 m LUISA pixels. The source map
-is not spatially clipped to building footprints. Weather is the source's
-72-hour maximum 3-second gust field. This run establishes neither annual
+is not spatially clipped to building footprints. CLIMK-WINDS §2.1 says its
+database uses daily wind-gust maxima derived from hourly gust data; its paper
+describes the absolute field as daily maximum gusts (m/s) associated with the
+selected storm footprint. The event selection uses 3-day windows, but the
+paper/source variable metadata do not specify the gust averaging duration.
+The paper's explicit 3-second/72-hour definition is for XWS, not CLIMK.
+Therefore this run matches the CLIMAAX curve's stated m/s unit but does not
+establish compatible gust duration/averaging or a validated vulnerability
+response. Treat the numbers above only as a conditional arithmetic
+sensitivity under an unresolved measurement contract. This run establishes neither annual
 event frequency nor broad geographic coverage, and has no policy, contents,
 or reinsurance terms.
 

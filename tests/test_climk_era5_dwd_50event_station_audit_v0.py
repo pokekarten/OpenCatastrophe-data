@@ -37,6 +37,7 @@ class ClimkEra5DWDTop50AuditTests(unittest.TestCase):
 
     def test_partial_windows_excluded_and_qn3_subset_separate(self):
         result=m.summarize_windows(windows_fixture())
+        self.assertIn("daily maximum wind gust derived from hourly gust data",m.CLIMK_PARAMETER_DESCRIPTION)
         self.assertEqual(result["CLIMK_top50_rows"],50)
         self.assertEqual(result["station_windows_with_any_valid_DWD_hours_and_unmasked_model_value"],50)
         self.assertEqual(result["station_windows_with_complete_72h_DWD"],25)
