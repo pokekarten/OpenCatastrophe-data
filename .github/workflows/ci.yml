@@ -46,6 +46,15 @@ jobs:
           echo '### JRC GSW v1.5 first-party inline JS route proof' >> "$GITHUB_STEP_SUMMARY"
           echo 'One official publisher HTML public GET only. Active CloudFerro after overwritten Google v1.5; no raster GET, no raw original body persisted, no CAT approval.' >> "$GITHUB_STEP_SUMMARY"
           python -m research_runners.jrc_gsw_v15_publisher_page_one_shot_v0 --one-shot | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Offline protect the EC downloader 360-tile default without network
+        run: python -m unittest tests.test_jrc_gsw_v15_publisher_downloader_instructions_one_shot_v0 -v
+      - name: Fetch only the official JRC downloader INSTRUCTIONS page, no scripts executed
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '### Original JRC Python downloader instructions (HTML metadata only)' >> "$GITHUB_STEP_SUMMARY"
+          echo 'One exact official JRC instructions HTML GET, no TIFF or downloader execution. An unfiltered aggregated invocation covers 360 tiles; allow zero data GETs.' >> "$GITHUB_STEP_SUMMARY"
+          python -m research_runners.jrc_gsw_v15_publisher_downloader_instructions_one_shot_v0 --one-shot-instructions | tee -a "$GITHUB_STEP_SUMMARY"
 
   check:
     name: Python ${{ matrix.python-version }}
