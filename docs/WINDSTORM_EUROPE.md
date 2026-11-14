@@ -22,6 +22,7 @@ sind noch nicht als europäisch kalibriert nachgewiesen.
 - [Recherche, Originalquellen, Prüfsummen und tatsächliche Läufe](research/windstorm-europe-v1-rebuild-and-sources.md)
 - [Datenbestand und fachliche Lücken](research/windstorm-europe-data-and-completion-gaps-v0.md)
 - [Maschinenlesbarer Quellenindex](research/windstorm-europe-source-index-v0.toml)
+- [LUISA-2018-Raster- und Kurvenmischungs-Audit](research/windstorm_europe_luisa2018_raster_audit_v0.toml)
 - [Physische und finanzielle Modellschritte](research/germany-wind-executable-scenarios-v0.md)
 
 Der Kern wurde über PR #1586 auf `main` integriert, Commit
@@ -78,6 +79,24 @@ Anzahl/Geschossfläche je Gebäude, passendes Land-/Preisjahr und eine validiert
 Zuordnung zwischen Gebäude und LUISA-Zelle. Die integrierte Punktgebäude-Engine
 verlangt deshalb weiterhin einen expliziten `building_value_eur`; die LUISA-
 Werte werden nicht stillschweigend als solche eingesetzt.
+
+Das im CLIMAAX-Workflow referenzierte [JRC LUISA Base Map 2018](https://data.jrc.ec.europa.eu/dataset/51858b51-8f27-4006-bf82-53eba35a142c)
+liegt als 50-m-Raster (Revision VER2026-07-15, EPSG:3035) vor. Der Original-
+TIFF-Download (1,019,186,382 Bytes; SHA-256 im Audit) wurde erfolgreich
+eingelesen. Punktabfragen aus unseren drei Beispielorten ergaben unter anderem
+London=1210, Paris=1111 und Köln=1210. Das sind nur die Landnutzungsklassen der
+Pixelmittelpunkte; sie beweisen weder Gebäudezahl noch Gebäudegrundfläche,
+Nutzung, Wert oder Widerstand.
+
+Beim Reproduzieren der CLIMAAX-Mischkurven wurde ein konkreter
+Spaltenordnungswiderspruch gefunden: Die gepinnte Kurven-CSV nennt ihre zweite
+und dritte Spalte `outbuilding strong` und `outbuilding`; das Notebook baut die
+Gewichtungsliste als `outbuilding`, `strong outbuilding` und multipliziert
+positionsweise. Für LUISA-Klasse 2110 bei 40 m/s ergeben die benannten
+Spalten 0,40 %, die positionsweise Notebook-Reihenfolge 2,75 %. Der Unterschied
+ist noch nicht mit den Autoren geklärt. Die integrierte Engine mischt diese
+Spalten nicht automatisch; bis zur Klärung muss jede Verwendung eine explizite
+benannte Zuordnung offenlegen.
 
 Die nächste Umgebung braucht ein persistentes Datenverzeichnis mit genügend
 Platz für die tatsächlich ausgewählten regionalen Extrakte. Große europäische

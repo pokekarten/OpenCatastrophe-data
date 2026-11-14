@@ -92,6 +92,32 @@ This establishes a useful regional exposure path for a future raster/portfolio
 adapter, while identifying the missing conversion steps. It does not replace
 observed building-level values or calibrate the existing point-building model.
 
+### Acquired JRC raster and response-mixture contradiction
+
+The exact land-use product used by the CLIMAAX workflow was also downloaded
+from the JRC's pinned `VER2026-07-15` directory. Its source, CC BY 4.0 notice,
+revision, size, SHA-256, raster transform and point-lookups are recorded in the
+[machine-readable raster audit](../windstorm_europe_luisa2018_raster_audit_v0.toml).
+The TIFF is 50 m in EPSG:3035, 130,000 × 92,000 pixels, one int32 band with
+zero nodata. It is about 1 GB and remains a local original, not a Git asset.
+London, Paris and Cologne fixture coordinates resolve to LUISA codes 1210,
+1111 and 1210 respectively. A point pixel is only a land-use proxy and is not
+a building footprint or validated building classification.
+
+The downloaded construction curve CSV has its second and third columns named
+`outbuilding strong` and `outbuilding`, whereas the published CLIMAAX notebook
+sets its `building_types` list to `outbuilding` then `strong outbuilding` and
+combines them with positional `iloc[:, 1]` and `iloc[:, 2]`. Under the literal
+column names, the two weights are reversed. At 40 m/s the curve values are
+5.5% for `outbuilding strong` and 0.8% for `outbuilding`; LUISA class 2110
+assigns a 50% regular-outbuilding share and zero strong-outbuilding share. A
+name-resolved mixture is therefore 0.40%, while the notebook's positional
+mixture gives 2.75%. This is a measured source-code/data-label discrepancy;
+it does not establish which source label or workflow line should be changed.
+Until the intended semantics are resolved, no mixed LUISA curves are admitted
+to the integrated model. The existing explicit single-response pathway is
+unaffected. See the audit TOML for pinned hashes and details.
+
 ## What changed in the model
 
 - Per-building response IDs replace the assumption of one response curve
