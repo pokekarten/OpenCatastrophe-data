@@ -63,6 +63,12 @@ class DWDOriginalMetadataResearchTests(unittest.TestCase):
                       ]))
         self.assertNotIn("original_2020_geography_valid_from_to_interpreted", receipt)
 
+    def test_official_zip_can_contain_harmless_additional_original_docs(self):
+        zip_bytes = source_zip(extra="citation_documentation.pdf")
+        proof = m.inspect_original_metadata_zip(zip_bytes, "02667")
+        self.assertEqual(set(proof["metadata"]), set(m.REQUIRED_CATEGORIES))
+        self.assertEqual(len(proof["original_archive_sha256"]), 64)
+
     def test_wrong_zip_member_structure_or_metadata_type_fails_closed(self):
         cases = (
             b"fake original publisher ZIP",
