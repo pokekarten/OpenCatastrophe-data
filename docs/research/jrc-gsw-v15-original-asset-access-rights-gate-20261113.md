@@ -44,6 +44,32 @@ service-automation state are distinct.
   file mirroring**. Exact service/API terms and byte persistence need separate
   review.
 
+## New independent host-policy research (2026-11-14)
+
+See [JRC GSW v1.5 — separate publisher and CloudFerro public host policy](jrc-gsw-v15-cloudferro-public-host-policy-20261114.md)
+and the machine-readable
+`research_runners/policies/jrc_gsw_v15_cloudferro_host_scope_v0.json`.
+
+CloudFerro's [published General Terms of Service](https://cloudferro.s3.waw3-1.cloudferro.com/wp-content/uploads/2024/05/general_terms_and_conditions.pdf)
+**section V.11(a–b), page 10** require **customers** using an API to
+avoid excessive/unnecessary load and follow technical specifications.
+The JRC [publisher-provided Python v1.5 download script](https://global-surface-water.appspot.com/gsw/Download_Instructions.html)
+does explicitly distribute individual 10-degree aggregated tiles from the
+named CloudFerro WAW4-1 Swift path, but the host customer contract does
+**not** define a numerical limit or independently authorize unattended
+anonymous JRC HTTP GET/HEAD/Range requests.
+
+Thus the **dataset reuse licence is established** but the **anonymous
+service-automation entitlement remains unknown**. The source remains
+`documented_only`; no original listing, raster, TIFF metadata or pixel
+value was downloaded in this step. One additional live Neon research
+rights row now records this exact CloudFerro **hosting**, separately
+from the existing fourteen JRC dataset rights rows, with
+`automated_api_access=unknown`,
+`scientific_model_admission=false` and
+`original_asset_admitted=false`. It is an audit of host conditions,
+not an API success claim.
+
 ## Science and data-integrity gates
 
 1. **Official correction dated 2026-11-10**: the publisher corrected
