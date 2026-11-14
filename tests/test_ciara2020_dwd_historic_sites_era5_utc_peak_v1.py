@@ -161,6 +161,43 @@ class Historical2020SiteCorrectedGustResearch(unittest.TestCase):
                 with self.assertRaises(m.HistoricSiteGridBlocked):
                     m._peak_utc_hour(label)
 
+    def test_first_actual_genuine_historical_site_plus_original_era5_receipt_no_go(self):
+        with m.FIRST_VERIFIED_2020_SITE_ERA5_ORIGINAL_PEAKS.open("rb") as f:
+            source=tomllib.load(f)
+        self.assertEqual(source["first_genuine_2020_historic_site_and_ERA5_live_github_run"],43608886802)
+        self.assertEqual(source["original_source_era5_decoded_96h_160node_sha256"],m.prior.ERA5_DECODED_96H_160_SHA)
+        self.assertEqual([s["historic_2020_to_original_ERA5_node_km"] for s in source["stations"]],
+                         [14.295,2.412,4.337])
+        self.assertEqual([s["historic_2020_anemometer_height_m"] for s in source["stations"]],[10,12,10])
+        self.assertFalse(source["matched_hour_ERA5_station_model_bias_or_RMSE_approved"])
+        self.assertFalse(source["native_GUL_IL_RI_OEP_AEP_or_SCR_admitted"])
+        result=m.research_historical_site_grid_crosswalk(
+            original_dwd_fixture(),accepted_real_peak_grid(),actual_historical_fixture()
+        )
+        self.assertIsNone(m.verify_first_historical_site_original_live_receipt(result))
+        for key,bad_value in (
+            ("historic_2020_to_original_ERA5_node_km",3.972),
+            ("historic_2020_anemometer_height_m",12),
+            ("DWD_original_2020_event_max_FX911_mps",80),
+        ):
+            # The frozen TOML is a source observation; live values must
+            # match it, not a previous site's coordinates/sensor values.
+            with self.subTest(key=key):
+                altered=deepcopy(result)
+                row=altered["historically_correct_stations"][2]
+                target={
+                    "historic_2020_to_original_ERA5_node_km":"2020_historic_sensor_to_model_grid_distance_km",
+                    "historic_2020_anemometer_height_m":"actual_2020_wind_anemometer_height_m",
+                    "DWD_original_2020_event_max_FX911_mps":"original_DWD_measured_2020_96h_peak_mps",
+                }[key]
+                row[target]=bad_value
+                with self.assertRaises(m.HistoricSiteGridBlocked):
+                    m.verify_first_historical_site_original_live_receipt(altered)
+        altered=deepcopy(result)
+        altered["independent_ERA5_station_gridpoint_skill_RMSE_bias_approved"]=True
+        with self.assertRaises(m.HistoricSiteGridBlocked):
+            m.verify_first_historical_site_original_live_receipt(altered)
+
     def test_no_network_dry_run_does_not_claim_actual_historic_join(self):
         with patch.object(sys,"argv",["hist","--dry-run"]),\
              patch.object(m,"live_original_historical_site_peak_replay",side_effect=AssertionError("NO NETWORK")):
