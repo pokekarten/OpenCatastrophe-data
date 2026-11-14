@@ -25,3 +25,9 @@ Antwortannahmen. Ein vollständiges jährliches Verlustmodell benötigt weiter
 einen vollständigen Ereignis-/Jahreskatalog, geeignete Gebäudewerte und
 beobachtete Schadenantworten. Globale Erweiterung benötigt zusätzlich eigene
 Gefahren- und Vulnerabilitätsnachweise außerhalb Europas.
+
+Die geprüfte Sweep-Fassung wurde erneut auf den Originaldaten ausgeführt:
+50 abgeschlossen, null blockiert. Der Beleg enthält Fixture-, Gefahren- und
+Kurven-SHA-256 sowie die Gefahrenprovenienz pro Ereignis. Blockierte Szenarien
+führen zu Exitstatus 1; der Teilbeleg bleibt zur Diagnose erhalten. Der
+unveränderte Modellkern wurde mit zehn gezielten Tests geprüft.
