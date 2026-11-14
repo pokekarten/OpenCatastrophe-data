@@ -22,7 +22,8 @@ import climk_era5_dwd_50event_station_audit_v0 as audit
 def fixture_windows():
     return [{
         "dwd_hourly_gust_qn":[[20.0,3] for _ in range(72)],
-        "climk_72h_gust_mps":18.0,
+        "dwd_storm_date_gust_qn":[[20.0,3] for _ in range(24)],
+        "climk_per_storm_gust_mps":18.0,
         "era5_grid_node":[50.75,7.25],
         "sensor_height_m":10.0,
         "station_elevation_m":100.0,
