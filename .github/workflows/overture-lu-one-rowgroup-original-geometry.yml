@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Luxembourg Overture one original rowgroup geometry research
+
+on:
+  pull_request:
+    paths:
+      - research_runners/overture_lu_one_rowgroup_geometry_observation_v0.py
+      - tests/test_overture_lu_one_rowgroup_geometry_observation_v0.py
+      - .github/workflows/overture-lu-one-rowgroup-original-geometry.yml
+      - research_runners/overture_lu_rowgroup_metadata_v0.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lu-overture-geometry-one-original-rowgroup-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-one-rowgroup:
+    name: Original group 182 only / aggregates only / never persist provider rows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout review-only source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install pinned source-only geometry dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            pyarrow==26.0.0 shapely==2.1.2 pyproj==3.7.2
+          python -m pip check
+      - name: Offline source-private and cardinality regression tests
+        run: python -m unittest tests.test_overture_lu_one_rowgroup_geometry_observation_v0 -v
+      - name: Scan exact original S3 row group 182 in ephemeral memory
+        run: python -m research_runners.overture_lu_one_rowgroup_geometry_observation_v0 --live

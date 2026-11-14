@@ -5,5 +5,10 @@
 # The repository-wide unittest discovery includes mandatory PPRI polygon
 # topology tests; pin the exact version required by the Luxembourg source
 # diagnostic (independent of the newer EU flood spatial profile).
+# Geodesic WGS84-area, CRS and original-shapefile metadata research checks
+# need the two following exact dependencies in addition to the frozen
+# Luxembourg-compatible Shapely 2.1.2 pin. Not a model runtime profile.
+pyproj==3.7.2
 PyYAML==6.0.3
+pyshp==2.3.1
 shapely==2.1.2
