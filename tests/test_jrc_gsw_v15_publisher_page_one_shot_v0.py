@@ -14,7 +14,7 @@ from research_runners import jrc_gsw_v15_publisher_page_one_shot_v0 as jrc
 
 
 def official_page() -> bytes:
-    return (
+    html = (
         '<!DOCTYPE html><html><head><title>Global Surface Water - Data Access</title></head>'
         '<body><h1>Global Surface Water - Data Access</h1>'
         '<p>The new dataset 1984-2024 V1.5 is available.</p>'
@@ -25,6 +25,18 @@ def official_page() -> bytes:
         '<a href="https://s3.waw4-1.cloudferro.com/swift/v1/global-surface-water/">'
         'File listing V1.5</a></body></html>'
     ).encode("utf-8")
+    # Synthetic exact first-party inline JavaScript structure: three route
+    # assignments, effective last one CloudFerro, overwritten Google v1.5.
+    script = (
+        "<script>var BASE_URL = '" + jrc.GCS_2021_OLD + "';"
+        "var BASE_URL = '" + jrc.GCS_2024_OVERWRITTEN + "';"
+        "var BASE_URL = '" + jrc.CLOUDFERRO_ACTIVE + "';"
+        "var FILES = ['occurrence/occurrence', 'change/change'];"
+        "function set_paths(x,y) {"
+        "var url = [BASE_URL, FILES[i], '_', lon, '_', lat, '_v1_5_2024.tif'].join('');"
+        "}</script>"
+    ).encode("utf-8")
+    return html.replace(b"<body>", b"<body>" + script)
 
 
 class Response(io.BytesIO):
@@ -54,6 +66,14 @@ class PublisherPageOneShotTests(unittest.TestCase):
         self.assertEqual(receipt["original_publisher_html_response_sha256"],
                          hashlib.sha256(raw).hexdigest())
         self.assertTrue(receipt["published_swift_catalogue_link_found"])
+        routes = receipt["publisher_inline_js_current_route_receipt"]
+        self.assertEqual(routes["effective_click_generated_tile_base_url"], jrc.CLOUDFERRO_ACTIVE)
+        self.assertEqual(routes["overwritten_google_v15_candidate_base_url"], jrc.GCS_2024_OVERWRITTEN)
+        self.assertTrue(routes["google_v15_candidate_overwritten_before_tile_links"])
+        self.assertFalse(routes["original_cloudferro_tiff_fetched"])
+        self.assertFalse(routes["original_google_v15_tiff_fetched"])
+        self.assertFalse(routes["google_v15_post_2026_11_10_correction_verified"])
+        self.assertEqual(routes["automated_source_asset_requests_approved"], 0)
         self.assertTrue(receipt["november_10_2026_occurrence_correction_announcement_found"])
         self.assertFalse(receipt["source_original_catalogue_bytes_hashed"])
         self.assertFalse(receipt["individual_tile_original_bytes_hashed"])
