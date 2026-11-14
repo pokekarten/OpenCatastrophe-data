@@ -45,7 +45,8 @@ FIXED_HEADERS = {
     "Range": f"bytes=0-{PREFIX_BYTES-1}",
     "User-Agent": "OpenCatastrophe-JRC-Reviewed-OneShot/0.1",
 }
-CONTENT_RANGE = re.compile(r"bytes 0-4095/([1-9][0-9]*)")
+# Max 18 decimal digits: reject unbounded attacker-supplied HTTP range totals.
+CONTENT_RANGE = re.compile(r"bytes 0-4095/([1-9][0-9]{3,17})")
 
 
 class OriginalPrefixBlocked(ValueError):
@@ -165,9 +166,11 @@ def probe_original_prefix(
             if not match or int(match.group(1)) <= PREFIX_BYTES:
                 raise OriginalPrefixBlocked("not an exact 4096-byte TIFF range response")
             announced = response.headers.get("Content-Length")
-            if announced is None or not announced.isdecimal() or int(announced) != PREFIX_BYTES:
+            if announced != str(PREFIX_BYTES):
                 raise OriginalPrefixBlocked("missing/incorrect original-range Content-Length")
-            prefix = response.read(PREFIX_BYTES + 1)
+            # Read no more than the **exact** approved 4096 original bytes.
+            # Content-Range and Content-Length already bound this reply.
+            prefix = response.read(PREFIX_BYTES)
     except OriginalPrefixBlocked:
         raise
     except (error.HTTPError, error.URLError, OSError, TimeoutError) as exc:
