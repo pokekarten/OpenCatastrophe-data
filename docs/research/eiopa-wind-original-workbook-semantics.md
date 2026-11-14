@@ -66,3 +66,18 @@ versicherten Bestand: Sparten, Deckungen und Meldeabdeckung bleiben offen.
 Der neue Abgleich gibt deshalb ausdrücklich keine Schadenquote frei.
 Die lokale Originalauswertung liegt in `/dev/shm/eiopa-country-overlap.json`.
 Sechs lokale Tests der EIOPA-Werkzeuge bestehen.
+
+## Vollständige Reproduktion mit einem Aufruf
+
+```bash
+python research_runners/eiopa_ciara_original_review.py \
+  --exposure /external/EIOPA-flood-wind-exposure.xlsx \
+  --losses /external/EIOPA-historical-loss-data.xlsx \
+  --output /external/eiopa-ciara-review.json
+```
+
+Dieser Aufruf verbindet Inventar, Spartenabgleich und Länderüberlappung
+mit Originalprüfsummen. Er lehnt bereits existierende Ausgaben und einen
+geänderten Storm-Ereignisumfang ab. Der Originallauf lieferte 39 Ciara-Zeilen
+und 15 Gruppen. Die Ausgabe erklärt den Datensatz weiterhin nicht für
+kalibrierungsbereit und erzeugt keine Schadenquoten.
