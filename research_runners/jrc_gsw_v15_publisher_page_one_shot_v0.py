@@ -20,6 +20,11 @@ import ssl
 import sys
 from urllib import error, request
 
+from scripts.preflight_jrc_gsw_v15_publisher_js_routes_v0 import (
+    JSRouteBlocked,
+    inspect_inline_tile_routes,
+)
+
 SOURCE = "ec-jrc.global-surface-water.1984-2024"
 PUBLISHER_URL = "https://global-surface-water.appspot.com/download"
 ORIGINAL_CATALOGUE_URL = "https://s3.waw4-1.cloudferro.com/swift/v1/global-surface-water/"
@@ -81,9 +86,18 @@ def inspect_publisher_html(raw: bytes) -> dict[str, object]:
         and ORIGINAL_CATALOGUE_URL in page.links
     ):
         raise PublisherPageBlocked("exact JRC v1.5 page update/link/rights shape not proven")
+    # The original page includes THREE sequential JavaScript BASE_URL
+    # declarations. Only the final, effective CloudFerro assignment drives
+    # the clickable v1.5 tile links. The earlier Google Storage v1.5
+    # assignment is overwritten; a code literal is not a Google TIFF receipt.
+    try:
+        inline_route = inspect_inline_tile_routes(raw)
+    except JSRouteBlocked as exc:
+        raise PublisherPageBlocked("publisher current inline tile source host changed") from exc
     # Link proves the publisher explicitly lists the Swift catalogue,
     # not that any individual GeoTIFF bytes or current file version exist.
     return {
+        "publisher_inline_js_current_route_receipt": inline_route,
         "profile": "jrc_gsw_v15_original_publisher_html_one_shot_metadata_v0",
         "source_id": SOURCE,
         "publisher_original_page_url": PUBLISHER_URL,
