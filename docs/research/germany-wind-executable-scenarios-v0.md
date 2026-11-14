@@ -142,3 +142,46 @@ EUR130/EUR90. Including a second zero-event year makes sample mean annual
 gross EUR65. At threshold EUR110, strict AEP is 0.5 and strict OEP is 0.
 These synthetic checks prove ordering and year aggregation, not frequency
 or financial calibration.
+
+## Reproducible assumed damage samples
+
+`windstorm_europe_damage_samples_v0.sample_policy_losses` now bridges physical
+responses to financial samples. Each site explicitly supplies `building_id`,
+`policy_id`, `dependence_group`, `building_value_eur`, and `gust_mps`.
+The API also requires integer seed/sample ID and a physical occurrence ID.
+It samples zero with probability 1-PAA and value × MDD otherwise. This is an
+assumed two-point law; it preserves the PAA×MDD mean but does not identify
+actual conditional severity variability or calibrated tail dependence.
+
+Groups share a uniform draw within the same sample and occurrence. Distinct
+groups use distinct SHA-256-derived 52-bit uniform keys. The versioned key
+includes seed, sample ID, occurrence ID and group. JSON encodes the fields
+unambiguously; output is independent of building iteration order. This is a
+reproducible research random mapping, not an empirically fitted dependence
+model. The caller must decide whether a group means a building, cell or
+larger region; the implementation supplies no default dependence assumption.
+Losses are summed by policy before the policy deductible is applied.
+
+Example integration (all occurrence frequencies and contracts are explicit
+scenario inputs, not inferred from selected CLIMK events):
+
+```python
+from research_runners.windstorm_europe_damage_samples_v0 import sample_policy_losses
+from research_runners.windstorm_europe_financial_years_v0 import aggregate
+
+losses = sample_policy_losses(
+    sites, curve, seed=7, sample_id=0, occurrence_id="KYRILL-scenario"
+)
+result = aggregate(
+    [1, 2],
+    [{"year_id": 1, "occurrence_id": "KYRILL-scenario",
+      "sampled_policy_ground_up_eur": losses}],
+    policies, treaty,
+)
+```
+
+The second supplied year has no occurrence. This synthetic two-year schedule
+checks the machinery; it does not assert Kyrill has a 50% annual probability.
+Tests verify the analytical mean at synthetic PAA=MDD=0.5 using 10,000
+samples, order invariance, seed sensitivity, policy aggregation, financial
+ordering, explicit groups and refusal to extrapolate response curves.
