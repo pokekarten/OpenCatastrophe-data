@@ -81,3 +81,24 @@ The existing [CBS 83673NED direct nine-request source runner draft PR #1542](htt
 does **not** cover these 2025VJ06 URLs; this PR leaves that contract unchanged. The separate [2026 regional five-row research PR #1553](https://github.com/pokekarten/OpenCatastrophe-data/pull/1553) stays unchanged too. No GitHub Actions dispatch for these three new requests is implied, and no new full CBS table, raw provider body, property-level geometry or insurer portfolio is written.
 
 Before linking to synthetic insurer portfolios, one must review independent exposure stock age/use, postcode-to-landsdeel mapping with correct regional crosswalk, dwelling-type calibration, construction mix bias, time revisions, VAT and coverage assumptions, loss demand surge and insured TIV contract definitions. Only after a separately approved source/science/legal review should an insurer-model consumer be built.
+
+## 2026-11-14 update — all six comparison URLs directly provider-verified
+
+The six exact original public OData response URIs used in this descriptive inter-year comparison **are now independently direct GitHub-verified**, in addition to the older external-intermediary complete original JSON byte evidence. This closes a previously missing **technical original-provider HTTP transport attestation** for these particular six URLs, not source-wide scientific or insurance-model admission.
+
+| 2025/2026 exact source scope | Original direct GitHub run | Job | Durable private research-only direct-proof sample |
+| --- | --- | --- | --- |
+| 2025VJ06 rental five regional rows | [43500093202](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43500093202) | 132143531309 | #102 |
+| 2025VJ06 owner five regional rows | same 2025 direct run | same | #103 |
+| 2025VJ06 definitive Perioden status | same 2025 direct run | same | #104 |
+| 2026VJ06 rental five regional rows | [43580334849](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43580334849) | 132403533534 | #127 |
+| 2026VJ06 owner five regional rows | same 2026 regional run | same | #128 |
+| 2026VJ06 provisional Perioden status | [43501313224](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43501313224) | 132147517168 | #119 |
+
+These metadata-only source-proof samples contain actual provider HTTP/whole response SHA-256/byte counts plus GitHub run/job and provenance. The previous intermediary source data samples #95–99, external smoke entries #39 and #41–45 and the older original 2026 Perioden source sample remain **unchanged**. No original CBS raw JSON bodies were persisted in Git, Actions artifacts or Neon, and no CAT model/TIV approval was granted.
+
+The read-only canonical research SQL at sql/research_cbs_83673ned_2025_definitive_2026_preliminary_v0.sql is upgraded to require all **six** direct GitHub receipt identities (exact source URL+original provider body SHA256+byte count, canonical private JSONB SHA256, fixed trusted job IDs and successful original-source 200/no-redirect attestations), in addition to earlier independently intermediary-observed original source bytes, source publication/vintage flags and source-native value/metric checks. With the private research database, the updated query returned exactly **10 research-only comparisons, zero blockers**.
+
+Five live database **read-only negative-control replays** each returned exactly **one BLOCKED_INCOMPLETE_OR_UNVERIFIED_SOURCE_EVIDENCE sentinel and zero comparison values**: absent original 2025 GitHub run; absent 2026 regional GitHub run; absent 2026 period GitHub run; wrong native €/m³ unit; and a mismatched original-body SHA join.
+
+**Interpretation remains unchanged:** The CBS 2025VJ06 figures are definitive, 2026VJ06 provisional; the native series consists of rolling averages of **new pure-dwelling granted permit projects**, not constant-quality same-building reconstruction inflation, existing property TIV, insured claims or an insurer portfolio model. Publishing or commercially using the official aggregate data is permitted with CBS attribution under CC BY 4.0, but all 10 comparison rows remain strictly **research-only, model_input_approved=false**.
