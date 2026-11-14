@@ -4,9 +4,11 @@
 
 The CLIMK source contains the 50 ERA5 storms selected by its LI3D severity
 ranking, not a complete or frequency-calibrated event set. This reader pairs
-each row's 3-day footprint value with DWD FX_911 observations in the three
-calendar days centred on the published Storm_Dates midpoint. Only complete
-72-hour station windows enter the primary aggregate metrics. The two long-record
+each per-storm CLIMK field with DWD FX_911 observations in the three calendar
+days centred on the published Storm_Dates midpoint. The CLIMK field's exact
+time bounds are undocumented, so results are unmatched-support arithmetic
+contrasts only. Only complete 72-hour DWD windows enter these descriptive
+contrasts. The two long-record
 stations map to one CLIMK ERA5 grid node; the shorter third station adds one
 separate node with only seven complete cases. This is not independent spatial
 validation.
@@ -33,7 +35,7 @@ from scripts.inspect_climk_winds_era5_v0 import (
     EXPECTED_DIMENSIONS, EXPECTED_FIELDS, verify_source_bytes, fetch_provider_bytes,
 )
 
-SCHEMA = "CLIMK_ERA5_TOP50_DWD_ORIGINAL_STATION_72H_EXPLORATION_V0"
+SCHEMA = "CLIMK_ERA5_TOP50_DWD_ORIGINAL_STATION_UNMATCHED_SUPPORT_EXPLORATION_V1"
 STATIONS = ("02667", "00603", "15200")
 CLIMK_PARAMETER_DESCRIPTION = (
     "absolute_maxwindgusts; daily maximum wind gust derived from hourly gust data, "
@@ -71,7 +73,7 @@ def summarize_windows(windows: list[dict]) -> dict:
         if not isinstance(item, dict):
             raise CLIMKDWDBlocked("malformed internal station/event pair")
         observations = item.get("dwd_hourly_gust_qn")
-        modeled = item.get("climk_72h_gust_mps")
+        modeled = item.get("climk_per_storm_gust_mps")
         node = item.get("era5_grid_node")
         height = item.get("sensor_height_m")
         elevation = item.get("station_elevation_m")
@@ -113,24 +115,25 @@ def summarize_windows(windows: list[dict]) -> dict:
             if all(q == 3 for _, q in checked):
                 complete_qn3.append(record)
 
-    def metrics(records: list[tuple[float, float]]) -> dict | None:
+    def unmatched_support_contrasts(records: list[tuple[float, float]]) -> dict | None:
         if not records:
             return None
         observed = [x for x, _ in records]
         modeled = [y for _, y in records]
-        errors = [y-x for x, y in records]
+        differences = [y-x for x, y in records]
         mo, mm = sum(observed)/len(observed), sum(modeled)/len(modeled)
         cov = sum((x-mo)*(y-mm) for x, y in records)
         vo = sum((x-mo)**2 for x in observed)
         vm = sum((y-mm)**2 for y in modeled)
         return {
-            "complete_72h_event_pairs": len(records),
-            "mean_error_era5_minus_dwd_mps": sum(errors)/len(errors),
-            "mean_absolute_error_mps": sum(abs(e) for e in errors)/len(errors),
-            "root_mean_square_error_mps": math.sqrt(sum(e*e for e in errors)/len(errors)),
-            "pearson_correlation": cov/math.sqrt(vo*vm) if vo and vm else None,
-            "mean_DWD_72h_max_mps": mo,
-            "mean_CLIMK_ERA5_72h_max_mps": mm,
+            "paired_values": len(records),
+            "mean_pairwise_difference_CLIMK_minus_DWD_mps": sum(differences)/len(differences),
+            "mean_absolute_pairwise_difference_mps": sum(abs(e) for e in differences)/len(differences),
+            "root_mean_square_pairwise_difference_mps": math.sqrt(sum(e*e for e in differences)/len(differences)),
+            "pearson_correlation_of_unmatched_support_values": cov/math.sqrt(vo*vm) if vo and vm else None,
+            "mean_DWD_72h_window_max_mps": mo,
+            "mean_CLIMK_per_storm_daily_max_field_mps": mm,
+            "interpretation": "arithmetic contrasts only; incompatible or undocumented temporal aggregation; not error, bias, or skill metrics",
         }
 
     return {
@@ -148,8 +151,8 @@ def summarize_windows(windows: list[dict]) -> dict:
         "unique_nearest_CLIMK_ERA5_grid_nodes": len(grid_nodes),
         "historical_sensor_height_counts_m_for_windows_with_observations": heights,
         "historical_station_elevation_counts_m_above_sea_level_for_windows_with_observations": elevations,
-        "complete_72h_primary_metrics_descriptive_only": metrics(complete),
-        "complete_72h_QN8_3_sensitivity_metrics_descriptive_only": metrics(complete_qn3),
+        "complete_72h_unmatched_support_contrasts_descriptive_only": unmatched_support_contrasts(complete),
+        "complete_72h_QN8_3_unmatched_support_contrasts_descriptive_only": unmatched_support_contrasts(complete_qn3),
         "partial_DWD_windows_imputed_or_used_in_primary_metrics": False,
         "sensor_height_adjustment_applied": False,
     }
@@ -329,7 +332,7 @@ def _climk_station_windows(source: bytes, station_id: str,
                         raise
                     windows.append({
                         "dwd_hourly_gust_qn": [],
-                        "climk_72h_gust_mps": None,
+                        "climk_per_storm_gust_mps": None,
                         "era5_grid_node": None,
                         "sensor_height_m": 10.0,
                         "station_elevation_m": None,
@@ -368,7 +371,7 @@ def _climk_station_windows(source: bytes, station_id: str,
                 if distance > 25:
                     raise CLIMKDWDBlocked("historical station exceeds 25 km from a CLIMK ERA5 grid centre")
                 cell = np.ma.asarray(field[index, row, col], dtype=float)
-                modelled = None if bool(np.ma.is_masked(cell)) else _finite_number(float(cell), "CLIMK 72h gust")
+                modelled = None if bool(np.ma.is_masked(cell)) else _finite_number(float(cell), "CLIMK per-storm gust")
                 paired = []
                 for h in range(WINDOW_HOURS):
                     stamp = (begin+timedelta(hours=h)).strftime("%Y%m%d%H")
@@ -376,7 +379,7 @@ def _climk_station_windows(source: bytes, station_id: str,
                         paired.append(list(observations[stamp]))
                 windows.append({
                     "dwd_hourly_gust_qn": paired,
-                    "climk_72h_gust_mps": modelled,
+                    "climk_per_storm_gust_mps": modelled,
                     "era5_grid_node": [grid_lat, grid_lon],
                     "sensor_height_m": height,
                     "station_elevation_m": elevation,
@@ -438,7 +441,9 @@ def analyze_sources(climk_bytes: bytes, dwd_archives: dict[str, bytes],
         "CLIMK_original_event_rows": EVENTS,
         "CLIMK_event_selection": "top 50 winter storms selected within ERA5 by LI3D severity; not a complete event set",
         "CLIMK_storm_date_label_semantics": "midpoint label of a 3-day LI3D event window",
-        "comparison_window": "Storm_Dates minus one UTC calendar day through plus one day, inclusive (72 labels)",
+        "DWD_comparison_window": "Storm_Dates minus one UTC calendar day through plus one day, inclusive (72 hourly labels)",
+        "CLIMK_comparison_temporal_support": "absolute_maxwindgusts is a per-storm field described as a daily maximum; exact aggregation interval/time bounds are not given in variable metadata",
+        "paired_values_have_proven_identical_temporal_support": False,
         "DWD_parameter": "FX_911; highest gust of the previous hour; source metadata says UTC",
         "CLIMK_parameter": CLIMK_PARAMETER_DESCRIPTION,
         "CLIMK_gust_duration_averaging_specified_by_publication_or_variable_metadata": False,
