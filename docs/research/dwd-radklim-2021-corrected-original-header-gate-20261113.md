@@ -68,7 +68,7 @@ The separate research DB's `research.source_api_smoke_receipt_v0` currently has 
 
 ## Remaining source-data and science gates
 
-- Carry out one independently authorized, fixed, 2,048-byte original Range GET in a trusted runner and verify the response SHA-256. **This PR does not execute it.**
+- The first independently authorized fixed 2,048-byte original Range GET **has already succeeded** on 2026-11-13 in trusted [GitHub run 43488656039](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43488656039). This PR does **not** repeat the provider request; any future replay requires a new explicit manual dispatch and a fresh transport/rights review.
 - Acquire and pin the **entire corrected monthly NetCDF member**, independently verify its full SHA-256 and NetCDF4/CF schema, DWD projection, timestamps, rainfall units and missingness. Check every actual original monthly TAR member for whole-year completeness rather than assuming the first one is January.
 - Validate radar artefacts, gauge adjustment, measurement uncertainty and independent rain-gauge holdouts before CAT hazard, occurrence rates, vulnerability or insurance-loss applications.
 
