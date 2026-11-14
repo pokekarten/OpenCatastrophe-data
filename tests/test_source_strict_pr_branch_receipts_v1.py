@@ -206,6 +206,20 @@ class StrictBranchReceiptContractTests(unittest.TestCase):
                 for item in (source_id,run_id,job_id,digest,commit):
                     self.assertIn(item, sql)
 
+    def test_jrc_gsw_original_sample_does_not_ignore_provider_service_terms(self):
+        sql = (ROOT / "insurance_707_source_original_pr_branch_priority_overlay_v1.sql").read_text()
+        self.assertIn("ec-jrc.global-surface-water.1984-2024",sql)
+        self.assertIn("PR #1533",sql)
+        self.assertIn("e72f8ab853f8b9d4639c0173bb8e70c4f16b53bd",sql)
+        self.assertIn("'P1_review_cloudferro_service_terms_before_original_occurrence_sample'",sql)
+        self.assertIn("AND q.sample_rows=0",sql)
+        self.assertIn("AND q.registry_commercial_verdict='allowed_verified'",sql)
+        self.assertIn("AND q.record_type='landscape_candidate'",sql)
+        # Publisher's Open Data rights do not imply automatic source-API approval.
+        self.assertIn("do NOT authorize unconstrained CloudFerro",sql)
+        self.assertNotIn("http.client",sql)
+        self.assertNotIn("requests.get",sql)
+
     def test_queue_overlay_only_changes_historical_inconclusive_case(self):
         sql = (ROOT / "insurance_707_source_original_pr_branch_priority_overlay_v1.sql").read_text()
         self.assertIn("WHEN q.last_api_shape_status='inconclusive' AND v.source_id IS NOT NULL", sql)
