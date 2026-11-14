@@ -29,10 +29,10 @@ python -m unittest tests.test_cologne_hwrm_service_probe_v0
 python research_runners/cologne_hwrm_service_probe_v0.py --live
 ```
 
-The second command requires deliberate `--live` opt-in. It requests only
-`GetCapabilities` at the exact official NRW service URL. Redirects, non-XML
-responses, unexpected WMS versions, empty layer inventories and responses
-above 4 MB fail closed. It prints only a JSON receipt containing bounded
+The second command requires deliberate `--live` opt-in. The endpoint now follows the official Open.NRW distribution URL at `https://www.wms.nrw.de/umwelt/wasser/HW_Gefahrenkarte?REQUEST=GetCapabilities&SERVICE=WMS` rather than the shortened legacy path. It requests only
+`GetCapabilities` at the exact official NRW service URL. Redirects, non-XML responses, non-WMS XML, absent service identity,
+missing GetCapabilities/GetMap operations, unexpected WMS versions,
+empty or invalid layer inventories and responses above 4 MB fail closed. It prints only a JSON receipt containing bounded
 layer metadata, SHA-256 of received XML and explicit non-admission flags. It
 does **not** download or retain source rasters, tile images, GeoJSON, building
 features or external raw bytes. The first command is fully offline.
@@ -44,6 +44,17 @@ status is **not verified**.
 
 ## Original-provider flood-data path
 
+**Distribution-specific rights must be kept separate:** the official WMS
+GetCapabilities `Service/AccessConstraints` read on 2026-11-14 states
+**Datenlizenz Deutschland Namensnennung 2.0**, attribution **Land NRW**.
+The provider's independently published HWRM download directory states
+**Datenlizenz Deutschland Zero 2.0** for those archives. Do not project
+WMS attribution terms onto the archive or vice versa without an exact
+per-asset source review. The external WMS XML was successfully rendered
+as a public third-party XML-to-Markdown view, demonstrating service
+metadata and `GetCapabilities` / `GetMap` descriptions; it did **not**
+produce an original response-byte SHA or a tested `--live` runner receipt.
+
 The authoritative NRW source directory is:
 
 https://www.opengeodata.nrw.de/produkte/umwelt_klima/wasser/hochwasser/hwrm/
@@ -51,7 +62,7 @@ https://www.opengeodata.nrw.de/produkte/umwelt_klima/wasser/hochwasser/hwrm/
 It lists distinct EPSG:25832 ZIP distributions for HQ10–50, HQ100 and
 extreme scenarios, including raster depth and vector boundary/velocity
 products. The original directory identifies 2026-01 release dates and
-the **Datenlizenz Deutschland – Zero 2.0**. The high-probability depth ZIP is
+the **Datenlizenz Deutschland – Zero 2.0** for the original download products. The high-probability depth ZIP is
 publisher-listed as approximately 2.4 GB. No original ZIP bytes were
 downloaded or hashed during this change.
 
