@@ -25,6 +25,19 @@ Upstream: `yaml/pyyaml`, release `6.0.3` (2025-09-25), MIT. PyPI declares Python
 
 The direct PyYAML version is exact but wheel/source hashes are not pinned in this bootstrap requirements file. GitHub Dependency Review remains required on pull requests, CI runs `pip check`, and the dependency has no repository write token or project secrets. Re-evaluate hash-locking or a digest-pinned validation image if publication/release assurance later depends on a frozen validation environment.
 
+## Validation-only historical building spatial dependencies
+
+The French 2016 BD TOPO / RNB geometry research tests added by PR #937
+require the exact validation pins `pyproj==3.7.2` (MIT), `shapely==2.1.2`
+(BSD-3-Clause) and `pyshp==2.3.1` (MIT). `pyproj` and `shapely` are
+already declared in `requirements-eu-flood-spatial.txt`; `pyshp` is
+pinned explicitly in the synthetic geometry GitHub Actions jobs.
+These are test/research dependencies only: they neither admit the 2016
+archive's original data rights nor permit real CAT model use.
+The PR #1107 validation-dependency claim additionally declares all three
+for eventual consolidation; no `requirements-validation.txt` edit is
+made here to avoid conflicting active PR writers.
+
 ## Acquisition-only scientific I/O dependency
 
 The GloFAS v4 upstream-area reader uses the official Unidata `netCDF4` Python package declared in `requirements-glofas-acquisition.txt` as `netCDF4==1.7.4`. This dependency is **not** imported by the normal landscape, manifest or model-evidence tooling. It is required only when an operator intentionally reads the external `uparea_glofas_v4_0.nc` NetCDF4 ancillary.
