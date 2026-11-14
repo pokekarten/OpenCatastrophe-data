@@ -16,7 +16,6 @@ persist. This challenges plausibility, not spatial accuracy or admission.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import sys
@@ -64,12 +63,29 @@ def query_url(lon: float, lat: float) -> str:
     )
 
 
+def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise PolygonChallengeError("duplicate KGG JSON key")
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite(_value: str) -> None:
+    raise PolygonChallengeError("non-finite KGG JSON number")
+
+
 def parse_point_reply(payload: bytes) -> str | None:
     """Accept at most one polygon label, never return source geometry/rows."""
     if not payload or len(payload) > MAX_RESPONSE_BYTES:
         raise PolygonChallengeError("empty or oversized KGG response")
     try:
-        doc = json.loads(payload.decode("utf-8"))
+        doc = json.loads(
+            payload.decode("utf-8"),
+            object_pairs_hook=_unique_object,
+            parse_constant=_reject_nonfinite,
+        )
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise PolygonChallengeError("invalid KGG JSON") from exc
     if not isinstance(doc, dict) or "error" in doc:
