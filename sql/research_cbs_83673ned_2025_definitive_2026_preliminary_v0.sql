@@ -72,7 +72,7 @@ trusted_direct AS (
         AND s.sample_json->>'provider_original_json_saved'='false'
         AND s.sample_json->>'original_provider_url'=s.source_url
         AND s.sample_json->>'full_original_provider_response_sha256'=s.provider_response_sha256
-        AND s.source_url LIKE '%/Perioden?$filter=Key%20eq%20%272026VJ06%27&$top=1'
+        AND s.source_url LIKE '%/Perioden?%'
       ELSE false
     END
 ),
