@@ -155,6 +155,71 @@ class StrictBranchReceiptContractTests(unittest.TestCase):
         self.assertIn("separately_trusted_main_range_exists", sql)
         self.assertIn("separately_trusted_main_metadata_exists", sql)
 
+    def test_full_707_source_queue_overlay_is_readonly_and_non_promoting(self):
+        """Queue keeps historical P1 but uses scoped original response proof."""
+        sql = (ROOT / "insurance_707_source_original_pr_branch_priority_overlay_v1.sql").read_text()
+        for required in (
+            "WITH original_prioritized AS (", "sample_evidence AS (",
+            "FROM research.all_source_inventory_v0 i",
+            "source_strict_pr_branch_receipt_v1",  # Separate proposed table is not needed here!
+        ):
+            if required == "source_strict_pr_branch_receipt_v1":
+                self.assertNotIn(required, sql)
+            else:
+                self.assertIn(required, sql)
+        for expected in (
+            "original_branch_evidence AS (",
+            "research.source_usage_rights_v0 rights",
+            "rights.product_scope=e.exact_product_rights_scope",
+            "s.sample_sha256 =",
+            "s.provider_response_sha256",
+            "e.exact_source_url=s.source_url",
+            "s.sample_json->>'github_head_sha'=e.github_head_sha",
+            "s.sample_json->>'github_job_id'=e.github_job_id::text",
+            "s.sample_json->>'request_sha256'=e.request_sha256",
+            "s.sample_json->>'runner_code_sha256'",
+            "s.sample_json->>'probe_code_sha256'",
+            "source_id IN ('",  # This is absent: review explicit positive markers below instead
+        ):
+            if expected == "source_id IN ('":
+                self.assertNotIn(expected, sql)
+            else:
+                self.assertIn(expected, sql)
+        self.assertIn("historical_queue_priority", sql)
+        self.assertIn("evidence_adjusted_next_action_priority", sql)
+        self.assertIn("older_intermediary_inconclusive_superseded_for_one_original_proof", sql)
+        self.assertIn("'P2_review_product_rights_and_science_after_original_probe'", sql)
+        self.assertIn("q.registry_commercial_verdict IN ('prohibited','restricted')", sql)
+        self.assertIn("q.record_type='admitted_manifest'", sql)
+        self.assertIn("false AS newly_grants_trusted_main_status", sql)
+        self.assertIn("false AS newly_grants_model_input_approval", sql)
+        self.assertIn("COALESCE(q.last_api_shape_status='inconclusive',false)", sql)
+        self.assertIn("EXISTS (", sql)
+        self.assertNotIn("JOIN research.source_usage_rights_v0 rights", sql)
+        body = "\n".join(line for line in sql.splitlines()
+                         if not line.lstrip().startswith("--")).upper()
+        for word in ("INSERT INTO ", "CREATE TABLE ", "UPDATE RESEARCH.", "DROP TABLE ",
+                     "DELETE FROM ", "ALTER TABLE ", "TRUNCATE ", "COPY "):
+            self.assertNotIn(word, body)
+        for source_id,(run_id,job_id,digest,commit) in EXPECTED.items():
+            with self.subTest(source=source_id):
+                for item in (source_id,run_id,job_id,digest,commit):
+                    self.assertIn(item, sql)
+
+    def test_queue_overlay_only_changes_historical_inconclusive_case(self):
+        sql = (ROOT / "insurance_707_source_original_pr_branch_priority_overlay_v1.sql").read_text()
+        self.assertIn("WHEN q.last_api_shape_status='inconclusive' AND v.source_id IS NOT NULL", sql)
+        self.assertIn("THEN q.next_action_priority", sql)
+        self.assertIn("ELSE q.next_action_priority", sql)
+        self.assertIn("q.next_action_priority AS historical_queue_priority", sql)
+        # Source-specific format and rights are checked before any ranking adjustment.
+        self.assertIn("e.exact_product_rights_scope", sql)
+        self.assertIn("rights.rights_result='allowed'", sql)
+        self.assertIn("rights.scientific_model_admission=false", sql)
+        self.assertIn("rights.original_asset_admitted=false", sql)
+        self.assertIn("NOT s.model_input_approved", sql)
+        self.assertIn("NOT s.source_byte_persistence_authorized", sql)
+
     def test_verifier_is_read_only_and_does_not_upgrade_main_trust(self):
         sql=self.verify
         self.assertRegex(sql,r"\bSELECT\b")
