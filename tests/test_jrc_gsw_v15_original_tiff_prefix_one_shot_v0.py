@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from email.message import Message
 import hashlib
 import json
 import tomllib
@@ -188,6 +189,9 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
         self.assertEqual(result["original_range_sha256"], hashlib.sha256(raw).hexdigest())
         self.assertEqual(result["external_prefix_sha256"], hashlib.sha256(raw).hexdigest())
         self.assertTrue(result["range_response_verified"])
+        self.assertTrue(result["http_206_exact_requested_url_and_range_observed"])
+        self.assertFalse(result["original_provider_source_identity_verified"])
+        self.assertFalse(result["original_asset_release_identity_independently_verified"])
         self.assertTrue(result["first_ifd_fully_within_prefix"])
         self.assertFalse(result["whole_original_tiff_sha256_verified"])
         self.assertFalse(result["post_2026_11_10_correction_verified"])
@@ -235,6 +239,62 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
             with self.subTest(headers=headers), self.assertRaises(jrc.OriginalPrefixBlocked):
                 jrc.probe_original_prefix(p,c,
                     open_request=lambda *_:FakeResponse(classic(),headers=headers))
+
+    def test_duplicate_original_http_framing_is_rejected_before_any_body_read(self):
+        # Real urllib HTTPResponse.headers is an email.message.Message.
+        # A dict fake can't represent multiple Content-Length/Range lines,
+        # so use the same multi-value API as the production HTTP client.
+        p,c=hypothetical_review(self.policy,self.contract)
+        pairs={
+            "Content-Type":"image/tiff",
+            "Content-Encoding":"identity",
+            "Content-Range":"bytes 0-4095/10000000",
+            "Content-Length":"4096",
+        }
+        for header, extra in (
+            ("Content-Type", "text/html"),
+            ("Content-Range", "bytes 0-4095/999999"),
+            ("Content-Length", "8192"),
+            ("Content-Encoding", "gzip"),
+            ("Transfer-Encoding", "chunked"),
+        ):
+            hdr=Message()
+            for k,v in pairs.items():
+                hdr[k]=v
+            if header == "Transfer-Encoding":
+                hdr[header] = extra
+            else:
+                hdr[header] = extra
+            response=FakeResponse(classic(),headers=hdr)
+            with self.subTest(header=header), self.assertRaises(
+                jrc.OriginalPrefixBlocked
+            ):
+                jrc.probe_original_prefix(p,c,open_request=lambda *_:response)
+            self.assertEqual(response.read_sizes,[])
+
+    def test_duplicate_case_insensitive_dict_headers_fail_closed(self):
+        p,c=hypothetical_review(self.policy,self.contract)
+        headers={
+            "Content-Type":"image/tiff",
+            "Content-Range":"bytes 0-4095/10000000",
+            "content-range":"bytes 0-4095/999999",
+            "Content-Length":"4096",
+        }
+        response=FakeResponse(classic(),headers=headers)
+        with self.assertRaisesRegex(jrc.OriginalPrefixBlocked, "duplicate"):
+            jrc.probe_original_prefix(p,c,open_request=lambda *_:response)
+        self.assertEqual(response.read_sizes,[])
+
+    def test_original_release_identity_not_proved_by_any_syntactic_206(self):
+        p,c=hypothetical_review(self.policy,self.contract)
+        reply=FakeResponse(classic())
+        result=jrc.probe_original_prefix(p,c,open_request=lambda *_:reply)
+        self.assertTrue(result["http_206_exact_requested_url_and_range_observed"])
+        self.assertTrue(result["range_response_verified"])
+        self.assertFalse(result["original_provider_source_identity_verified"])
+        self.assertFalse(result["original_asset_release_identity_independently_verified"])
+        self.assertFalse(result["post_2026_11_10_correction_verified"])
+        self.assertFalse(result["model_input_approved"])
 
     def test_short_long_or_invalid_tiff_body_blocked_without_source_admission(self):
         p, c = hypothetical_review(self.policy, self.contract)
