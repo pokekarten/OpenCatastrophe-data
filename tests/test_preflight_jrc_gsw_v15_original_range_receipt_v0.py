@@ -107,7 +107,7 @@ class JRCTiffRangeTests(unittest.TestCase):
                 validate(response_headers=h)
 
     def test_content_length_range_body_must_all_be_consistent(self):
-        for size in ("0","4095","8192","bogus"," 4096"):
+        for size in ("0","4095","8192","bogus","+4096"):
             h=headers()
             h["Content-Length"]=size
             with self.subTest(size=size),self.assertRaises(jrc.JRCOriginalRangeBlocked):
