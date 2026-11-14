@@ -111,6 +111,53 @@ not an API success claim.
   set `model_input_approved=true` solely because the product licence permits
   commercial analysis.
 
+## New purely offline original-TIFF and decoded Occurrence semantics gate (2026-11-14)
+
+New code: `scripts/preflight_jrc_gsw_v15_occurrence_header_v0.py`.
+New synthetic tests: `tests/test_preflight_jrc_gsw_v15_occurrence_header_v0.py`.
+
+**No network provider request has been made by these components.** The CLI
+requires an **externally and separately authorized exact 4096-byte source
+prefix file**, and never tries to download it. It parses bounded, typed,
+inline scalar tags in classic TIFF or BigTIFF first Image File Directories:
+width/height, BitsPerSample, SamplesPerPixel, compression code, tile
+dimensions and the presence (NOT the values) of GeoTIFF tags. Out-of-prefix
+first-IFD data stays inconclusive. Oversized and duplicate directories,
+invalid TIFF bytes and misleading source-byte lengths fail closed.
+
+A separate pure function `validate_decoded_occurrence_values` checks up to
+65,536 caller-supplied **decoded uint8 pixels**; it rejects 101–254 and
+distinguishes **0 = observed not water** from **255 = NoData**. The
+[FAO catalog for the 1984–2024 JRC Occurrence dataset](https://data.fao.org/catalog/iso/f1b1d45a-e360-44bd-95a9-d628c468a7f6)
+pins source v1.5 metadata, `EPSG:4326`, `0.00025°` grid resolution,
+8-bit Byte and NoData=255. Such semantic checks cannot be called on
+compressed TIFF bytes. They are exercised only with synthetic windows
+in this PR; **no original pixels are claimed**.
+
+A 10-degree grid at the documented `0.00025°` resolution corresponds
+to 40,000 by 40,000 nominal samples. This is a *candidate shape expectation*,
+not an inferred original raster checksum/CRS or proof of the 2026-11-10
+correction. The separate CloudFerro network contract remains `documented_only`;
+the default official all-tile downloader is not invoked. Every emitted header
+or decoded-pixel receipt explicitly sets original-source authenticity,
+post-correction proof, full-file SHA and model admission to `false`.
+
+One-shot **offline** usage only, after an independently authorized acquisition:
+
+```sh
+python -m unittest tests.test_preflight_jrc_gsw_v15_occurrence_header_v0 -v
+python -m scripts.preflight_jrc_gsw_v15_occurrence_header_v0 \
+  --offline-tiff-prefix-file /path/to/reviewed-exact-4096-byte-prefix
+```
+
+**Do not use** the [Source Cooperative JRC Monthly History mirror](https://source.coop/epoch/jrc-global-surface-water-monthly)
+as if it were v1.5 **Aggregated Occurrence**: the mirror has
+`monthlyhistory` (2017–2024, partial original period), a different
+raster product and distinct pixel semantics. Likewise, the
+[CloudFerro published S3 general-tier performance limit](https://docs.cloudferro.com/en/latest/cloud/Block-storage-and-object-storage-performance-limits-on-CloudFerro-Cloud.html)
+is not evidence of a granted request rate for a **public anonymous
+WAW4-1 Swift** object. Both remain research context, not a host approval.
+
 ## Checks included
 
 ```bash
