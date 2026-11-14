@@ -116,3 +116,12 @@ PYTHONPATH=. python research_runners/knmi_historical_event_coverage.py \
 Intake-/Abdeckungstests laufen offline mit der Python-Standardbibliothek.
 Sie prüfen auch die 72-Stunden-Grenze, fehlende Werte gegenüber fehlenden
 Zeilen und die Ablehnung veränderter Originalbytes.
+
+## Direkter CLI-Aufruf geprüft
+
+Der Ereignisprüfer funktioniert jetzt auch als direkter Skriptaufruf aus
+anderen Arbeitsverzeichnissen ohne gesetzten `PYTHONPATH`. Zuvor schlug
+sein Import des benachbarten Intake-Moduls fehl. Ein Subprozess-Test entfernt
+`PYTHONPATH` explizit und startet `--help` aus `/tmp`. Alle acht lokalen
+Intake-/Abdeckungstests bestehen. Für den Originallauf bleibt die optionale
+Abhängigkeit `netCDF4` erforderlich; die Hilfe benötigt sie nicht.

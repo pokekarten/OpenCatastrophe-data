@@ -8,6 +8,11 @@ import io
 import json
 from pathlib import Path
 import zipfile
+import sys
+
+if __package__ in (None, ''):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from research_runners.knmi_historical_wind_acquisition import inspect
 
 
