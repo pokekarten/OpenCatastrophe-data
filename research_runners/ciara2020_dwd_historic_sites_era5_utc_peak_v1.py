@@ -323,7 +323,8 @@ def live_original_nominal_hour_pair_replay() -> dict:
     by_id={s["station_id"]:s for s in measured["stations"]}
     if set(by_id)!=set(EXPECTED):
         raise HistoricSiteGridBlocked("live DWD candidate selection differs from the three attested historic stations")
-    weather=era5.original_96h_grid(include_internal_station_hourly=True)
+    weather=era5.original_96h_grid(include_public_grid_peaks=True,
+                                   include_internal_station_hourly=True)
     metadata=historic.live_feb2020_attestation()
     site_result=research_historical_site_grid_crosswalk(measured,weather,metadata)
     verify_first_historical_site_original_live_receipt(site_result)
