@@ -44,6 +44,13 @@ class TestOriginalGust(unittest.TestCase):
         with self.assertRaises(Blocked):
             audit_gzip(self.data(ROWS.replace('2020020914', '2019020914')))
 
+    def test_real_utc_calendar_hours_including_leap_day(self):
+        good = ROWS.replace("2020020914", "2020022914")
+        self.assertEqual(audit_gzip(self.data(good))["rows"], 3)
+        for invalid in ("2020023014", "2020130114", "2020020924", "2021022914"):
+            with self.subTest(hour=invalid), self.assertRaisesRegex(Blocked, "real-calendar UTC"):
+                audit_gzip(self.data(ROWS.replace("2020020914", invalid)))
+
     def test_frozen_resource_identity(self):
         base = {'title': 'HOR_departement_75_periode_2020-2024',
                 'url': ORIGINAL_RESOURCE_URL,
