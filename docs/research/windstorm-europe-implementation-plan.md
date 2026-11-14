@@ -83,3 +83,36 @@ Ergebnis des korrigierten Originallaufs: 10/10 Archive geladen und geparst,
 870890 vorhandene und 5710 fehlende FX-Werte.
 Keine fehlenden Stunden zwischen den jeweiligen Datei-Endpunkten.
 Vollständige Zeitstempel bedeuten somit ausdrücklich nicht vollständige Böenmessungen.
+
+## Historische Ereignisabdeckung tatsächlich ausgeführt
+
+Der [Offline-Prüfer](../../research_runners/knmi_historical_event_coverage.py)
+prüft die Original-ZIPs gegen die gespeicherten SHA256-Quittungen und verbindet
+sie mit den 50 Ereignisnamen/-daten des ursprünglichen CLIMK-ERA5-NetCDF.
+Das untersuchte Fenster umfasst den Vortag ab Stundenende 01 UTC bis zum
+Folgetag einschließlich Stundenende 24 UTC. Dies ist eine explizite
+Dreitagesfenster-Hypothese; die exakte Quellzeitgrenze ist noch nicht bewiesen.
+
+Ergebnis des Originallaufs: **19 Ereignisse an allen fünf Stationen vollständig**.
+Pro Station: 235 → 20, 260 → 21, 280 → 21, 310 → 21, 330 → 19.
+Es werden nur Abdeckungsergebnisse ausgegeben, keine kalibrierten Windbias
+oder Schäden. Fehlende Stundenzeilen und vorhandene Zeilen ohne FX werden
+getrennt gezählt; ein gemessener Nullwert bleibt ein gültiger Wert.
+
+Der vollständige lokale Ergebnisdatensatz liegt außerhalb Git unter
+`/dev/shm/knmi-historical-climk-coverage.json`; die Rohdaten sind weiterhin
+nicht zur Weiterveröffentlichung zugelassen. Das folgende Kommando erzeugt
+sämtliche Ereignis-/Stationsabdeckungen erneut:
+
+```bash
+PYTHONPATH=. python research_runners/knmi_historical_event_coverage.py \
+  --archive-dir /external/knmi-historical \
+  --receipt research/observations/knmi_historical_downloads.json \
+  --hazard /external/ERA5_StormFootprint_Database_Europe_Winter_1995-2015.nc \
+  --output /external/knmi-historical-climk-coverage.json
+```
+
+`netCDF4` wird für den Originallauf benötigt; die sieben gemeinsamen
+Intake-/Abdeckungstests laufen offline mit der Python-Standardbibliothek.
+Sie prüfen auch die 72-Stunden-Grenze, fehlende Werte gegenüber fehlenden
+Zeilen und die Ablehnung veränderter Originalbytes.
