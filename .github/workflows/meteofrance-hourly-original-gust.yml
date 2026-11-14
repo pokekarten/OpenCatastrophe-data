@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Meteo France original 3-second gust station preflight
+on:
+  pull_request:
+    paths:
+      - 'research_runners/meteofrance_hourly_gust_v0.py'
+      - 'tests/test_meteofrance_hourly_gust_v0.py'
+      - '.github/workflows/meteofrance-hourly-original-gust.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-gust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline negative and schema gates
+        run: python -m unittest tests.test_meteofrance_hourly_gust_v0 -v
+      - name: Fetch exactly one public official 2020-2024 original and log aggregates only
+        # The exact original source was already fetched and hashed in run 43632969638.
+        # PRs run synthetic tests only; future provider GET needs explicit dispatch.
+        if: github.event_name == 'workflow_dispatch'
+        run: python -m research_runners.meteofrance_hourly_gust_v0 --live
