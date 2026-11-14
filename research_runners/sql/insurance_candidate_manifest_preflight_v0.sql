@@ -103,11 +103,17 @@ SELECT *,
        CASE
            WHEN samples = 0 THEN 'NO_SAMPLES_IN_RESEARCH_STORE'
            WHEN verified_sample_hashes <> samples THEN 'INVALID_STORED_SAMPLE_HASH'
+           -- A source_id may cover multiple separately licensed product scopes.
+           -- Source-wide samples alone cannot prove which exact product was read.
+           WHEN COUNT(*) OVER (PARTITION BY source_id) > 1
+               THEN 'MULTI_PRODUCT_SAMPLE_SCOPE_NOT_VERIFIED'
            WHEN observational_previews = 0 THEN 'METADATA_ONLY_NO_OBSERVED_VALUES'
            ELSE 'OBSERVED_PREVIEW_RESEARCH_ONLY'
        END AS research_sample_gate,
        'SOURCE_SPECIFIC_SCIENCE_REVIEW_AND_EXACT_ARTIFACT_GATE_REQUIRED'::text
            AS manifest_promotion_gate,
+       'SOURCE_ID_AGGREGATE_NOT_PRODUCT_SCOPE_PROOF'::text
+           AS sample_evidence_granularity,
        false AS model_input_admitted_by_this_audit
 FROM candidate_state
 ORDER BY model_relevance_priority NULLS LAST, source_id;
