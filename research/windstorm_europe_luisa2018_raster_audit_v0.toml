@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+schema = "windstorm-europe-luisa-raster-audit-v0"
+audited_on = "2026-11-14"
+
+[source]
+name = "LUISA Base Map 2018, 50 m, revision 2026-07-15"
+catalogue_url = "https://data.jrc.ec.europa.eu/dataset/51858b51-8f27-4006-bf82-53eba35a142c"
+download_url = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/LUISA/EUROPE/Basemaps/LandUse/2018/VER2026-07-15/LUISA_Basemap_2018_50m_rev0726.tif"
+copyright_url = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/LUISA/EUROPE/Basemaps/LandUse/2018/VER2026-07-15/copyright.txt"
+dataset_id = "10.2905/JRC.NBGPQJ8"
+licence = "CC-BY-4.0"
+licence_evidence = "JRC copyright.txt states that any copyright and/or sui generis right on the dataset is licensed under CC BY 4.0 and reuse requires appropriate credit and indication of changes."
+attribution = "European Commission, Joint Research Centre; Batista and Pigaiani (2021), LUISA Base Map 2018, doi:10.2905/JRC.NBGPQJ8"
+catalogue_coverage = "EU27, Albania, Bosnia and Herzegovina, Iceland, Kosovo, Liechtenstein, Montenegro, North Macedonia, Norway, Serbia, Switzerland, Turkey, United Kingdom"
+catalogue_revision_note = "2026.07 revision corrects omitted urban fabric in limited locations and some greenhouse misclassification."
+raw_data_storage = "Download locally; do not commit the 1 GB original TIFF."
+
+[raster]
+filename = "LUISA_Basemap_2018_50m_rev0726.tif"
+bytes = 1019186382
+sha256 = "6693db65a8bb4d7f152e11533d121130c716037e82f67a55b67e8e82ef467c8a"
+driver = "GTiff"
+width_pixels = 130000
+height_pixels = 92000
+bands = 1
+dtype = "int32"
+crs = "EPSG:3035"
+pixel_size_m = 50
+nodata = 0
+compression = "LZW"
+transform = [900000, 50, 0, 5500000, 0, -50]
+
+[lookup_examples]
+method = "Transform WGS84 point into raster CRS and read containing pixel; no neighbourhood majority or building-footprint overlay."
+examples = [
+  { place = "London", longitude = -0.12, latitude = 51.50, landuse_code = 1210 },
+  { place = "Paris", longitude = 2.35, latitude = 48.86, landuse_code = 1111 },
+  { place = "Cologne", longitude = 6.96, latitude = 50.94, landuse_code = 1210 },
+  { place = "Hamburg", longitude = 9.99, latitude = 53.55, landuse_code = 1111 },
+  { place = "Munich", longitude = 11.58, latitude = 48.14, landuse_code = 1210 },
+]
+
+[damage_workbook]
+filename = "LUISA_damage_info_curves.xlsx"
+bytes = 20858
+sha256 = "a4ddff2c35bbc3536330389334c0fcae378799a49c6b7f3c643276065bbb8276"
+class_rows = 46
+formula_audit = "All cached values in columns J,K,L,P,T,U,W,X,Z were independently recomputed for all 46 classes and matched within floating-point tolerance."
+structural_value = "structural €/m² is a modelled maximum structural damage proxy per area, not a building-specific replacement sum. The workbook construction cost uses GDP/capita in 2010 USD and yields 2010 EUR; see the CLIMAAX maximum-damage FAQ."
+material_share_columns = ["weakest outbuilding", "outbuilding", "strong outbuilding", "weak brick structure", "strong brick structure", "concrete buidling"]
+
+[curve_source]
+filename = "CURVES_feuerstein_koks.csv"
+sha256 = "d960e67ab726815974feb08e5850054d7fac2873ea5bb3b02956e6262da7fd81"
+csv_header_order = ["weakest outbuilding", "outbuilding strong", "outbuilding", "weak brick structure", "strong brick structure", "concrete buidling"]
+notebook_weight_order = ["weakest outbuilding", "outbuilding", "strong outbuilding", "weak brick structure", "strong brick structure", "concrete buidling"]
+notebook_mixing = "The official CLIMAAX notebook multiplies the named notebook weights by curve columns positionally using iloc[:, 0..5]. The CSV's second and third headers are the reverse order of the workbook/notebook material labels."
+status = "Unresolved semantic conflict. Do not build or admit mixed LUISA response curves until the intended mapping is established; current per-building explicit response curve path does not mix these columns."
+
+[conflict_example]
+landuse_code = 2110
+landuse_description = "Non irrigated arable land"
+wind_speed_m_s = 40
+workbook_regular_outbuilding_share = 0.5
+workbook_strong_outbuilding_share = 0.0
+csv_outbuilding_strong_damage_percent = 5.5
+csv_outbuilding_damage_percent = 0.8
+name_resolved_weighted_damage_percent = 0.4
+notebook_positional_weighted_damage_percent = 2.75
+interpretation = "The 6.875x ratio is a diagnostic of the column-order ambiguity, not a selected correction or validated vulnerability estimate."
