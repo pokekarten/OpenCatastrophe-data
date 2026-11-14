@@ -170,6 +170,29 @@ def authorization_blockers(policy: dict[str, object], contract: dict[str, object
     return blockers
 
 
+def _single_response_header(headers: object, key: str, *, required: bool = True) -> str | None:
+    """Reject duplicates and ambiguous HTTP framing before reading data.
+
+    urllib HTTPMessage/EmailMessage exposes get_all. Dict-like synthetic
+    fixtures are supported, but only actual HTTPMessage objects demonstrate
+    duplicate-header behaviour.
+    """
+    if hasattr(headers, "get_all"):
+        values = headers.get_all(key, [])  # type: ignore[attr-defined]
+    elif type(headers) is dict:
+        values = [v for k, v in headers.items() if type(k) is str and k.lower() == key.lower()]
+    else:
+        raise OriginalPrefixBlocked("unexpected response header container")
+    if len(values) != 1:
+        if required or values:
+            raise OriginalPrefixBlocked(f"missing or duplicate response header: {key}")
+        return None
+    value = values[0]
+    if type(value) is not str or len(value) > 256 or "\r" in value or "\n" in value:
+        raise OriginalPrefixBlocked(f"invalid response header: {key}")
+    return value
+
+
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
@@ -206,16 +229,22 @@ def probe_original_prefix(
         with open_request(req, TIMEOUT_SECONDS) as response:
             if response.status != 206 or response.geturl() != SOURCE_URL:
                 raise OriginalPrefixBlocked("requires exact original-host HTTP206, no redirect")
-            media = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            # A single ambiguous Content-Length/Content-Range can invalidate
+            # the 4096-byte authorization budget. Reject duplicate headers
+            # even where HTTP libraries normally expose only the first.
+            media = _single_response_header(response.headers, "Content-Type").split(";", 1)[0].strip().lower()
             if media not in ("image/tiff", "application/octet-stream"):
                 raise OriginalPrefixBlocked("not a native TIFF/octet-stream response")
-            if response.headers.get("Content-Encoding", "identity").strip().lower() != "identity":
+            encoding = _single_response_header(response.headers, "Content-Encoding", required=False)
+            if encoding is not None and encoding.strip().lower() != "identity":
                 raise OriginalPrefixBlocked("encoded/compressed transport response forbidden")
-            content_range = response.headers.get("Content-Range", "")
+            if _single_response_header(response.headers, "Transfer-Encoding", required=False) is not None:
+                raise OriginalPrefixBlocked("chunked or alternative HTTP transfer framing forbidden")
+            content_range = _single_response_header(response.headers, "Content-Range")
             match = CONTENT_RANGE.fullmatch(content_range.strip())
             if not match or int(match.group(1)) <= PREFIX_BYTES:
                 raise OriginalPrefixBlocked("not an exact 4096-byte TIFF range response")
-            announced = response.headers.get("Content-Length")
+            announced = _single_response_header(response.headers, "Content-Length")
             if announced != str(PREFIX_BYTES):
                 raise OriginalPrefixBlocked("missing/incorrect original-range Content-Length")
             # Read no more than the **exact** approved 4096 original bytes.
@@ -247,7 +276,12 @@ def probe_original_prefix(
         "range_response_verified": True,
         "original_prefix_sha_only_not_full_asset": True,
         "original_asset_whole_file_sha256": None,
-        "original_provider_source_identity_verified": True,
+        "http_206_exact_requested_url_and_range_observed": True,
+        # No signed publisher manifest, whole-object SHA or corrected pixel
+        # witness is present in a 4K prefix. TLS URL+valid TIFF syntax cannot
+        # independently authenticate the underlying release content.
+        "original_provider_source_identity_verified": False,
+        "original_asset_release_identity_independently_verified": False,
         "whole_original_tiff_sha256_verified": False,
         "post_2026_11_10_correction_verified": False,
         "geospatial_crs_and_affine_verified": False,
