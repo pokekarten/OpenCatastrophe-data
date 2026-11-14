@@ -120,3 +120,126 @@ def compare_native_occurrence_windows(
         "raw_external_source_values_persisted": False,
         "model_input_approved": False,
     }
+
+
+# Google Earth Engine PixelGrid has six ordered affine coefficients:
+# [x_scale, x_shear, x_translate, y_shear, y_scale, y_translate].
+# Pixel (0,0) is its upper-left corner; using only 'scale' can move the grid.
+# FAO identifies JRC GSW 1.5 Occurrence as EPSG:4326, 0.00025 degrees.
+_GRID_KEYS = frozenset({
+    "crs", "transform", "raster_width", "raster_height",
+    "left", "top", "width", "height",
+})
+_GRID_RESOLUTION_DEGREES = 0.00025
+_GRID_TOL_DEGREES = 1e-12
+_MAX_RASTER_SIDE = 2_000_000
+
+
+def _supplied_grid(grid: dict[str, object], name: str) -> dict[str, object]:
+    """Validate caller-supplied native-grid metadata, never assert provenance."""
+    if type(grid) is not dict or set(grid) != _GRID_KEYS:
+        raise JRCWindowComparisonBlocked(f"{name}: wrong pixel-grid metadata keys")
+    if grid["crs"] != "EPSG:4326" or type(grid["crs"]) is not str:
+        raise JRCWindowComparisonBlocked(f"{name}: unsupported CRS")
+    for key in ("raster_width", "raster_height", "left", "top", "width", "height"):
+        value = grid[key]
+        if type(value) is not int:
+            raise JRCWindowComparisonBlocked(f"{name}: non-integer {key}")
+        if key in ("raster_width", "raster_height"):
+            if not 1 <= value <= _MAX_RASTER_SIDE:
+                raise JRCWindowComparisonBlocked(f"{name}: invalid {key}")
+        elif key in ("left", "top"):
+            if not 0 <= value < _MAX_RASTER_SIDE:
+                raise JRCWindowComparisonBlocked(f"{name}: invalid {key}")
+        elif not 1 <= value <= MAX_PIXELS:
+            raise JRCWindowComparisonBlocked(f"{name}: invalid {key}")
+    if (grid["width"] * grid["height"] > MAX_PIXELS
+            or grid["left"] + grid["width"] > grid["raster_width"]
+            or grid["top"] + grid["height"] > grid["raster_height"]):
+        raise JRCWindowComparisonBlocked(f"{name}: window outside bounded native grid")
+    transform = grid["transform"]
+    if type(transform) not in (list, tuple) or len(transform) != 6:
+        raise JRCWindowComparisonBlocked(f"{name}: expected 6 affine coefficients")
+    for coefficient in transform:
+        # Bound huge integers *before* numeric float conversion.
+        if (type(coefficient) not in (int, float)
+                or not -360 <= coefficient <= 360
+                or (type(coefficient) is float and not math.isfinite(coefficient))):
+            raise JRCWindowComparisonBlocked(f"{name}: unsafe affine coefficient")
+    xs, xsh, xt, ysh, ys, yt = transform
+    if (abs(xs - _GRID_RESOLUTION_DEGREES) > _GRID_TOL_DEGREES
+            or abs(ys + _GRID_RESOLUTION_DEGREES) > _GRID_TOL_DEGREES
+            or abs(xsh) > _GRID_TOL_DEGREES
+            or abs(ysh) > _GRID_TOL_DEGREES):
+        raise JRCWindowComparisonBlocked(f"{name}: non-native resolution, rotation or shear")
+    # Validate corners of the supplied window, not just pixel resolution.
+    x0 = xs * grid["left"] + xsh * grid["top"] + xt
+    y0 = ysh * grid["left"] + ys * grid["top"] + yt
+    x1 = x0 + xs * grid["width"] + xsh * grid["height"]
+    y1 = y0 + ysh * grid["width"] + ys * grid["height"]
+    if not (-180 <= x0 <= 180 and -180 <= x1 <= 180
+            and -90 <= y0 <= 90 and -90 <= y1 <= 90):
+        raise JRCWindowComparisonBlocked(f"{name}: window beyond geographic coordinates")
+    return {
+        "crs": grid["crs"],
+        "window_width": grid["width"],
+        "window_height": grid["height"],
+        "upper_left": (x0, y0),
+        "lower_right": (x1, y1),
+    }
+
+
+def inspect_supplied_native_window_grid_pair(
+    geotiff_grid: dict[str, object], earth_engine_grid: dict[str, object],
+) -> dict[str, object]:
+    """Require consistent *supplied* grid coordinates, not original-source proof.
+
+    The two sources may have different parent raster origins and dimensions:
+    a JRC 10-degree TIFF tile may be paired with a window in a global GEE
+    asset. Per-source native grids, window offsets and native resolution
+    must lead to the *same* four geographic window corner coordinates.
+    """
+    a = _supplied_grid(geotiff_grid, "GeoTIFF")
+    b = _supplied_grid(earth_engine_grid, "GEE")
+    if (a["window_width"], a["window_height"]) != (
+            b["window_width"], b["window_height"]):
+        raise JRCWindowComparisonBlocked("GeoTIFF/GEE window shapes differ")
+    for corner in ("upper_left", "lower_right"):
+        if any(abs(av - bv) > _GRID_TOL_DEGREES for av, bv in zip(a[corner], b[corner])):
+            raise JRCWindowComparisonBlocked(
+                "GeoTIFF/GEE window native affine locations differ"
+            )
+    return {
+        "profile": "jrc-gsw-v15-native-supplied-grid-pair-offline-v0",
+        "source_id": SOURCE_ID,
+        "native_grid_crs_expected": "EPSG:4326",
+        "native_pixel_size_degrees_expected": _GRID_RESOLUTION_DEGREES,
+        "caller_supplied_grid_metadata_compatible": True,
+        "caller_supplied_window_width": a["window_width"],
+        "caller_supplied_window_height": a["window_height"],
+        "caller_supplied_window_pixel_count": a["window_width"] * a["window_height"],
+        "grid_metadata_provider_authenticated": False,
+        "geospatial_grid_alignment_independently_verified": False,
+        "native_unresampled_source_data_independently_verified": False,
+        "post_2026_11_10_correction_verified": False,
+        "model_input_approved": False,
+    }
+
+
+def compare_native_occurrence_windows_with_grid(
+    geotiff_occurrence: bytes,
+    earth_engine_occurrence: list[int | float | None] | tuple[int | float | None, ...],
+    earth_engine_mask: list[int | float] | tuple[int | float, ...],
+    geotiff_grid: dict[str, object], earth_engine_grid: dict[str, object],
+) -> dict[str, object]:
+    """Compare values only after fail-closed caller-provided grid preflight.
+
+    Numeric match still cannot authenticate native/reviewed source pixels.
+    """
+    grid = inspect_supplied_native_window_grid_pair(geotiff_grid, earth_engine_grid)
+    if len(geotiff_occurrence) != grid["caller_supplied_window_pixel_count"]:
+        raise JRCWindowComparisonBlocked("decoded source pixels do not fit supplied window")
+    result = compare_native_occurrence_windows(
+        geotiff_occurrence, earth_engine_occurrence, earth_engine_mask
+    )
+    return {**result, **grid}
