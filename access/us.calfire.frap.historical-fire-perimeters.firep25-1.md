@@ -30,7 +30,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Service root:** <https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/California_Fire_Perimeters/FeatureServer>
 
-**Api version:** CAL FIRE FRAP firep25_1, April 2026 (public ArcGIS FeatureServer layer 0)
+**Api version:** Frozen CAL FIRE FRAP firep25_1, published April 2026; 2026-09-30 mutable CA Open Data ArcGIS resource and 2026-11-11 catalogue updates are NOT independently proven identical to firep25_1
 
 ## Access scope
 
@@ -80,7 +80,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Rate limit notes:** Do not automate, query or crawl the ArcGIS service until exact API terms, release-specific rights and a separately fixed metadata-only recipe have been reviewed.
 
-**Mutability notes:** Public service is mutable and historical shapes/attributes are corrected in later releases. Source edition firep25_1 must be frozen separately from the current API's present bytes, along with UTC, request identity, byte count and SHA-256. May 2026 source description says firep25_1 is the current edition.
+**Mutability notes:** Public service is mutable and historical shapes/attributes are corrected in later releases. Source edition firep25_1 must be frozen separately from the current API's present bytes, along with UTC, request identity, byte count and SHA-256. May 2026 source description says firep25_1 is the current edition. Official FRAP release notes independently confirm firep25_1 released April 2026; 516 2025 fires added, five fire polygons replaced, one duplicate removed, one prescribed-burn polygon transferred to rxburn25_1, and 12,097 collection-method NULLs set to Unknown. This matters to negative-missingness tests and event identity. California portal 'California Fire Perimeters (all)' now reports catalogue updated 2026-11-11 with resources updated 2026-09-30; a separate 'California Fire Perimeters (1950+)' dataset has a distinct publisher dataset identifier and 2026-10-08 metadata update. Neither is proof of the frozen April firep25_1 bytes.
 
 ## Rights and policy
 
@@ -94,7 +94,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** unknown
 
-**Notes:** State public portal identifies 'Creative Commons Attribution' and no public-use restrictions. Specific data-file attribution, exact version and API service-automation terms have not passed source-specific rights review; the contract thus cannot authorize sample download or public redistribution of derived geometry.
+**Notes:** State public portal identifies 'Creative Commons Attribution' and no public-use restrictions. Specific data-file attribution, exact version and API service-automation terms have not passed source-specific rights review; the contract thus cannot authorize sample download or public redistribution of derived geometry. Authoritative CAL FIRE portal currently labels the general '(all)' and separate '(1950+)' catalogue products Creative Commons Attribution, access level public and no restrictions on public use (checked 2026-11-14). They have different identifiers; the mutable Sep/Nov 2026 resource must not silently be relabelled the April 2026 firep25_1 release. Exact published original release-file licence/attribution and ArcGIS service terms remain unreviewed, so automation and redistribution are not granted.
 
 ## Probe contract
 
@@ -110,12 +110,13 @@ _Empty array._
 
 **Implementation decision:** document_only
 
-**Reviewed at:** 2026-11-01
+**Reviewed at:** 2026-11-14
 
 ## Evidence urls
 
 - <https://publish.data.ca.gov/dataset/california-fire-perimeters-all>
 - <https://www.fire.ca.gov/what-we-do/fire-resource-assessment-program/fire-perimeters>
 - <https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/California_Fire_Perimeters/FeatureServer>
+- <https://publish.data.ca.gov/dataset/california-fire-perimeters-1950>
 
-**Notes:** T0 documented service item and fixed layer 0 without consuming original metadata response bytes. Full versions and valid incident-identifier crosswalk with DINS remain unproven. This access record is a source-usage boundary, not an execution receipt or admission.
+**Notes:** T0 documented service item and fixed layer 0 without consuming original metadata response bytes. Full versions and valid incident-identifier crosswalk with DINS remain unproven. This access record is a source-usage boundary, not an execution receipt or admission. Verified release/portal identity split on 2026-11-14 using official CAL FIRE and California government data catalogue pages. T0 documentary evidence only; no live ArcGIS GET, feature query, geometry, original byte sample, persisted receipt, Neon write or model admission. Next causal action: identify and freeze original April firep25_1 source asset or prove byte/edition equivalence of the current provider resource, then review its exact dataset and service terms before designing any bounded probe.
