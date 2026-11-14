@@ -81,6 +81,28 @@ estimate, a global buildings register, a loss model or verified insurer TIV.
   represents standalone insured buildings. Record source credit and
   any derivative modifications for BOTH data products.
 
+## Actually executed: five live, read-only Neon source-integrity challenges
+
+On **2026-11-14**, the committed SQL `bavaria_hu_by_wsf2019_original_pair_readiness_v0.sql`
+was executed against the existing `insurance/main` research samples.
+No source raster rows/polygons or personal/building IDs were returned;
+only per-window aggregate values. The following experiments modified
+the **query in memory only**, **never database data**:
+
+| Live query | Source-consistent receipt rows | Expected result |
+| --- | ---: | --- |
+| Exact committed source SHA/mask/vintage/area checks | **2** (#56/#57) | Both original windows pass |
+| Tamper BVV research sample #56 canonical JSONB SHA | **1** (#57 only) | Corrupted source evidence excluded |
+| Tamper both pinned native WSF mask digests | **0** | Both source combinations excluded |
+| Falsely claim 2019 and BVV source have same vintage | **0** | Temporal-gate drift excluded |
+| Tamper full original BVV SHP decompressed SHA-256 | **0** | Both original-source claims excluded |
+
+These are actual SQL readbacks exercising the committed query predicates,
+not invented figures or permission to import original polygons.
+The source dataset rows and their SHA fields were **not modified**.
+Although both source products publish CC BY 4.0, model admission and
+API service-specific automation/rate limits remain independent reviews.
+
 ## Scientific limits: these TWO IoU numbers cannot be pooled
 
 **Luxembourg** measures a *building-versus-building geometric identity
