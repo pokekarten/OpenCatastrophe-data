@@ -33,6 +33,16 @@ The output option refuses to overwrite a receipt. It writes an aggregate-only
 JSON receipt at the chosen local path. Original hourly DWD and gridded CLIMK
 observations are held in memory only and are not written into the repository.
 
+## Aktualisierte Interpretation der Zeitaggregation
+
+Der [räumliche Kyrill-Rekonstruktionsvergleich](kyrill-climk-arco-hourly-reconstruction.md)
+findet Übereinstimmung mit Dreitagesmaxima in allen 2.090 geprüften positiven
+CLIMK-Zellen, während einzelne Tagesmaxima nicht überall passen. Die folgende
+Tagesauswertung bleibt eine Sensitivität; ihre zeitliche Harmonisierung mit
+CLIMK ist nicht nachgewiesen. Die Formulierung „daily maximum“ allein belegt
+kein einzelnes Tagesfeld. Für einen primären Stationsvergleich sind das
+Dreitagesfenster und dessen Randstunden je Ereignis zu rekonstruieren.
+
 ## Hour-ending correction
 
 The numerical tables were replayed from the pinned original CLIMK and DWD

@@ -45,3 +45,34 @@ Schadenkurven oder Frequenzen kalibriert.
 Attribution: Copernicus Climate Change Service (C3S), Google Research
 ARCO-ERA5; Copernicus Licence. CLIMK-WINDS: Flynn et al. (2025), Zenodo
 15305753, CC BY 4.0.
+
+## Räumliche Erweiterung: Tages- gegen Dreitagesmaximum
+
+Ein weiterer Originaldownload derselben 73 Stunden wurde auf dem gemeinsamen
+0,25°-Raster 0–16° E und 45–56° N ausgewertet. Die Zuordnung verwendet
+CLIMK-Zeilen 64:109 und Spalten 88:153 sowie ARCO-Zeilen 136:181 und
+Spalten 0:65. Die unterschiedlichen Ursprünge der beiden Raster sind dabei
+explizit berücksichtigt. Ausgewertet wurden 2.090 positive CLIMK-Zellen;
+Nullwerte außerhalb des ausgewählten Footprints wurden ausgeschlossen.
+
+| ARCO-Fenster | Zellen mit absoluter Differenz <0,01 m/s | Mittlere absolute Differenz (m/s) |
+|---|---:|---:|
+| 18. Januar, Labels 00–23 | 1834 | 0,807258 |
+| 18. Januar, Endpunkte 01–24 | 1902 | 0,582004 |
+| 17.–19. Januar, Labels 00–23 | 2090 | 0,000467 |
+| 17.–19. Januar, Endpunkte 01–24 | 2090 | 0,000467 |
+
+In 201 Zellen unterscheidet sich das Dreitagesmaximum um mehr als 1 m/s vom
+Maximum der 18.-Januar-Labels 00–23. Die räumliche Erweiterung kann daher die
+Tageshypothese tatsächlich prüfen. Die Ergebnisse unterstützen für Kyrill
+in diesem Ausschnitt die Interpretation als Maximum über drei Tage aus
+täglichen Maxima. Die frühere Ableitung, CLIMK sei allein wegen der
+Formulierung „daily maximum“ ein einzelnes Tagesfeld, war nicht ausreichend
+belegt. Ein Vergleich ausschließlich mit dem DWD-Storm_Dates-Tag ist eine
+Sensitivität und darf nicht als nachgewiesene zeitliche Harmonisierung gelten.
+
+Beide Dreitagesgrenzen liefern dieselben Maxima. Die Untersuchung entscheidet
+daher weiterhin nicht zwischen Stundenlabels 00–23 und Endpunkten 01–24.
+Auch andere Ereignisse, Quellenfamilien und außerhalb des Ausschnitts liegende
+Zellen sind damit nicht nachgewiesen. Die geringe Restabweichung ist keine
+Byteparität und identifiziert keine bestimmte Packungs- oder Versionsursache.
