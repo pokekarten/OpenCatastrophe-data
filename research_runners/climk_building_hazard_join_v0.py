@@ -42,6 +42,7 @@ def main():
     p.add_argument('--buildings',type=Path,required=True,help='CSV: building_id,longitude,latitude')
     p.add_argument('--source',type=Path)
     p.add_argument('--storm-index',type=int,default=0)
+    p.add_argument('--bounds',type=float,nargs=4,default=(5,47,16,56),metavar=('WEST','SOUTH','EAST','NORTH'))
     p.add_argument('--output',type=Path,required=True)
     args=p.parse_args()
     if args.output.exists(): p.error('output already exists')
@@ -51,7 +52,7 @@ def main():
             p.error('expected exactly building_id,longitude,latitude')
         points=list(reader)
     if not 1<=len(points)<=10000: p.error('expected 1..10000 building points')
-    hazard=export(args.source.read_bytes() if args.source else fetch_provider_bytes(),args.storm_index)
+    hazard=export(args.source.read_bytes() if args.source else fetch_provider_bytes(),args.storm_index,args.bounds)
     rows=join_points(hazard['features'],points)
     result={'hazard_metadata':hazard['metadata'],'building_count':len(rows),
             'boundary_rule':'west/south inclusive, east/north exclusive',

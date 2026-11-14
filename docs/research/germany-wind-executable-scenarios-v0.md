@@ -83,3 +83,29 @@ external reference curve: **50 completed, 0 blocked**. This establishes the
 scenario pipeline on that example portfolio. It does not establish complete
 weather support at other buildings. The exporter reads each event field once
 before cell extraction to avoid repeated NetCDF decompression per cell.
+
+## Europe architecture, Germany first validation
+
+A common European event domain is appropriate because a single windstorm
+can damage several countries. Preserve the physical source event identity
+and native area-peril IDs across national portfolios; do not simulate country
+losses independently and then call their sum one European storm. Exposure
+values, valuation years, building classes, response calibration and policy
+terms still need country-specific evidence. A generic European response curve
+is a reference assumption rather than evidence of transferability.
+
+The map, point crosswalk and scenario CLI now accept
+`--bounds WEST SOUTH EAST NORTH`; default remains the Germany bounding box.
+A local original-source Kyrill replay over `--bounds -5 45 16 56` exported
+3825 cells and successfully mapped fictional probes in London, Paris and
+Cologne to native IDs 22147, 25115 and 22713. Their source gusts were
+34.37997265538519, 22.87145170942648 and 33.411881663861934 m/s respectively.
+This proves common-event spatial lookup, not cross-country loss calibration.
+The selected source footprint and its missing-value support remain binding;
+a requested bounding box does not expand the provider's actual data domain.
+
+Existing Impact Forecasting EUWS scenarios are useful model comparisons:
+the source inventory describes Ciaran/Domingos deterministic scenarios and
+multiple footprint interpolation alternatives. Empty occurrence data do not
+supply an annual stochastic catalogue. CLIMK and the European response
+reference are already acquired building blocks for our own implementation.

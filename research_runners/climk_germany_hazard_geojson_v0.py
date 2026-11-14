@@ -26,13 +26,23 @@ def cell_polygon(latitudes, longitudes, row, col):
     return [[[west,south],[east,south],[east,north],[west,north],[west,south]]]
 
 
-def export(original: bytes, storm_index: int) -> dict:
+def validate_bounds(bounds):
+    if len(bounds)!=4 or any(type(v) not in (int,float) or not math.isfinite(v) for v in bounds):
+        raise ValueError('four finite west south east north bounds required')
+    west,south,east,north=bounds
+    if not -180<=west<east<=180 or not -90<=south<north<=90:
+        raise ValueError('invalid geographic bounds')
+    return west,south,east,north
+
+
+def export(original: bytes, storm_index: int, bounds=(5.0,47.0,16.0,56.0)) -> dict:
     import numpy as np
     from netCDF4 import Dataset
     if type(storm_index) is not int or not 0<=storm_index<50:
         raise ValueError('source storm index must be 0..49')
     verify_source_bytes(original,require_sha256=True)
     inspect_netcdf_header(original)
+    west,south,east,north=validate_bounds(bounds)
     features=[]; missing=0
     with Dataset('climk-map',mode='r',memory=original) as ds:
         lat=[float(v) for v in ds.variables['latitude'][:]]
@@ -41,9 +51,9 @@ def export(original: bytes, storm_index: int) -> dict:
         date=str(ds.variables['Storm_Dates'][storm_index]).strip()
         field=ds.variables['absolute_maxwindgusts'][storm_index,:,:]
         for row,y in enumerate(lat):
-            if not 47<=y<=56: continue
+            if not south<=y<=north: continue
             for col,x in enumerate(lon):
-                if not 5<=x<=16: continue
+                if not west<=x<=east: continue
                 value=field[row,col]
                 if np.ma.is_masked(value):
                     gust=None; missing+=1
@@ -60,7 +70,8 @@ def export(original: bytes, storm_index: int) -> dict:
         'profile':'CLIMK_GERMANY_BBOX_NATIVE_GUST_MAP_V0','storm_index':storm_index,
         'storm_name':name,'provider_date_label':date,'source_sha256':PINNED_SHA256,
         'source':'CLIMK-WINDS v2 ERA5; Flynn et al. (2025); Zenodo 15305753; CC BY 4.0',
-        'selection':'native cell centres within 5..16 E, 47..56 N; bounding box includes neighbouring countries',
+        'selection':'native cell centres inside requested bounding box; not country-boundary clipped',
+        'bounds_west_south_east_north':[west,south,east,north],
         'geometry':'native grid centre midpoints; longitude latitude WGS84',
         'gust_measure':'source absolute_maxwindgusts; 72h footprint maximum 3-second gust; m/s',
         'cell_count':len(features),'missing_cells':missing,
@@ -73,9 +84,10 @@ def main():
     p.add_argument('--source',type=Path,help='local original NetCDF; omitted: fetch publisher')
     p.add_argument('--storm-index',type=int,default=0)
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--bounds',type=float,nargs=4,default=(5,47,16,56),metavar=('WEST','SOUTH','EAST','NORTH'))
     args=p.parse_args()
     if args.output.exists(): p.error('output already exists')
-    result=export(args.source.read_bytes() if args.source else fetch_provider_bytes(),args.storm_index)
+    result=export(args.source.read_bytes() if args.source else fetch_provider_bytes(),args.storm_index,args.bounds)
     with args.output.open('x') as f: json.dump(result,f,allow_nan=False)
     print(json.dumps(result['metadata'],sort_keys=True))
 

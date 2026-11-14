@@ -66,6 +66,7 @@ def main():
     p.add_argument('--curve',type=Path,required=True)
     p.add_argument('--curve-label',required=True)
     p.add_argument('--storm-index',type=int,default=0)
+    p.add_argument('--bounds',type=float,nargs=4,default=(5,47,16,56),metavar=('WEST','SOUTH','EAST','NORTH'))
     p.add_argument('--all-storms',action='store_true',help='evaluate all 50 selected source scenarios; no annual weights')
     p.add_argument('--output',type=Path,required=True)
     args=p.parse_args()
@@ -80,7 +81,7 @@ def main():
     if args.all_storms:
         scenarios=[]
         for index in range(50):
-            hazard=export(source,index)
+            hazard=export(source,index,args.bounds)
             try:
                 outcome=calculate(hazard,portfolio,curve)
                 scenarios.append(dict(storm_index=index,status='completed',**outcome))
@@ -90,7 +91,7 @@ def main():
                 'completed':sum(r['status']=='completed' for r in scenarios),
                 'annual_frequency_established':False,'germany_calibrated':False}
     else:
-        result=calculate(export(source,args.storm_index),portfolio,curve)
+        result=calculate(export(source,args.storm_index,args.bounds),portfolio,curve)
     result.update(curve_label=args.curve_label,
                   curve_sha256=hashlib.sha256(args.curve.read_bytes()).hexdigest(),
                   portfolio_sha256=hashlib.sha256(args.portfolio.read_bytes()).hexdigest())
