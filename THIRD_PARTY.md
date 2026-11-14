@@ -28,15 +28,17 @@ The direct PyYAML version is exact but wheel/source hashes are not pinned in thi
 ## Validation-only historical building spatial dependencies
 
 The French 2016 BD TOPO / RNB geometry research tests added by PR #937
-require the exact validation pins `pyproj==3.7.2` (MIT), `shapely==2.2.0`
-(BSD-3-Clause) and `pyshp==2.3.1` (MIT). `pyproj` and `shapely` are
-already declared in `requirements-eu-flood-spatial.txt`; `pyshp` is
-pinned explicitly in the synthetic geometry GitHub Actions jobs.
+run in the general validation job with `shapely==2.1.2` (BSD-3-Clause)
+from `requirements-validation.txt`, together with an explicitly pinned
+`pyproj==3.7.2` (MIT) and `pyshp==2.3.1` (MIT). The independent EU
+flood spatial job installs `requirements-eu-flood-spatial.txt`, with
+`shapely==2.2.0` and `pyproj==3.7.2`. The two incompatible Shapely
+versions must **not** be installed in one Python environment.
 These are test/research dependencies only: they neither admit the 2016
 archive's original data rights nor permit real CAT model use.
-The PR #1107 validation-dependency claim additionally declares all three
-for eventual consolidation; no `requirements-validation.txt` edit is
-made here to avoid conflicting active PR writers.
+The PR #1107 validation-dependency claim additionally proposes separate
+dependency consolidation. This PR does not change `requirements-validation.txt`
+and avoids overlapping active PR writers.
 
 ## Acquisition-only scientific I/O dependency
 
