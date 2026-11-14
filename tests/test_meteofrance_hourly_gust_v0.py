@@ -5,7 +5,8 @@ from __future__ import annotations
 import gzip
 import json
 import unittest
-from research_runners.meteofrance_hourly_gust_v0 import Blocked, audit_gzip, resolve_resource, verify_dictionary
+from research_runners.meteofrance_hourly_gust_v0 import (Blocked, audit_gzip, resolve_resource, verify_dictionary,
+    RESOURCE_ID, ORIGINAL_RESOURCE_URL, ORIGINAL_RESOURCE_BYTES, ORIGINAL_RESOURCE_SHA256, _RejectRedirects)
 
 
 HEADER = 'NUM_POSTE;AAAAMMJJHH;FF;FXI;FXI3S;QFXI3S;STATUS_FXI3S;LAT\n'
@@ -45,14 +46,32 @@ class TestOriginalGust(unittest.TestCase):
 
     def test_frozen_resource_identity(self):
         base = {'title': 'HOR_departement_75_periode_2020-2024',
-                'url': 'https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/HOR/H_75_previous-2020-2024.csv.gz',
-                'id': 'placeholder-public-resource', 'filesize': 2000000}
+                'url': ORIGINAL_RESOURCE_URL,
+                'id': RESOURCE_ID, 'filesize': ORIGINAL_RESOURCE_BYTES}
         resolved = resolve_resource(json.dumps({'resources': [base]}).encode())
-        self.assertEqual(resolved['declared_bytes'], 2000000)
+        self.assertEqual(resolved['declared_bytes'], ORIGINAL_RESOURCE_BYTES)
+        self.assertEqual(resolved['resource_id'], RESOURCE_ID)
+        self.assertEqual(len(ORIGINAL_RESOURCE_SHA256), 64)
         with self.assertRaises(Blocked):
             resolve_resource(json.dumps({'resources': [base, base]}).encode())
-        with self.assertRaises(Blocked):
-            resolve_resource(json.dumps({'resources': [{**base, 'url': 'https://example.org/dummy-not-official'}]}).encode())
+        for change in [
+            {'url': 'http://127.0.0.1/secret'},
+            {'url': ORIGINAL_RESOURCE_URL + '.repacked'},
+            {'id': 'different-resource-id'},
+            {'filesize': ORIGINAL_RESOURCE_BYTES + 1},
+            {'filesize': None},
+        ]:
+            with self.subTest(change=change), self.assertRaises(Blocked):
+                resolve_resource(json.dumps({'resources': [{**base, **change}]}).encode())
+
+    def test_redirect_handler_rejects_pre_follow(self):
+        # This must reject before urllib issues a second request to the
+        # Location target, not merely inspect response.geturl afterwards.
+        handler = _RejectRedirects()
+        for target in ('https://attacker.example/steal',
+                       'http://169.254.169.254/latest/meta-data/'):
+            with self.subTest(target=target), self.assertRaisesRegex(Blocked, 'redirect'):
+                handler.redirect_request(None, None, 302, 'Found', {}, target)
 
     def test_dictionary_terms(self):
         d = ('FF: force du vent moyenné sur 10 mn\n'
