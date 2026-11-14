@@ -109,15 +109,20 @@ The downloaded construction curve CSV has its second and third columns named
 `outbuilding strong` and `outbuilding`, whereas the published CLIMAAX notebook
 sets its `building_types` list to `outbuilding` then `strong outbuilding` and
 combines them with positional `iloc[:, 1]` and `iloc[:, 2]`. Under the literal
-column names, the two weights are reversed. At 40 m/s the curve values are
-5.5% for `outbuilding strong` and 0.8% for `outbuilding`; LUISA class 2110
-assigns a 50% regular-outbuilding share and zero strong-outbuilding share. A
-name-resolved mixture is therefore 0.40%, while the notebook's positional
-mixture gives 2.75%. This is a measured source-code/data-label discrepancy;
-it does not establish which source label or workflow line should be changed.
-Until the intended semantics are resolved, no mixed LUISA curves are admitted
-to the integrated model. The existing explicit single-response pathway is
-unaffected. See the audit TOML for pinned hashes and details.
+column names, the two weights are reversed. An earlier note incorrectly
+presented 0.40% versus 2.75% as complete LUISA class-2110 curves; those values
+are only the disputed regular-outbuilding component. Class 2110 also has a
+50% weakest-outbuilding share. At 40 m/s the complete name-resolved curve is
+29.40%; exact notebook positional reproduction is 31.75%, a 2.35 percentage-
+point difference. A source-pinned comparison across all 46 classes and 141
+wind-speed knots finds the mappings differ for 29 classes, with a maximum
+absolute difference of 32.5 percentage points. Upstream history confirms the
+label/order ambiguity was present in the first available 2023 curve file and
+notebook and persists in the pinned 2026 source; it does not reveal the
+authors' intended correction. Therefore neither mixed curve is promoted.
+The existing explicit single-response path remains unaffected. See the
+[corrected full-class comparison](windstorm-europe-luisa-mixture-sensitivity-v0.md)
+and audit TOML for per-class results and hashes.
 
 ## What changed in the model
 
