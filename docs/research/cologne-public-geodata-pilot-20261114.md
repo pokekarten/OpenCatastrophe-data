@@ -170,7 +170,7 @@ transformation is **only a hypothesis check**, not proof of correct CRS
 for all features or permission to overlay model hazard data.
 
 The single-feature reader deliberately returns
-`coordinate_status=not_approved_geographic_crs_must_reproject_and_verify`
+`coordinate_status=projected_epsg25832_hypothesis_only_not_model_approved`
 for tree results; no model admission is made for either source. The next
 spatial challenge should verify multiple well-distributed original tree
 points against independently authoritative Cologne geometry, then pin
@@ -204,9 +204,10 @@ from EPSG:25832 to EPSG:4326 (explicit `always_xy=True`). The five
 resulting points fell within the independent city KGG Stadtviertel
 WGS84BoundingBox of longitude `6.80547870..7.16330759`, latitude
 `50.83135123..51.09018683`. Their transformed longitude span was
-approximately 0.162° and latitude span 0.100°. **This is a bounding-box
-plausibility test, NOT point-in-polygon membership, verified horizontal
-accuracy, model exposure or proof that all features use EPSG:25832.**
+approximately 0.162° and latitude span 0.100°. **This original five-offset observation was initially only a bounding-box
+plausibility test. The independently executed Stadtteil polygon intersection
+challenge is documented below; neither constitutes verified horizontal
+positional accuracy, model exposure or proof that all features use EPSG:25832.**
 
 A new bounded replay runner performs six original GETs (five sorted
 offsets plus a repeat of index zero) and prints only byte hashes, hashed
@@ -227,11 +228,79 @@ replay identity/geometry. It deliberately never writes external data bytes.
 Passing these checks does **not** flip `rights_review_status`,
 `scientific_review_status` or `admission_status`.
 
-Before any spatial join to building exposures, challenge an independently
-selected set of tree points against authoritative Cologne geometries
-using explicit conversion and a documented source CRS, quantify positional
-error rather than just a bounding-box pass, and freeze a provider snapshot
-or stable feature IDs/versions to avoid silent daily-update drift.
+Before a model-ready spatial join to building exposures, quantify independent
+positional error using an authoritative surveyed reference, not just the
+city-area polygon intersection below. Freeze a source vintage/snapshot
+or independently versioned feature identities to prevent daily-update drift.
+
+### Independent city and Stadtteil polygon-intersection challenge
+
+On 2026-11-14 the publicly documented municipal KGG MapServer REST
+metadata `https://geoportal.stadt-koeln.de/arcgis/rest/services/basiskarten/kgg/MapServer?f=pjson`
+identified authoritative polygon layers **3 = Stadtteil** and
+**5 = Köln**. This is the same published KGG geography service represented
+by its official WFS, not a third-party reverse geocoder.
+
+The five previously selected *sorted* tree WFS Point samples were
+reprojected locally with `pyproj` from the service's hypothesized source
+EPSG:25832 to geographic EPSG:4326. For each location the exact official
+KGG server performed a **point/polygon spatial intersection**, not just
+a coordinate-envelope lookup:
+
+- `MapServer/5/query`, `geometryType=esriGeometryPoint`,
+  `inSR=4326`, `spatialRel=esriSpatialRelIntersects`,
+  `returnCountOnly=true`: **5/5 tree points matched exactly one
+  Köln polygon**.
+- A fixed *outside-city negative control* located in Berlin returned
+  **0 city polygon matches**.
+- `MapServer/3/query`, with identical point and spatial relation,
+  `returnGeometry=false`, `outFields=name,nummer`: **5/5 points
+  matched exactly one official Stadtteil polygon**.
+- The tree dataset carried four non-empty `Stadtteil` labels for these
+  five samples; **4/4 agreed exactly** with the independent polygon
+  assignment (`Merheim`, `Deutz`, `Sülz`, `Seeberg`).
+  **1/5 tree records lacked a source Stadtteil label** even though the
+  official polygon service assigned an area (Dellbrück). This is a
+  documented missing-attribute defect, not a licence to silently impute
+  the missing source field.
+- An additional Berlin negative control against the official
+  `MapServer/3` Stadtteil service returned **0 features**.
+
+No original source polygon geometries, tree IDs, individual tree positions,
+or first-party data features have been committed. This is a reproducible
+**provider-side polygon intersection challenge**. It is stronger than
+an envelope test but **not an independent survey control**, measured
+horizontal positional uncertainty, geometry freshness audit, or proof that
+every Baumkataster feature is in the city / correct city district.
+
+The new optional runner uses the fixed `SORTBY=Baumnummer`,
+`COUNT=1`, `STARTINDEX` sample offsets, a sorted-first-object
+identity/coordinates replay check, explicit `pyproj` reprojection,
+five provider-side polygon queries, and one negative query:
+
+```bash
+python -m unittest tests.test_cologne_tree_polygon_challenge_v0
+python -m pip install -r requirements-eu-flood-spatial.txt
+python research_runners/cologne_tree_polygon_challenge_v0.py --live
+```
+
+Only the exact provider KGG `MapServer/3/query` endpoint is permitted
+for the science canary. It requests no source geometry or other administrative
+fields, requires exactly one positive polygon per tree, rejects mismatched
+non-empty source district labels and malformed responses, and records
+only aggregate counts/hash identities rather than raw geospatial features.
+This uses **6 bounded tree calls + 5 bounded KGG city-district point
+queries + 1 fixed Berlin negative control**. It is not scheduled polling.
+The ArcGIS REST interface must undergo any separate required endpoint/service
+policy review before it is promoted to a reusable production adapter;
+the already accepted WFS access contract does not silently expand to REST.
+
+**Important limits:** the static five-offset sample is not statistically
+representative; polygons and tree attributes both originate with the
+municipality and may share administrative inaccuracies; a point/polygon
+intersection is not a measured spatial error; daily tree updates and
+current city boundaries are not synchronized snapshots. Scientific-review
+and asset admission stay **not reviewed / not admitted**.
 
 These receipts are ephemeral observations at the date above, not frozen
 complete provider files and not an approved warehouse import.
