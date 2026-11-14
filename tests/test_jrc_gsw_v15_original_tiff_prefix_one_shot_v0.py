@@ -128,7 +128,7 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
             self.assertEqual(req.full_url, jrc.SOURCE_URL)
             self.assertEqual(req.get_method(), "GET")
             self.assertEqual(req.get_header("Range"), "bytes=0-4095")
-            self.assertEqual(req.get_header("Accept-Encoding"), "identity")
+            self.assertEqual(req.get_header("Accept-encoding"), "identity")
             self.assertEqual(timeout, 20)
             return response
         result = jrc.probe_original_prefix(p, c, open_request=fake_open)
