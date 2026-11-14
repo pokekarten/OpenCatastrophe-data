@@ -16,6 +16,7 @@ import csv
 import hashlib
 import json
 import math
+from datetime import datetime
 from pathlib import Path
 import re
 
@@ -68,8 +69,13 @@ def audit_rows(reader: object, *, expected_columns: int = PINNED_COLUMNS,
         if len(row) != expected_columns:
             raise IBTrACSAuditError("ragged original CSV observation")
         sid = row[index["SID"]].strip()
-        if not sid or not ISO_TIME.fullmatch(row[index["ISO_TIME"]].strip()):
+        iso_time = row[index["ISO_TIME"]].strip()
+        if not sid or not ISO_TIME.fullmatch(iso_time):
             raise IBTrACSAuditError("missing SID or malformed ISO_TIME")
+        try:
+            datetime.strptime(iso_time, "%Y-%m-%d %H:%M:%S")
+        except ValueError as exc:
+            raise IBTrACSAuditError("invalid native ISO_TIME calendar date/time") from exc
         storm_ids.add(sid)
         try:
             lat, lon = float(row[index["LAT"]]), float(row[index["LON"]])
