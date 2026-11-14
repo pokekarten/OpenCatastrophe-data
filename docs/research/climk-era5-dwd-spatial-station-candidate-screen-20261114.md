@@ -36,6 +36,13 @@ The JSON receipt is aggregate-only and written exclusively to the requested
 local path. Hourly DWD readings, CLIMK event rows and station-by-event series
 are held in memory and are not written to the repository.
 
+## Hour-ending correction
+
+The numerical tables were replayed from the pinned original CLIMK and DWD
+files using V3 hour-ending labels 01:00 through 00:00 of the following date.
+These represent Storm_Dates 00:00–24:00 UTC in DWD. CLIMK day-boundary and
+gust-duration equivalence remain unproven.
+
 ## Coverage and results
 
 Fourteen of the 15 downloaded candidate archives could be checked against
@@ -57,21 +64,21 @@ terrain adjustment was made.
 
 | Station | Archive-supported event windows | DWD windows with readings | Complete 72h context | Complete Storm_Dates days | Complete days, all QN_8=3 | Sensor height (m AGL) | Station elevation (m) | Mean paired difference CLIMK−DWD (m/s) | Mean absolute paired difference (m/s) | RMS paired difference (m/s) | Pearson r |
 |---|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|
-| 00183 Arkona | 50 | 50 | 28 | 28 | 23 | 24 | 42 | −9.03 | 10.92 | 13.84 | 0.729 |
-| 00222 Aue | 37 | 36 | 12 | 14 | 10 | 13 | 391 | −4.75 | 12.82 | 14.01 | 0.554 |
-| 00460 Berus | 50 | 50 | 27 | 27 | 23 | 12 | 362.33–363 | −5.24 | 10.35 | 13.93 | 0.226 |
-| 01228 UFS TW Ems | 50 | 41 | 8 | 17 | 12 | 15 | 0 | −2.82 | 7.32 | 11.22 | 0.620 |
-| 01346 Feldberg/Schwarzwald | 50 | 50 | 27 | 28 | 22 | 18.4 | 1486.07 | −21.59 | 22.11 | 25.37 | 0.383 |
-| 01684 Görlitz | 50 | 50 | 29 | 29 | 23 | 12–13 | 238–238.48 | −7.66 | 11.81 | 14.55 | 0.331 |
+| 00183 Arkona | 50 | 50 | 28 | 28 | 23 | 24 | 42 | -8.96 | 11.13 | 13.83 | 0.722 |
+| 00222 Aue | 37 | 36 | 12 | 14 | 10 | 13 | 391 | -4.83 | 12.75 | 13.95 | 0.581 |
+| 00460 Berus | 50 | 50 | 27 | 27 | 23 | 12 | 362.33–363 | -5.28 | 10.39 | 14.04 | 0.210 |
+| 01228 UFS TW Ems | 50 | 41 | 8 | 17 | 12 | 15 | 0 | -2.76 | 7.38 | 11.23 | 0.616 |
+| 01346 Feldberg/Schwarzwald | 50 | 50 | 27 | 28 | 22 | 18.4 | 1486.07 | -21.66 | 22.03 | 25.33 | 0.401 |
+| 01684 Görlitz | 50 | 50 | 29 | 29 | 23 | 12–13 | 238–238.48 | -8.04 | 11.29 | 14.36 | 0.425 |
 | 01832 Großer Arber | 50 | — | — | — | — | — | — | blocked | — | — | — |
-| 01975 Hamburg-Fuhlsbüttel | 50 | 50 | 29 | 29 | 23 | 10 | 10.65–13 | −0.50 | 7.23 | 9.08 | 0.678 |
+| 01975 Hamburg-Fuhlsbüttel | 50 | 50 | 29 | 29 | 23 | 10 | 10.65–13 | -0.43 | 7.30 | 9.15 | 0.668 |
 | 02494 Kalkar | 43 | 20 | 0 | 0 | 0 | 10 | 31.33 | — | — | — | — |
-| 02925 Leinefelde | 50 | 50 | 28 | 29 | 23 | 11.6–12 | 355.87–356 | −1.23 | 7.78 | 10.21 | 0.525 |
-| 03032 List auf Sylt | 50 | 50 | 29 | 29 | 23 | 10–12 | 24.7 | −7.11 | 10.58 | 13.54 | 0.599 |
-| 03167 Bad Marienberg | 50 | 50 | 26 | 27 | 21 | 10–12 | 545.37–546.66 | 1.46 | 7.88 | 9.62 | 0.439 |
-| 03552 Neuruppin | 50 | 49 | 27 | 28 | 22 | 18 | 38.44 | −5.08 | 8.00 | 10.27 | 0.764 |
+| 02925 Leinefelde | 50 | 50 | 28 | 29 | 23 | 11.6–12 | 355.87–356 | -1.40 | 7.89 | 10.38 | 0.502 |
+| 03032 List auf Sylt | 50 | 50 | 29 | 29 | 23 | 10–12 | 24.7 | -7.11 | 10.56 | 13.48 | 0.606 |
+| 03167 Bad Marienberg | 50 | 50 | 26 | 27 | 21 | 10–12 | 545.37–546.66 | 1.42 | 7.84 | 9.60 | 0.442 |
+| 03552 Neuruppin | 50 | 49 | 27 | 28 | 22 | 18 | 38.44 | -5.23 | 8.29 | 10.37 | 0.756 |
 | 03603 Niederstetten | 50 | 21 | 0 | 0 | 0 | 10 | 463 | — | — | — | — |
-| 03730 Oberstdorf | 50 | 44 | 24 | 28 | 22 | 10 | 805.76–806 | 0.25 | 11.46 | 12.00 | 0.640 |
+| 03730 Oberstdorf | 50 | 44 | 24 | 28 | 22 | 10 | 805.76–806 | 0.10 | 11.68 | 12.23 | 0.601 |
 
 Among the 14 stations with verified event-era metadata, 12 have at least 10
 complete Storm_Dates days; two have none. An archive filename covering an
@@ -85,9 +92,9 @@ eight complete 72-hour context windows but 17 complete Storm_Dates days.
 The mean paired differences are negative at 10 of the 12 stations with at
 least one complete Storm_Dates day; two are positive. For example,
 Feldberg/Schwarzwald has a sensor at 18.4 m above ground and a reported
-station elevation near 1,486 m; its 28-day mean paired difference is −21.59
-m/s. Arkona's 24 m sensor has a −9.03 m/s mean paired difference, while
-10–12 m sensors at Hamburg and Bad Marienberg show −0.50 and 1.46 m/s. These
+station elevation near 1,486 m; its 28-day mean paired difference is −21.66
+m/s. Arkona's 24 m sensor has a −8.96 m/s mean paired difference, while
+10–12 m sensors at Hamburg and Bad Marienberg show −0.43 and 1.42 m/s. These
 arithmetic contrasts are not error metrics or grounds for a common
 multiplicative or additive correction. They highlight the unresolved role of
 sensor height, local terrain, exposure, offshore setting, historical siting

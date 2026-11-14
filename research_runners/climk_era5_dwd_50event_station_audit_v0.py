@@ -35,7 +35,7 @@ from scripts.inspect_climk_winds_era5_v0 import (
     EXPECTED_DIMENSIONS, EXPECTED_FIELDS, verify_source_bytes, fetch_provider_bytes,
 )
 
-SCHEMA = "CLIMK_ERA5_TOP50_DWD_ORIGINAL_STATION_DAILY_DATE_ALIGNMENT_V2"
+SCHEMA = "CLIMK_ERA5_TOP50_DWD_ORIGINAL_STATION_DAILY_HOUR_END_ALIGNMENT_V3"
 STATIONS = ("02667", "00603", "15200")
 CLIMK_PARAMETER_DESCRIPTION = (
     "absolute_maxwindgusts; daily maximum wind gust derived from hourly gust data, "
@@ -171,6 +171,12 @@ def summarize_windows(windows: list[dict]) -> dict:
         "partial_DWD_windows_imputed_or_used_in_primary_metrics": False,
         "sensor_height_adjustment_applied": False,
     }
+
+
+def daily_hour_end_labels(middle):
+    """UTC endpoints covering [Storm_Dates 00:00, next date 00:00]."""
+    return [(middle + timedelta(hours=h)).strftime("%Y%m%d%H")
+            for h in range(1, 25)]
 
 
 def _rows_from_metadata(raw: bytes, station_id: str) -> dict[str, list[dict]]:
@@ -394,8 +400,7 @@ def _climk_station_windows(source: bytes, station_id: str,
                     if stamp in observations:
                         paired.append(list(observations[stamp]))
                 storm_date_paired = []
-                for h in range(24):
-                    stamp = (middle+timedelta(hours=h)).strftime("%Y%m%d%H")
+                for stamp in daily_hour_end_labels(middle):
                     if stamp in observations:
                         storm_date_paired.append(list(observations[stamp]))
                 windows.append({
@@ -464,7 +469,7 @@ def analyze_sources(climk_bytes: bytes, dwd_archives: dict[str, bytes],
         "CLIMK_event_selection": "top 50 winter storms selected within ERA5 by LI3D severity; not a complete event set",
         "CLIMK_storm_date_label_semantics": "midpoint label of a 3-day LI3D event window",
         "DWD_event_context_window": "Storm_Dates minus one UTC calendar day through plus one day, inclusive (72 hourly labels); used for coverage only",
-        "DWD_daily_comparison_window": "the Storm_Dates UTC calendar date, 00:00 through 23:00 hourly labels (24 labels)",
+        "DWD_daily_comparison_window": "the Storm_Dates UTC calendar date, 01:00 through 00:00 of the following day, hour-ending UTC labels (24 labels)",
         "CLIMK_comparison_temporal_support": "absolute_maxwindgusts is a per-storm field described as a daily maximum; exact aggregation interval/time bounds are not given in variable metadata",
         "paired_values_have_proven_identical_temporal_support": False,
         "DWD_daily_calendar_date_aligned_to_CLIMK_Storm_Dates": True,
