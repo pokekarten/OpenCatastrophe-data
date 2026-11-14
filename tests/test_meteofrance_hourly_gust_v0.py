@@ -52,7 +52,7 @@ class TestOriginalGust(unittest.TestCase):
         with self.assertRaises(Blocked):
             resolve_resource(json.dumps({'resources': [base, base]}).encode())
         with self.assertRaises(Blocked):
-            resolve_resource(json.dumps({'resources': [{**base, 'url': 'http://127.0.0.1/secret'}]}).encode())
+            resolve_resource(json.dumps({'resources': [{**base, 'url': 'https://example.org/dummy-not-official'}]}).encode())
 
     def test_dictionary_terms(self):
         d = ('FF: force du vent moyenné sur 10 mn\n'
