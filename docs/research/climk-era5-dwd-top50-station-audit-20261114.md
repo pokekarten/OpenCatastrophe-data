@@ -33,6 +33,16 @@ The output option refuses to overwrite a receipt. It writes an aggregate-only
 JSON receipt at the chosen local path. Original hourly DWD and gridded CLIMK
 observations are held in memory only and are not written into the repository.
 
+## Hour-ending correction
+
+The numerical tables below record the earlier 00:00–23:00 label selection.
+Because FX_911 describes the preceding hour, those labels span 23:00 on the
+previous date to 23:00 on Storm_Dates, not the full calendar day. The V3
+audit now selects 01:00 through 00:00 of the following date to represent
+Storm_Dates 00:00–24:00 UTC. The tables require a V3 source replay before
+being used as calendar-day results. CLIMK day-boundary equivalence remains
+unproven.
+
 ## Same-date daily descriptive contrasts
 
 Only storm dates with all 24 DWD hourly observations on that calendar date

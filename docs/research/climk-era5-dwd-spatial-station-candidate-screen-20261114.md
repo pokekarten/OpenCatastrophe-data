@@ -36,6 +36,16 @@ The JSON receipt is aggregate-only and written exclusively to the requested
 local path. Hourly DWD readings, CLIMK event rows and station-by-event series
 are held in memory and are not written to the repository.
 
+## Hour-ending correction
+
+The numerical tables below record the earlier 00:00–23:00 label selection.
+Because FX_911 describes the preceding hour, those labels span 23:00 on the
+previous date to 23:00 on Storm_Dates, not the full calendar day. The V3
+audit now selects 01:00 through 00:00 of the following date to represent
+Storm_Dates 00:00–24:00 UTC. The tables require a V3 source replay before
+being used as calendar-day results. CLIMK day-boundary equivalence remains
+unproven.
+
 ## Coverage and results
 
 Fourteen of the 15 downloaded candidate archives could be checked against
