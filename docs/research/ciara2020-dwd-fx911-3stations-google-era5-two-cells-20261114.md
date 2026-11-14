@@ -74,6 +74,38 @@ unverified. Current DWD product's `MESS_DATUM` is a reference
 hour label, not yet a proven time-identical 2020 UTC gust
 aggregation to ERA5's hourly meteorological 10fg.
 
+## Actual original-source result: first genuine 2020 live run
+
+The first actual public-source reload **succeeded** in
+[GitHub run 43603655228](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43603655228),
+job **132473533297**. All three independently measured DWD
+2020 original archive SHA-256s, QN_8=3 for 96 hours, and the
+four Google public original Zarr metadata/decoded 96h×160
+ERA5 10fg source values matched their earlier live research
+receipts, including the original decoded SHA
+`5fb7c41963a94f88ee3651b51bfa84cc2f4bf379e1ee6f4eb4a4fb597d37f932`.
+
+| DWD original observed station | Source 2020 96h measured peak | Nearest Google ERA5 2020 modelled grid 96h peak | *Descriptive only* ERA5 minus DWD |
+|---|---:|---:|---:|
+| Köln/Bonn (02667) | 26.4 m/s | **31.169416427612305 m/s**, 50.75N/7.25E | **+4.769416 m/s** |
+| Wuppertal (15200) | 31.1 m/s | **32.13789749145508 m/s**, 51.25N/7.25E | **+1.037897 m/s** |
+| Königswinter-Heiderhof (00603) | 25.5 m/s | **31.169416427612305 m/s**, 50.75N/7.25E | **+5.669416 m/s** |
+
+Distances from the publisher's **current** DWD station
+geography to these nearest original Google ERA5 grid centres
+are respectively **14.295 km, 2.412 km and 3.972 km**. This
+is *not* proof the 2020 station sensors were at these unchanged
+coordinates or had equal wind-measurement and gust time windows.
+Köln/Bonn and Königswinter **reuse one original ERA5 cell**.
+
+The independently first-observed values and SHA-provenance
+are versioned at
+`research/observations/ciara2020_dwd3_era5_two_cells_original_peak_comparison_20261114.toml`.
+The live CLI rejects any further source replay with changed
+measured gust, original ZIP SHA, ERA5 cell, descriptive
+difference or unapproved science flag rather than silently
+turning it into a new historic benchmark.
+
 ## Scientific quarantine and legal bounds
 
 The actual site measurement, the nearby modelled **0.25° cell
