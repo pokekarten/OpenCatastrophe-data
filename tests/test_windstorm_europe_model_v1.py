@@ -4,10 +4,26 @@ import hashlib
 from pathlib import Path
 import tempfile
 import unittest
+import tomllib
+from copy import deepcopy
 from research_runners.windstorm_europe_model_v1 import execute
 from tests.test_climk_building_hazard_join_v0 import cell
 
 class IntegratedEuropeTests(unittest.TestCase):
+    def test_invalid_schedule_and_duplicate_buildings_fail_before_source_io(self):
+        fixture=Path(__file__).resolve().parents[1]/'research/fixtures/windstorm_europe_v1_synthetic.toml'
+        with fixture.open('rb') as f: original=tomllib.load(f)
+        mutations=[lambda c:c['occurrences'][0].update(year_id=99),
+                   lambda c:c['occurrences'].append(dict(c['occurrences'][0])),
+                   lambda c:c['occurrences'][0].update(sample_id=-1),
+                   lambda c:c['occurrences'][0].update(storm_index=True),
+                   lambda c:c['buildings'][1].update(building_id=c['buildings'][0]['building_id']),
+                   lambda c:c['buildings'][0].update(latitude=float('nan'))]
+        for mutation in mutations:
+            c=deepcopy(original);mutation(c)
+            with self.subTest(config=c),self.assertRaises(ValueError):
+                execute(c,Path('/nonexistent-inputs'),validate_only=True)
+
     def test_class_specific_policy_aggregation_and_zero_year(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);raw=b'wind speed,weak,strong\n0,0,0\n40,100,50\n'

@@ -138,3 +138,30 @@ The mixed-resistance replay returned EUR206591.34873161552 gross occurrence
 loss, EUR100000 ceded and EUR106591.34873161552 net. The brick-only replay
 returned zero insured loss under its curve/deductible assumptions. Neither
 amount is an observed loss or a basis for fitting German/European parameters.
+
+## Versioned example and input preflight
+
+The repository now includes an explicitly fictional three-country config at
+`research/fixtures/windstorm_europe_v1_synthetic.toml`. Put the original
+CLIMK NetCDF and the downloaded CLIMAAX CSV in a local data directory; the
+file names and curve hash in the config are fixed. Preserve upstream licence
+notices alongside those external files. Reproduce with:
+
+```sh
+python research_runners/windstorm_europe_model_v1.py \
+  --config research/fixtures/windstorm_europe_v1_synthetic.toml \
+  --data-dir /data/windstorm-europe --validate-only \
+  --output /tmp/windstorm-input-check.json
+python research_runners/windstorm_europe_model_v1.py \
+  --config research/fixtures/windstorm_europe_v1_synthetic.toml \
+  --data-dir /data/windstorm-europe --output /tmp/windstorm-example.json
+```
+
+Preflight checks source bytes, response tables and configuration identities;
+it does not open hazard grids, establish spatial coverage, or run losses.
+Full execution performs spatial coverage checks. Both commands completed
+locally using the original source files. The versioned example retains its
+fictional schedule and zero-event years. JSON configs remain supported.
+Negative tests now verify invalid years, repeated occurrence IDs, invalid
+sample IDs, boolean storm indices, duplicate buildings and NaN coordinates
+fail before attempting to access external source files.
