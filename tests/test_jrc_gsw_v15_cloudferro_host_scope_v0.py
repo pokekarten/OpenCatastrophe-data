@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 from scripts.validate_source_access import validate_path
 
 ROOT = Path(__file__).resolve().parents[1]
-POLICY = ROOT / "research_runners/policies/jrc_gsw_v15_cloudferro_host_scope_v0.json"
+POLICY = ROOT / "research_runners/policies/jrc_gsw_v15_cloudferro_host_scope_v0.jsonl"
 CONTRACT = ROOT / "access/ec-jrc.global-surface-water.1984-2024.json"
 EVIDENCE_DOC = ROOT / "docs/research/jrc-gsw-v15-cloudferro-public-host-policy-20261114.md"
 
