@@ -68,6 +68,12 @@ missing public anonymous-use service agreement. Do not set this source to
 `probe_ready` based only on a customer contract and a downloadable publisher
 script.
 
+## Swift listing pagination is independent of source-asset identity
+
+The official [OpenStack Swift pagination documentation](https://docs.openstack.org/swift/2026.2/api/pagination.html) says that a container-listing GET normally returns at most **10,000 object names**. Additional pages require a `marker` and additional network requests; this maximum is server-configurable. A single HTTP 200 response with the target pathname and a correct SHA-256 proves only **that page's original byte identity**, not an exhaustive original catalogue, a tile body or post-correction pixel values. Even fewer than 10,000 names do not establish exhaustive completeness without verified host-specific pagination behaviour.
+
+The existing offline `scripts/preflight_jrc_gsw_v15_listing_v0.py` now preserves exact object keys without stripping whitespace and emits `listing_page_object_count`, `swift_default_page_limit_reached`, `listing_scope=single_supplied_original_swift_listing_page`, and explicitly `complete_original_catalogue_verified=false`. A 10,000-name synthetic regression protects against treating a default capped page as a full source register. No `marker` pagination, second HTTP request, all-tiles crawler or CloudFerro source GET has been approved or executed by this change. Exact target-path presence is a **discovery receipt**, not an exhaustive source census or license grant.
+
 ## Minimum next original-provider acquisition proof (only once authorized)
 
 Before a one-shot JRC `GET`, record a version-specific approval of the
