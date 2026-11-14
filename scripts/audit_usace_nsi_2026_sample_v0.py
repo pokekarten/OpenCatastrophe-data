@@ -38,6 +38,13 @@ def _reject_nonfinite(_: str) -> None:
     raise NSI2026SampleBlocked("non-finite JSON numeric value")
 
 
+def _strict_float(value: str) -> float:
+    number = float(value)
+    if not math.isfinite(number):
+        raise NSI2026SampleBlocked("non-finite JSON decimal or exponent")
+    return number
+
+
 def _number(value: Any, name: str, *, minimum: float | None = None) -> float:
     if type(value) not in (int, float) or not math.isfinite(value):
         raise NSI2026SampleBlocked(f"invalid {name} number")
@@ -55,6 +62,7 @@ def inspect_nsi_2026_geojson(original: bytes) -> dict[str, Any]:
             original.decode("utf-8"),
             object_pairs_hook=_unique_object,
             parse_constant=_reject_nonfinite,
+            parse_float=_strict_float,
         )
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise NSI2026SampleBlocked("not strict UTF-8 GeoJSON") from exc
