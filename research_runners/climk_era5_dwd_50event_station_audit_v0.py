@@ -173,6 +173,12 @@ def summarize_windows(windows: list[dict]) -> dict:
     }
 
 
+def daily_hour_end_labels(middle):
+    """UTC endpoints covering [Storm_Dates 00:00, next date 00:00]."""
+    return [(middle + timedelta(hours=h)).strftime("%Y%m%d%H")
+            for h in range(1, 25)]
+
+
 def _rows_from_metadata(raw: bytes, station_id: str) -> dict[str, list[dict]]:
     if len(raw) > dwd.MAX_ZIP:
         raise CLIMKDWDBlocked("original DWD source archive exceeds byte bound")
@@ -394,8 +400,7 @@ def _climk_station_windows(source: bytes, station_id: str,
                     if stamp in observations:
                         paired.append(list(observations[stamp]))
                 storm_date_paired = []
-                for h in range(1, 25):
-                    stamp = (middle+timedelta(hours=h)).strftime("%Y%m%d%H")
+                for stamp in daily_hour_end_labels(middle):
                     if stamp in observations:
                         storm_date_paired.append(list(observations[stamp]))
                 windows.append({

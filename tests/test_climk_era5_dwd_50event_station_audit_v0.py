@@ -33,6 +33,14 @@ def windows_fixture():
 
 
 class ClimkEra5DWDTop50AuditTests(unittest.TestCase):
+    def test_hour_endpoints_cover_day_across_year_boundary(self):
+        from datetime import datetime
+        labels = m.daily_hour_end_labels(datetime(2007, 12, 31))
+        self.assertEqual(len(labels), 24)
+        self.assertEqual(labels[0], "2007123101")
+        self.assertEqual(labels[-1], "2008010100")
+        self.assertNotIn("2007123100", labels)
+
     def test_source_population_includes_third_dwd_station(self):
         self.assertEqual(m.STATIONS,("02667","00603","15200"))
 

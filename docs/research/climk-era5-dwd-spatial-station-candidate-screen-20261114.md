@@ -92,9 +92,9 @@ eight complete 72-hour context windows but 17 complete Storm_Dates days.
 The mean paired differences are negative at 10 of the 12 stations with at
 least one complete Storm_Dates day; two are positive. For example,
 Feldberg/Schwarzwald has a sensor at 18.4 m above ground and a reported
-station elevation near 1,486 m; its 28-day mean paired difference is −21.59
-m/s. Arkona's 24 m sensor has a −9.03 m/s mean paired difference, while
-10–12 m sensors at Hamburg and Bad Marienberg show −0.50 and 1.46 m/s. These
+station elevation near 1,486 m; its 28-day mean paired difference is −21.66
+m/s. Arkona's 24 m sensor has a −8.96 m/s mean paired difference, while
+10–12 m sensors at Hamburg and Bad Marienberg show −0.43 and 1.42 m/s. These
 arithmetic contrasts are not error metrics or grounds for a common
 multiplicative or additive correction. They highlight the unresolved role of
 sensor height, local terrain, exposure, offshore setting, historical siting
