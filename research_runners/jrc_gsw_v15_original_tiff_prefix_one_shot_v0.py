@@ -77,6 +77,15 @@ def authorization_blockers(policy: dict[str, object], contract: dict[str, object
          "fixed product identity")
     need(policy.get("public_anonymous_download_permission") == "reviewed_allowed",
          "independently reviewed public anonymous source-asset GET permission")
+    # Customer service terms (published for contractual customers) cannot
+    # silently authorize *anonymous* third-party downloads, or HTTP Range.
+    # These are separately reviewable prerequisites for this exact endpoint.
+    need(policy.get("customer_terms_applicability_to_anonymous_reader") == "reviewed",
+         "CloudFerro anonymous-reader service scope independently reviewed")
+    need(policy.get("range_support_verified") is True,
+         "HTTP Range method/service entitlement independently verified")
+    need(policy.get("redirect_policy_verified") is True,
+         "no-redirect original-host transport policy independently verified")
     rate = policy.get("anonymous_http_rate_cap")
     need(type(rate) is int and rate > 0, "reviewed host rate budget")
     need(type(policy.get("approved_network_requests")) is int
