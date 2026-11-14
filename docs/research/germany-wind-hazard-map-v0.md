@@ -28,3 +28,24 @@ Kyrill native GUL demonstration uses fictional exposure and an authored,
 uncalibrated curve. Broader maps do not validate that curve. CLIMK's selected
 50 storms supply scenarios without annual event frequencies; annual AAL,
 OEP and AEP require an additional defensible occurrence catalogue.
+
+## Building point crosswalk
+
+`research_runners/climk_building_hazard_join_v0.py` accepts a local CSV with
+exact columns `building_id,longitude,latitude` (1–10,000 unique building IDs).
+It regenerates the hazard from the SHA-verified original NetCDF rather than
+trusting an edited GeoJSON. It exports each building's area-peril ID and gust,
+with explicit `matched`, `missing_weather` or `outside_exported_grid` status.
+Cell ownership includes the west/south edge and excludes the east/north edge.
+Coordinates must be finite WGS84 longitude/latitude; duplicates fail.
+
+```sh
+python research_runners/climk_building_hazard_join_v0.py \
+  --buildings /private/building-points.csv --storm-index 0 \
+  --output /private/kyrill-building-hazard.json
+```
+
+The output contains building identifiers and belongs in the same controlled
+local storage as the input portfolio. It does not infer building replacement
+values, taxonomy or vulnerability from coordinates. Preserve missing and
+out-of-grid statuses before passing matched records into Oasis lookup keys.
