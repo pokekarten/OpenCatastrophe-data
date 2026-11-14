@@ -36,11 +36,8 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install reviewed validation and historical geometry test dependencies
-        run: >-
-          python -m pip install --disable-pip-version-check --no-input
-          -r requirements-validation.txt
-          pyproj==3.7.2 pyshp==2.3.1
+      - name: Install reviewed validation dependency set
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-validation.txt
       - name: Verify validation dependency consistency
         run: python -m pip check
       - name: Repository definition of done
@@ -65,7 +62,179 @@ jobs:
       - name: Verify acquisition dependency consistency
         run: python -m pip check
       - name: Exercise real NetCDF4 reader with synthetic bytes
-        run: python -m unittest tests.test_glofas_v4_uparea_reader -v
+        run: >-
+          python -m unittest
+          tests.test_glofas_v4_uparea_reader
+          tests.test_ciara2020_nrw_era5_normalized_netcdf_v0
+          tests.test_ciara2020_cds_original_source_one_shot_v0
+          -v
+
+  google-arco-ciara-public-metadata:
+    # Narrow one-off live ORIGINAL public Zarr metadata probe for this PR only.
+    # Read-only anonymous Google GCS. No cloud/API tokens, no ERA5 data chunks.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-google-arco-10fg-public-metadata-20261112'
+    name: Google public ARCO 10fg original Zarr metadata
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact PR commit, no stored token
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up pinned Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Offline anonymized original-source security and shape regression
+        run: python -m unittest tests.test_ciara2020_google_arco_public_10fg_metadata_v0 -v
+      - name: Read exactly four original variable/coordinate metadata objects
+        run: python research_runners/ciara2020_google_arco_public_10fg_metadata_v0.py --live-metadata
+
+  google-arco-ciara-real-one-hour:
+    # PUBLIC original reanalysis one-hour/one-gridpoint research challenge.
+    # No Google account, CDS token or insured-site source is accessed.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-google-arco-real-10fg-one-hour-20261112'
+    name: Google public ARCO Ciara 2020 actual one-hour gust
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact branch HEAD, no retained GitHub credential
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up pinned Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install pinned public-Zarr research reader dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-google-arco-2020-original-smoke.txt
+          python -m pip check
+      - name: Independently challenge source SHA, UTC and false-insurer claims offline
+        run: python -m unittest tests.test_ciara2020_google_arco_real_onehour_gust_v0 -v
+      - name: Read exactly one historical original public Google 10fg gridpoint hour
+        run: python research_runners/ciara2020_google_arco_real_onehour_gust_v0.py --live-one-hour
+
+  google-arco-ciara-real-96h:
+    # Research-branch-scoped genuine 2020 public ERA5 weather read.
+    # Strict SHA and 96x160 original data replay; no site or CDS secrets.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-google-arco-96h-nrw-main-sync-20261113'
+    name: Google public ARCO Ciara 2020 original 96h NRW grid
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source at exact PR HEAD without token retention
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup pinned Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install reviewed optional original public Zarr reader dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-google-arco-2020-original-smoke.txt
+          python -m pip check
+      - name: Challenge source SHA, hour, grid and wind-loss NO-GO offline
+        run: python -m unittest tests.test_ciara2020_google_arco_real_96h_nrw_area_v0 -v
+      - name: Replay original public 96h x 160 Ciara 2020 wind values and pinned digest
+        run: python research_runners/ciara2020_google_arco_real_96h_nrw_area_v0.py --live-96h
+
+  ciara2020-nrw-hu22-10k-93cell-counterfactual:
+    # Exactly 93 SHA-pinned cells from original HU22 public source 10k ZIP.
+    # Live Google public original 96x160 wind read, 2020 vs 2022 exposure
+    # is COUNTERFACTUAL; no site IDs, no GUL/IL/RI or annual EP.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-nrw-hu22-10k-93cell-wind-counterfactual-20261113'
+    name: Ciara public source 2022 10k cells x original 2020 Google wind
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact PR source no retained token
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Pinned Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install reviewed optional public Zarr research reader dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-google-arco-2020-original-smoke.txt
+          python -m pip check
+      - name: Validate SHA-pinned 93-cell source and adversarial no-loss boundaries
+        run: |
+          python -m unittest tests.test_ciara2020_nrw_hu22_10k_google_arco_wind_counterfactual_v0 -v
+          python research_runners/ciara2020_nrw_hu22_10k_google_arco_wind_counterfactual_v0.py --dry-run
+      - name: Live original 96h Google gust x 93 HU2022 public cell aggregate exposure
+        run: python research_runners/ciara2020_nrw_hu22_10k_google_arco_wind_counterfactual_v0.py --live-google
+
+  ciara2020-dwd-real-station-fx:
+    # PR-only actual independent DWD observation retrieval. No CDS/GCS
+    # credentials, raw historical ZIPs or insurer/individual site data logged.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-dwd-hourly-fx-original-station-observations-20261113'
+    name: DWD Ciara2020 original hourly FX911 measured gusts at three NRW stations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact PR source without retaining GitHub credential
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Challenge DWD original FX911 strict URLs station/archive/quality and loss no-go
+        run: |
+          python -m unittest tests.test_ciara2020_dwd_hourly_fx_original_station_observations_v0 -v
+          python research_runners/ciara2020_dwd_hourly_fx_original_station_observations_v0.py --dry-run
+      - name: Read actual official historical DWD FX911 2020 measurement stations
+        run: python research_runners/ciara2020_dwd_hourly_fx_original_station_observations_v0.py --live-dwd
+
+  ciara2020-dwd-3station-era5-2cells-peak-check:
+    # Original live DWD measured FX911 plus original Google ARCO ERA5 10fg,
+    # strict 96h/hash checks; exploratory site-vs-grid maxima only.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-dwd-3station-to-2-era5-grid-peak-check-20261114'
+    name: Ciara 2020 DWD 3 measured stations vs 2 original ERA5 cells
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact PR without retained credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup pinned Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install pinned optional original public Google Zarr reader packages
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-google-arco-2020-original-smoke.txt
+          python -m pip check
+      - name: Verify original archive SHA, two cells, scientific boundaries offline
+        run: |
+          python -m unittest tests.test_ciara2020_dwd_original_to_era5_station_peak_comparison_v0 -v
+          python research_runners/ciara2020_dwd_original_to_era5_station_peak_comparison_v0.py --dry-run
+      - name: Re-fetch official 3 measured DWD 2020 stations and exact Google ERA5 96h
+        run: python research_runners/ciara2020_dwd_original_to_era5_station_peak_comparison_v0.py --live-original-station-grid
 
   eu-flood-spatial:
     name: EU flood spatial A1
@@ -99,6 +268,33 @@ jobs:
         run: python -m unittest tests.test_luxembourg_gpkg_schema_window_v0 -v
       - name: Challenge original Luxembourg EPSG2169 coordinate axis hypotheses with synthetic extents
         run: python -m unittest tests.test_luxembourg_axis_extent_audit_v0 -v
+
+  luxembourg-lidar-inset-spatial:
+    name: Luxembourg LiDAR inset spatial regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Install reviewed spatial and raster dependency profiles
+        run: >-
+          python -m pip install --disable-pip-version-check --no-input
+          -r requirements-eu-flood-spatial.txt
+          -r requirements-cems-geotiff-profile.txt
+          numpy==2.3.5
+      - name: Verify spatial dependencies and fail rather than skip
+        run: |
+          python -m pip check
+          python -c 'import numpy, rasterio, shapely, pyproj'
+      - name: Run all Luxembourg LiDAR inset sensitivity regression cases
+        run: python -m unittest tests.test_luxembourg_lidar2024_footprint_inset_sensitivity_v0 -v
 
   cems-geotiff-profile:
     name: CEMS GeoTIFF profile and support challenge
@@ -173,7 +369,7 @@ jobs:
   required:
     name: Required
     if: always()
-    needs: [check, glofas-acquisition, cems-geotiff-profile, reuse, dependency-review]
+    needs: [check, glofas-acquisition, luxembourg-lidar-inset-spatial, cems-geotiff-profile, reuse, dependency-review]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -182,11 +378,13 @@ jobs:
           CHECK_RESULT: ${{ needs.check.result }}
           GLOFAS_ACQUISITION_RESULT: ${{ needs.glofas-acquisition.result }}
           CEMS_GEOTIFF_PROFILE_RESULT: ${{ needs.cems-geotiff-profile.result }}
+          LUX_LIDAR_INSET_RESULT: ${{ needs.luxembourg-lidar-inset-spatial.result }}
           REUSE_RESULT: ${{ needs.reuse.result }}
           DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
         run: |
           test "$CHECK_RESULT" = "success"
           test "$GLOFAS_ACQUISITION_RESULT" = "success"
           test "$CEMS_GEOTIFF_PROFILE_RESULT" = "success"
+          test "$LUX_LIDAR_INSET_RESULT" = "success"
           test "$REUSE_RESULT" = "success"
           test "$DEPENDENCY_REVIEW_RESULT" = "success" || test "$DEPENDENCY_REVIEW_RESULT" = "skipped"
