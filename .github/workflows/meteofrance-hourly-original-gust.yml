@@ -21,4 +21,7 @@ jobs:
       - name: Offline negative and schema gates
         run: python -m unittest tests.test_meteofrance_hourly_gust_v0 -v
       - name: Fetch exactly one public official 2020-2024 original and log aggregates only
+        # The exact original source was already fetched and hashed in run 43632969638.
+        # PRs run synthetic tests only; future provider GET needs explicit dispatch.
+        if: github.event_name == 'workflow_dispatch'
         run: python -m research_runners.meteofrance_hourly_gust_v0 --live
