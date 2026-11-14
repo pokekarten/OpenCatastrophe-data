@@ -20,6 +20,7 @@ import sys
 import urllib.parse
 import urllib.request
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 
 CATALOGUE_URL = "https://www.data.gouv.fr/api/1/datasets/donnees-climatologiques-de-base-horaires/"
@@ -55,10 +56,19 @@ def _check_url(url: str, *, document: bool = False) -> None:
         raise Blocked("dictionary URL must equal the frozen official file")
 
 
+class _StrictSourceRedirect(urllib.request.HTTPRedirectHandler):
+    """Validate each redirect URL before any redirected request is sent."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _check_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def _read_url(url: str, limit: int) -> bytes:
     _check_url(url)
     request = urllib.request.Request(url, headers={"User-Agent": "OpenCatastrophe-data-original-preflight/1.0", "Accept": "application/json, text/plain, */*"})
-    with urllib.request.urlopen(request, timeout=30) as response:
+    opener = urllib.request.build_opener(_StrictSourceRedirect())
+    with opener.open(request, timeout=30) as response:
         _check_url(response.geturl())
         size = response.headers.get("Content-Length")
         if size and size.isdecimal() and int(size) > limit:
@@ -149,6 +159,10 @@ def audit_gzip(source: bytes, *, expected_sha256: str | None = None) -> dict[str
             stamp = row["AAAAMMJJHH"].strip()
             if not re.fullmatch(r"\d{8}", station) or not re.fullmatch(r"202[0-4]\d{6}", stamp):
                 raise Blocked("station ID or hourly timestamp violates fixed France-2020-2024 profile")
+            try:
+                datetime.strptime(stamp, "%Y%m%d%H")
+            except ValueError as exc:
+                raise Blocked("invalid real-calendar UTC station hour") from exc
             station_ids.add(station)
             if len(station_ids) > MAX_STATIONS:
                 raise Blocked("too many stations for single department")
