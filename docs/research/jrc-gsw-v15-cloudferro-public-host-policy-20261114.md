@@ -74,6 +74,62 @@ The official [OpenStack Swift pagination documentation](https://docs.openstack.o
 
 The existing offline `scripts/preflight_jrc_gsw_v15_listing_v0.py` now preserves exact object keys without stripping whitespace and emits `listing_page_object_count`, `swift_default_page_limit_reached`, `listing_scope=single_supplied_original_swift_listing_page`, and explicitly `complete_original_catalogue_verified=false`. A 10,000-name synthetic regression protects against treating a default capped page as a full source register. No `marker` pagination, second HTTP request, all-tiles crawler or CloudFerro source GET has been approved or executed by this change. Exact target-path presence is a **discovery receipt**, not an exhaustive source census or license grant.
 
+## Frozen original TIFF 4,096-byte one-shot runner (prepared, not authorized)
+
+An implementation now exists at
+`research_runners/jrc_gsw_v15_original_tiff_prefix_one_shot_v0.py`,
+with synthetic no-network fixtures and tests in
+`tests/test_jrc_gsw_v15_original_tiff_prefix_one_shot_v0.py`.
+This is a **conditional executable acquisition path**, not a claim
+that provider source bytes were obtained.
+
+The exact JRC publisher [download script instructions](https://global-surface-water.appspot.com/gsw/Download_Instructions.html)
+document automatic v1.5 **10° tile** delivery from the specific WAW4-1 Swift
+host. That establishes an officially intended distribution mechanism
+and the data-use permission, but still does not supply an independently
+reviewed *anonymous rate cap or CloudFerro service contract* for this
+insurance workflow. The immutable on-repository policy **continues** to
+authorize **0 original-host requests and 0 original data bytes**.
+The test harness cannot turn this into permission.
+
+The runner requires **both** a separately reviewed host-policy approval
+and a canonical schema-valid active access contract. The latter uses
+source-access v1's actual `rights_and_policy.api_terms_status =
+separate_reviewed` enum (NOT the impossible legacy
+`reviewed_allowed` string), an authoritative HTTPS
+`terms_url`, `status=probe_ready` and a fixed
+`provider_specific` operation. The host policy must independently
+review `public_anonymous_download_permission=reviewed_allowed`,
+set an explicit positive rate cap, **exactly one** permitted request
+and **exactly 4096** original response bytes, and explicitly approve
+the live probe. All conditions are currently **false**.
+
+Once independently authorized, this one-shot code permits only a
+`GET` to the exact hardcoded original
+`occurrence_10E_50N_v1_5_2024.tif`, with
+`Range: bytes=0-4095` and `Accept-Encoding: identity`.
+It disables redirects and proxies; does not retry, paginate, persist
+source bytes, follow alternative hosts or accept a full HTTP200
+download. It requires same-host HTTP206, exact
+`Content-Range: bytes 0-4095/TOTAL` with
+`TOTAL > 4096`, exactly `Content-Length: 4096`,
+native TIFF/octet-stream media, no transport compression
+and an in-memory read capped at **4097 bytes**. Even if a
+server ignores Range, the runner never accepts the response and
+does not read a full TIFF into memory. It produces a metadata-only
+receipt including an **original-prefix-only** SHA-256,
+a 4096-byte first-IFD TIFF shape preflight and explicit negative
+whole-asset, corrected-pixel and CAT-model flags.
+
+**Crucial:** successful HTTP206 proves neither the
+post-2026-11-10 corrected original TIFF nor a full-file hash or
+decoded numeric pixels. Authorization of this prefix probe is
+**not** a licence to request more bytes. For a future *actual*
+original read, the strictly reviewed contract/policy must be
+updated together and undergo an independent decision before an
+authorized GitHub job is run. Current automated CI is completely
+synthetic and makes no CloudFerro request.
+
 ## Minimum next original-provider acquisition proof (only once authorized)
 
 Before a one-shot JRC `GET`, record a version-specific approval of the
