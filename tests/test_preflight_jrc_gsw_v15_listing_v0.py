@@ -66,6 +66,23 @@ class OriginalListingPreflightTests(unittest.TestCase):
             with self.subTest(payload=payload[:60]), self.assertRaises(GSWListingError):
                 inspect_original_listing(payload)
 
+    def test_only_lf_or_crlf_separates_original_object_names(self):
+        selected = SELECTED_ASSET
+        # A CRLF-terminated official page is acceptable and byte-hashed
+        # exactly as received, including carriage returns.
+        raw = (selected + "\r\nother/safe.tif\r\n").encode()
+        observed = inspect_original_listing(raw)
+        self.assertEqual(observed["original_listing_sha256"],
+                         hashlib.sha256(raw).hexdigest())
+        self.assertEqual(observed["listing_page_object_count"], 2)
+        # splitlines() would have silently discarded these separators
+        # and falsely located the selected key in the original bytes.
+        for separator in ("\x0b", "\x0c", "\x85", "\u2028", "\u2029", "\r"):
+            with self.subTest(separator=repr(separator)):
+                forged = (separator + selected).encode("utf-8")
+                with self.assertRaises(GSWListingError):
+                    inspect_original_listing(forged)
+
     def test_html_response_and_absolute_url_rejected(self):
         for value in (
             "<html>not listing</html>\n" + SELECTED_ASSET,
