@@ -62,8 +62,35 @@ Original URLs are the corresponding paths under
 README and both licence files were also downloaded; README declares
 `Apache-2.0 OR CC-BY-4.0`. Preserve attribution and upstream scientific
 references. We do not assert the table equals the missing original WISC
-CURVES.csv. The workbook has been acquired but its cell-level valuation
-semantics have not been validated or inserted into building values.
+CURVES.csv. The workbook has now been inspected at cell/formula level and
+cross-checked against the official [CLIMAAX maximum-damage methodology](https://handbook.climaax.eu/resources/FAQ/maximum_damages.html)
+and the [STORMS wind workflow](https://handbook.climaax.eu/notebooks/workflows/STORMS/01_windstorm/Risk_assessment_STORMS.html).
+It contains 46 LUISA land-use classes, not individual buildings. The workflow
+extracts the `structural €/m²` field as a **modelled maximum structural damage
+proxy per square metre**. The workbook also includes `content €/m²`, calculated
+from a content importance factor, and land-use-specific residential,
+commercial, industrial, and six construction-material shares. The wind
+workflow weights the Feuerstein construction curves with those material
+shares; the mixed land-use share is not an observed building-level occupancy
+or resistance label.
+
+The workbook's example GDP/capita is 32,169 and calculates construction cost
+through `a * GDP^b`; structure value then applies depreciated value,
+undamageable share, and material factor. The official CLIMAAX FAQ specifies
+GDP in **2010 US dollars** and construction costs in **2010 euros**, with
+inflation/currency conversion applied to the resulting costs. Those cached
+workbook figures therefore cannot be treated as current EUR replacement
+values without a documented country GDP input and price-year conversion.
+They are also per-area land-use proxies, not values for a particular building.
+The integrated model correctly continues to require explicit `building_value_eur`;
+converting this proxy requires a validated building/LUISA spatial crosswalk,
+building floor area (or a defensible footprint-to-floor-area model), and
+country/price-year updates. Contents should remain a distinct coverage/value
+component if included.
+
+This establishes a useful regional exposure path for a future raster/portfolio
+adapter, while identifying the missing conversion steps. It does not replace
+observed building-level values or calibrate the existing point-building model.
 
 ## What changed in the model
 
