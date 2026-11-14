@@ -86,7 +86,7 @@ def resolve_resource(catalogue: bytes) -> dict[str, str | int | None]:
         raise Blocked("resource lacks HTTPS download URL")
     _check_url(url)
     if not url.endswith("/" + RESOURCE_FILENAME) and not re.fullmatch(r"https://www\.data\.gouv\.fr/api/1/datasets/r/[0-9a-fA-F-]+/?", url):
-        raise Blocked("resource URL/filename does not match frozen source identity")
+        raise Blocked("resource URL/filename does not match frozen source identity; basename=" + urllib.parse.urlsplit(url).path.rsplit("/", 1)[-1])
     size = item.get("filesize")
     if size is not None and (type(size) is not int or size < 0 or size > MAX_GZIP_BYTES):
         raise Blocked("resource declared byte size out of allowed bounds")
