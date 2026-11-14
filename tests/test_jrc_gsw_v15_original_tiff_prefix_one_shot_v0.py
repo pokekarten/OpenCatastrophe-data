@@ -58,18 +58,20 @@ def hypothetical_review(policy, contract):
     contract["status"] = "probe_ready"
     contract["implementation_decision"] = "build_adapter_now"
     contract["rights_and_policy"]["api_terms_status"] = "separate_reviewed"
-    # Intentionally non-real test URL: never use this mock as legal evidence.
-    contract["rights_and_policy"]["terms_url"] = "https://example.test/synthetic-not-legal-approval"
+    # This official provider-hosted customer-terms URL alone is NOT proof
+    # that those terms govern anonymous JRC readers. These flags are
+    # synthetic in-memory test data, not a reviewed real-world decision.
+    contract["rights_and_policy"]["terms_url"] = (
+        "https://cloudferro.s3.waw3-1.cloudferro.com/"
+        "wp-content/uploads/2024/05/general_terms_and_conditions.pdf"
+    )
     contract["rights_and_policy"]["commercial_automation_status"] = "allowed"
     contract["probe_contract"]["mode"] = "provider_specific"
     contract["probe_contract"]["operation"] = "inspect_fixed_v15_occurrence_tiff"
     contract["probe_contract"]["expected_evidence"] = [
         "Original HTTP206 exact 4096-byte TIFF prefix and SHA256"
     ]
-    contract["request_contract"]["parameter_rules"] = (
-        "SYNTHETIC ONLY: reviewed 1 GET exact host TIFF Range bytes=0-4095, "
-        "no redirects, retries, proxies, cache or alternate path."
-    )
+    contract["request_contract"]["parameter_rules"] = jrc.ACTIVE_ONE_SHOT_PARAMETER_RULES
     validate_contract(contract)
     return policy, contract
 
@@ -119,6 +121,10 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
             ("p", "anonymous_http_rate_cap", True),
             ("c", "status", "documented_only"),
             ("c", "service_root", "https://attacker.example"),
+            ("c", "request_contract", dict(contract["request_contract"],
+                                           parameter_rules=self.contract["request_contract"]["parameter_rules"])),
+            ("c", "request_contract", dict(contract["request_contract"],
+                                           parameter_rules="EXPLICIT REVIEWED JRC V1.5 SOURCE OPERATION: unlimited downloads")),
             ("c", "probe_contract", {"mode":"none","operation":None,
                 "requires_credentials":False,"expected_evidence":[]}),
             ("c", "rights_and_policy", dict(contract["rights_and_policy"],
@@ -128,6 +134,38 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
             (p if target == "p" else c)[key] = bad
             with self.subTest(target=target,key=key,bad=str(bad)[:30]):
                 self.assertTrue(jrc.authorization_blockers(p, c))
+
+    def test_official_terms_host_required_without_confusing_customer_contract_for_grant(self):
+        p,c=hypothetical_review(self.policy,self.contract)
+        for url in (
+            "https://example.test/fake-approval",
+            "https://cloudferro.com.evil.example/terms",
+            "http://docs.cloudferro.com/terms",
+            "https://docs.cloudferro.com/",
+            "https://user:password@docs.cloudferro.com/terms",
+            "https://docs.cloudferro.com/terms?approval=1",
+        ):
+            changed=deepcopy(c)
+            changed["rights_and_policy"]["terms_url"]=url
+            with self.subTest(url=url):
+                self.assertIn("separately reviewed anonymous API/commercial terms",
+                              jrc.authorization_blockers(p,changed))
+        self.assertEqual(jrc.authorization_blockers(p,c), [])
+
+    def test_direct_runner_cannot_bypass_complete_contract_schema(self):
+        p,c=hypothetical_review(self.policy,self.contract)
+        broken=deepcopy(c)
+        broken.pop("response_contract")
+        # All coarse-grained activation fields are present, but the full
+        # source-access schema must block the direct function call.
+        self.assertEqual(jrc.authorization_blockers(p,broken), [])
+        calls=[]
+        def must_not_open(*args):
+            calls.append(True)
+            raise AssertionError("should have blocked before a GET")
+        with self.assertRaisesRegex(jrc.OriginalPrefixBlocked, "contract is invalid"):
+            jrc.probe_original_prefix(p,broken,open_request=must_not_open)
+        self.assertEqual(calls, [])
 
     def test_exact_successful_206_range_with_native_tiff_parses_metadata_only(self):
         p, c = hypothetical_review(self.policy, self.contract)
