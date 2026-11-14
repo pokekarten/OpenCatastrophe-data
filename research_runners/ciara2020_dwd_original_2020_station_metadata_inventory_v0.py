@@ -46,8 +46,12 @@ def inspect_original_metadata_zip(data: bytes, station_id: str) -> dict:
                 or any(x.flag_bits & 1 or x.file_size > MAX_TOTAL_EXPANDED
                        or x.filename.startswith(("/", "\\"))
                        or "/" in x.filename or "\\" in x.filename or ".." in x.filename
-                       or not x.filename.endswith(".txt") for x in info)):
+                       for x in info)):
                 raise DWDMetadataBlocked("unsafe or too large original DWD archive structure")
+            # DWD source ZIPs may include harmless explanatory .html/.pdf
+            # or other metadata files. Only the required three ORIGINAL
+            # Metadaten_*.txt payloads are decoded; every other entry is
+            # subject to the same path, encryption and bounded size checks.
             found = {}
             names_seen = set()
             for member in info:
@@ -56,6 +60,8 @@ def inspect_original_metadata_zip(data: bytes, station_id: str) -> dict:
                     raise DWDMetadataBlocked("duplicate original DWD metadata filename")
                 names_seen.add(filename)
                 if not filename.lower().startswith("metadaten_"):
+                    continue
+                if not filename.lower().endswith(".txt"):
                     continue
                 for kind in REQUIRED_CATEGORIES:
                     if not filename.lower().startswith("metadaten_" + kind):
