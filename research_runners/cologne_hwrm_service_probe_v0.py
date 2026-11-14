@@ -19,8 +19,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 from xml.etree import ElementTree
 
 CAPABILITIES_URL = (
-    "https://www.wms.nrw.de/umwelt/HW_Gefahrenkarte"
-    "?SERVICE=WMS&REQUEST=GetCapabilities"
+    "https://www.wms.nrw.de/umwelt/wasser/HW_Gefahrenkarte"
+    "?REQUEST=GetCapabilities&SERVICE=WMS"
 )
 MAX_RESPONSE_BYTES = 4_000_000
 MAX_REPORTED_LAYERS = 10
@@ -46,18 +46,31 @@ def parse_wms_capabilities(payload: bytes) -> dict[str, object]:
     except ElementTree.ParseError as exc:
         raise SourceProbeError("invalid XML") from exc
     root_name = root.tag.rsplit("}", 1)[-1]
+    namespace = root.tag.split("}", 1)[0][1:] if root.tag.startswith("{") else ""
     if root_name not in {"WMS_Capabilities", "WMT_MS_Capabilities"}:
         raise SourceProbeError("response is not a WMS capabilities document")
+    if namespace not in {"", "http://www.opengis.net/wms"}:
+        raise SourceProbeError("unexpected WMS XML namespace")
     version = root.attrib.get("version", "")
     if version not in {"1.1.1", "1.3.0"}:
         raise SourceProbeError("unexpected WMS version")
+    service_name = root.findtext("./{*}Service/{*}Name", default="")
+    service_title = root.findtext("./{*}Service/{*}Title", default="")
+    if service_name.strip() not in {"WMS", "OGC:WMS"} or not service_title.strip():
+        raise SourceProbeError("missing WMS service identity")
+    capability = root.find("./{*}Capability")
+    if capability is None:
+        raise SourceProbeError("missing WMS Capability section")
+    request = capability.find("./{*}Request")
+    if request is None or request.find("./{*}GetCapabilities") is None or request.find("./{*}GetMap") is None:
+        raise SourceProbeError("missing WMS GetCapabilities/GetMap operation")
     names = sorted({
         element.text.strip()
-        for element in root.findall(".//{*}Layer/{*}Name")
+        for element in capability.findall(".//{*}Layer/{*}Name")
         if element.text and element.text.strip()
     })
-    if not names:
-        raise SourceProbeError("WMS has no named feature layers")
+    if not names or any(len(name) > 256 or any(ord(ch) < 32 for ch in name) for name in names):
+        raise SourceProbeError("missing or malformed WMS layer names")
     return {
         "wms_version": version,
         "named_layer_count": len(names),
