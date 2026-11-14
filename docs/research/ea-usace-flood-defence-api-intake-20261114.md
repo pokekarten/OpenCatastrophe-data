@@ -48,14 +48,26 @@ No full feature, coordinate, building location, protected polygon, time-series,
 source geometry, source binary, exposure, TIV or sample row was imported into
 Neon or the repository. The upstream values themselves are not reproduced.
 
-The repository ships a deliberately manual, fail-closed and fixed-target live canary:
+The repository ships a deliberately opt-in, fail-closed and fixed-target live canary:
 
 ```bash
 python -m unittest tests.test_probe_aims_nld_flood_defences_v0
+# Manual only: two reads, sequentially
 python -m research_runners.probe_aims_nld_flood_defences_v0 --live
+# Trusted runner: exactly one read from one fixed ID
+python -m research_runners.probe_aims_nld_flood_defences_v0 \
+  --live --source uk.ea.aims.spatial-flood-defences.2026
 ```
 
-It makes **exactly two GETs** only when `--live` is explicitly given, uses no
+The [source-specific GitHub workflow](../../.github/workflows/ea-usace-flood-defence-original-receipts.yml)
+runs offline-only on Pull Requests; a push to trusted `main` or a manual
+dispatch from `main` runs an independent **single-request** matrix job
+per original service. It does not read sources from an unreviewed PR ref,
+use stored API credentials or upload provider bytes. Actual success must
+be checked **per matrix job**, not inferred from the offline job or generic CI.
+
+It makes **at most two GETs per full manual invocation, or exactly one per
+source-selected invocation**, only when `--live` is explicitly given, uses no
 auth/key/cookie/proxy, refuses redirects, applies a 15-second timeout per GET and
 an 8,192-byte body cap. It validates the layer, CRS, one OID-only attribute,
 no geometry and no ArcGIS error before printing a SHA-256 of each transient

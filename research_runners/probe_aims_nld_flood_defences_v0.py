@@ -4,7 +4,7 @@
 
 Only source-provided OBJECTID is read (without geometry), never stored or
 printed. This script does not authorize source admission, CAT input or Neon writes.
-Run: python -m research_runners.probe_aims_nld_flood_defences_v0 --live
+Run: python -m research_runners.probe_aims_nld_flood_defences_v0 --live\nRun one: python -m research_runners.probe_aims_nld_flood_defences_v0 --live --source uk.ea.aims.spatial-flood-defences.2026
 """
 from __future__ import annotations
 
@@ -133,11 +133,16 @@ def get_one(target: Target, opener=None) -> dict[str, str | int]:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--live", action="store_true", help="Opt in to exactly two original provider reads")
+    parser.add_argument("--live", action="store_true", help="Opt in to original bounded provider reads")
+    parser.add_argument(
+        "--source", choices=tuple(target.source_id for target in TARGETS),
+        help="Select exactly one of the two compile-time fixed provider contracts",
+    )
     args = parser.parse_args(argv)
     if not args.live:
-        parser.error("offline by default; use --live for two exact bounded source GETs")
-    for target in TARGETS:
+        parser.error("offline by default; use --live for fixed bounded source GETs")
+    selected = tuple(target for target in TARGETS if args.source in (None, target.source_id))
+    for target in selected:
         result = get_one(target)
         print(json.dumps({**result, "data_persisted": False, "model_admitted": False}, sort_keys=True))
     return 0

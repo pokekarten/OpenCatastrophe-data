@@ -1,11 +1,14 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 """Offline, synthetic-only tests; no network or copied provider responses."""
+import io
 import json
 import unittest
+from contextlib import redirect_stdout
+from unittest.mock import patch
 
 from research_runners.probe_aims_nld_flood_defences_v0 import (
-    MAX_BYTES, NoRedirect, ProbeFailure, TARGETS, get_one, validate_payload,
+    MAX_BYTES, NoRedirect, ProbeFailure, TARGETS, get_one, main, validate_payload,
 )
 
 
@@ -76,6 +79,39 @@ class TestFloodDefenceProbe(unittest.TestCase):
         payload["features"].append({"attributes": {"OBJECTID": 38}})
         with self.assertRaises(ProbeFailure):
             validate_payload(encoded(payload), TARGETS[1])
+
+    def test_cli_selects_exactly_one_trusted_fixed_provider(self):
+        calls = []
+
+        def fake_get_one(target):
+            calls.append(target.source_id)
+            return {
+                "source_id": target.source_id,
+                "shape": "one_oid_no_geometry",
+                "wkid": target.wkid,
+                "original_response_sha256": "0" * 64,
+            }
+
+        with patch(
+            "research_runners.probe_aims_nld_flood_defences_v0.get_one",
+            side_effect=fake_get_one,
+        ), redirect_stdout(io.StringIO()) as capture:
+            self.assertEqual(main(["--live", "--source", TARGETS[1].source_id]), 0)
+        self.assertEqual(calls, [TARGETS[1].source_id])
+        receipt = json.loads(capture.getvalue())
+        self.assertFalse(receipt["data_persisted"])
+        self.assertFalse(receipt["model_admitted"])
+        self.assertNotIn("url", receipt)
+
+    def test_cli_disallows_network_by_default_and_untrusted_source(self):
+        with patch(
+            "research_runners.probe_aims_nld_flood_defences_v0.get_one"
+        ) as call:
+            with self.assertRaises(SystemExit), redirect_stdout(io.StringIO()):
+                main(["--source", TARGETS[0].source_id])
+            with self.assertRaises(SystemExit), redirect_stdout(io.StringIO()):
+                main(["--live", "--source", "not-an-allowed-provider"])
+            call.assert_not_called()
 
     def test_no_redirect_handler(self):
         with self.assertRaisesRegex(ProbeFailure, "redirect forbidden"):
