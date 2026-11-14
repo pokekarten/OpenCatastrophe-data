@@ -10,6 +10,10 @@
 -- Fixed 3 exact response SHA/run/job/commit identities prevent a generic JSON
 -- smoke, a wrong URL or a plausible-looking metadata object from gating.
 -- Deliberately never changes restricted/prohibited source rights priorities.
+-- JRC GSW 1.5 exception is independently documented-only in PR #1533
+-- HEAD e72f8ab853f8b9d4639c0173bb8e70c4f16b53bd; free dataset use and
+-- the publisher Python downloader do NOT authorize unconstrained CloudFerro
+-- service polling or assert source-native 2026-11-10 corrected pixels.
 --
 WITH original_prioritized AS (
 WITH
@@ -237,6 +241,11 @@ SELECT
       OR q.registry_commercial_verdict IN ('prohibited','restricted')
       OR q.record_type='admitted_manifest'
       THEN q.next_action_priority
+   WHEN q.source_id='ec-jrc.global-surface-water.1984-2024'
+      AND q.record_type='landscape_candidate'
+      AND q.registry_commercial_verdict='allowed_verified'
+      AND q.sample_rows=0
+      THEN 'P1_review_cloudferro_service_terms_before_original_occurrence_sample'
    WHEN q.last_api_shape_status='inconclusive' AND v.source_id IS NOT NULL
       THEN 'P2_review_product_rights_and_science_after_original_probe'
    ELSE q.next_action_priority
