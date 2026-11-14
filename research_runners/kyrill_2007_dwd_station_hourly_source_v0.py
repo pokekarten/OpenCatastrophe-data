@@ -11,6 +11,7 @@ import argparse
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import sys
@@ -30,6 +31,12 @@ SCHEMA="KYRILL_2007_DWD_FX911_ORIGINAL_STATION_HOURLY_SOURCE_V0"
 
 class KyrillDWDSourceBlocked(ValueError):
     """Original DWD archive, event-window or historical metadata failed gates."""
+
+
+def _matches_finite_metadata(actual: float, expected: float, tolerance: float) -> bool:
+    """Reject nonfinite metadata before comparing against the source receipt."""
+    return (math.isfinite(actual) and math.isfinite(expected)
+            and abs(actual-expected) <= tolerance)
 
 
 def _manifest() -> dict:
@@ -92,10 +99,10 @@ def _sources(opener=None) -> tuple[dict,list[dict]]:
         if (param.get("Parameter")!="FX_911" or param.get("Zusatz-Info")!="in UTC"
             or param.get("Parameterbeschreibung")!="hoechste Windspitze der letzten Stunde"
             or param.get("Einheit") not in ("m/sec","m/s")
-            or abs(lat-expected["historical_latitude"])>1e-8
-            or abs(lon-expected["historical_longitude"])>1e-8
-            or abs(elevation-expected["historical_station_elevation_m"])>0.02
-            or abs(height-expected["historical_anemometer_height_m_agl"])>1e-8):
+            or not _matches_finite_metadata(lat,expected["historical_latitude"],1e-8)
+            or not _matches_finite_metadata(lon,expected["historical_longitude"],1e-8)
+            or not _matches_finite_metadata(elevation,expected["historical_station_elevation_m"],0.02)
+            or not _matches_finite_metadata(height,expected["historical_anemometer_height_m_agl"],1e-8)):
             raise KyrillDWDSourceBlocked("historical DWD site/device/FX911 UTC semantics differ from pin")
         values=[]
         for index in range(HOURS):
