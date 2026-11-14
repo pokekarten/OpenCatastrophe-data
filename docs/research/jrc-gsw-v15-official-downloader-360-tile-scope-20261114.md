@@ -98,3 +98,39 @@ None of these provenance, transport or research-science gates authorizes
 unattended worldwide raster acquisition. All source and insurer model
 admission flags remain false; the JRC provider source access contract stays
 \`documented_only\`, \`probe_contract.mode=none\`.
+
+## Bounded original TIFF HTTP Range acceptance gate (offline only)
+
+The new pure function
+\`scripts/preflight_jrc_gsw_v15_original_range_receipt_v0.py\`
+implements a future **single fixed tile** transport check over externally
+supplied original response headers and exactly **4,096 bytes**. It performs
+**zero provider network requests** and cannot authorize the underlying
+service account/anonymous access.
+
+A future approved request for
+\`occurrence_10E_50N_v1_5_2024.tif\` would have to return:
+
+- exactly \`206 Partial Content\` rather than \`200 OK\` (which would
+  indicate the server ignored the Range header and may transmit the entire
+  enormous TIFF);
+- \`Content-Range: bytes 0-4095/TOTAL\` with canonical bounded declared
+  total size, exact \`Content-Length: 4096\`, \`Content-Encoding: identity\`;
+- \`image/tiff\` or \`application/octet-stream\` content type, exact source
+  URL and strict native TIFF/BigTIFF first IFD inspection;
+- only the original **4-KiB prefix SHA256**, never a false whole-file
+  SHA256, whole-file checksum claim, NoData/CRS validation or assumed
+  post-2026-11-10 corrected source identity.
+
+Synthetic regression tests in
+\`tests/test_preflight_jrc_gsw_v15_original_range_receipt_v0.py\`
+cover a correct TIFF prefix, unhonored Range/HTTP200, compression,
+invalid media types, wrong source URLs/versions, malformed TIFFs, missing
+or inconsistent Content-Range/Content-Length, conflicting headers and
+claims of scientific model approval. No original provider request or
+pixel extraction is performed.
+
+**The original source access contract still allows zero CloudFerro
+or Google data asset HTTP requests.** This code prepares a later
+reviewed single-request proof and prevents accidental bulk transfer,
+not a new host permission.
