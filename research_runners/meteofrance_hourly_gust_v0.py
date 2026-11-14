@@ -26,6 +26,10 @@ CATALOGUE_URL = "https://www.data.gouv.fr/api/1/datasets/donnees-climatologiques
 DOCUMENT_URL = "https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/HOR/H_descriptif_champs.csv"
 RESOURCE_TITLE = "HOR_departement_75_periode_2020-2024"
 RESOURCE_FILENAME = "H_75_previous-2020-2024.csv.gz"
+RESOURCE_ID = "a77b4d44-d361-4e59-b6cc-cbbf435a2d89"
+ORIGINAL_RESOURCE_URL = "https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/HOR/" + RESOURCE_FILENAME
+ORIGINAL_RESOURCE_BYTES = 9_084_848
+ORIGINAL_RESOURCE_SHA256 = "8d0b0d7cded68110d1e755a085cd5b96956e80b822c81950969bd21ff97b9d76"
 ALLOWED_HOSTS = frozenset(("www.data.gouv.fr", "meteofrance.s3.sbg.io.cloud.ovh.net"))
 MAX_CATALOGUE_BYTES = 12 * 1024 * 1024
 MAX_DOCUMENT_BYTES = 64 * 1024
@@ -39,6 +43,13 @@ QUALITY_OK = frozenset(("0", "1"))
 
 class Blocked(ValueError):
     """Source identity, API transport or physical-unit ambiguity."""
+
+
+class _RejectRedirects(urllib.request.HTTPRedirectHandler):
+    """Block redirects before urllib sends a request to a new host."""
+
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        raise Blocked("HTTP redirect forbidden for fixed original data source")
 
 
 def sha256(data: bytes) -> str:
@@ -58,7 +69,9 @@ def _check_url(url: str, *, document: bool = False) -> None:
 def _read_url(url: str, limit: int) -> bytes:
     _check_url(url)
     request = urllib.request.Request(url, headers={"User-Agent": "OpenCatastrophe-data-original-preflight/1.0", "Accept": "application/json, text/plain, */*"})
-    with urllib.request.urlopen(request, timeout=30) as response:
+    # Do not follow a redirect and only afterwards check the destination:
+    # a malicious redirect target would already have received a request.
+    with urllib.request.build_opener(_RejectRedirects()).open(request, timeout=30) as response:
         _check_url(response.geturl())
         size = response.headers.get("Content-Length")
         if size and size.isdecimal() and int(size) > limit:
@@ -81,15 +94,17 @@ def resolve_resource(catalogue: bytes) -> dict[str, str | int | None]:
     if len(matches) != 1:
         raise Blocked(f"expected exactly one official {RESOURCE_TITLE} resource; got {len(matches)}")
     item = matches[0]
+    if item.get("id") != RESOURCE_ID:
+        raise Blocked("catalogue resource UUID differs from pinned original source")
     url = item.get("url")
     if not isinstance(url, str):
         raise Blocked("resource lacks HTTPS download URL")
     _check_url(url)
-    if not url.endswith("/" + RESOURCE_FILENAME) and not re.fullmatch(r"https://www\.data\.gouv\.fr/api/1/datasets/r/[0-9a-fA-F-]+/?", url):
-        raise Blocked("resource URL/filename does not match frozen source identity; basename=" + urllib.parse.urlsplit(url).path.rsplit("/", 1)[-1])
+    if url != ORIGINAL_RESOURCE_URL:
+        raise Blocked("resource URL differs from pinned original publisher object")
     size = item.get("filesize")
-    if size is not None and (type(size) is not int or size < 0 or size > MAX_GZIP_BYTES):
-        raise Blocked("resource declared byte size out of allowed bounds")
+    if type(size) is not int or size != ORIGINAL_RESOURCE_BYTES:
+        raise Blocked("resource declared byte size differs from pinned original")
     return {"resource_id": str(item.get("id", "")), "title": RESOURCE_TITLE, "url": url, "declared_bytes": size, "catalogue_sha256": sha256(catalogue)}
 
 
@@ -207,7 +222,9 @@ def main(argv: list[str] | None = None) -> int:
             dictionary_sha = verify_dictionary(_read_url(DOCUMENT_URL, MAX_DOCUMENT_BYTES))
             metadata = resolve_resource(_read_url(CATALOGUE_URL, MAX_CATALOGUE_BYTES))
             source = _read_url(str(metadata["url"]), MAX_GZIP_BYTES)
-            result = audit_gzip(source)
+            if len(source) != ORIGINAL_RESOURCE_BYTES:
+                raise Blocked("original source byte length differs from previous provider receipt")
+            result = audit_gzip(source, expected_sha256=ORIGINAL_RESOURCE_SHA256)
             result.update({"dictionary_sha256": dictionary_sha, **metadata})
         else:
             result = audit_gzip(args.original_gz.read_bytes(), expected_sha256=args.expected_sha256)
