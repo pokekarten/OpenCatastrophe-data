@@ -98,6 +98,8 @@ class CologneTreePolygonTests(unittest.TestCase):
                          {"name": "A", "nummer": "123"}}]}).encode("utf-8"),
             json.dumps({"features": [{"attributes": {"name": "", "nummer": "123"}}]}).encode("utf-8"),
             json.dumps({"features": [{"attributes": {"name": "A", "nummer": 123}}]}).encode("utf-8"),
+            b'{"features":[],"features":[]}',
+            b'{"features":[],"metadata":NaN}',
         ]
         for data in cases:
             with self.subTest(length=len(data)), self.assertRaises(challenge.PolygonChallengeError):
