@@ -10,6 +10,8 @@
 -- Fixed 3 exact response SHA/run/job/commit identities prevent a generic JSON
 -- smoke, a wrong URL or a plausible-looking metadata object from gating.
 -- Deliberately never changes restricted/prohibited source rights priorities.
+-- JRC GSW 1.5 exception survives the 2026-11-14 original PUBLISHER HTML
+-- metadata sample #129: a webpage is not the source catalogue or any TIFF.
 -- JRC GSW 1.5 exception is independently documented-only in PR #1533
 -- HEAD e72f8ab853f8b9d4639c0173bb8e70c4f16b53bd; free dataset use and
 -- the publisher Python downloader do NOT authorize unconstrained CloudFerro
@@ -222,6 +224,32 @@ one_per_source AS (
         MAX(retrieved_at) AS last_original_pr_branch_observed_at
  FROM original_branch_evidence
  GROUP BY source_id
+),
+jrc_verified_publisher_html AS (
+ SELECT source_id,
+        COUNT(*)::int AS verified_publisher_html_source_receipts,
+        MIN(sample_id) AS publisher_html_metadata_sample_id
+ FROM research.source_sample_v0 s
+ WHERE s.source_id='ec-jrc.global-surface-water.1984-2024'
+   AND s.source_url='https://global-surface-water.appspot.com/download'
+   AND s.sample_kind='public_metadata'
+   AND s.provider_response_sha256=
+      '510b4bc273c743b8789afb3ffa57db31077e1f2ac617aca4869870c123995a08'
+   AND s.sample_sha256=
+       encode(sha256(convert_to(s.sample_json::text,'UTF8')),'hex')
+   AND s.sample_json->>'profile'=
+      'jrc_gsw_v15_original_publisher_html_one_shot_metadata_v0'
+   AND s.sample_json->>'github_run_id'='43591889218'
+   AND s.sample_json->>'github_job_id'='132438178397'
+   AND s.sample_json->>'github_head_sha'='bf9f5a729bebb069492d1fc94e4d0db6cababd74'
+   AND s.sample_json->>'request_sha256'=
+      'd2ba746281468b520c5ac3b73db8f40f2d1438d471b2a08c385fbb71b6cfd3f7'
+   AND s.sample_json->>'original_publisher_html_response_bytes'='85581'
+   AND s.sample_json->>'source_original_catalogue_bytes_hashed'='false'
+   AND s.sample_json->>'individual_tile_original_bytes_hashed'='false'
+   AND s.research_only AND NOT s.model_input_approved
+   AND NOT s.source_byte_persistence_authorized
+ GROUP BY source_id
 )
 SELECT
  q.*,
@@ -233,6 +261,9 @@ SELECT
  (COALESCE(q.last_api_shape_status='inconclusive',false)
    AND v.source_id IS NOT NULL)
     AS older_intermediary_inconclusive_superseded_for_one_original_proof,
+ COALESCE(h.verified_publisher_html_source_receipts,0)::int
+    AS jrc_publisher_html_original_receipts_not_tile_proofs,
+ h.publisher_html_metadata_sample_id,
  q.next_action_priority AS historical_queue_priority,
  CASE
    -- Never let independent PR-branch proof override source integrity,
@@ -244,7 +275,8 @@ SELECT
    WHEN q.source_id='ec-jrc.global-surface-water.1984-2024'
       AND q.record_type='landscape_candidate'
       AND q.registry_commercial_verdict='allowed_verified'
-      AND q.sample_rows=0
+      AND q.native_or_observed_value_samples=0
+      AND q.native_pixel_receipts_classified_preview=0
       THEN 'P1_review_cloudferro_service_terms_before_original_occurrence_sample'
    WHEN q.last_api_shape_status='inconclusive' AND v.source_id IS NOT NULL
       THEN 'P2_review_product_rights_and_science_after_original_probe'
@@ -255,12 +287,18 @@ SELECT
  false AS newly_grants_model_input_approval
 FROM original_prioritized q
 LEFT JOIN one_per_source v ON v.source_id=q.source_id
+LEFT JOIN jrc_verified_publisher_html h ON h.source_id=q.source_id
 ORDER BY
  CASE
    WHEN q.bad_sample_json_hashes>0 THEN 0
    WHEN q.registry_commercial_verdict='prohibited' THEN 5
    WHEN q.registry_commercial_verdict='restricted' THEN 4
    WHEN q.record_type='admitted_manifest' THEN 6
+   WHEN q.source_id='ec-jrc.global-surface-water.1984-2024'
+     AND q.record_type='landscape_candidate'
+     AND q.registry_commercial_verdict='allowed_verified'
+     AND q.native_or_observed_value_samples=0
+     AND q.native_pixel_receipts_classified_preview=0 THEN 1
    WHEN q.last_api_shape_status='inconclusive' AND v.source_id IS NOT NULL THEN 2
    WHEN q.next_action_priority LIKE 'P1_%' THEN 1
    WHEN q.next_action_priority LIKE 'P2_%' THEN 2
