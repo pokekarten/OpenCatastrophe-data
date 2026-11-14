@@ -25,7 +25,7 @@ SOURCES = {
         "url": (
             "https://geoportal.stadt-koeln.de/wss/service/baumkataster_extern_wfs/guest"
             "?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature"
-            "&TYPENAMES=ms:baumkataster&COUNT=1"
+            "&TYPENAMES=ms:baumkataster&COUNT=1&SORTBY=Baumnummer"
             "&OUTPUTFORMAT=application%2Fjson%3B%20subtype%3Dgeojson"
         ),
         "geometry_type": "Point",
@@ -116,10 +116,19 @@ def inspect_geojson(payload: bytes, source: str) -> dict[str, object]:
             raise WfsSampleError("KGG sample missing/invalid source-declared EPSG:4326")
         coordinate_status = "declared_wgs84_position_range_checked"
     else:
-        # Even when a provider receives SRSNAME=EPSG:4326, its JSON layer
-        # has been observed omitting CRS and returning metre-like values.
-        # Preserve the ambiguity and do not infer a CRS from a .json suffix.
-        coordinate_status = "not_approved_geographic_crs_must_reproject_and_verify"
+        # Stadt Koeln's tree WFS advertises EPSG:25832 as default. Original
+        # GeoJSON has been observed with *no* CRS and metre-like coordinates,
+        # even when a client explicitly requests EPSG:4326. Require a plausible
+        # projected envelope while keeping every result non-admitted.
+        if not all(250_000 <= x <= 500_000 and 5_550_000 <= y <= 5_750_000
+                   for x, y in positions):
+            raise WfsSampleError("tree coordinates do not fit NRW UTM32 hypothesis")
+        number = properties.get("Baumnummer")
+        if not isinstance(number, str) or not number.strip() or len(number) > 256:
+            raise WfsSampleError("missing or invalid provider tree identifier")
+        if declared not in (None, "EPSG:25832", "urn:ogc:def:crs:EPSG::25832"):
+            raise WfsSampleError("tree GeoJSON CRS conflicts with metre coordinates")
+        coordinate_status = "projected_epsg25832_hypothesis_only_not_model_approved"
 
     keys = sorted(properties)
     return {
@@ -134,6 +143,11 @@ def inspect_geojson(payload: bytes, source: str) -> dict[str, object]:
         "property_keys_sha256": hashlib.sha256(
             json.dumps(keys, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         ).hexdigest(),
+        "tree_identifier_sha256": (
+            hashlib.sha256(properties["Baumnummer"].encode("utf-8")).hexdigest()
+            if source == "tree" else None
+        ),
+        "source_order": "Baumnummer_ascending" if source == "tree" else "unfixed",
         "source_crs_declaration": declared or "not_declared",
         "coordinate_status": coordinate_status,
         "model_admitted": False,
