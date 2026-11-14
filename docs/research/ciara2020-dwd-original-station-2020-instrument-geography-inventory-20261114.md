@@ -34,27 +34,44 @@ The already SHA-proven three original DWD FX station ZIPs are:
 - 00603, Königswinter-Heiderhof, original ZIP SHA
   `4a61a6394344bba05a06553794ac1a2d5edb4c4e3ac39ae1f26407e5f4e2f62b`
 
-The new **branch-scoped live source metadata inventory** downloads
-only these three original official DWD source archives. It validates
-their exact original ZIP SHA against accepted #1564 TOML and inspects
-at most three bounded source metadata text files per original archive.
-For each, the one-off CI logs original member name, original member
-SHA256, raw original byte count, line count and up to twelve short
-lines, to establish the exact historical file structure.
-It does not publish entire original FX hourly measurements or any
-genuine insurer private site data.
+The bounded metadata inventory first hashed the exact geography,
+device and parameter members in each original SHA-pinned ZIP. The
+follow-on attestation then parsed the publisher's schemas, selected
+exactly one metadata period covering all four Ciara dates, and matched
+those fields to the already accepted member SHA receipt. This session
+also replayed that parser offline against all three acquired original
+ZIPs; the event-period result matched the committed attestation values.
+Raw hourly files and source ZIPs remain outside Git.
 
-**This is discovery rather than historical matching**: source
-metadata lines remain uninterpreted until the file structure is
-observed. An independent follow-on test can then parse dates,
-geography, device/measurement-height and timestamp standards for
-the 2020 Ciara period, with fail-closed interval selection and
-source provenance. No timewise DWD/ERA5 bias, RMSE, geography
-calibration or vulnerability is currently approved.
+## Verified February 2020 source metadata
+
+| Station | Historical site position | Site elevation | Sensor above ground | Instrument | Nearest ERA5 cell / distance |
+|---|---:|---:|---:|---|---:|
+| Köln/Bonn (02667) | 50.8645N, 7.1575E | 90.91 m | 10 m | Windsensor Classic 4.3303 (DWDSYN) | 50.75N, 7.25E / 14.295 km |
+| Wuppertal (15200) | 51.2531N, 7.2157E | 327 m | 12 m | Ultrasonic Anemometer 2D | 51.25N, 7.25E / 2.412 km |
+| Königswinter-Heiderhof (00603) | 50.7350N, 7.1931E | 159 m | 10 m | Windsensor Classic 4.3303 | 50.75N, 7.25E / 4.337 km |
+
+The DWD parameter metadata for all three stations describes `FX_911`
+as the highest wind gust in the previous hour, in m/s, with the hour
+reference **in UTC**. For Königswinter-Heiderhof, the February 2020
+position and 10 m instrument height were valid through 2020-09-30;
+the currently listed position and 12 m instrument are effective from
+2020-10-01. Using today's location for the February comparison would
+therefore be wrong by roughly one kilometre.
+
+The source establishes DWD's UTC hour labels and station metadata.
+It does **not** establish that the DWD one-hour maximum and ERA5
+`10m_wind_gust_since_previous_post_processing` use exactly identical
+hour windows or equivalent exposure/height. The stations map to only
+two independent ERA5 grid nodes, and the three event maxima remain
+descriptive checks; no same-hour bias, RMSE, climate skill, or gust
+height correction is admitted. No insurer loss or vulnerability
+calibration is admitted.
 
 Run no network:
 
     python -m unittest tests.test_ciara2020_dwd_original_2020_station_metadata_inventory_v0 -v
+    python -m unittest tests.test_ciara2020_dwd_historical_feb2020_station_attestation_v0 -v
     python research_runners/ciara2020_dwd_original_2020_station_metadata_inventory_v0.py --dry-run
 
 Run bounded official public DWD originals:

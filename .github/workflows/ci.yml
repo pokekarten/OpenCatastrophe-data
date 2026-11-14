@@ -236,32 +236,6 @@ jobs:
       - name: Re-fetch official 3 measured DWD 2020 stations and exact Google ERA5 96h
         run: python research_runners/ciara2020_dwd_original_to_era5_station_peak_comparison_v0.py --live-original-station-grid
 
-  ciara2020-dwd-original-station-metadata:
-    # Three original SHA-pinned DWD FX911 ZIPs. Inspect metadata ONLY;
-    # no station temporal/geography harmonization or insurer model GO.
-    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-dwd-2020-station-metadata-inventory-20261114'
-    name: Ciara 2020 DWD original historical station instrument/geography metadata
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - name: Exact PR checkout with no stored auth
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-      - name: Setup pinned Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.11"
-      - name: Adversarial source metadata archive tests without external data
-        run: |
-          python -m unittest tests.test_ciara2020_dwd_original_2020_station_metadata_inventory_v0 -v
-          python research_runners/ciara2020_dwd_original_2020_station_metadata_inventory_v0.py --dry-run
-      - name: Read exact 3 original publisher ZIP SHA and 2020 source metadata previews
-        run: python research_runners/ciara2020_dwd_original_2020_station_metadata_inventory_v0.py --live-original-metadata
-
   eu-flood-spatial:
     name: EU flood spatial A1
     runs-on: ubuntu-24.04
