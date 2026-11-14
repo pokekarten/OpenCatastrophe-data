@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "de.koeln.statistik-rbs-kgg-stadtteil.arcgis-rest.2026",
+  "source_ids": [
+    "de.koeln.statistik.rbs-geopackage.2026"
+  ],
+  "provider": "Stadt Köln / Amt für Stadtentwicklung und Statistik",
+  "interface_type": "arcgis_rest",
+  "status": "documented_only",
+  "documentation_url": "https://www.offenedaten-koeln.de/dataset/geopackage-raumbezugssystem-koeln",
+  "service_root": "https://geoportal.stadt-koeln.de",
+  "api_version": "ArcGIS REST MapServer, official Stadtteil polygon layer 3",
+  "access_scope": [
+    "metadata"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "point_stadtteil_membership"
+    ],
+    "path_templates": [
+      "/arcgis/rest/services/basiskarten/kgg/MapServer/3/query"
+    ],
+    "parameter_rules": "Research-only manual point/polygon check was performed with fixed official MapServer/3/query and where=1=1, geometryType=esriGeometryPoint, inSR=4326, spatialRel=esriSpatialRelIntersects, returnGeometry=false, outFields=name,nummer, f=json; five positions derived by transforming fixed bounded Baumkataster samples, plus one fixed Berlin negative control. No authorized recurring, bulk, user-chosen-coordinate or model pipeline invocation under this documentation-only contract. No other layers, paths, query formats, source geometry, full district records, geocoding, arbitrary hosts/redirects or arbitrary feature filters."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "Provider-side ArcGIS REST JSON: zero or one features with Stadtteil fields name, nummer; no original polygon geometry returned or retained.",
+    "scientific_semantics": "The MapServer/3 point intersection tests whether a transformed Baumkataster sample lies inside one official Köln Stadtteil polygon. Five of five sorted sampled tree positions returned one Stadtteil; 4/4 nonblank tree district labels agreed, one was blank. Berlin control returned zero features. This independently validates approximate geographic support, not survey-level positional precision, full tree/municipal coverage, official dataset version synchronization, a flood-loss layer, building exposure or CAT model admission."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 16384,
+    "max_sample_bytes": 16384,
+    "retry_policy": "none",
+    "rate_limit_notes": "REST service access observed once in this bounded source investigation. No separately published numeric quota or REST-specific commercial automation terms were verified. Contract remains documentation-only, with probe mode none until endpoint terms and purpose are reviewed.",
+    "mutability_notes": "Municipal KGG polygon service and daily Baumkataster WFS are mutable and may be updated independently. A match is not a frozen date-consistent source snapshot. Future production samples must bind service/version, independent timestamps, exact feature identities, response hashes, CRS handling and snapshot drift policy."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Municipal dataset page and original WFS ServiceIdentification explicitly declare Datenlizenz Deutschland Zero 2.0 for the KGG WFS source. ArcGIS REST MapServer metadata identifies the city publisher and supports Query but did not state separate REST automation/redistribution permissions. Do not automatically transfer WFS service licence or provider access commitments to this REST interface. The recorded limited one-time external source research does not grant production automation, data retention, public raw redistribution or hazard-model training/admission."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-14",
+  "evidence_urls": [
+    "https://www.offenedaten-koeln.de/dataset/geopackage-raumbezugssystem-koeln",
+    "https://geoportal.stadt-koeln.de/arcgis/services/basiskarten/kgg/MapServer/WFSServer?request=GetCapabilities&service=WFS",
+    "https://geoportal.stadt-koeln.de/arcgis/rest/services/basiskarten/kgg/MapServer?f=pjson",
+    "https://www.govdata.de/dl-de/zero-2-0"
+  ],
+  "notes": "Five point-in-polygon queries on original Stadtteil layer 3 returned exactly one named district each; four nonblank tree Stadtteil labels matched; one tree label was missing. Fixed Berlin negative returned zero. A separate independent city layer 5 query returned five positive and one negative. No source geometry/feature rows/trees are stored in Git or NeonDB. Reproduce the syntax only through an explicit research runner research_runners/cologne_tree_polygon_challenge_v0.py after separate service-rights review; its offline tests are deterministic and synthetic. This contract deliberately cannot authorize production REST acquisition or model-admitted inputs."
+}
