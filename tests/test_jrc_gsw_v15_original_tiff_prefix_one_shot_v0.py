@@ -189,11 +189,23 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
 
     def test_short_long_or_invalid_tiff_body_blocked_without_source_admission(self):
         p, c = hypothetical_review(self.policy, self.contract)
-        for raw in (b"", b"not tiff", classic()[:4095], classic()+b"x",
+        for raw in (b"", b"not tiff", classic()[:4095],
                     bytes(jrc.PREFIX_BYTES)):
             with self.subTest(n=len(raw)), self.assertRaises(jrc.OriginalPrefixBlocked):
                 jrc.probe_original_prefix(p,c,
                     open_request=lambda *_:FakeResponse(raw))
+
+    def test_even_server_oversends_body_no_extra_original_bytes_are_read(self):
+        # HTTP206 and declared Content-Length are checked *before* reading.
+        # An untrusted transport could send trailing bytes beyond the
+        # declared range: our bounded consumer never acquires them.
+        p,c=hypothetical_review(self.policy,self.contract)
+        response=FakeResponse(classic()+b"not-authorized")
+        meta=jrc.probe_original_prefix(p,c,open_request=lambda *_:response)
+        self.assertEqual(response.read_sizes,[4096])
+        self.assertTrue(meta["original_prefix_sha_only_not_full_asset"])
+        self.assertIsNone(meta["original_asset_whole_file_sha256"])
+        self.assertFalse(meta["model_input_approved"])
 
     def test_http429_and_network_error_not_retried(self):
         p,c=hypothetical_review(self.policy,self.contract)
