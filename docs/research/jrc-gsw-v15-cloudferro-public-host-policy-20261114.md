@@ -114,9 +114,12 @@ download. It requires same-host HTTP206, exact
 `Content-Range: bytes 0-4095/TOTAL` with
 `TOTAL > 4096`, exactly `Content-Length: 4096`,
 native TIFF/octet-stream media, no transport compression
-and an in-memory read capped at **4097 bytes**. Even if a
-server ignores Range, the runner never accepts the response and
-does not read a full TIFF into memory. It produces a metadata-only
+and an in-memory read capped at **4096 bytes**. An HTTP200
+response that ignores Range is rejected before any body read; even if
+a malformed server sends more bytes than its declared HTTP206 range,
+the consumer reads only the authorized 4096-byte prefix, not a
+full TIFF. The runner cannot prove that any unconsumed trailing bytes
+do or do not exist. It produces a metadata-only
 receipt including an **original-prefix-only** SHA-256,
 a 4096-byte first-IFD TIFF shape preflight and explicit negative
 whole-asset, corrected-pixel and CAT-model flags.
