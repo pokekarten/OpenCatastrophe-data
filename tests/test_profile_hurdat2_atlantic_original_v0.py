@@ -42,6 +42,8 @@ class Hurdat2OriginalProfileTests(unittest.TestCase):
         self.assertIn("syntactic_preflight_only", result["verification"])
         self.assertEqual(result["first_fix_utc"], "2022-09-19T00:00:00+00:00")
         self.assertNotIn("model_use", result)
+        self.assertFalse(result["source_identity_verified"])
+        self.assertNotIn("source_id", result)
 
     def test_older_twenty_column_fix_is_supported_without_imputation(self):
         fields = original().decode().splitlines()[1].split(",")
