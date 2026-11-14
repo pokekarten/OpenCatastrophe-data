@@ -52,6 +52,9 @@ def inspect_inline_tile_routes(raw: bytes) -> dict[str, object]:
     for item in _SCRIPT_BLOCK.finditer(page):
         code = item.group(1)
         if _FUNCTION.search(code):
+            opening_tag = item.group(0).split(">", 1)[0]
+            if re.search(r"\bsrc\s*=", opening_tag, flags=re.IGNORECASE):
+                raise JSRouteBlocked("external script src cannot prove inline publisher routing")
             blocks.append(code)
     if len(blocks) != 1:
         raise JSRouteBlocked("exactly one publisher set_paths inline script required")
