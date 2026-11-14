@@ -63,14 +63,13 @@ receipt AS (
  FROM facts f
 )
 INSERT INTO research.source_sample_v0 (
-  sample_id,source_id,source_url,sample_kind,sample_json,
+  source_id,source_url,sample_kind,sample_json,
   provider_response_sha256,sample_sha256,provider_license,
   licence_evidence_url,rights_scope,product_version,request_identity,
   retrieved_at,research_only,model_input_approved,
   source_byte_persistence_authorized
 )
 SELECT
- (SELECT COALESCE(MAX(sample_id),0)+1 FROM research.source_sample_v0),
  r.source_id,r.source_url,'public_metadata',r.receipt_json,
  r.response_sha,
  encode(sha256(convert_to(r.receipt_json::text,'UTF8')),'hex'),
