@@ -164,14 +164,16 @@ checks retain their existing safety priority.
 | --- | ---: |
 | Canonical inventory entries | 707 |
 | PR-branch original-response proofs validated | 3 |
-| Queue priorities changed | **1** |
+| Queue priorities changed | **2** |
 | Historical inconclusive responses independently superseded | **1** |
 | Duplicated source proof matches | 0 |
 | NULL inconclusive flags | 0 |
 | Newly granted main trust or model admission | **0** |
 
-The **only changed priority** is
-`noaa.swpc.real-time-solar-wind`:
+Two **source-specific** priorities were adjusted, without changing their
+historical API receipts or any licensing status.
+
+**NOAA SWPC** (`noaa.swpc.real-time-solar-wind`):
 
 - Original historic queue: `P1_retest_provider_with_trusted_runner`
   because its old intermediary smoke receipt remains `inconclusive`.
@@ -183,6 +185,27 @@ The **only changed priority** is
   are **retained** as distinct fields (not overwritten or falsified).
   It is **not** a claim of a trusted-main check, unconditional data rights,
   sensor lineage integrity, scientific validity or CAT model approval.
+
+**JRC Global Surface Water v1.5**
+(`ec-jrc.global-surface-water.1984-2024`):
+
+- Original historic queue: `P1_review_bounded_first_source_sample`.
+- New rights-safe queue action:
+  `P1_review_cloudferro_service_terms_before_original_occurrence_sample`.
+- The publisher's official [V1.5 download page](https://global-surface-water.appspot.com/download)
+  confirms free Copernicus data reuse, required attribution, the exact
+  version, the **2026-11-10 Occurrence >100% correction**, and availability
+  of its own download script. The official
+  [Python downloader instructions](https://global-surface-water.appspot.com/gsw/Download_Instructions.html)
+  specify source-hosting and raster asset layout, but do not independently
+  grant unlimited CloudFerro API requests. The independently reviewed
+  source contract in PR #1533 (`e72f8ab853f8b9d4639c0173bb8e70c4f16b53bd`)
+  remains `documented_only` with
+  `commercial_automation_status=unknown`. Therefore **no original
+  listing/GeoTIFF GET was attempted**, and the source still has **zero
+  native samples**. First review the exact hosted service terms and a
+  single bounded original request. Original pixel/science/model admission
+  remains separately blocked.
 
 DWD RADKLIM remains `P2_review_native_observation_sample` because a 2,048-byte
 original corrected NetCDF compressed archive prefix has **no rainfall data**.
