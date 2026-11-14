@@ -55,12 +55,22 @@ def _no_nan(value):
     raise ArchiveBlocked("non-finite source JSON")
 
 
+def _strict_float(value: str) -> float:
+    import math
+
+    result = float(value)
+    if not math.isfinite(result):
+        raise ArchiveBlocked("overflowed source JSON decimal")
+    return result
+
+
 def check_archive_metadata(raw: bytes) -> dict:
     if type(raw) is not bytes or not (0 < len(raw) <= MAX_BYTES):
         raise ArchiveBlocked("original source metadata bytes outside cap")
     try:
         data = json.loads(raw.decode("utf-8"),
-                          object_pairs_hook=_unique, parse_constant=_no_nan)
+                          object_pairs_hook=_unique, parse_constant=_no_nan,
+                          parse_float=_strict_float)
     except (ValueError, UnicodeDecodeError) as exc:
         raise ArchiveBlocked("non-strict original provider JSON") from exc
     if (
@@ -77,8 +87,9 @@ def check_archive_metadata(raw: bytes) -> dict:
     for key, value in assets.items():
         if type(key) is not str or not key or len(key) > 180:
             raise ArchiveBlocked("malformed archive asset identifier")
-        if type(value) is not dict or type(value.get("href")) is not str:
-            raise ArchiveBlocked("missing archive metadata asset pointer")
+        if (type(value) is not dict or type(value.get("href")) is not str
+                or not value["href"].strip() or len(value["href"]) > 2048):
+            raise ArchiveBlocked("missing or invalid archive metadata asset pointer")
         # Returned hrefs are references only; no URL resolution or network follows.
         reported = value.get("type")
         if reported is None:
@@ -112,17 +123,21 @@ def probe(opener=None) -> dict:
     )
     try:
         with client.open(req, timeout=TIMEOUT) as response:
-            if response.status != 200:
-                raise ArchiveBlocked("unexpected metadata HTTP status")
+            if response.status != 200 or response.geturl() != URL:
+                raise ArchiveBlocked("unexpected metadata HTTP status or final URL")
             media = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             if media not in {"application/geo+json", "application/json"}:
                 raise ArchiveBlocked("unexpected metadata media type")
+            if response.headers.get("Content-Encoding", "identity").strip().lower() != "identity":
+                raise ArchiveBlocked("compressed metadata response not reviewed")
             declared = response.headers.get("Content-Length")
             if declared is not None and (
                 not declared.isdecimal() or int(declared) < 1 or int(declared) > MAX_BYTES
             ):
                 raise ArchiveBlocked("oversized declared metadata body")
             raw = response.read(MAX_BYTES + 1)
+            if declared is not None and len(raw) != int(declared):
+                raise ArchiveBlocked("metadata Content-Length mismatch")
     except (HTTPError, URLError, TimeoutError, OSError) as exc:
         raise ArchiveBlocked("exact provider metadata GET unavailable") from exc
     result = check_archive_metadata(raw)
