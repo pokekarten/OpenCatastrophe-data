@@ -17,6 +17,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  jrc-gsw-v15-original-publisher-js-source-route:
+    # Same-repository research PR ONLY, one exact JRC public publisher HTML GET
+    # to prove the CURRENT first-party inline JS route assignment sequence.
+    # NO CloudFerro, Google TIFF/WMTS/GEE, original pixel, crawler or credentials.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/20261113-jrc-gsw-v15-rights-transport-gate' && github.event.pull_request.head.repo.full_name == github.repository
+    name: JRC v1.5 official original publisher HTML JS route proof (one GET)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout original same-repository source PR without token retention
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up pinned Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Verify original HTML and three JS route assignments offline first
+        run: python -m unittest tests.test_preflight_jrc_gsw_v15_publisher_js_routes_v0 tests.test_jrc_gsw_v15_publisher_page_one_shot_v0 -v
+      - name: Read only one exact public JRC HTML and hash original full publisher page
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '### JRC GSW v1.5 first-party inline JS route proof' >> "$GITHUB_STEP_SUMMARY"
+          echo 'One official publisher HTML public GET only. Active CloudFerro after overwritten Google v1.5; no raster GET, no raw original body persisted, no CAT approval.' >> "$GITHUB_STEP_SUMMARY"
+          python -m research_runners.jrc_gsw_v15_publisher_page_one_shot_v0 --one-shot | tee -a "$GITHUB_STEP_SUMMARY"
+
   check:
     name: Python ${{ matrix.python-version }}
     needs: [eu-flood-spatial]
