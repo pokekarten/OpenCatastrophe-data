@@ -71,8 +71,15 @@ estimate, a global buildings register, a loss model or verified insurer TIV.
   www.geodaten.bayern.de*. This does not authorize proprietary ALKIS WFS,
   ownership data or federal HU-DE. Source:
   [Official rights](https://www.geodaten.bayern.de/odd/m/3/html/nutzungsbedingungen.html).
-  The satellite source's attribution/licensing requires separate review
-  for the final chosen use; don't infer dataset-wide approval.
+  The separate DLR/EOC official [WSF2019 dataset catalog]
+  (https://catalogue.geoservice.dlr.de/web/datasets/wsf_2019)
+  and [original STAC collection](https://geoservice.dlr.de/eoc/ogc/stac/v1/collections/WSF_2019?f=html)
+  both explicitly state **CC BY 4.0** for WSF2019. This confirms the
+  product-level attribution licence, **not** independently reviewed API
+  automation/rate or bulk redistribution service terms, model calibration
+  validity, temporal alignment or a claim that the 10 m settlement class
+  represents standalone insured buildings. Record source credit and
+  any derivative modifications for BOTH data products.
 
 ## Scientific limits: these TWO IoU numbers cannot be pooled
 
