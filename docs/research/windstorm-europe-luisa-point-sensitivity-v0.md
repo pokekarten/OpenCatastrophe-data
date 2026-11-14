@@ -45,8 +45,12 @@ conditional structural-loss sensitivities are:
 | `concrete buidling` | 0.00 |
 
 These alternatives are deliberately not averaged or mapped from a land-use
-code to a mix. The 0.40% versus 2.75% workbook/notebook column-order conflict
-remains unresolved. The output is deterministic damage-percentage arithmetic;
+code to a mix. The 0.40% versus 2.75% values cited in the source-order audit
+are only the disputed regular-outbuilding component, not full LUISA class
+curves. Including every class share changes the class-2110 example at 40 m/s
+to 29.40% (name-resolved) versus 31.75% (legacy positional). The conflict is
+still unresolved; see the [full 46-class mapping sensitivity](windstorm-europe-luisa-mixture-sensitivity-v0.md).
+The output is deterministic damage-percentage arithmetic;
 it does not model the probability distribution of individual building
 damage. Paris's zero here means only that every selected source curve is zero
 at its sampled gust knot range; it is not evidence of zero wind risk.
