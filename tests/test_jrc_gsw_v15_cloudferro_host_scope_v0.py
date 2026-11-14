@@ -7,7 +7,7 @@ These tests do not access JRC or CloudFerro and do not grant permission.
 from __future__ import annotations
 
 from copy import deepcopy
-import json
+import tomllib
 from pathlib import Path
 import unittest
 from urllib.parse import urlsplit
@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 from scripts.validate_source_access import validate_path
 
 ROOT = Path(__file__).resolve().parents[1]
-POLICY = ROOT / "research_runners/policies/jrc_gsw_v15_cloudferro_host_scope_v0.jsonl"
+POLICY = ROOT / "research_runners/policies/jrc_gsw_v15_cloudferro_host_scope_v0.toml"
 CONTRACT = ROOT / "access/ec-jrc.global-surface-water.1984-2024.json"
 EVIDENCE_DOC = ROOT / "docs/research/jrc-gsw-v15-cloudferro-public-host-policy-20261114.md"
 
@@ -55,7 +55,7 @@ def is_live_probe_authorized(policy: dict, contract: dict) -> bool:
 class JRCCloudFerroHostScopeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.policy = json.loads(POLICY.read_text(encoding="utf-8"))
+        cls.policy = tomllib.loads(POLICY.read_text(encoding="utf-8"))
         cls.contract = validate_path(CONTRACT)
         cls.doc = EVIDENCE_DOC.read_text(encoding="utf-8")
 
@@ -83,7 +83,7 @@ class JRCCloudFerroHostScopeTests(unittest.TestCase):
         self.assertEqual(p["public_anonymous_download_permission"], "unknown")
         self.assertEqual(p["customer_terms_applicability_to_anonymous_reader"],
                          "unverified")
-        self.assertIsNone(p["anonymous_http_rate_cap"])
+        self.assertEqual(p["anonymous_http_rate_cap"], "unknown")
         self.assertEqual(p["approved_network_requests"], 0)
         self.assertEqual(p["approved_original_download_bytes"], 0)
         self.assertFalse(p["live_provider_probe_approved"])
