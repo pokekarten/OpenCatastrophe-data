@@ -98,7 +98,25 @@ source-access v1's actual `rights_and_policy.api_terms_status =
 separate_reviewed` enum (NOT the impossible legacy
 `reviewed_allowed` string), an authoritative HTTPS
 `terms_url`, `status=probe_ready` and a fixed
-`provider_specific` operation. The host policy must independently
+`provider_specific` operation. The `terms_url` must be an HTTPS
+**CloudFerro-controlled** host with a non-root path, no embedded
+credentials, query string or fragment. An arbitrary HTTPS webpage,
+`example.test`, or a `cloudferro.com.evil.example` lookalike is
+not source-specific service evidence. **Even a real CloudFerro customer
+terms URL is evidence only**: it does not prove applicability to
+anonymous JRC downloaders, which needs separate affirmative review.
+
+The live runner also requires the canonical
+`request_contract.parameter_rules` to equal its exact frozen
+`ACTIVE_ONE_SHOT_PARAMETER_RULES`. A contract cannot become executable
+if its original narrative still prohibits **all provider GETs**,
+or if a caller simply changes `status` and `probe_contract` flags.
+The public `probe_original_prefix()` callable revalidates the complete
+source-access v1 schema before network execution, not only its CLI
+wrapper. Synthetic unit tests deliberately mimic a hypothetical
+fully-reviewed state, never a real permission decision.
+
+The host policy must independently
 review `public_anonymous_download_permission=reviewed_allowed`,
 `customer_terms_applicability_to_anonymous_reader=reviewed`,
 `range_support_verified=true` and `redirect_policy_verified=true`
