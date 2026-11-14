@@ -45,17 +45,19 @@ meteorological data and does not load any insurer portfolios.
 
 ## Three stations ≠ three ERA5 spatial observations
 
-The DWD station list is explicit that its geographic coordinates
-reflect the **current** station metadata, not a source-verified
-historical anemometer position for the Ciara 2020 event.
-The deterministic nearest-grid-centre, no-ties, <=20km
-experimental mapping is:
+The current DWD station list is not the authority for historical
+coordinates. The original SHA-pinned DWD ZIPs contain date-versioned
+geography and instrument metadata, now parsed and matched to their
+original member SHA receipts in
+`research/observations/ciara2020_dwd_original_historical_station_metadata_attestation_20261114.toml`.
+The deterministic nearest-grid-centre, no-ties, <=20km mapping using
+the locations valid during February 2020 is:
 
-| Original DWD station | Current listed position | Nearest Google ERA5 0.25° node |
+| Original DWD station | February 2020 site position | Nearest Google ERA5 0.25° node |
 |---|---|---|
 | Köln/Bonn, ID 02667 | 50.8645N, 7.1575E | **50.75N, 7.25E** |
 | Wuppertal, ID 15200 | 51.2531N, 7.2157E | **51.25N, 7.25E** |
-| Königswinter-Heiderhof, ID 00603 | 50.7293N, 7.2040E | **50.75N, 7.25E** |
+| Königswinter-Heiderhof, ID 00603 | **50.7350N, 7.1931E** | **50.75N, 7.25E** |
 
 **Köln/Bonn and Königswinter-Heiderhof map to the same ERA5 node.**
 Therefore three measured stations offer only **two** geographically
@@ -69,10 +71,12 @@ The first original DWD source 2020 peaks were **26.4 m/s**
 with original **QN_8 = 3 (automatic QC)**; none had original
 highest QN_8 = 10. A fourth station (ID 03623) was excluded after
 an original SHA-verified archive had insufficient original 2020
-measurements. Historical instrument and 2020 site geography remain
-unverified. Current DWD product's `MESS_DATUM` is a reference
-hour label, not yet a proven time-identical 2020 UTC gust
-aggregation to ERA5's hourly meteorological 10fg.
+measurements. The original DWD metadata verifies the February 2020
+coordinates, sensor type/heights (10 m, 12 m, 10 m), and that FX_911
+hour labels are **in UTC** and describe the highest gust in the last
+hour. Königswinter-Heiderhof moved to the current position and a 12 m
+sensor on 2020-10-01, after Ciara. Exact aggregation-window equivalence
+to ERA5 remains unverified.
 
 ## Actual original-source result: first genuine 2020 live run
 
@@ -91,12 +95,10 @@ receipts, including the original decoded SHA
 | Wuppertal (15200) | 31.1 m/s | **32.13789749145508 m/s**, 51.25N/7.25E | **+1.037897 m/s** |
 | Königswinter-Heiderhof (00603) | 25.5 m/s | **31.169416427612305 m/s**, 50.75N/7.25E | **+5.669416 m/s** |
 
-Distances from the publisher's **current** DWD station
-geography to these nearest original Google ERA5 grid centres
-are respectively **14.295 km, 2.412 km and 3.972 km**. This
-is *not* proof the 2020 station sensors were at these unchanged
-coordinates or had equal wind-measurement and gust time windows.
-Köln/Bonn and Königswinter **reuse one original ERA5 cell**.
+Distances from the original DWD geography valid in February 2020 to
+the nearest original Google ERA5 grid centres are respectively
+**14.295 km, 2.412 km and 4.337 km**. Köln/Bonn and Königswinter
+**reuse one original ERA5 cell**.
 
 The independently first-observed values and SHA-provenance
 are versioned at
@@ -113,10 +115,12 @@ peak** and a descriptive signed difference can be displayed,
 but are not a station-vs-ERA5 **same-hour forecast error**,
 RMSE, bias, climatology, validated spatial interpolation,
 insured windstorm loss or building vulnerability fit.
-Independent 2020 historical DWD `Metadaten_Geographie`,
-`Metadaten_Geraete` and parameter time-reference definitions
-must be reviewed first. Differences in elevation, land roughness,
-measurement and reanalysis sampling are further limitations.
+Original 2020 historical DWD `Metadaten_Geographie`,
+`Metadaten_Geraete` and parameter time-reference definitions have
+now been reviewed. Differences in elevation, land roughness,
+measurement and reanalysis sampling are further limitations. DWD's
+parameter metadata says `in UTC`; exact one-hour interval equivalence
+with ERA5 post-processing remains unverified.
 An original 2020 atmospheric ERA5 value is not a German insurer's
 loss observation. The original 2022 NRW HU building candidates
 and their 2025-like insurance TIV are fictional counterfactual
