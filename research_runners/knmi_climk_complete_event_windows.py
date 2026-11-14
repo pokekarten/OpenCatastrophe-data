@@ -2,8 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Build complete KNMI hour-ending windows for original CLIMK event labels."""
 import csv,zipfile,json,hashlib
+import sys
 from pathlib import Path
 from datetime import datetime,timedelta
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from research_runners.knmi_historical_wind_acquisition import inspect
 from netCDF4 import Dataset
 import argparse
 p=argparse.ArgumentParser(description=__doc__)
@@ -21,7 +24,9 @@ for station in [235,260,280,310,330]:
  obs={}
  for period in ['2001-2010','2011-2020']:
   p=b/f'uurgeg_{station}_{period}.zip'
-  source_hashes[p.name]=hashlib.sha256(p.read_bytes()).hexdigest()
+  raw=p.read_bytes()
+  inspect(raw,station,period)
+  source_hashes[p.name]=hashlib.sha256(raw).hexdigest()
   with zipfile.ZipFile(p) as z:lines=z.read(z.namelist()[0]).decode('utf-8-sig').splitlines()
   fields=[x.strip() for x in next(x for x in lines if x.startswith('# STN,'))[2:].split(',')]
   for line in lines:
@@ -36,4 +41,4 @@ for station in [235,260,280,310,330]:
   vals=[obs.get(t) for t in labels];valid=[v for v in vals if v is not None]
   rows.append(dict(storm_index=index,provider_name=name,provider_date=date,valid_hours=len(valid),complete=len(valid)==72,peak_mps=max(valid) if len(valid)==72 else None))
  result.append(dict(station=station,complete_events=sum(r['complete'] for r in rows),events=rows))
-with a.output.open('x') as stream:json.dump(dict(schema='KNMI_CLIMK_COMPLETE_WINDOWS_V1',annual_catalogue_complete=False,hazard_sha256=hashlib.sha256(h.read_bytes()).hexdigest(),archive_sha256=source_hashes,stations=result),stream,indent=2,allow_nan=False);print([(r['station'],r['complete_events']) for r in result]);print('common complete',sum(all(s['events'][i]['complete'] for s in result) for i in range(50)))
+with a.output.open('x') as stream:json.dump(dict(schema='KNMI_CLIMK_COMPLETE_WINDOWS_V1',annual_catalogue_complete=False,bias_calibration_eligible=False,exact_source_window_verified=False,hazard_sha256=hashlib.sha256(h.read_bytes()).hexdigest(),archive_sha256=source_hashes,stations=result),stream,indent=2,allow_nan=False);print([(r['station'],r['complete_events']) for r in result]);print('common complete',sum(all(s['events'][i]['complete'] for s in result) for i in range(50)))
