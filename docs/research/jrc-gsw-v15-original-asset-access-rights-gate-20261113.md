@@ -218,6 +218,49 @@ is explicitly adjusted so this HTML-only sample does **not** mask
 the pending `P1_review_cloudferro_service_terms_before_original_occurrence_sample`
 action.
 
+## Independently published native alternative: Google Earth Engine GSW1_5 Occurrence (2026-11-14)
+
+The official [JRC v1.5 publisher page](https://global-surface-water.appspot.com/download)
+identifies the native, **1984–2024 aggregated Occurrence** asset as
+`projects/global-surface-water/assets/GSW1_5/Occurrence`. This is a
+distinct distribution and execution service from the public CloudFerro
+`occurrence_10E_50N_v1_5_2024.tif`. Both are referenced by the same
+publisher, including the **2026-11-10 Occurrence pixel correction**; a
+documented asset ID by itself does not prove a current pixel read, tile
+identity, corrected byte set or whole-source SHA.
+
+The publisher additionally links a **2024 WMTS RGB visualization**. The
+JRC explicitly says these rendered RGB tiles are useful for cartography
+but **unsuitable for numerical analysis**; never use PNG/WMTS colour as
+native numeric occurrence percentages or historical hazard frequencies.
+
+Google's [Earth Engine access guide](https://developers.google.com/earth-engine/guides/access)
+requires a registered Cloud project, enabled Earth Engine API and
+appropriate IAM. Google's [commercial-use rules](https://developers.google.com/earth-engine/guides/transition_to_commercial)
+require a **paid commercial Earth Engine configuration** for operational
+private-sector insurance use. The JRC Copernicus **dataset reuse licence**
+does not waive Google's separate service, billing or Cloud-project rules.
+No OpenCatastrophe Cloud project, paid plan, asset visibility or corrected
+native read is verified by this documentation. No Google credential, project
+identifier, bearer token, private URL or raw data is stored in public Git.
+
+For this exact alternative use the independent machine-readable research
+policy `research_runners/policies/jrc_gsw_v15_earth_engine_access_v0.toml`,
+offline-only validator
+`scripts/preflight_jrc_gsw_v15_earth_engine_access_v0.py`, and synthetic
+negative tests `tests/test_preflight_jrc_gsw_v15_earth_engine_access_v0.py`.
+The validator rejects legacy `JRC/GSW1_4/GlobalSurfaceWater`, incorrect
+Recurrence/Seasonality or RGB-WMTS identities, unsigned commercial claims,
+boolean/type drift and *any* claimed automatic request/model authority.
+Even a future manual review of all project prerequisites means only
+`commercial_cloud_service_prerequisites_met_on_paper`; execution, pixels,
+public redistribution and CAT scientific admission stay independently
+**false** pending a separately approved fixed bounded source operation.
+
+This creates a **second candidate data path** without lifting the still-
+unreviewed public CloudFerro Swift rate/service gate or silently treating
+a noncommercial Google project as an insurance production entitlement.
+
 ## Checks included
 
 ```bash
