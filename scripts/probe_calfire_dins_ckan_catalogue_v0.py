@@ -55,6 +55,7 @@ def verify_reviewed_contract(path: Path = CONTRACT_PATH) -> None:
         or c["authentication"]["mode"] != "none"
         or c["request_contract"]["allowed_operations"] != ["dins_package_show_catalogue"]
         or c["request_contract"]["path_templates"] != ["/api/3/action/package_show"]
+        or f"metadata_modified={CURRENT_METADATA_MODIFIED}" not in c["response_contract"]["format"]
         or c["probe_contract"]["mode"] != "metadata_get"
         or c["probe_contract"]["operation"] != "dins_package_show_catalogue"
         or c["probe_contract"]["requires_credentials"] is not False
