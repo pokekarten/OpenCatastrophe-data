@@ -50,10 +50,10 @@ class JRCNativeWindowsComparisonTests(unittest.TestCase):
         self.assertIsNone(rec["supplied_window_positional_values_equal_if_overlap"])
 
     def test_untrusted_masks_and_values_fail_closed(self):
-        for mask in (-1, 1.01, float("nan"), float("inf"), True, "1"):
+        for mask in (-1, 1.01, 10**1000, float("nan"), float("inf"), True, "1"):
             with self.subTest(mask=mask), self.assertRaises(jrc.JRCWindowComparisonBlocked):
                 jrc.compare_native_occurrence_windows(b"\x01", [1], [mask])
-        for value in (True, float("nan"), 1.5, 101, 255, "1"):
+        for value in (True, 10**1000, float("nan"), 1.5, 101, 255, "1"):
             with self.subTest(value=value), self.assertRaises(jrc.JRCWindowComparisonBlocked):
                 jrc.compare_native_occurrence_windows(b"\x01", [value], [1])
         with self.assertRaises(jrc.JRCWindowComparisonBlocked):
