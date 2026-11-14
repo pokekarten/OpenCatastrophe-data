@@ -27,18 +27,22 @@ The direct PyYAML version is exact but wheel/source hashes are not pinned in thi
 
 ## Validation-only historical building spatial dependencies
 
-The French 2016 BD TOPO / RNB geometry research tests added by PR #937
-run in the general validation job with `shapely==2.1.2` (BSD-3-Clause)
-from `requirements-validation.txt`, together with an explicitly pinned
-`pyproj==3.7.2` (MIT) and `pyshp==2.3.1` (MIT). The independent EU
-flood spatial job installs `requirements-eu-flood-spatial.txt`, with
-`shapely==2.2.0` and `pyproj==3.7.2`. The two incompatible Shapely
-versions must **not** be installed in one Python environment.
-These are test/research dependencies only: they neither admit the 2016
-archive's original data rights nor permit real CAT model use.
-The PR #1107 validation-dependency claim additionally proposes separate
-dependency consolidation. This PR does not change `requirements-validation.txt`
-and avoids overlapping active PR writers.
+The French 2016 BD TOPO / RNB geometry tests introduced by PR #937 are
+executed in the **dedicated** `.github/workflows/ign-bdtopo-2016-d077-receipt.yml`
+job, with `pyproj==3.7.2` (MIT), `shapely==2.2.0`
+(BSD-3-Clause), and `pyshp==2.3.1` (MIT). The first two are in the
+pinned optional `requirements-eu-flood-spatial.txt`; `pyshp` is
+pinned in that research workflow. Generic CI uses the existing
+`requirements-validation.txt`, including `shapely==2.1.2`,
+and the historic spatial tests explicitly skip when their optional
+dependencies are absent. The dedicated workflow installs the reviewed
+profile before those tests and must report a successful full execution.
+
+This isolation prevents two incompatible Shapely pins being installed in
+the same Python environment and avoids conflicting edits to the shared
+`.github/workflows/ci.yml`, which remains identical to `main`.
+No optional dependency, test receipt or legacy archive grants data rights,
+historical building-identity certainty or production CAT model admission.
 
 ## Acquisition-only scientific I/O dependency
 
