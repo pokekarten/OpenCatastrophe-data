@@ -7,16 +7,26 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from pyproj import CRS, Transformer
-import shapefile
-from shapely.geometry import Polygon, mapping
+# The main validation CI intentionally does not install the independent
+# historical geospatial dependency profile. The dedicated pinned workflow
+# installs it and executes these tests in full. Never hide a code/import bug
+# unrelated to one of the explicitly optional spatial packages.
+try:
+    from pyproj import CRS, Transformer
+    import shapefile
+    from shapely.geometry import Polygon, mapping
+    from research_runners.fr_bdtopo_2016_rnb_id_provenance_v0 import (
+        bounded_historical_attribute_receipts, research_id_crosscheck,
+        rnb_external_id_receipts, RNB_IDS, BridgeError,
+    )
+    HAS_SPATIAL = True
+except ModuleNotFoundError as exc:
+    if exc.name not in {"pyproj", "shapefile", "shapely"}:
+        raise
+    HAS_SPATIAL = False
 
-from research_runners.fr_bdtopo_2016_rnb_id_provenance_v0 import (
-    bounded_historical_attribute_receipts, research_id_crosscheck,
-    rnb_external_id_receipts, RNB_IDS, BridgeError,
-)
 
-
+@unittest.skipUnless(HAS_SPATIAL, "optional historic spatial dependencies; run dedicated pinned workflow")
 class HistoricalDbfIdTests(unittest.TestCase):
     def setUp(self):
         self.tmp=TemporaryDirectory()
