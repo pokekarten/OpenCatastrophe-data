@@ -25,6 +25,7 @@ def windows_fixture():
             "climk_72h_gust_mps":22.0+i,
             "era5_grid_node":[50.75,7.25],
             "sensor_height_m":10.0 if i<30 else 12.0,
+            "station_elevation_m":100.0,
             "historical_metadata_verified":i<40,
         })
     return result
@@ -45,6 +46,8 @@ class ClimkEra5DWDTop50AuditTests(unittest.TestCase):
         self.assertEqual(result["unique_nearest_CLIMK_ERA5_grid_nodes"],1)
         self.assertEqual(result["historical_sensor_height_counts_m_for_windows_with_observations"],
                          {"10.0":30,"12.0":20})
+        self.assertEqual(result["historical_station_elevation_counts_m_above_sea_level_for_windows_with_observations"],
+                         {"100.0":50})
         primary=result["complete_72h_primary_metrics_descriptive_only"]
         self.assertEqual(primary["complete_72h_event_pairs"],25)
         self.assertAlmostEqual(primary["mean_error_era5_minus_dwd_mps"],2.0)
