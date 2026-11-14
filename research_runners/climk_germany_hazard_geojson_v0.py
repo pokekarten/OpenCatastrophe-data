@@ -39,12 +39,12 @@ def export(original: bytes, storm_index: int) -> dict:
         lon=[float(v) for v in ds.variables['longitude'][:]]
         name=str(ds.variables['Storm_Names'][storm_index]).strip()
         date=str(ds.variables['Storm_Dates'][storm_index]).strip()
-        field=ds.variables['absolute_maxwindgusts']
+        field=ds.variables['absolute_maxwindgusts'][storm_index,:,:]
         for row,y in enumerate(lat):
             if not 47<=y<=56: continue
             for col,x in enumerate(lon):
                 if not 5<=x<=16: continue
-                value=field[storm_index,row,col]
+                value=field[row,col]
                 if np.ma.is_masked(value):
                     gust=None; missing+=1
                 else:

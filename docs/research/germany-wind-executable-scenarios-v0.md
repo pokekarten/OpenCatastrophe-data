@@ -76,3 +76,10 @@ A full Germany stochastic insured CAT model is not complete until these data
 and model requirements are resolved. The executable conditional scenario
 chain lets them be developed and challenged without substituting zero losses
 or invented annual probabilities for missing information.
+
+The implemented `--all-storms` command was executed locally against all 50
+original ERA5 storm fields with this three-point fictional portfolio and
+external reference curve: **50 completed, 0 blocked**. This establishes the
+scenario pipeline on that example portfolio. It does not establish complete
+weather support at other buildings. The exporter reads each event field once
+before cell extraction to avoid repeated NetCDF decompression per cell.
