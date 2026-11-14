@@ -1,0 +1,110 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+schema = "CLIMK_ERA5_DWD_SPATIALLY_DISTRIBUTED_STATION_CANDIDATE_SOURCES_V0"
+retrieved_utc = "2026-11-14"
+status = "SOURCE_HASHES_PINNED_FOR_EXPLORATORY_SCREEN_ONLY"
+climk_product = "CLIMK-WINDS v2 ERA5, Flynn et al. (2025), Zenodo record 15305753, CC BY 4.0"
+climk_source_sha256 = "92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102"
+dwd_product = "DWD CDC hourly extreme wind FX_911 historical archives, CC BY 4.0; attribute Deutscher Wetterdienst (DWD)"
+dwd_station_list_url = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/historical/FX_Stundenwerte_Beschreibung_Stationen.txt"
+dwd_station_list_sha256 = "7183352071fede0bdbe817a542587e75da14f58a4efa01b0ede0dbb34750358c"
+dwd_historical_index_url = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/historical/"
+dwd_historical_index_sha256 = "fba730a76c1ff7ae0f5f7eda9b22403987d2bb50444983cd3a65a8cd62065696"
+dwd_historical_archive_count = 448
+dwd_station_list_record_count = 564
+selection = "15 geographically spread stations on distinct nearest CLIMK ERA5 grid cells, excluding the three already audited stations; candidate archive periods span 35 to 50 of the CLIMK top-50 72-hour windows. Selection used the DWD station list coordinates for screening; event-era coordinates and instrument metadata were then checked from each original DWD archive. This is a purposive screening sample, not a probability sample."
+temporal_support = "Storm_Dates midpoint minus one UTC calendar day through plus one day, inclusive; 72 hourly labels."
+model_skill_admitted = false
+annual_frequency_or_oep_aep_admitted = false
+german_wind_loss_or_vulnerability_calibrated = false
+
+[[candidate_archives]]
+station_id = "00183"
+filename = "stundenwerte_FX_00183_19900602_20251231_hist.zip"
+sha256 = "0dbd895b999c9dac41659517d3b99e21672b1710c41510af4158aaac092accb1"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "00222"
+filename = "stundenwerte_FX_00222_19900622_20080701_hist.zip"
+sha256 = "62869e753de5abdc8c3b0f608575915a382324c5ceec985e92bc94eecc84e9f3"
+filename_supported_event_windows = 37
+
+[[candidate_archives]]
+station_id = "00460"
+filename = "stundenwerte_FX_00460_19900701_20251231_hist.zip"
+sha256 = "464e52c169f6ebe7d16533d8c89a00710bb3488c3228949bb884b9344adb74ab"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "01228"
+filename = "stundenwerte_FX_01228_19900907_20250723_hist.zip"
+sha256 = "d4473f621c82855ce7471ad30b14a69de751ecb35646c6625839fc441665cba6"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "01346"
+filename = "stundenwerte_FX_01346_19900701_20251231_hist.zip"
+sha256 = "5a3ac2dd5af0f8f8d81a9c86991e706ac8850c30062ef3de8dc7fe2967552629"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "01684"
+filename = "stundenwerte_FX_01684_19900602_20251231_hist.zip"
+sha256 = "5a1c90407d4c3e899056b6f3aefc42d0e560777f28a4523d6af94ebb5177b67a"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "01832"
+filename = "stundenwerte_FX_01832_19900701_20251231_hist.zip"
+sha256 = "d9d731a779e3919c76b0c4988361c31c536e09e741ed290c68b40cfb8482db08"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "01975"
+filename = "stundenwerte_FX_01975_19900701_20251231_hist.zip"
+sha256 = "94b256a5951b39a8896a0a2c3571df7c81472440a88f406b269c9caeeb686e74"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "02494"
+filename = "stundenwerte_FX_02494_19930302_20131020_hist.zip"
+sha256 = "2e173fc38b0ea7f9eaabf7aa8c3e536c08b46f662296fbe7fbc910895765953f"
+filename_supported_event_windows = 43
+
+[[candidate_archives]]
+station_id = "02925"
+filename = "stundenwerte_FX_02925_19900604_20251231_hist.zip"
+sha256 = "981a0118a117eb8308c84f7415a74dc693cb58a5080e8f3d5571cb7eac6f8582"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "03032"
+filename = "stundenwerte_FX_03032_19900701_20251231_hist.zip"
+sha256 = "214cec9ec5075bf179d0d6d20b56529a44ca68cce36e3b284047f7164438e82b"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "03167"
+filename = "stundenwerte_FX_03167_19900701_20251231_hist.zip"
+sha256 = "f7fd9fe18a2ca435bcd2aa28746fa956236fc829bdbca03bb6b70dd162fd1e31"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "03552"
+filename = "stundenwerte_FX_03552_19900602_20190408_hist.zip"
+sha256 = "53af5f21318812a8fcb289ab9c8766bb36a7c1a1cbfb5ab26794d16151210019"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "03603"
+filename = "stundenwerte_FX_03603_19930301_20251231_hist.zip"
+sha256 = "1b19489dd3e5a06a9190ff14fad6fc7f4848ac51c0233399636d7320616f1f6d"
+filename_supported_event_windows = 50
+
+[[candidate_archives]]
+station_id = "03730"
+filename = "stundenwerte_FX_03730_19900730_20251231_hist.zip"
+sha256 = "e64f286d29f8ab6931e156dc2137809740022bcb54561e8ac52bff614546b02e"
+filename_supported_event_windows = 50

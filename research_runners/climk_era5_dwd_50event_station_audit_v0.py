@@ -61,7 +61,7 @@ def summarize_windows(windows: list[dict]) -> dict:
     complete, complete_qn3 = [], []
     valid_windows = 0
     observed_hours = []
-    grid_nodes, heights = set(), {}
+    grid_nodes, heights, elevations = set(), {}, {}
     model_masked = 0
     for item in windows:
         if not isinstance(item, dict):
@@ -70,10 +70,13 @@ def summarize_windows(windows: list[dict]) -> dict:
         modeled = item.get("climk_72h_gust_mps")
         node = item.get("era5_grid_node")
         height = item.get("sensor_height_m")
+        elevation = item.get("station_elevation_m")
         metadata_verified = item.get("historical_metadata_verified")
         if (not isinstance(observations, list) or len(observations) > WINDOW_HOURS
             or (node is not None and (not isinstance(node, (list, tuple)) or len(node) != 2))
             or type(metadata_verified) is not bool
+            or (elevation is not None and (type(elevation) not in (int, float)
+                or not math.isfinite(elevation) or not 0 <= elevation <= 10_000))
             or type(height) not in (int, float) or not math.isfinite(height)
             or not 1.0 <= height <= 150.0):
             raise CLIMKDWDBlocked("invalid bounded DWD hourly, metadata or grid support")
@@ -98,6 +101,8 @@ def summarize_windows(windows: list[dict]) -> dict:
         model_gust = _finite_number(modeled, "CLIMK ERA5 absolute_maxwindgusts")
         valid_windows += 1
         heights[str(float(height))] = heights.get(str(float(height)), 0) + 1
+        if elevation is not None:
+            elevations[str(float(elevation))] = elevations.get(str(float(elevation)), 0) + 1
         if count == WINDOW_HOURS:
             record = (max(v for v, _ in checked), model_gust)
             complete.append(record)
@@ -138,6 +143,7 @@ def summarize_windows(windows: list[dict]) -> dict:
         "CLIMK_masked_cell_windows_with_DWD_observations": model_masked,
         "unique_nearest_CLIMK_ERA5_grid_nodes": len(grid_nodes),
         "historical_sensor_height_counts_m_for_windows_with_observations": heights,
+        "historical_station_elevation_counts_m_above_sea_level_for_windows_with_observations": elevations,
         "complete_72h_primary_metrics_descriptive_only": metrics(complete),
         "complete_72h_QN8_3_sensitivity_metrics_descriptive_only": metrics(complete_qn3),
         "partial_DWD_windows_imputed_or_used_in_primary_metrics": False,
@@ -322,6 +328,7 @@ def _climk_station_windows(source: bytes, station_id: str,
                         "climk_72h_gust_mps": None,
                         "era5_grid_node": None,
                         "sensor_height_m": 10.0,
+                        "station_elevation_m": None,
                         "historical_metadata_verified": False,
                     })
                     continue
@@ -340,11 +347,12 @@ def _climk_station_windows(source: bytes, station_id: str,
                 try:
                     lat = float(geo["Geogr.Breite"])
                     lon = float(geo["Geogr.Laenge"])
+                    elevation = float(geo["Stationshoehe"])
                     height = float(device["Geberhoehe ueber Grund [m]"])
                 except (KeyError, ValueError) as exc:
                     raise CLIMKDWDBlocked("historical DWD station geography or height is unparseable") from exc
                 if (not math.isfinite(lat) or not math.isfinite(lon) or not math.isfinite(height)
-                    or not 49 <= lat <= 55 or not 5 <= lon <= 16 or not 1 <= height <= 150):
+                    or not 47 <= lat <= 56 or not 5 <= lon <= 16 or not 1 <= height <= 150):
                     raise CLIMKDWDBlocked("historical DWD station geometry/height outside bounds")
                 row = min(range(len(latitudes)), key=lambda i: abs(latitudes[i]-lat))
                 col = min(range(len(longitudes)), key=lambda i: abs(longitudes[i]-lon))
@@ -367,6 +375,7 @@ def _climk_station_windows(source: bytes, station_id: str,
                     "climk_72h_gust_mps": modelled,
                     "era5_grid_node": [grid_lat, grid_lon],
                     "sensor_height_m": height,
+                    "station_elevation_m": elevation,
                     "historical_metadata_verified": True,
                 })
     except CLIMKDWDBlocked:
