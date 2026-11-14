@@ -23,6 +23,7 @@ import ssl
 import sys
 import tomllib
 from urllib import error, request
+from urllib.parse import urlsplit
 
 from scripts.preflight_jrc_gsw_v15_occurrence_header_v0 import (
     JRCHeaderBlocked,
@@ -31,7 +32,7 @@ from scripts.preflight_jrc_gsw_v15_occurrence_header_v0 import (
     SOURCE_URL,
     inspect_tiff_prefix,
 )
-from scripts.validate_source_access import validate_path
+from scripts.validate_source_access import SourceAccessError, validate_contract, validate_path
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / "research_runners/policies/jrc_gsw_v15_cloudferro_host_scope_v0.toml"
@@ -47,6 +48,38 @@ FIXED_HEADERS = {
 }
 # Max 18 decimal digits: reject unbounded attacker-supplied HTTP range totals.
 CONTENT_RANGE = re.compile(r"bytes 0-4095/([1-9][0-9]{3,17})")
+# A future approved contract must explicitly replace its current
+# "Documentation and offline preflight ONLY: no provider GET" restriction
+# with precisely the one operation the executable supports. Keeping
+# contradictory prose while flipping probe_ready is not authorization.
+ACTIVE_ONE_SHOT_PARAMETER_RULES = (
+    "EXPLICIT REVIEWED JRC V1.5 SOURCE OPERATION: one anonymous CloudFerro "
+    "HTTPS GET for the fixed occurrence_10E_50N_v1_5_2024.tif asset, "
+    "Range bytes=0-4095, exactly 4096 bytes, one request, no redirects, "
+    "no retries, no proxy, no fallback, no source bytes persisted."
+)
+
+
+def _provider_terms_url_is_bounded(raw: object) -> bool:
+    """Host-scoped evidence only; a URL by itself is *never* legal proof."""
+    if type(raw) is not str or not 15 <= len(raw) <= 2048:
+        return False
+    try:
+        parsed = urlsplit(raw)
+        host = parsed.hostname
+        return bool(
+            parsed.scheme == "https"
+            and host
+            and (host == "cloudferro.com" or host.endswith(".cloudferro.com"))
+            and parsed.username is None
+            and parsed.password is None
+            and parsed.port is None
+            and parsed.path not in ("", "/")
+            and not parsed.query
+            and not parsed.fragment
+        )
+    except ValueError:
+        return False
 
 
 class OriginalPrefixBlocked(ValueError):
@@ -121,11 +154,12 @@ def authorization_blockers(policy: dict[str, object], contract: dict[str, object
          and "/swift/v1/global-surface-water/download2024/Aggregated/VER1-5/"
              "occurrence/occurrence_10E_50N_v1_5_2024.tif" in req.get("path_templates", []),
          "fixed TIFF path allowlist")
+    need(req.get("parameter_rules") == ACTIVE_ONE_SHOT_PARAMETER_RULES,
+         "canonical exact one-shot operation not contradicted by source rules")
     rights = contract.get("rights_and_policy") or {}
     need(rights.get("dataset_rights_status") == "verified"
          and rights.get("api_terms_status") == "separate_reviewed"
-         and type(rights.get("terms_url")) is str
-         and rights.get("terms_url", "").startswith("https://")
+         and _provider_terms_url_is_bounded(rights.get("terms_url"))
          and rights.get("commercial_automation_status") == "allowed",
          "separately reviewed anonymous API/commercial terms")
     limits = contract.get("operational_constraints") or {}
@@ -157,6 +191,13 @@ def probe_original_prefix(
     open_request=_open_fixed,
 ) -> dict[str, object]:
     """Only one fixed HTTPS range GET, with bounded read and offline TIFF check."""
+    # Validate the complete canonical schema in this public callable too,
+    # not only in main(). An external orchestrator must not bypass the
+    # schema validator by calling probe_original_prefix() directly.
+    try:
+        validate_contract(contract)
+    except SourceAccessError as exc:
+        raise OriginalPrefixBlocked("canonical source contract is invalid") from exc
     blocked = authorization_blockers(policy, contract)
     if blocked:
         raise OriginalPrefixBlocked("source request blocked: " + "; ".join(blocked))
