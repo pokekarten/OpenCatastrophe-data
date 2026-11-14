@@ -245,6 +245,18 @@ jrc_verified_publisher_html AS (
    AND s.sample_json->>'request_sha256'=
       'd2ba746281468b520c5ac3b73db8f40f2d1438d471b2a08c385fbb71b6cfd3f7'
    AND s.sample_json->>'original_publisher_html_response_bytes'='85581'
+   AND s.sample_json->>'http_status'='200'
+   AND s.sample_json->>'cloudferro_service_api_terms_reviewed'='false'
+   AND EXISTS (
+     SELECT 1 FROM research.source_usage_rights_v0 jr
+     WHERE jr.source_id=s.source_id
+       AND jr.product_scope=
+         'JRC Global Surface Water v1.5 (1984-2024) corrected 2026-11-10 Occurrence only; excludes unresolved Monthly Recurrence and deprecated v1.4'
+       AND jr.use_case='internal_neon_metadata'
+       AND jr.rights_result='allowed'
+       AND NOT jr.scientific_model_admission
+       AND NOT jr.original_asset_admitted
+   )
    AND s.sample_json->>'source_original_catalogue_bytes_hashed'='false'
    AND s.sample_json->>'individual_tile_original_bytes_hashed'='false'
    AND s.research_only AND NOT s.model_input_approved
