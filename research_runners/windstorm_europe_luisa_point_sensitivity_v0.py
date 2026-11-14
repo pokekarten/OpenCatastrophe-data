@@ -15,6 +15,7 @@ import json
 import math
 from pathlib import Path
 import sys
+import tomllib
 import xml.etree.ElementTree as ET
 import zipfile
 
@@ -251,24 +252,22 @@ def main():
     if args.output.exists():
         parser.error("output already exists")
     raw_config = args.sites.read_bytes()
-    site_config = json.loads(raw_config)
-    if isinstance(site_config, dict):
-        if site_config.get("profile") != "windstorm-europe-luisa-point-pixel-sensitivity-v0":
-            parser.error("unsupported point sensitivity configuration profile")
-        expected_sources = site_config.get("source_expectations", {})
-        pinned_sources = {"luisa_raster_sha256": RASTER_SHA256,
-                          "luisa_workbook_sha256": WORKBOOK_SHA256,
-                          "construction_curves_sha256": CURVES_SHA256,
-                          "climk_hazard_sha256": HAZARD_SHA256}
-        if expected_sources != pinned_sources:
-            parser.error("configuration source pins do not match this runner")
-        sites = site_config.get("sites")
-        storm_index = args.storm_index if args.storm_index is not None else site_config.get("storm_index", 0)
-        bounds = args.bounds if args.bounds is not None else site_config.get("hazard_bounds_wgs84", (-5, 45, 16, 56))
-    else:
-        sites = site_config
-        storm_index = args.storm_index if args.storm_index is not None else 0
-        bounds = args.bounds if args.bounds is not None else (-5, 45, 16, 56)
+    try:
+        site_config = tomllib.loads(raw_config.decode("utf-8"))
+    except (UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+        parser.error(f"sites configuration must be valid TOML: {exc}")
+    if site_config.get("profile") != "windstorm-europe-luisa-point-pixel-sensitivity-v0":
+        parser.error("unsupported point sensitivity configuration profile")
+    expected_sources = site_config.get("source_expectations", {})
+    pinned_sources = {"luisa_raster_sha256": RASTER_SHA256,
+                      "luisa_workbook_sha256": WORKBOOK_SHA256,
+                      "construction_curves_sha256": CURVES_SHA256,
+                      "climk_hazard_sha256": HAZARD_SHA256}
+    if expected_sources != pinned_sources:
+        parser.error("configuration source pins do not match this runner")
+    sites = site_config.get("sites")
+    storm_index = args.storm_index if args.storm_index is not None else site_config.get("storm_index", 0)
+    bounds = args.bounds if args.bounds is not None else site_config.get("hazard_bounds_wgs84", (-5, 45, 16, 56))
     result = run(args.raster, args.workbook, args.curves, args.hazard,
                  sites, storm_index=storm_index, bounds=bounds)
     result["runner_sha256"] = sha256_file(__file__)

@@ -12,10 +12,11 @@ insured-portfolio loss model.
 
 ## Exact executed result
 
-The machine-readable receipt is
-`research/observations/windstorm_europe_luisa_point_sensitivity_kyrill_v0.json`;
-the fictional point configuration is
-`research/fixtures/windstorm_europe_luisa_point_sensitivity_v0.json`.
+The machine-readable, one-row-per-site-and-curve receipt is
+`research/observations/windstorm_europe_luisa_point_sensitivity_kyrill_v0.csv`;
+it includes source, runner and configuration hashes in comment metadata. The
+fictional point configuration is the TOML file
+`research/fixtures/windstorm_europe_luisa_point_sensitivity_v0.toml`.
 The executable is [windstorm_europe_luisa_point_sensitivity_v0.py](../../research_runners/windstorm_europe_luisa_point_sensitivity_v0.py).
 
 | Fictional point | CLIMK gust (m/s) | LUISA code | Structural maximum per pixel (2010 EUR) |
@@ -52,7 +53,7 @@ at its sampled gust knot range; it is not evidence of zero wind risk.
 
 ## Reproduction
 
-The exact input hashes and output values are recorded in the receipt. The
+The exact input hashes and output values are recorded in the CSV receipt. The
 full 1 GB JRC raster must be downloaded from the pinned URL in
 `research/windstorm_europe_luisa2018_raster_audit_v0.toml`. Python needs
 `rasterio` to read it and the repository's NetCDF4/NumPy environment for the
@@ -65,7 +66,7 @@ python research_runners/windstorm_europe_luisa_point_sensitivity_v0.py \
   --workbook /data/windstorm-europe/LUISA_damage_info_curves.xlsx \
   --curves /data/windstorm-europe/CURVES_feuerstein_koks.csv \
   --hazard /data/windstorm-europe/ERA5_StormFootprint_Database_Europe_Winter_1995-2015.nc \
-  --sites research/fixtures/windstorm_europe_luisa_point_sensitivity_v0.json \
+  --sites research/fixtures/windstorm_europe_luisa_point_sensitivity_v0.toml \
   --output /tmp/luisa-kyrill-point-sensitivity.json
 ```
 
