@@ -42,6 +42,22 @@ SCALARS = {
 }
 GEO_TAGS = {33550, 33922, 34264, 34735, 34736, 34737, 42113}
 
+# TIFF 6.0 architectural fields have tag-specific types, not any scalar.
+# A malformed LONG-valued BitsPerSample=8 or SamplesPerPixel=1 must NOT
+# support a positive 8-bit, single-band claim. Width/height and tiles also
+# accept BigTIFF LONG8 when the header is explicitly BigTIFF.
+FIELD_DTYPES = {
+    256: frozenset((3, 4, 16)),
+    257: frozenset((3, 4, 16)),
+    258: frozenset((3,)),
+    259: frozenset((3,)),
+    262: frozenset((3,)),
+    277: frozenset((3,)),
+    322: frozenset((3, 4, 16)),
+    323: frozenset((3, 4, 16)),
+    339: frozenset((3,)),
+}
+
 
 class JRCHeaderBlocked(ValueError):
     """Missing, malformed or scientifically unjustified original evidence."""
@@ -107,6 +123,8 @@ def inspect_tiff_prefix(raw: bytes) -> dict[str, object]:
                 seen_tags.add(tag)
                 if tag not in SCALARS or items != 1:
                     continue
+                if dtype not in FIELD_DTYPES[tag] or (dtype == 16 and not big):
+                    continue  # Invalid tag-specific TIFF type: no shape claim.
                 scalar_size = {3: 2, 4: 4, 16: 8 if big else 0}.get(dtype, 0)
                 if scalar_size == 0 or scalar_size > value_bytes:
                     continue  # Not an inline scalar of a supported type.
