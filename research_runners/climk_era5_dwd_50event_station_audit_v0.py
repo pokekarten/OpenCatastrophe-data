@@ -38,7 +38,7 @@ from scripts.inspect_climk_winds_era5_v0 import (
 SCHEMA = "CLIMK_ERA5_TOP50_DWD_ORIGINAL_STATION_DAILY_HOUR_END_ALIGNMENT_V3"
 STATIONS = ("02667", "00603", "15200")
 CLIMK_PARAMETER_DESCRIPTION = (
-    "absolute_maxwindgusts; daily maximum wind gust derived from hourly gust data, "
+    "absolute_maxwindgusts; per-storm maximum wind gust derived from hourly/daily gust data, "
     "within selected storm footprint; m/s"
 )
 MAX_UNCOMPRESSED = 25_000_000
@@ -470,7 +470,7 @@ def analyze_sources(climk_bytes: bytes, dwd_archives: dict[str, bytes],
         "CLIMK_storm_date_label_semantics": "midpoint label of a 3-day LI3D event window",
         "DWD_event_context_window": "Storm_Dates minus one UTC calendar day through plus one day, inclusive (72 hourly labels); used for coverage only",
         "DWD_daily_comparison_window": "the Storm_Dates UTC calendar date, 01:00 through 00:00 of the following day, hour-ending UTC labels (24 labels)",
-        "CLIMK_comparison_temporal_support": "absolute_maxwindgusts is a per-storm field described as a daily maximum; exact aggregation interval/time bounds are not given in variable metadata",
+        "CLIMK_comparison_temporal_support": "absolute_maxwindgusts is a per-storm maximum; Kyrill reconstruction supports three-day maxima; exact boundary hours and other-event equivalence remain unproven",
         "paired_values_have_proven_identical_temporal_support": False,
         "DWD_daily_calendar_date_aligned_to_CLIMK_Storm_Dates": True,
         "CLIMK_Storm_Dates_UTC_day_boundary_proven": False,
