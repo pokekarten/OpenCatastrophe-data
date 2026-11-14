@@ -13,6 +13,13 @@
 --
 -- Source-sample and source-API ledgers are independent of the older candidate
 -- actual_sample_state snapshot. Do not interpret that snapshot as live data.
+-- The external API-smoke ledger intentionally enforces
+-- CHECK (NOT strict_repository_runner_executed), so api_totals.strict_runner_receipts
+-- is NOT the count of actual GitHub direct original source proofs.
+-- Separate append-only research.sample metadata rows with individually
+-- successful GitHub original-run/job identities and provider SHA/URL evidence
+-- are counted separately; counts are OBSERVATIONS, not distinct sources,
+-- licence or admission permissions. All CAT model approvals remain false.
 -- The one PEGELONLINE access-contract alias is normalized only for the API
 -- receipt join. Individual rights use cases remain product-scoped: aggregate
 -- lists are evidence, never a blanket rights entitlement across all versions.
@@ -37,6 +44,38 @@ sample_evidence AS (
           WHERE sample_sha256 IS DISTINCT FROM
             encode(sha256(convert_to(sample_json::text,'UTF8')),'hex')
         )::int AS bad_sample_json_hashes,
+        COUNT(*) FILTER(WHERE sample_kind='public_metadata'
+            AND sample_json->>'strict_repository_runner_executed'='true'
+            AND sample_json->>'profile' IN (
+              'oc-cbs-83673ned-2025-github-trusted-original-direct-https-proof-v0',
+              'oc-cbs-github-trusted-direct-original-20261113-v0',
+              'oc-cbs-83673ned-2026-regional-two-github-trusted-original-direct-v0'
+            )
+            AND (sample_json->>'github_job_conclusion'='success'
+                 OR sample_json->>'trusted_github_job_conclusion'='success'
+                 OR sample_json->>'trusted_github_ci_job_conclusion'='success')
+            AND sample_json->>'model_input_approved'='false'
+            AND research_only IS TRUE
+            AND model_input_approved IS FALSE
+            AND source_byte_persistence_authorized IS FALSE
+            AND sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex'))::int
+          AS recorded_direct_github_original_proof_metadata_rows,
+        COUNT(DISTINCT source_url) FILTER(WHERE sample_kind='public_metadata'
+            AND sample_json->>'strict_repository_runner_executed'='true'
+            AND sample_json->>'profile' IN (
+              'oc-cbs-83673ned-2025-github-trusted-original-direct-https-proof-v0',
+              'oc-cbs-github-trusted-direct-original-20261113-v0',
+              'oc-cbs-83673ned-2026-regional-two-github-trusted-original-direct-v0'
+            )
+            AND (sample_json->>'github_job_conclusion'='success'
+                 OR sample_json->>'trusted_github_job_conclusion'='success'
+                 OR sample_json->>'trusted_github_ci_job_conclusion'='success')
+            AND sample_json->>'model_input_approved'='false'
+            AND research_only IS TRUE
+            AND model_input_approved IS FALSE
+            AND source_byte_persistence_authorized IS FALSE
+            AND sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex'))::int
+          AS recorded_direct_github_original_exact_urls,
         COUNT(*) FILTER(WHERE model_input_approved)::int AS sample_model_approvals,
         ARRAY_AGG(sample_id ORDER BY sample_id) AS sample_ids,
         MAX(created_at) AS most_recent_sample
@@ -101,6 +140,10 @@ joined AS (
         COALESCE(s.native_pixel_receipts_classified_preview,0)::int
           AS native_pixel_receipts_classified_preview,
         COALESCE(s.bad_sample_json_hashes,0)::int AS bad_sample_json_hashes,
+        COALESCE(s.recorded_direct_github_original_proof_metadata_rows,0)::int
+          AS recorded_direct_github_original_proof_metadata_rows,
+        COALESCE(s.recorded_direct_github_original_exact_urls,0)::int
+          AS recorded_direct_github_original_exact_urls,
         COALESCE(s.sample_model_approvals,0)::int AS sample_model_approvals,
         s.sample_ids,s.most_recent_sample,
         COALESCE(a.api_smoke_receipts,0)::int AS api_smoke_receipts,
