@@ -237,7 +237,8 @@ def compare_native_occurrence_windows_with_grid(
     Numeric match still cannot authenticate native/reviewed source pixels.
     """
     grid = inspect_supplied_native_window_grid_pair(geotiff_grid, earth_engine_grid)
-    if len(geotiff_occurrence) != grid["caller_supplied_window_pixel_count"]:
+    if (type(geotiff_occurrence) is not bytes
+            or len(geotiff_occurrence) != grid["caller_supplied_window_pixel_count"]):
         raise JRCWindowComparisonBlocked("decoded source pixels do not fit supplied window")
     result = compare_native_occurrence_windows(
         geotiff_occurrence, earth_engine_occurrence, earth_engine_mask
