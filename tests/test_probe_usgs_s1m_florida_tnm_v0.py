@@ -138,6 +138,18 @@ class ProbeTests(unittest.TestCase):
         with self.assertRaises(s.ProbeBlocked):
             s.probe(open_request=lambda req, timeout: Reply(raw_example(), length=str(s.MAX_BYTES+1)))
 
+    def test_incomplete_or_overstated_content_length_blocked(self):
+        # A syntactically valid provider JSON must not mask a broken HTTP frame.
+        actual = raw_example()
+        for declared in (len(actual) - 1, len(actual) + 1):
+            with self.subTest(declared=declared), self.assertRaises(s.ProbeBlocked):
+                s.probe(open_request=lambda req, timeout: Reply(actual, length=str(declared)))
+
+    def test_missing_content_length_allowed_with_bounded_body(self):
+        # Transfer-Encoding: chunked can legitimately omit Content-Length.
+        result = s.probe(open_request=lambda req, timeout: Reply(raw_example()))
+        self.assertEqual(result["original_response_bytes"], len(raw_example()))
+
     def test_invalid_raw_json_blocked(self):
         with self.assertRaises(s.ProbeBlocked):
             s.inspect_original(b'{"items": [NaN]}')
