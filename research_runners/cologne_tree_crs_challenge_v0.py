@@ -63,13 +63,18 @@ def parse_source_sample(raw: bytes) -> dict[str, object]:
         raise ChallengeError("original feature failed conservative schema gate") from exc
     feature = doc["features"][0]
     tree_id = feature["properties"]["Baumnummer"]
+    district = feature["properties"].get("Stadtteil") or ""
+    if not isinstance(district, str) or len(district) > 80:
+        raise ChallengeError("invalid source district text")
     x, y = feature["geometry"]["coordinates"][:2]
-    # Preserve only hashed identity and original-body identity in output.
+    # Raw city-district label remains private to the in-memory spatial challenge.
+    # It is never included in the public/human-readable receipt.
     return {
         "response_size": evidence["response_size"],
         "response_sha256": evidence["sha256"],
         "tree_id_sha256": hashlib.sha256(tree_id.encode("utf-8")).hexdigest(),
         "coords_internal": (float(x), float(y)),
+        "source_stadtteil_internal": district.strip(),
         "source_crs_declaration": evidence["source_crs_declaration"],
     }
 
