@@ -50,6 +50,8 @@ def inspect_external_original_range(
     if not m:
         raise JRCOriginalRangeBlocked("original Content-Range not precisely bytes 0-4095/TOTAL")
     total = int(m.group(1))
+    if m.group(1) != str(total):
+        raise JRCOriginalRangeBlocked("noncanonical original total size in Content-Range")
     if not PREFIX_BYTES < total <= MAX_WHOLE_ORIGINAL_TIFF_BYTES_DECLARATION:
         raise JRCOriginalRangeBlocked("unbounded or invalid declared total TIFF size")
     if headers.get("content-length") != str(PREFIX_BYTES):
