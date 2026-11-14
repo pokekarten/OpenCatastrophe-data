@@ -73,7 +73,9 @@ def inspect_tiff_prefix(raw: bytes) -> dict[str, object]:
         minimum_offset, count_bytes, entry_bytes, value_bytes = 16, 8, 20, 8
     else:
         raise JRCHeaderBlocked("not TIFF/BigTIFF")
-    if first_ifd < minimum_offset or first_ifd % 2:
+    # Classic TIFF requires word alignment; BigTIFF requires 8-byte
+    # alignment for directory/value offsets (libtiff BigTIFF design).
+    if first_ifd < minimum_offset or first_ifd % (8 if big else 2):
         raise JRCHeaderBlocked("invalid or unaligned first TIFF IFD pointer")
 
     # A first IFD outside a bounded prefix is inconclusive, not source proof.
