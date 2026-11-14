@@ -97,7 +97,7 @@ class JRCInstructionsEvidenceTests(TestCase):
             (b"download2024/Aggregated/VER1-5/",b"downloads2021/Aggregated/VER1-4/"),
             (b"download2024/monthlyhistory/VER1-5/",b"monthlyhistory/VER1-4/"),
             (b"all years",b"year 2024"),
-            (b"occurrence",b"not_occurrence"),
+            (b"occurrence",b"riverbank"),
             (b"s3.waw4-1.cloudferro.com",b"unknown.example"),
         ):
             changed=raw.replace(old,new)
