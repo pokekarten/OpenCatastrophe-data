@@ -158,6 +158,66 @@ raster product and distinct pixel semantics. Likewise, the
 is not evidence of a granted request rate for a **public anonymous
 WAW4-1 Swift** object. Both remain research context, not a host approval.
 
+## Independently verified original JRC publisher HTML receipt (2026-11-14)
+
+The European Commission [official JRC download page](https://global-surface-water.appspot.com/download)
+**explicitly links** its public [JRC GSW v1.5 original
+file list](https://s3.waw4-1.cloudferro.com/swift/v1/global-surface-water/).
+A separate, **read-only online index observation** found the exact fixed
+`download2024/Aggregated/VER1-5/occurrence/occurrence_10E_50N_v1_5_2024.tif`
+entry **once in the publicly viewed portion** of that index. This
+independently grounds the candidate *path*. The online browser view is
+limited and does **not** establish original full catalogue byte length or SHA.
+
+To supply a machine-verifiable original response without overriding
+CloudFerro hosting restrictions, a separate original **JRC publisher HTML**
+request was run successfully in GitHub Actions:
+
+- Immutable [run 43591889218, job 132438178397](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43591889218/job/132438178397);
+  branch commit `bf9f5a729bebb069492d1fc94e4d0db6cababd74`.
+- Exactly **one** HTTPS GET, fixed
+  `https://global-surface-water.appspot.com/download`, no redirects,
+  no retries, no third-party proxy or arbitrary URL.
+- **HTTP 200**, `text/html`, original response length **85,581 bytes**,
+  verified original publisher HTML SHA-256
+  `510b4bc273c743b8789afb3ffa57db31077e1f2ac617aca4869870c123995a08`,
+  request identity SHA-256
+  `d2ba746281468b520c5ac3b73db8f40f2d1438d471b2a08c385fbb71b6cfd3f7`,
+  retrieval UTC `2026-11-14T11:50:14.612603+00:00`.
+- The original HTML directly contains the v1.5 data-rights statement,
+  `Source: EC JRC/Google` attribution, correction notice dated
+  **November 10, 2026** and the official Swift catalogue link.
+- Raw original HTML bytes were **transient only** and not committed to
+  public Git. The bounded runner
+  `research_runners/jrc_gsw_v15_publisher_page_one_shot_v0.py`
+  has nine synthetic offline safety tests in
+  `tests/test_jrc_gsw_v15_publisher_page_one_shot_v0.py`.
+  The narrow public workflow is
+  `.github/workflows/research-jrc-gsw-v15-single-publisher-html-20261114.yml`.
+
+**Actual private Neon metadata write completed** via the source-controlled
+idempotent receipt file
+`research_runners/sql/jrc_gsw_v15_publisher_page_one_shot_neon_metadata_v0.sql`:
+**`research.source_sample_v0.sample_id=129`**,
+`sample_kind=public_metadata`,
+`provider_response_sha256=510b4bc273c743b8789afb3ffa57db31077e1f2ac617aca4869870c123995a08`
+and canonical JSONB SHA-256
+`51371cac6fb550d76d2606e54f846d83fce0ec2df7d79a054920e7c2e02d6d98`.
+The insert required exact product-specific Neon
+`internal_neon_metadata=allowed`, `research_only=true`,
+`source_byte_persistence_authorized=false` and
+`model_input_approved=false`. It stored *no original body or pixel rows*.
+
+This receipt is deliberately **not** a source-asset proof: no CloudFerro
+source catalogue byte hash, no original GeoTIFF bytes, no post-correction
+raster content and no scientific CAT model admission. The
+`access/ec-jrc.global-surface-water.1984-2024.json` contract remains
+`documented_only` with `probe_contract.mode=none`. The
+[all-707 source queue overlay in PR #1563](https://github.com/pokekarten/OpenCatastrophe-data/pull/1563)
+is explicitly adjusted so this HTML-only sample does **not** mask
+the pending `P1_review_cloudferro_service_terms_before_original_occurrence_sample`
+action.
+
 ## Checks included
 
 ```bash
@@ -178,7 +238,7 @@ behind the live `research.source_sample_v0` ledger (for example,
 MeteoSwiss and NOAA NODD still appear as `not_collected` in that
 candidate snapshot despite new metadata-only samples).
 Research reporting must join **actual sample receipts** instead of
-promoting a stale candidate status. The main repo has an all-707
-offline rights/contract audit and a separate reviewed 18-probe
-manual GitHub workflow; **neither was run against this provider** by
-the current documentation change.
+promoting a stale candidate status. The main repo also has an all-707 offline rights/contract audit
+and a separate reviewed 18-probe manual GitHub workflow. Neither constitutes
+an authentic **CloudFerro source-asset** read here: the separate successful
+publisher HTML response is intentionally documentation-only.
