@@ -261,6 +261,45 @@ This creates a **second candidate data path** without lifting the still-
 unreviewed public CloudFerro Swift rate/service gate or silently treating
 a noncommercial Google project as an insurance production entitlement.
 
+## Offline GEE ↔ GeoTIFF native-window mask comparison (2026-11-14)
+
+The official [Google Earth Engine **GSW v1.4** data catalogue](https://developers.google.com/earth-engine/datasets/catalog/JRC_GSW1_4_GlobalSurfaceWater)
+warns that the old `occurrence` band can have a **fractional mask
+equal to its band value**, causing unintentional double weighting when the
+mask is used in a reduction. This is *evidence about v1.4 only*; **v1.5
+mask behaviour remains unverified** until a real numeric source sample
+exists. General Earth Engine [mask semantics](https://developers.google.com/earth-engine/guides/getstarted)
+define zero as missing data and positive (possibly fractional) mask as
+valid. An `ee.Image.sampleRectangle()` masked-value default may look
+numeric, so original validity masks must travel separately from values.
+
+New local implementation:
+`scripts/compare_jrc_gsw_v15_native_windows_v0.py` with synthetic
+regressions in `tests/test_compare_jrc_gsw_v15_native_windows_v0.py`.
+The pure function accepts up to **65,536 separately decoded, positionally
+paired pixels**. The GeoTIFF window uses **255 = NoData** and **0 =
+observed not water**; GEE values must be native integral occurrence
+percentages 0..100 at **positive** Earth Engine mask. Positive fractional
+masks are treated as valid flags **without multiplying their value into
+the source percentages**. At Earth Engine mask zero, even a placeholder
+`0` is missing, not evidence of 0% water occurrence. The comparator
+reports valid overlap, exact-value mismatches, separately masked cells,
+fractional masks and a hash of the *caller-supplied decoded local window*
+(not a provider TIFF file hash); it outputs no source pixel arrays.
+
+The comparison deliberately **does not** authenticate either host
+response, match CRS/transform/resolution, prove that both source windows
+are co-registered, validate 2026-11-10 corrected-source identity, persist
+external bytes, execute a Google/CloudFerro network request, or admit CAT
+model inputs. Even when the synthetic overlapped pixels match, the output
+`geospatial_grid_alignment_independently_verified=false` and
+`model_input_approved=false` remain mandatory. A future real comparison
+requires separately authorized native reads from both services, a
+reproduced identical grid and raster-band selection, explicit raw masks,
+and original response/asset identities.
+
+**No Earth Engine project/billing authorization was created or inferred.**
+
 ## Checks included
 
 ```bash
