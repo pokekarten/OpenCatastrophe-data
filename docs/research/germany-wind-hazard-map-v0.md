@@ -49,3 +49,23 @@ The output contains building identifiers and belongs in the same controlled
 local storage as the input portfolio. It does not infer building replacement
 values, taxonomy or vulnerability from coordinates. Preserve missing and
 out-of-grid statuses before passing matched records into Oasis lookup keys.
+
+## Executed spatial crosswalk example (2026-11-14)
+
+The source-verified Kyrill map was exercised with three explicitly fictional
+point markers and one outside-domain marker. These are coordinate probes,
+not observed buildings or insured properties. The resulting source gusts were:
+
+| Synthetic marker | Longitude | Latitude | Oasis area-peril ID | Gust m/s |
+|---|---:|---:|---:|---:|
+| Cologne | 6.96 | 50.94 | 22713 | 33.411881663861934 |
+| Hamburg | 10.00 | 53.55 | 20035 | 29.192090650343737 |
+| Munich | 11.58 | 48.14 | 25690 | 33.97645061592783 |
+| Outside domain | 0 | 0 | null | null |
+
+The three interior markers resolve to three distinct native source cells.
+The outside-domain marker is explicitly excluded. Regression tests cover
+shared-edge ownership, missing weather versus a true zero gust, duplicate
+building IDs, NaN/infinite/out-of-range coordinates and overlapping cells.
+These checks establish spatial lookup behavior; building values and damage
+functions remain separate inputs to a future loss calculation.
