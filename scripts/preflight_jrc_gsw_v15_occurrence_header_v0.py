@@ -86,7 +86,14 @@ def inspect_tiff_prefix(raw: bytes) -> dict[str, object]:
         count = _read_integer(raw, endian, first_ifd, count_bytes)
         if count > MAX_IFD_ENTRIES:
             raise JRCHeaderBlocked("implausibly large first TIFF IFD entry count")
-        directory_visible = first_ifd + count_bytes + count * entry_bytes <= len(raw)
+        # A complete TIFF IFD also contains its terminal next-IFD pointer
+        # (4 bytes classic / 8 bytes BigTIFF). Without it, only entry
+        # records may be visible, so the directory remains inconclusive.
+        next_ifd_bytes = 8 if big else 4
+        directory_visible = (
+            first_ifd + count_bytes + count * entry_bytes + next_ifd_bytes
+            <= len(raw)
+        )
         if directory_visible:
             for n in range(count):
                 off = first_ifd + count_bytes + n * entry_bytes
