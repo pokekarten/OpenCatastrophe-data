@@ -13,6 +13,7 @@ import unittest
 from urllib.parse import urlsplit
 
 from scripts.validate_source_access import validate_path
+from research_runners.jrc_gsw_v15_original_tiff_prefix_one_shot_v0 import authorization_blockers
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / "research_runners/policies/jrc_gsw_v15_cloudferro_host_scope_v0.toml"
@@ -27,29 +28,13 @@ EXPECTED_TILE = (
 
 
 def is_live_probe_authorized(policy: dict, contract: dict) -> bool:
-    """Conservative test-only gate: true requires INDEPENDENT reviewed approvals.
+    """Reuse the actual execution gate; don't invent impossible API enums.
 
-    Current source contract and policy must return false. This explicitly
-    rejects unilateral edits of the policy 'approved' flag and ensures that
-    a downloadable script never counts as network automation authorization.
+    Source-access v1 accepts 'separate_reviewed', never 'reviewed_allowed'
+    as an api_terms_status. The reviewed one-shot implementation performs
+    this identical check before any network request.
     """
-    return (
-        policy.get("source_id") == "ec-jrc.global-surface-water.1984-2024"
-        and policy.get("fixed_tile_url") == EXPECTED_TILE
-        and policy.get("public_anonymous_download_permission") == "reviewed_allowed"
-        and policy.get("customer_terms_applicability_to_anonymous_reader") == "reviewed"
-        and isinstance(policy.get("anonymous_http_rate_cap"), int)
-        and policy["anonymous_http_rate_cap"] > 0
-        and isinstance(policy.get("approved_network_requests"), int)
-        and policy["approved_network_requests"] > 0
-        and isinstance(policy.get("approved_original_download_bytes"), int)
-        and policy["approved_original_download_bytes"] > 0
-        and policy.get("live_provider_probe_approved") is True
-        and contract.get("status") == "probe_ready"
-        and contract.get("probe_contract", {}).get("mode") != "none"
-        and contract.get("rights_and_policy", {}).get("api_terms_status") == "reviewed_allowed"
-        and contract.get("rights_and_policy", {}).get("commercial_automation_status") == "allowed"
-    )
+    return not authorization_blockers(policy, contract)
 
 
 class JRCCloudFerroHostScopeTests(unittest.TestCase):
