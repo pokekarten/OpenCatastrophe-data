@@ -15,6 +15,14 @@ import kyrill_2007_dwd_station_hourly_source_v0 as m
 
 
 class Kyrill2007DWDSourceAuditTests(unittest.TestCase):
+    def test_nonfinite_historical_metadata_cannot_pass_tolerance_gate(self):
+        for invalid in (float("nan"),float("inf"),-float("inf")):
+            with self.subTest(invalid=invalid):
+                self.assertFalse(m._matches_finite_metadata(invalid,12.0,0.02))
+                self.assertFalse(m._matches_finite_metadata(12.0,invalid,0.02))
+        self.assertTrue(m._matches_finite_metadata(12.0,12.0,0.02))
+        self.assertFalse(m._matches_finite_metadata(10.0,12.0,0.02))
+
     def test_pinned_event_window_station_archives_and_historic_sensor_heights(self):
         source=m._manifest()
         self.assertEqual(source["publisher_event_time_utc"],"2007-01-18T15:00:00Z")
