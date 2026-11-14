@@ -100,7 +100,7 @@ class SourceEvidenceQueueTests(unittest.TestCase):
         self.assertIn("scoped_api_automation_results LIKE '%unknown%'", self.query)
         self.assertIn("recorded_direct_github_original_exact_urls=0", self.query)
         self.assertIn("metadata sample #129", self.query)
-        self.assertIn("not a CloudFerro tile", self.query)
+        self.assertIn("NOT a CloudFerro tile", self.query)
 
     def test_native_tiff_values_in_preview_are_not_mistaken_for_wms(self):
         self.assertIn("native_geotiff_lzw_window%", self.query)
