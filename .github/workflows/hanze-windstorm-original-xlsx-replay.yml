@@ -1,0 +1,120 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Explicit original-provider byte-identity and FULL workbook replay.
+# No dataset bytes/claims are persisted as Actions artifacts or Git files.
+name: HANZE Windstorm Original XLSX Full-row Replay
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/hanze-windstorm-original-xlsx-replay.yml"
+      - "research_runners/hanze_windstorm_original_xlsx_acquisition_v0.py"
+      - "research_runners/hanze_windstorm_original_workbook_audit_v0.py"
+      - "tests/test_hanze_windstorm_original_xlsx_acquisition_v0.py"
+      - "tests/test_hanze_windstorm_original_workbook_audit_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hanze-windstorm-original-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  full-original-replay:
+    name: Verify fixed Zenodo XLSX and screen all original country rows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout exact PR ref without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python standard-library runtime
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Run offline synthetic malformed-XLSX and date/identity regression gates
+        run: >-
+          python -m unittest
+          tests.test_hanze_windstorm_original_xlsx_acquisition_v0
+          tests.test_hanze_windstorm_original_workbook_audit_v0
+          -v
+      - name: Fetch exact fixed original Zenodo byte ranges outside Git
+        run: |
+          python -B -m research_runners.hanze_windstorm_original_xlsx_acquisition_v0 \
+            --execute --out-dir "$RUNNER_TEMP/hanze-windstorm-original"
+      - name: Replay full row audit against the actual pinned original XLSX
+        run: |
+          python -B -m research_runners.hanze_windstorm_original_workbook_audit_v0 \
+            --original-xlsx "$RUNNER_TEMP/hanze-windstorm-original/HANZE European Windstorm Impact Database 1950-2020.xlsx" \
+            > "$RUNNER_TEMP/hanze-original-complete-row-audit.json"
+      - name: Fail closed on full original row numbers, modelled losses and parent-event restrictions
+        env:
+          HANZE_RECEIPT: ${{ runner.temp }}/hanze-original-complete-row-audit.json
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          r=json.loads(Path(os.environ["HANZE_RECEIPT"]).read_text(encoding="utf-8"))
+          assert r["status"]=="ORIGINAL_COMPLETE_XLSX_ROWS_READ_RESEARCH_UNADMITTED"
+          assert r["original_sha256"]=="c2fe636c9e7a1e601d64f00f5bdef8fdf9aaa854060f4d5edcd02e1405140944"
+          assert r["original_impact_country_rows"]==1358
+          assert r["unique_publisher_country_row_ids"]==1358
+          assert r["country_code_count"]==33
+          assert r["original_reference_worksheet_rows"]==815
+          assert r["economic_loss_2020_eur_million_present"]==720
+          assert r["economic_loss_2020_eur_million_missing"]==638
+          assert (r["economic_loss_2020_eur_million_numeric"] +
+                  r["economic_loss_2020_eur_million_non_numeric"] == 720)
+          assert r["economic_loss_non_numeric_rows_admitted_as_claims"] is False
+          m=r["economic_loss_by_publisher_CDS_flag_and_numeric_class"]
+          source_modelled=m["explicit_publisher_CDS_modelled"]
+          source_unflagged=m["not_flagged_CDS_independence_unverified"]
+          assert sum(source_modelled.values()) == 299
+          assert sum(source_unflagged.values()) == 1059
+          assert source_modelled == {"numeric":278, "non_numeric":21, "blank":0}
+          assert source_unflagged == {"numeric":409, "non_numeric":12, "blank":638}
+          assert source_modelled["numeric"] + source_unflagged["numeric"] == 687
+          assert source_modelled["non_numeric"] + source_unflagged["non_numeric"] == 33
+          assert source_modelled["blank"] + source_unflagged["blank"] == 638
+          assert r["not_flagged_CDS_means_independently_observed"] is False
+          assert r["explicit_publisher_modelled_cds_loss_rows"]==299
+          assert r["named_kyrill_country_rows"]==12
+          g=r["kyrill_source_country_review_candidate"]
+          assert g["country_report_rows"]==12
+          assert g["review_day_intersection_start"]=="2007-01-18"
+          assert g["review_day_intersection_end"]=="2007-01-18"
+          assert g["country_codes_explicitly_modelled_cds"]==["AT","IE","LU","PL"]
+          assert g["published_cross_country_parent_storm_id"] is None
+          assert g["native_c3s_climk_oasis_parent_id"] is None
+          assert g["independent_physical_hazard_occurrences"] is None
+          assert g["annual_AEP"] is None and g["annual_OEP"] is None
+          assert r["original_data_rights_admitted"] is False
+          assert r["source_rows_promoted_to_cat"] is False
+          assert r["annual_AAL"] is None and r["annual_AEP"] is None and r["annual_OEP"] is None
+          print("PASS exact original HANZE XLSX full-row research audit:")
+          print("sha256:",r["original_sha256"])
+          print("impact_country_rows:",r["original_impact_country_rows"])
+          print("countries:",r["country_code_count"])
+          print("publisher_modelled_CDS_rows:",r["explicit_publisher_modelled_cds_loss_rows"])
+          print("missing_economic_losses:",r["economic_loss_2020_eur_million_missing"])
+          print("numeric_economic_losses:",r["economic_loss_2020_eur_million_numeric"])
+          print("non_numeric_publisher_economic_values:",r["economic_loss_2020_eur_million_non_numeric"])
+          print("publisher_CDS_modelled_economic_status:",source_modelled)
+          print("non_CDS_flagged_independence_unverified_economic_status:",source_unflagged)
+          print("source_row_ids_needing_economic_value_review:",
+                [x["source_id"] for x in r["economic_loss_2020_eur_million_non_numeric_source_rows"]])
+          print("Kyrill_country_reports:",g["country_report_rows"])
+          print("source_rights_or_CAT_admitted:",r["original_data_rights_admitted"])
+          PY
+      - name: Delete original source bytes and temporary derived receipt
+        if: always()
+        run: |
+          rm -rf -- "$RUNNER_TEMP/hanze-windstorm-original"
+          rm -f -- "$RUNNER_TEMP/hanze-original-complete-row-audit.json"
