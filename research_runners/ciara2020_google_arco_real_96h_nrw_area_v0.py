@@ -115,7 +115,10 @@ class WindAreaAccumulator:
         }
 
 
-def original_96h_grid(*, include_public_grid_peaks: bool = False) -> dict:
+def original_96h_grid(
+    *, include_public_grid_peaks: bool = False,
+    include_internal_station_hourly: bool = False,
+) -> dict:
     # No full original site/insurer records required for public hazard-only
     # grid; the separate source-pinned 10k insurance OED site join remains
     # NOT performed / NOT admitted by this single-event meteorology.
@@ -156,6 +159,8 @@ def original_96h_grid(*, include_public_grid_peaks: bool = False) -> dict:
         lats = [float(v) for v in cropped.latitude.values]
         lons = [float(v) for v in cropped.longitude.values]
         acc = WindAreaAccumulator()
+        station_grid = {"02667": (7, 6), "15200": (5, 6), "00603": (7, 6)}
+        paired = {station: [] for station in station_grid}
         for h in range(HOURS):
             # One time chunk at a time: no full 96xglobal array retained.
             block = cropped.isel(time=h).values
@@ -169,6 +174,8 @@ def original_96h_grid(*, include_public_grid_peaks: bool = False) -> dict:
                 latitudes=lats, longitudes=lons,
                 gust_grid=[[float(v) for v in row] for row in block],
             )
+            for station, (row, col) in station_grid.items():
+                paired[station].append(float(block[row, col]))
         outcome = acc.finish()
     except RealGridBlocked:
         raise
@@ -230,6 +237,10 @@ def original_96h_grid(*, include_public_grid_peaks: bool = False) -> dict:
         result["_internal_public_10x16_event_peak_gust_mps"] = [
             list(row) for row in acc.peaks
         ]
+    if include_internal_station_hourly:
+        # Selected cell values only, held in memory for paired diagnostics.
+        # The default CLI and source receipts never expose hourly source data.
+        result["_internal_station_era5_hourly_10fg_mps"] = paired
     return result
 
 

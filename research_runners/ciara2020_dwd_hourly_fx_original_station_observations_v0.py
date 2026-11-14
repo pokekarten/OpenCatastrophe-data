@@ -161,7 +161,9 @@ def historical_zip_links(index_html: bytes) -> dict[str, str]:
     return archives
 
 
-def measured_2020_gust_from_original_zip(blob: bytes, station_id: str) -> dict:
+def measured_2020_gust_from_original_zip(
+    blob: bytes, station_id: str, *, include_internal_hourly: bool = False,
+) -> dict:
     if not re.fullmatch(r"\d{5}", station_id):
         raise OriginalDWDRejected("station id must exactly match official 5-digit station ID")
     original_sha = hashlib.sha256(blob).hexdigest()
@@ -226,7 +228,7 @@ def measured_2020_gust_from_original_zip(blob: bytes, station_id: str) -> dict:
         raise OriginalDWDRejected("original DWD 2020 FX_911 hour coverage too sparse")
     if any(day not in expected_timestamps for day in valid):
         raise OriginalDWDRejected("DWD station observation not in original historical study window")
-    return {
+    result = {
         "provider_original_zip_sha256": original_sha,
         "exact_original_station_product_member": products[0].filename,
         "original_station_fx911_hourly_valid_count": len(valid),
@@ -239,6 +241,11 @@ def measured_2020_gust_from_original_zip(blob: bytes, station_id: str) -> dict:
         ),
         "observed_station_max_gust_hours_full_96h": len(valid) == HOURS,
     }
+    if include_internal_hourly:
+        # In-memory only. Callers must keep observed source rows out of
+        # public receipts; this opt-in exists for aggregate paired analysis.
+        result["_internal_observed_hourly_fx911_mps"] = dict(sorted(valid.items()))
+    return result
 
 
 def live_dwd_2020_original_three_stations(*, opener=None) -> dict:
