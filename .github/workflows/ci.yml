@@ -40,8 +40,7 @@ jobs:
         run: >-
           python -m pip install --disable-pip-version-check --no-input
           -r requirements-validation.txt
-          -r requirements-eu-flood-spatial.txt
-          pyshp==2.3.1
+          pyproj==3.7.2 pyshp==2.3.1
       - name: Verify validation dependency consistency
         run: python -m pip check
       - name: Repository definition of done
