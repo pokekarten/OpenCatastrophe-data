@@ -160,11 +160,11 @@ ORDER BY
 ),
 expected_exact(source_id, exact_source_url, github_run_id, github_job_id,
                github_head_sha, original_response_sha256, request_sha256,
-               runner_code_sha256) AS (
+               runner_code_sha256, exact_product_rights_scope) AS (
  VALUES
-  ('dwd.radklim.rw.v2017.002', 'https://opendata.dwd.de/climate_environment/CDC/grids_germany/hourly/radolan/reproc/2017_002/netCDF/supplement/RW2017.002_2021_netcdf_supplement.tar.gz', 43488656039::bigint, 132103695178::bigint, '01ab7b83d1765fb6bbe590ad772880c65d5e43c9', '741c1320301be519a57818655d0380d94a6b6865adc3249f454f9c9cdf254867', '76b410d2c64e3147bb6932df07c860455d04e097d1ec3fe179ea16a472cb28c3', '635be219e2faf2b2e680f5a3d0f8d0b32cb3f80ba19440f38c6bb68b9672bd71'),
-  ('noaa.swpc.real-time-solar-wind', 'https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json', 43489514680::bigint, 132106651956::bigint, '4a579279e240c9429e6e66360194446c7c6e48b9', 'bc35b0a375b85efe559f132cfae46d8c79b7e8f19400299ae223d067f6091159', '9c8cff6ed4aa0ba97edb2a8d179728c5696e446c25437fbf9dfc758d20ac31d2', '80b80b5b214c471eb43ae3d303e95748afb7be624dea351f663a057f52333281'),
-  ('gfz.geomagnetic-kp', 'https://kp.gfz.de/app/json/?start=2024-01-01T00:00:00Z&end=2024-01-01T23:59:59Z&index=Kp&status=def', 43491158483::bigint, 132112397671::bigint, '17da6a4a3250bc63e7c363a47f74213472196eeb', 'f03506f678672a99c4c5a2c1d251740bd484b064853db18177b9b5ba4ad27d0a', 'f766594d3b83d42a9a16ef247c7119f1a435a2ea00d5c004876e4cfab3cd7dfd', '423e21bda179d5664a74f3c3bbe2a5e6d955aa4386305545d292a627b191affa')
+  ('dwd.radklim.rw.v2017.002', 'https://opendata.dwd.de/climate_environment/CDC/grids_germany/hourly/radolan/reproc/2017_002/netCDF/supplement/RW2017.002_2021_netcdf_supplement.tar.gz', 43488656039::bigint, 132103695178::bigint, '01ab7b83d1765fb6bbe590ad772880c65d5e43c9', '741c1320301be519a57818655d0380d94a6b6865adc3249f454f9c9cdf254867', '76b410d2c64e3147bb6932df07c860455d04e097d1ec3fe179ea16a472cb28c3', '635be219e2faf2b2e680f5a3d0f8d0b32cb3f80ba19440f38c6bb68b9672bd71', 'DWD RADKLIM RW2017.002 hourly gauge-corrected precipitation product'),
+  ('noaa.swpc.real-time-solar-wind', 'https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json', 43489514680::bigint, 132106651956::bigint, '4a579279e240c9429e6e66360194446c7c6e48b9', 'bc35b0a375b85efe559f132cfae46d8c79b7e8f19400299ae223d067f6091159', '9c8cff6ed4aa0ba97edb2a8d179728c5696e446c25437fbf9dfc758d20ac31d2', '80b80b5b214c471eb43ae3d303e95748afb7be624dea351f663a057f52333281', 'NOAA SWPC RTSW 2026 rtsw_mag_1m.json multi-spacecraft rolling product'),
+  ('gfz.geomagnetic-kp', 'https://kp.gfz.de/app/json/?start=2024-01-01T00:00:00Z&end=2024-01-01T23:59:59Z&index=Kp&status=def', 43491158483::bigint, 132112397671::bigint, '17da6a4a3250bc63e7c363a47f74213472196eeb', 'f03506f678672a99c4c5a2c1d251740bd484b064853db18177b9b5ba4ad27d0a', 'f766594d3b83d42a9a16ef247c7119f1a435a2ea00d5c004876e4cfab3cd7dfd', '423e21bda179d5664a74f3c3bbe2a5e6d955aa4386305545d292a627b191affa', 'GFZ definitive Kp index (2024-01-01; not GFZ nowcast or other providers)')
 ),
 original_branch_evidence AS (
  SELECT s.source_id, s.sample_id, e.github_run_id, e.github_job_id,
@@ -176,13 +176,16 @@ original_branch_evidence AS (
    ON e.source_id=s.source_id
   AND e.exact_source_url=s.source_url
   AND e.original_response_sha256=s.provider_response_sha256
- JOIN research.source_usage_rights_v0 rights
-   ON rights.source_id=s.source_id
-  AND rights.use_case='internal_neon_metadata'
-  AND rights.rights_result='allowed'
-  AND rights.scientific_model_admission=false
-  AND rights.original_asset_admitted=false
- WHERE s.sample_kind='public_metadata'
+ WHERE EXISTS (
+   SELECT 1 FROM research.source_usage_rights_v0 rights
+   WHERE rights.source_id=s.source_id
+     AND rights.product_scope=e.exact_product_rights_scope
+     AND rights.use_case='internal_neon_metadata'
+     AND rights.rights_result='allowed'
+     AND rights.scientific_model_admission=false
+     AND rights.original_asset_admitted=false
+ )
+ AND s.sample_kind='public_metadata'
    AND s.sample_json->>'profile' IN
      ('strict_public_original_pr_branch_github_receipt_metadata_v1',
       'noaa-swpc-rtsw-2026-direct-public-github-source-metadata-v1')
@@ -223,7 +226,8 @@ SELECT
  v.pr_branch_metadata_sample_id,
  v.last_original_pr_branch_observed_at,
  (v.source_id IS NOT NULL) AS exact_original_public_pr_branch_proof_verified,
- (q.last_api_shape_status='inconclusive' AND v.source_id IS NOT NULL)
+ (COALESCE(q.last_api_shape_status='inconclusive',false)
+   AND v.source_id IS NOT NULL)
     AS older_intermediary_inconclusive_superseded_for_one_original_proof,
  q.next_action_priority AS historical_queue_priority,
  CASE
