@@ -156,11 +156,72 @@ def combine_original_2020_station_and_grid_peaks(
     }
 
 
+FIRST_ACTUAL_SOURCE_COMPARISON = (
+    Path(__file__).resolve().parents[1] /
+    "research/observations/ciara2020_dwd3_era5_two_cells_original_peak_comparison_20261114.toml"
+)
+
+
+def verify_first_original_station_era5_comparison_receipt(result: dict) -> None:
+    """Fail closed on the very first independently verified actual 2020 result."""
+    with FIRST_ACTUAL_SOURCE_COMPARISON.open("rb") as f:
+        actual = tomllib.load(f)
+    if (
+        actual.get("schema") != SCHEMA
+        or actual.get("status") != result.get("status")
+        or actual.get("first_genuine_source_comparison_github_run") != 43603655228
+        or actual.get("first_genuine_source_comparison_github_job") != 132473533297
+        or actual.get("ERA5_original_2020_96x160_decoded_float32_le_sha256") != ERA5_DECODED_96H_160_SHA
+        or result.get("ERA5_2020_original_decoded_96h_160_SHA256") != ERA5_DECODED_96H_160_SHA
+        or actual.get("source_genuine_DWD_stations") != 3
+        or actual.get("source_genuine_distinct_ERA5_025degree_nodes") != 2
+        or actual.get("source_DWD_original_2020_hour_values_total") != 288
+        or actual.get("publisher_current_locations_not_verified_historical_2020") is not True
+        or actual.get("2020_DWD_hour_reference_and_ERA5_window_UTC_harmonized") is not False
+        or actual.get("station_2020_instrument_height_exposure_verified") is not False
+        or actual.get("ERA5_bias_RMSE_skill_model_approved") is not False
+        or actual.get("actual_2020_real_RV_insurer_sites_claims_observed") is not False
+        or actual.get("native_GUL_IL_RI_OEP_AEP_or_annual_EP_approved") is not False
+        or result.get("DWD_2020_station_historic_instrument_and_geography_verified") is not False
+        or result.get("matched_hour_errors_RMSE_or_model_skill_admitted") is not False
+        or result.get("German_wind_damage_vulnerability_native_GUL_IL_RI_OEP_AEP_admitted") is not False
+        or result.get("source_verified_dwd_stations") != 3
+        or result.get("source_verified_unique_nearest_era5_grid_cells") != 2
+        or result.get("total_original_DWD_FX911_observed_hours") != 288
+    ):
+        raise DWDGridComparisonBlocked("first real historical DWD/ERA5 comparison identity or scientific no-go drift")
+    station_data = result.get("station_to_original_ERA5_peak_only", [])
+    if len(station_data) != 3 or len(actual.get("stations", [])) != 3:
+        raise DWDGridComparisonBlocked("first accepted three DWD/two ERA5 station population changed")
+    pairs = (
+        ("station_id", "original_dwd_station_id"),
+        ("original_DWD_zip_sha256", "dwd_original_zip_sha256"),
+        ("publisher_current_lat", "publisher_current_station_lat"),
+        ("publisher_current_lon", "publisher_current_station_lon"),
+        ("nearest_era5_grid_lat", "nearest_era5_grid_lat"),
+        ("nearest_era5_grid_lon", "nearest_era5_grid_lon"),
+        ("distance_to_grid_km", "distance_publisher_current_station_to_era5_grid_km"),
+        ("DWD_original_observed_hourly_gust_count", "dwd_observed_hour_count"),
+        ("DWD_QN_8", "dwd_QN8_quality_level"),
+        ("DWD_observed_2020_event_peak_FX911_mps", "dwd_measured_original_2020_96h_peak_FX911_mps"),
+        ("original_google_era5_2020_event_peak_10fg_mps", "google_era5_modelled_original_2020_96h_peak_10fg_mps"),
+        ("descriptive_ERA5_minus_DWD_peak_difference_mps_not_model_bias",
+         "descriptive_peak_difference_era5_minus_dwd_mps_not_bias_or_skill"),
+    )
+    for original, observed in zip(actual["stations"], station_data):
+        if any(original.get(k) != observed.get(v) for k, v in pairs):
+            raise DWDGridComparisonBlocked("verified first original 2020 DWD station/ERA5 peak data changed")
+        if observed.get("matched_hourly_time_support_and_station_instrument_verified") is not False:
+            raise DWDGridComparisonBlocked("station UTC and instrument not actually harmonized")
+
+
 def live_original_comparison() -> dict:
     measured = dwd.live_dwd_2020_original_three_stations()
     dwd.verify_first_original_2020_station_receipt_against_live(measured)
     original_weather = era5.original_96h_grid(include_public_grid_peaks=True)
-    return combine_original_2020_station_and_grid_peaks(measured, original_weather)
+    result = combine_original_2020_station_and_grid_peaks(measured, original_weather)
+    verify_first_original_station_era5_comparison_receipt(result)
+    return result
 
 
 def main() -> int:
