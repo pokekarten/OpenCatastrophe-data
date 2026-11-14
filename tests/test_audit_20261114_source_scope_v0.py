@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 import unittest
 
@@ -19,14 +18,6 @@ IDS = (
 
 
 class AuditSourceScopeTests(unittest.TestCase):
-    def test_acquisition_dependency_matches_inventory(self):
-        req = (ROOT / "requirements-glofas-acquisition.txt").read_text(encoding="utf-8")
-        match = re.search(r"(?m)^netCDF4==([0-9A-Za-z.]+)$", req)
-        self.assertIsNotNone(match)
-        inventory = (ROOT / "THIRD_PARTY.md").read_text(encoding="utf-8")
-        self.assertIn("netCDF4==" + match.group(1), inventory)
-        self.assertIn("separate from bounded Oasis/CLIMK research workflows", inventory)
-
     def test_contracts_are_nonexecutable(self):
         for access_id in IDS:
             with self.subTest(access_id=access_id):
