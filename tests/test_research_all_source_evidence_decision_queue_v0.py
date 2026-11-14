@@ -75,6 +75,33 @@ class SourceEvidenceQueueTests(unittest.TestCase):
         self.assertIn("P2_scientific_native_sample_validation", self.query)
         self.assertNotIn("SET model_input_approved", self.query)
 
+    def test_noaa_gfz_trusted_original_run_observations_do_not_override_rights(self):
+        self.assertIn("non_cbs_github_originals AS (", self.query)
+        self.assertIn("verified_additional_github_original_rows", self.query)
+        self.assertIn("verified_additional_github_exact_urls", self.query)
+        self.assertIn("LEFT JOIN non_cbs_github_originals d ON d.source_id=i.source_id", self.query)
+        self.assertIn("noaa.swpc.real-time-solar-wind", self.query)
+        self.assertIn("gfz.geomagnetic-kp", self.query)
+        self.assertIn("s.sample_id=124", self.query)
+        self.assertIn("s.sample_id=126", self.query)
+        self.assertIn("s.sample_json->>'github_run_id'='43489514680'", self.query)
+        self.assertIn("s.sample_json->>'github_run_id'='43491158483'", self.query)
+        self.assertIn("s.sample_json->>'scientific_values_verified'='false'", self.query)
+        self.assertIn("rights.use_case='internal_neon_metadata'", self.query)
+        self.assertIn("rights.scientific_model_admission IS FALSE", self.query)
+        self.assertIn("source_byte_persistence_authorized IS FALSE", self.query)
+        self.assertIn("sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex')", self.query)
+        self.assertIn("recorded_direct_github_original_exact_urls=0", self.query)
+        self.assertNotIn("strict_repository_runner_executed IS TRUE", self.query)
+
+    def test_jrc_license_does_not_authorize_cloudferro_transport(self):
+        self.assertIn("ec-jrc.global-surface-water.1984-2024", self.query)
+        self.assertIn("P1_resolve_CloudFerro_anonymous_transport_before_original_tile", self.query)
+        self.assertIn("scoped_api_automation_results LIKE '%unknown%'", self.query)
+        self.assertIn("recorded_direct_github_original_exact_urls=0", self.query)
+        self.assertIn("metadata sample #129", self.query)
+        self.assertIn("not a CloudFerro tile", self.query)
+
     def test_native_tiff_values_in_preview_are_not_mistaken_for_wms(self):
         self.assertIn("native_geotiff_lzw_window%", self.query)
         self.assertIn("native_pixels_verified", self.query)
