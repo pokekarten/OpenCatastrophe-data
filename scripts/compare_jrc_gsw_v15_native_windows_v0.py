@@ -58,13 +58,24 @@ def compare_native_occurrence_windows(
     ):
         if 100 < tiff < 255:
             raise JRCWindowComparisonBlocked(f"invalid GeoTIFF occurrence percentage at index {i}")
-        if type(raw_mask) not in (int, float) or not math.isfinite(raw_mask) or not 0 <= raw_mask <= 1:
+        # Never convert an unbounded Python integer into a float via
+        # math.isfinite: 10**1000 would raise OverflowError instead of our
+        # well-defined blocked input error.
+        if type(raw_mask) not in (int, float):
+            raise JRCWindowComparisonBlocked(f"invalid Earth Engine mask at index {i}")
+        if not 0 <= raw_mask <= 1 or (
+            type(raw_mask) is float and not math.isfinite(raw_mask)
+        ):
             raise JRCWindowComparisonBlocked(f"invalid Earth Engine mask at index {i}")
         masked = raw_mask == 0
         if ee_value is not None:
-            if type(ee_value) not in (int, float) or not math.isfinite(ee_value):
+            if type(ee_value) not in (int, float):
                 raise JRCWindowComparisonBlocked(f"invalid Earth Engine value type at index {i}")
-            if not 0 <= ee_value <= 255 or ee_value != int(ee_value):
+            if not 0 <= ee_value <= 255 or (
+                type(ee_value) is float and not math.isfinite(ee_value)
+            ):
+                raise JRCWindowComparisonBlocked(f"invalid Earth Engine value type at index {i}")
+            if ee_value != int(ee_value):
                 raise JRCWindowComparisonBlocked(f"invalid/non-native Earth Engine occurrence at index {i}")
         elif not masked:
             raise JRCWindowComparisonBlocked(f"valid Earth Engine mask without data at index {i}")
