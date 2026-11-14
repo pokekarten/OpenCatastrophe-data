@@ -198,7 +198,8 @@ original_branch_evidence AS (
      'https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/'||
        e.github_run_id::text
    AND s.sample_json->>'request_sha256'=e.request_sha256
-   AND s.sample_json->>'runner_code_sha256'=e.runner_code_sha256
+   AND COALESCE(s.sample_json->>'runner_code_sha256',
+                s.sample_json->>'probe_code_sha256')=e.runner_code_sha256
    AND s.research_only
    AND NOT s.model_input_approved
    AND NOT s.source_byte_persistence_authorized
