@@ -137,6 +137,64 @@ The two paths are complementary: use the no-migration SELECT now, then
 reviewed source-specific proof table + seed only after a free Neon test
 branch is available and a database owner authorizes the migration.
 
+## Executed complete 707-source queue correction, 2026-11-14
+
+The new standalone, read-only
+`research_runners/sql/insurance_707_source_original_pr_branch_priority_overlay_v1.sql`
+**was executed directly on the live Neon main research database**. It retains
+the full baseline 707-entry candidate / manifest SQL from open PR #1536 at
+commit `71eaa025ebd497d197bed43620b6c4d173c3224e`
+and overlays only **three exact previously observed source responses**.
+Every provider identity is independently pinned to a real original GitHub
+run/job, 40-character head commit, exact provider URL, raw-response SHA-256,
+request SHA-256, runner-code SHA-256 and a matching canonical JSONB SHA-256
+metadata sample.
+
+The query joins `source_usage_rights_v0` with
+**exact source-product scopes**, including the specific original DWD RADKLIM
+product, GFZ **definitive** Kp (not nowcast), and NOAA **2026 rolling**
+multi-spacecraft RTSW product. Rights are checked as `EXISTS`, avoiding
+one-to-many sample multiplication when a source gains additional rights rows.
+Source-restricted/prohibited rights, data integrity failures and manifest
+checks retain their existing safety priority.
+
+**Observed exact live results:**
+
+| Measure | Actual |
+| --- | ---: |
+| Canonical inventory entries | 707 |
+| PR-branch original-response proofs validated | 3 |
+| Queue priorities changed | **1** |
+| Historical inconclusive responses independently superseded | **1** |
+| Duplicated source proof matches | 0 |
+| NULL inconclusive flags | 0 |
+| Newly granted main trust or model admission | **0** |
+
+The **only changed priority** is
+`noaa.swpc.real-time-solar-wind`:
+
+- Original historic queue: `P1_retest_provider_with_trusted_runner`
+  because its old intermediary smoke receipt remains `inconclusive`.
+- New evidence-adjusted next action:
+  **`P2_review_product_rights_and_science_after_original_probe`** because
+  a separately verified original NOAA source-provider GitHub GET succeeded,
+  and exact rights scope and original hashes also matched.
+- The original historic P1 label, timestamp and `inconclusive` receipt
+  are **retained** as distinct fields (not overwritten or falsified).
+  It is **not** a claim of a trusted-main check, unconditional data rights,
+  sensor lineage integrity, scientific validity or CAT model approval.
+
+DWD RADKLIM remains `P2_review_native_observation_sample` because a 2,048-byte
+original corrected NetCDF compressed archive prefix has **no rainfall data**.
+GFZ remains `P2_scientific_native_sample_validation` because the definitive
+day JSON format is confirmed, but physical validity and model use are not.
+
+The overlay uses only existing read-only Neon tables. The **proposed**
+additional `research.source_strict_pr_branch_receipt_v1` DDL/seed is **still
+unexecuted**, and the Neon branch quota blocks an isolated SQL schema
+rehearsal. Any changes in the original #1536 queue require a new diff/review
+rather than automatically treating this frozen baseline as updated.
+
 ## Proposed additive database artefacts (not applied)
 
 - research_runners/sql/insurance_source_strict_pr_branch_receipt_v1_schema.sql
