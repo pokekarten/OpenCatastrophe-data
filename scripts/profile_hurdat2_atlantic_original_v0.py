@@ -119,7 +119,8 @@ def profile_original(raw: bytes) -> dict[str, object]:
         storms += 1
         index += count + 1
     return {
-        "source_id": SOURCE_ID,
+        "declared_source_id_unverified": SOURCE_ID,
+        "source_identity_verified": False,
         "original_sha256": hashlib.sha256(raw).hexdigest(),
         "original_bytes": len(raw),
         "storm_count": storms,
@@ -134,9 +135,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path, help="authorized external original HURDAT2 file")
     args = parser.parse_args()
-    if args.input.stat().st_size > MAX_ORIGINAL_BYTES:
-        parser.error("input exceeds 12 MiB")
     try:
+        if args.input.stat().st_size > MAX_ORIGINAL_BYTES:
+            parser.error("input exceeds 12 MiB")
         profile = profile_original(args.input.read_bytes())
     except (Hurdat2StructureError, OSError) as exc:
         parser.error(str(exc))
