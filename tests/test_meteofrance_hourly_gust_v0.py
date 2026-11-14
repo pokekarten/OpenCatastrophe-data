@@ -56,7 +56,7 @@ class TestOriginalGust(unittest.TestCase):
         request = urllib.request.Request('https://www.data.gouv.fr/api/1/datasets/example/')
         handler = _StrictSourceRedirect()
         for unsafe in (
-            'http://127.0.0.1/secret',
+            'http://example.net/insecure',
             'https://example.net/candidate',
             'https://www.data.gouv.fr/api/1/private?token=secret',
             'https://operator@www.data.gouv.fr/private',
