@@ -198,11 +198,72 @@ def research_historical_site_grid_crosswalk(
     }
 
 
+FIRST_VERIFIED_2020_SITE_ERA5_ORIGINAL_PEAKS = (
+    Path(__file__).resolve().parents[1] /
+    "research/observations/ciara2020_dwd2020_historic_sites_to_two_era5_utc_peaks_v1.toml"
+)
+
+
+def verify_first_historical_site_original_live_receipt(result: dict) -> None:
+    """Pin the actual first independent live 2020 DWD/ERA5 corrected sites."""
+    with FIRST_VERIFIED_2020_SITE_ERA5_ORIGINAL_PEAKS.open("rb") as fd:
+        source=tomllib.load(fd)
+    if (source.get("schema")!=SCHEMA
+        or source.get("first_genuine_2020_historic_site_and_ERA5_live_github_run")!=43608886802
+        or source.get("first_genuine_2020_historic_site_and_ERA5_live_github_job")!=132489320449
+        or source.get("original_source_era5_decoded_96h_160node_sha256")!=prior.ERA5_DECODED_96H_160_SHA
+        or result.get("original_Google_ERA5_2020_decoded_96h_160node_sha256")!=prior.ERA5_DECODED_96H_160_SHA
+        or source.get("original_dwd_archives_source_count")!=3
+        or source.get("original_historical_geo_device_param_metadata_sha_count")!=9
+        or source.get("original_2020_DWD_hourly_FX911_observations")!=288
+        or source.get("unique_original_ERA5_grid_cells_for_three_sites")!=2
+        or source.get("DWD_original_FX911_previous_hour_UTC_declared") is not True
+        or source.get("ERA5_HRES_10fg_previous_hour_ending_validity_documented") is not True
+        or source.get("source_2020_historical_site_sensor_verified") is not True
+        or source.get("same_hour_station_vs_ERA5_gust_pairs_extracted") is not False
+        or source.get("matched_hour_ERA5_station_model_bias_or_RMSE_approved") is not False
+        or source.get("german_building_wind_vulnerability_or_loss_function_calibrated") is not False
+        or source.get("real_2020_RV_policy_site_exposure_or_claims_observed") is not False
+        or source.get("native_GUL_IL_RI_OEP_AEP_or_SCR_admitted") is not False
+        or result.get("same_UTC_hour_wind_pairs_retrieved") is not False
+        or result.get("independent_ERA5_station_gridpoint_skill_RMSE_bias_approved") is not False
+        or result.get("German_wind_damage_vulnerability_or_native_GUL_IL_RI_OEP_AEP_admitted") is not False):
+        raise HistoricSiteGridBlocked("actual first live source 2020 historic-site receipt or model NO-GO drift")
+    actual=result.get("historically_correct_stations",[])
+    accepted=source.get("stations",[])
+    if len(actual)!=3 or len(accepted)!=3:
+        raise HistoricSiteGridBlocked("historical 2020 original 3 DWD source sites changed")
+    pairs={
+        "id":"DWD_station_id",
+        "original_dwd_zip_sha256":"DWD_original_zip_sha256",
+        "historic_2020_lat":"actual_2020_DWD_station_latitude",
+        "historic_2020_lon":"actual_2020_DWD_station_longitude",
+        "historic_2020_ground_elevation_m":"actual_2020_station_elevation_m",
+        "historic_2020_anemometer_height_m":"actual_2020_wind_anemometer_height_m",
+        "ERA5_original_node_lat":"Google_ERA5_reanalysis_grid_centre_lat",
+        "ERA5_original_node_lon":"Google_ERA5_reanalysis_grid_centre_lon",
+        "historic_2020_to_original_ERA5_node_km":"2020_historic_sensor_to_model_grid_distance_km",
+        "old_current_site_to_original_ERA5_node_km":"prior_current_station_site_to_grid_distance_km",
+        "DWD_original_2020_event_max_FX911_mps":"original_DWD_measured_2020_96h_peak_mps",
+        "Google_original_2020_ERA5_event_max_10fg_mps":"Google_ERA5_2020_96h_event_peak_mps",
+        "descriptive_peak_diff_mps_NOT_BIAS":"descriptive_event_peak_ERA5_minus_DWD_mps_NOT_BIAS",
+        "DWD_original_FX911_peak_hour_UTC":"DWD_reported_peak_hour_label_in_UTC",
+        "DWD_original_FX911_peak_previous_hour_start_UTC":"DWD_peak_gust_previous_hour_start_UTC",
+    }
+    for a,b in zip(accepted,actual):
+        if (any(a.get(k)!=b.get(v) for k,v in pairs.items())
+            or b.get("same_UTC_hour_gust_pair_read_or_matched") is not False
+            or b.get("ERA5_vs_DWD_hourly_RMSE_bias_skill_approved") is not False):
+            raise HistoricSiteGridBlocked("true original February 2020 sites, UTC periods or ERA5 source peaks drift")
+
+
 def live_original_historical_site_peak_replay() -> dict:
     measured=dwd.live_dwd_2020_original_three_stations()
     weather=era5.original_96h_grid(include_public_grid_peaks=True)
     metadata=historic.live_feb2020_attestation()
-    return research_historical_site_grid_crosswalk(measured,weather,metadata)
+    result=research_historical_site_grid_crosswalk(measured,weather,metadata)
+    verify_first_historical_site_original_live_receipt(result)
+    return result
 
 
 def main() -> int:
