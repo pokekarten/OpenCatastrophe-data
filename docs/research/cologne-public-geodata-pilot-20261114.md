@@ -165,6 +165,61 @@ the provider's response/projection semantics and implement a reviewed
 explicit reprojection; never silently accept an `EPSG:4326` label whose
 coordinate magnitudes contradict it.
 
+### 2026-11-14 five-offset and stable-order CRS challenge
+
+A crucial reproducibility failure was found in the live public tree WFS:
+two immediately repeated un-sorted `GetFeature COUNT=1 STARTINDEX=0`
+requests returned **different original Point geometries**. An offset by
+itself therefore does **not** provide a stable source-asset identity.
+`DescribeFeatureType` separately verified an available `Baumnummer`
+field. The provider also accepted `SORTBY=Baumnummer`; three repeated
+sorted first-feature requests returned the same Point and response size.
+The normal one-feature preflight now pins this sort and requires a non-empty
+provider tree identifier, but even sorted offsets are mutable as the city
+updates the daily register.
+
+Five additional live original responses, each `COUNT=1`, were inspected
+at sorted `STARTINDEX=0,750,2500,5000,10000`. All five were GeoJSON Point
+responses with sixteen fields, a present `Baumnummer` and **no GeoJSON CRS
+declaration**. Their original sizes were respectively 584, 644, 614, 616
+and 613 bytes. Their source coordinates were metre-like, compatible with
+an EPSG:25832 hypothesis; no rows, exact identifiers or feature geometries
+were committed to Git or any production DB.
+
+The *hypothetical* transformation was checked locally with `pyproj`
+from EPSG:25832 to EPSG:4326 (explicit `always_xy=True`). The five
+resulting points fell within the independent city KGG Stadtviertel
+WGS84BoundingBox of longitude `6.80547870..7.16330759`, latitude
+`50.83135123..51.09018683`. Their transformed longitude span was
+approximately 0.162° and latitude span 0.100°. **This is a bounding-box
+plausibility test, NOT point-in-polygon membership, verified horizontal
+accuracy, model exposure or proof that all features use EPSG:25832.**
+
+A new bounded replay runner performs six original GETs (five sorted
+offsets plus a repeat of index zero) and prints only byte hashes, hashed
+provider IDs, sample-count/CRS checks and rounded spatial spans:
+
+```bash
+python -m unittest tests.test_cologne_tree_crs_challenge_v0
+python -m pip install -r requirements-eu-flood-spatial.txt
+python research_runners/cologne_tree_crs_challenge_v0.py --live
+```
+
+The optional `pyproj==3.7.2` dependency is already pinned in the existing
+EU flood spatial profile; the normal repository validation remains free of
+this runtime dependency. The runner rejects unrecognized offsets, source
+redirects or non-JSON responses, oversized bodies, non-unique/absent tree
+identifiers, non-projected or out-of-envelope positions, and inconsistent
+replay identity/geometry. It deliberately never writes external data bytes.
+Passing these checks does **not** flip `rights_review_status`,
+`scientific_review_status` or `admission_status`.
+
+Before any spatial join to building exposures, challenge an independently
+selected set of tree points against authoritative Cologne geometries
+using explicit conversion and a documented source CRS, quantify positional
+error rather than just a bounding-box pass, and freeze a provider snapshot
+or stable feature IDs/versions to avoid silent daily-update drift.
+
 These receipts are ephemeral observations at the date above, not frozen
 complete provider files and not an approved warehouse import.
 
