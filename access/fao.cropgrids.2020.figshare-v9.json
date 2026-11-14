@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "fao.cropgrids.2020.figshare-v9",
+  "source_ids": [
+    "fao.cropgrids.2020.global"
+  ],
+  "provider": "CROPGRIDS research consortium (Tang et al.) via Figshare; distinct from the later FAO/CGIAR COG derivatives",
+  "interface_type": "rest",
+  "status": "documented_only",
+  "documentation_url": "https://figshare.com/articles/dataset/CROPGRIDS/22491997",
+  "service_root": "https://api.figshare.com",
+  "api_version": "Figshare article 22491997 version 9 (2024-04-23); original CROPGRIDSv1.08 NetCDF distribution",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "cropgrids_v9_article_metadata"
+    ],
+    "path_templates": [
+      "/v2/articles/22491997/versions/9"
+    ],
+    "parameter_rules": "Frozen Figshare article version 9 metadata route only. Earlier separate Neon research sample #14 records 6 original article file identities, not original NetCDF pixels. This documented_only contract forbids execution, request parameters, free-form URLs, file-download URL following, archive streaming, pagination, automatic mirrors and metadata-to-asset escalation. Any future fixed bounded request requires legal/API re-review, a trusted source-specific runner and strict response identity, content type and SHA-256 verification."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "Original Figshare article version 9 JSON metadata, listing 6 files: CODES.zip; CROPGRIDS_Dataset_Distribution.pdf; CROPGRIDSv1.08_NC_maps.zip; CROPGRIDSv1.08_PNG_maps.zip; Table_CROPGRIDSv1.08_COU.xlsx; Tang_ETAL_2024_SDATA_CROPGRIDS.pdf. No original asset bytes were retrieved under this contract.",
+    "scientific_semantics": "CROPGRIDSv1.08 maps modelled 2020 harvested area (harvarea, hectares) and physical crop area (croparea, hectares) of 173 crops on a WGS84 0.05-degree global grid, alongside source/quality flags. Repeated harvests can yield harvarea greater than croparea. The gridded estimates fuse earlier MRF, additional gridded sources, subnational reports and FAOSTAT 2020: they are not independent FAOSTAT total validation, field boundaries, insured area, TIV or agricultural CAT losses. The original Figshare v9 six-file release must not be conflated with the later FAO/CGIAR COG catalogue of 171 distinct file identities; inspect original per-crop NetCDF and the source quality flags before scientific use."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "No source-specific automated API request rate reviewed for this exact Figshare release. This documentation-only contract grants no new request. Avoid scheduled crawling or large downloads; original NetCDF zip is approximately 806.9 MB, exceeding the bounded metadata scope.",
+    "mutability_notes": "Exact Figshare version 9 frozen; article version 9 was published 2024-04-23. Underlying CROPGRIDSv1.08 assets remain distinct from metadata. Research Neon sample #14 was obtained 2026-11-11 and records original article metadata only, including six advertised file names and bytes, not independent asset hashes or per-NetCDF contents. Do not treat provider-side file metadata or original metadata SHA as a verified GIS asset SHA."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://figshare.com/articles/dataset/CROPGRIDS/22491997",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "The original research data distribution note and linked Figshare record describe CC BY 4.0 for CROPGRIDS research release; this is a product/release claim, not independent verification of every bundled third-party input, its provenance or the distinct later CGIAR/FAO derivative. Figshare API/Data Access Policy and any version-9 asset-specific restrictions still require authoritative review. In particular, commercial insurer CAT modelling, automated service calls, retention, publication of raw/derived per-crop assets and share-alike/attribution obligations are not declared allowed by this contract. Until resolved, commercial automation and raw or derived redistribution are not approved."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-14",
+  "evidence_urls": [
+    "https://figshare.com/articles/dataset/CROPGRIDS/22491997",
+    "https://doi.org/10.6084/m9.figshare.22491997.v9",
+    "https://www.nature.com/articles/s41597-024-03247-7",
+    "https://www.fao.org/agroinformatics/training-and-resources/data-sets/data-set-detail/cropgrids-data-on-harvested-and-crop-areas/en"
+  ],
+  "notes": "T0 research: exact original Figshare 22491997/v9 and CROPGRIDSv1.08 2020 variables, units and provenance identified. Prior private Neon sample #14 is a public metadata research observation, not a new original crop raster download, verified per-crop content, licence or CAT model admission. T1-T4 not executed in this change. Next smallest step: verify precise Figshare API and version-9 per-asset rights and one allowed fixed metadata probe; then select a tiny version-pinned crop NetCDF sample outside public Git and check WGS84, nodata, harvested/crop-area units and original SHA."
+}
