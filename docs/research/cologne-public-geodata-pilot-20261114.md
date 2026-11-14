@@ -38,9 +38,22 @@ does **not** download or retain source rasters, tile images, GeoJSON, building
 features or external raw bytes. The first command is fully offline.
 
 A confirmed content-type from a website fetch or a source catalogue link
-is not the same as the above complete live receipt. Until the real command
-returns a parse-verified receipt on an authorized runner, the live canary
-status is **not verified**.
+is not the same as an original-byte response. An **independent bounded Python
+urllib original-source GetCapabilities request** was executed against the
+official WMS endpoint on 2026-11-14: HTTP 200, no endpoint redirect,
+`text/xml`, root `{http://www.opengis.net/wms}WMS_Capabilities`, version
+`1.3.0`, service `WMS`, **19 named layers** and 112,777 original XML bytes.
+Full-body SHA-256:
+`b5d72228b7c3c926c9765e79be3ee516237fa2a31054578e57e4ea2cbb4e095e`.
+The original `Service/AccessConstraints` string included a
+Namensnennung attribution signal and had SHA-256
+`2b280a54d318695d430248562d1fbc0d074349dd27df444d3e72633e2f978c03`.
+This **verifies the public XML access/parse route** independently of
+any search-index excerpts; it does not verify archived TIFF pixels,
+raster depth semantics, provider version immutability or permission to
+publish model inputs. It does not claim that the *repository's own*
+`--live` command ran during this investigation. No XML bytes were
+committed or persisted in a model warehouse.
 
 ## Original-provider flood-data path
 
