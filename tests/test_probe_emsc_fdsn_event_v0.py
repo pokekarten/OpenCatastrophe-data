@@ -25,7 +25,10 @@ def fake_event() -> dict:
             "type": "Feature",
             "id": "synthetic-one",
             "geometry": {"type": "Point", "coordinates": [12.5, 45.0, 11.0]},
-            "properties": {"source_id": "synthetic-not-provider-data", "mag": 5.2},
+            "properties": {
+                "source_id": "synthetic-not-provider-data", "mag": 5.2,
+                "time": "2026-11-14T21:30:19.0Z", "unid": "synthetic-one",
+            },
         }],
     }
 
@@ -37,9 +40,12 @@ def raw_event() -> bytes:
 class SyntheticResponse(io.BytesIO):
     status = 200
 
-    def __init__(self, raw: bytes, content_type: str = "application/json", url: str = PROBE_URL):
+    def __init__(self, raw: bytes, content_type: str = "application/json",
+                 url: str = PROBE_URL, headers: dict | None = None):
         super().__init__(raw)
         self.headers = {"Content-Type": content_type}
+        if headers:
+            self.headers.update(headers)
         self.url = url
 
     def geturl(self) -> str:
@@ -106,6 +112,47 @@ class EMSCEventProbeTests(unittest.TestCase):
             with self.subTest(coords=coords):
                 with self.assertRaises(EMSCProbeError):
                     inspect_json_bytes(json.dumps(payload).encode())
+
+    def test_rejects_missing_or_mismatched_event_identity_and_non_utc_time(self) -> None:
+        changes = (
+            lambda d: d["features"][0].pop("id"),
+            lambda d: d["features"][0].update(id=""),
+            lambda d: d["features"][0].update(id=7),
+            lambda d: d["features"][0]["properties"].update(unid="different-id"),
+            lambda d: d["features"][0]["properties"].pop("time"),
+            lambda d: d["features"][0]["properties"].update(time="2026-11-14T21:30:19"),
+            lambda d: d["features"][0]["properties"].update(time="2026-11-14T21:30:19+01:00"),
+            lambda d: d["features"][0]["properties"].update(time="not-an-event-timeZ"),
+            lambda d: d["features"][0]["properties"].update(time="2026-02-30T12:00:00Z"),
+        )
+        for change in changes:
+            payload = fake_event()
+            change(payload)
+            with self.subTest(payload=payload), self.assertRaises(EMSCProbeError):
+                inspect_json_bytes(json.dumps(payload).encode())
+
+    def test_response_encoding_and_content_length_fail_closed(self) -> None:
+        body = raw_event()
+        for headers in (
+            {"Content-Encoding": "gzip"},
+            {"Content-Length": "-1"},
+            {"Content-Length": "wrong"},
+            {"Content-Length": str(MAX_RESPONSE_BYTES + 1)},
+            {"Content-Length": str(len(body) + 1)},
+            {"Content-Length": str(len(body) - 1)},
+        ):
+            with self.subTest(headers=headers), self.assertRaises(EMSCProbeError):
+                probe(open_request=lambda req, timeout: SyntheticResponse(body, headers=headers))
+
+    def test_correct_length_returns_sha_only_without_stored_event(self) -> None:
+        body = raw_event()
+        reply = SyntheticResponse(body, headers={
+            "Content-Length": str(len(body)), "Content-Encoding": "identity",
+        })
+        receipt = probe(open_request=lambda req, timeout: reply)
+        self.assertEqual(receipt["response_bytes"], len(body))
+        self.assertFalse(receipt["external_bytes_persisted"])
+        self.assertNotIn("features", receipt)
 
     def test_rejects_redirect_http_error_media_mismatch_and_oversize(self) -> None:
         cases = [
