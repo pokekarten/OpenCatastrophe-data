@@ -20,6 +20,7 @@ import sys
 import urllib.parse
 import urllib.request
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 
 CATALOGUE_URL = "https://www.data.gouv.fr/api/1/datasets/donnees-climatologiques-de-base-horaires/"
@@ -164,6 +165,10 @@ def audit_gzip(source: bytes, *, expected_sha256: str | None = None) -> dict[str
             stamp = row["AAAAMMJJHH"].strip()
             if not re.fullmatch(r"\d{8}", station) or not re.fullmatch(r"202[0-4]\d{6}", stamp):
                 raise Blocked("station ID or hourly timestamp violates fixed France-2020-2024 profile")
+            try:
+                datetime.strptime(stamp, "%Y%m%d%H")
+            except ValueError as exc:
+                raise Blocked("invalid real-calendar UTC station hour") from exc
             station_ids.add(station)
             if len(station_ids) > MAX_STATIONS:
                 raise Blocked("too many stations for single department")
