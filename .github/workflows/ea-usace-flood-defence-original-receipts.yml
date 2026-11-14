@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: EA AIMS and USACE NLD original-source one-record receipts
+
+on:
+  pull_request:
+    paths:
+      - "research_runners/probe_aims_nld_flood_defences_v0.py"
+      - "tests/test_probe_aims_nld_flood_defences_v0.py"
+      - ".github/workflows/ea-usace-flood-defence-original-receipts.yml"
+  push:
+    branches: [main]
+    paths:
+      - "research_runners/probe_aims_nld_flood_defences_v0.py"
+      - "tests/test_probe_aims_nld_flood_defences_v0.py"
+      - ".github/workflows/ea-usace-flood-defence-original-receipts.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ea-usace-one-record-receipts-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline-contract-and-negative-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Checkout exact Git revision without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Exercise synthetic-only two-source contract tests
+        run: python -m unittest tests.test_probe_aims_nld_flood_defences_v0 -v
+
+  trusted-original-one-record:
+    name: Direct public source original receipt (${{ matrix.source }})
+    needs: offline-contract-and-negative-tests
+    # Never run network against unreviewed PR heads. A commit on main is the trust boundary.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    strategy:
+      fail-fast: false
+      matrix:
+        source:
+          - uk.ea.aims.spatial-flood-defences.2026
+          - us.usace.nld.public-floodwalls.2026
+    steps:
+      - name: Checkout trusted main code without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify fixed no-geometry transport and source ID in synthetic tests
+        run: python -m unittest tests.test_probe_aims_nld_flood_defences_v0 -v
+      - name: One exact original HTTPS GET, one OBJECTID, no raw bytes retained
+        env:
+          SOURCE_ID: ${{ matrix.source }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m research_runners.probe_aims_nld_flood_defences_v0 \
+            --live --source "$SOURCE_ID" | tee -a "$GITHUB_STEP_SUMMARY"
+          {
+            echo ""
+            echo "Research-only original provider receipt: source byte SHA-256 of transient one-OID response."
+            echo "No geometry, original raw bytes, TIV, claims or model inputs stored; no rights or science admission."
+          } >> "$GITHUB_STEP_SUMMARY"
