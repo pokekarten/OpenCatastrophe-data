@@ -67,3 +67,31 @@ unaffected. The LUISA workbook values are also 2010-euro per-area structural
 damage proxies, not current building-level replacement sums. Their use needs
 area, country GDP/price-year updates, spatial matching and building-level
 valuation assumptions, as detailed in the main rebuild report.
+
+### Independent category-order cross-check
+
+The [ECMWF/Copernicus Loss Indicators product guide](https://confluence.ecmwf.int/display/CKB/Loss+indicators+%28Tier+3%29%3A+Product+User+Guide)
+independently names the six Feuerstein classes in this order: weakest
+outbuildings, outbuilding, strong outbuilding, weak brick, strong brick,
+concrete. This agrees with the CLIMAAX notebook's `building_types` list and
+the LUISA workbook's share-column order. It makes a swapped pair of CSV labels
+or curve columns a plausible explanation, but does not prove which artifact is
+wrong: the curve source is still the pinned CSV, and its middle headers read
+`outbuilding strong`, then `outbuilding`.
+
+Accordingly, two different computations must remain distinguishable:
+
+- **Name-resolved class interpretation:** map workbook `outbuilding` share to
+  the exact CSV `outbuilding` column, and `strong outbuilding` share to
+  `outbuilding strong`. For LUISA class 2110 at 40 m/s this gives 0.40%.
+- **Published notebook positional reproduction:** preserve the notebook's
+  list and column positions exactly. For the same class and speed this gives
+  2.75%.
+
+The independent taxonomy supports the semantic category order, but cannot
+establish whether the CSV labels are transposed or the published computation
+intended the positional result. The implementation therefore continues to
+report the six source curves independently and does not admit either mixture
+as the resolved model curve. Resolving this requires an authoritative erratum,
+source-data clarification, or a byte-pinned upstream version whose mapping
+can be reconciled to the cited category definitions.
