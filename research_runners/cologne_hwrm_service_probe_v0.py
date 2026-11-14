@@ -56,8 +56,11 @@ def parse_wms_capabilities(payload: bytes) -> dict[str, object]:
         raise SourceProbeError("unexpected WMS version")
     service_name = root.findtext("./{*}Service/{*}Name", default="")
     service_title = root.findtext("./{*}Service/{*}Title", default="")
+    service_terms = root.findtext("./{*}Service/{*}AccessConstraints", default="")
     if service_name.strip() not in {"WMS", "OGC:WMS"} or not service_title.strip():
         raise SourceProbeError("missing WMS service identity")
+    if not service_terms.strip():
+        raise SourceProbeError("WMS service terms missing from original metadata")
     capability = root.find("./{*}Capability")
     if capability is None:
         raise SourceProbeError("missing WMS Capability section")
@@ -77,6 +80,14 @@ def parse_wms_capabilities(payload: bytes) -> dict[str, object]:
         "first_layer_names": names[:MAX_REPORTED_LAYERS],
         "response_size": len(payload),
         "sha256": hashlib.sha256(payload).hexdigest(),
+        "service_access_constraints_sha256": hashlib.sha256(
+            service_terms.encode("utf-8")
+        ).hexdigest(),
+        "service_mentions_attribution": (
+            "namensnennung" in service_terms.casefold()
+            or "dl-de/by-2-0" in service_terms.casefold()
+        ),
+        "rights_reviewed": False,
         "verified_live": False,
         "sample_policy": "receipt_only",
         "model_admitted": False,
