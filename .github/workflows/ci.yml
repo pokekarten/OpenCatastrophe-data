@@ -259,8 +259,14 @@ jobs:
         run: |
           python -m unittest tests.test_ciara2020_dwd_original_2020_station_metadata_inventory_v0 -v
           python research_runners/ciara2020_dwd_original_2020_station_metadata_inventory_v0.py --dry-run
+      - name: Independently challenge actual 2020 historical station rows and UTC definition
+        run: |
+          python -m unittest tests.test_ciara2020_dwd_historical_feb2020_station_attestation_v0 -v
+          python research_runners/ciara2020_dwd_historical_feb2020_station_attestation_v0.py --dry-run
       - name: Read exact 3 original publisher ZIP SHA and 2020 source metadata previews
         run: python research_runners/ciara2020_dwd_original_2020_station_metadata_inventory_v0.py --live-original-metadata
+      - name: Attest three 2020 historical DWD original site/device/FX UTC metadata against nine publisher SHAs
+        run: python research_runners/ciara2020_dwd_historical_feb2020_station_attestation_v0.py --live-feb2020-attestation
 
   eu-flood-spatial:
     name: EU flood spatial A1
