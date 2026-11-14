@@ -17,6 +17,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  cbs-83673ned-2025-original-source-three:
+    # Exactly THREE CC-BY public CBS OData source requests, not a data feed,
+    # not a crawler, not a scientific or insurer-model admission job.
+    # One research branch only; cannot run live on generic PRs or forks.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/20261113-cbs-83673ned-2025-direct-original-gh' && github.event.pull_request.head.repo.full_name == github.repository
+    name: CBS 83673NED three original definitive 2025 source receipts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source PR revision without retained token
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up pinned Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Verify exact licensed request contract and fail-closed synthetic data before network
+        run: python -m unittest tests.test_probe_nl_cbs_83673ned_2025_original_three_v0 -v
+      - name: Fetch exactly three original small CBS 2025 JSON responses, emit no source bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '### CBS original direct HTTP 83673NED 2025VJ06 source SHA/length' >> "$GITHUB_STEP_SUMMARY"
+          echo 'CBS StatLine 83673NED CC BY 4.0. Five rental, five owner and one definitive period public record; research only, no TIV or raw provider response bytes.' >> "$GITHUB_STEP_SUMMARY"
+          python -m scripts.probe_nl_cbs_83673ned_2025_original_three_v0 --live-three | tee -a "$GITHUB_STEP_SUMMARY"
+
   check:
     name: Python ${{ matrix.python-version }}
     needs: [eu-flood-spatial]
