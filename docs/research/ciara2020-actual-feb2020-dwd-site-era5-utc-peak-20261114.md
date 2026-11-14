@@ -33,6 +33,27 @@ The original DWD 2020 `Metadaten_Parameter_fx_stunde_*.txt` for all three statio
 
 These are **three independently observed station maxima but only TWO independent model grid-cell maxima**. They do not necessarily occur in the *same hour*. Each DWD peak has its own source-attested UTC ending-hour label (and the preceding-hour interval can now be stated), but the corresponding ERA5 gust at that *same hour* is **not yet retrieved as a station-paired 96-hour series** by this comparison. Hence no same-hour bias, RMSE, measured skill, spatial interpolation quality, building damage or insurer loss is admitted.
 
+## Real first-live historical-site source proof
+
+The genuine public-source research job **succeeded** on
+[GitHub run #43608886802](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43608886802),
+job **132489320449**. It re-read original DWD FX911 measured 2020
+station ZIPs and all nine historically valid original DWD source
+geography/instrument/parameter SHA files, and the original 96h×160
+Google Research ARCO ERA5 10fg source matrix. Every 2020 source
+identity and peak magnitude reproduced without modification.
+Original Kelvin/precipitation/mean wind was **not** substituted.
+
+This actually replayed result is frozen in
+`research/observations/ciara2020_dwd2020_historic_sites_to_two_era5_utc_peaks_v1.toml`.
+The live runner performs a second fail-closed comparison to the exact
+first real-source site, sensor, DWD source ZIP, original ERA5 peaks,
+reported DWD previous-hour UTC interval and original source-science
+NO-GO flags; a future provider refresh that changes evidence must
+be explicitly reviewed rather than silently overwriting historical
+facts. The original #1570 first-current-site comparison remains
+unchanged for provenance.
+
 ## Code, legal status and scientific controls
 
 - `research_runners/ciara2020_dwd_historic_sites_era5_utc_peak_v1.py` first repeats the originally accepted [#1570](https://github.com/pokekarten/OpenCatastrophe-data/pull/1570) source and peak receipt without modification, then checks the independently original-source historical 2020 station metadata from [#1571](https://github.com/pokekarten/OpenCatastrophe-data/pull/1571). It validates full DWD original archive identities, nine original historical geo/device/parameter member SHA-256s, 96h original Google ARCO source digest, **historical** station-to-cell distances, and nominal UTC hour-ending labels.
