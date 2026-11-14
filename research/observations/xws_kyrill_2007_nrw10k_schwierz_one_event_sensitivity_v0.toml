@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Historical real XWS wind × FICTIONAL NRW insured-location values ×
+# documented CLIMADA numerical impact points; never an admitted insurer CAT model.
+schema_version = "XWS_KYRILL_2007_NRW10K_SCHWIERZ_CONDITIONAL_REFERENCE_V0"
+original_historical_storm = "Kyrill 2007-01-18"
+original_historical_storm_count = 1
+source_existing_index_candidate_id = "xws.european-extreme-windstorms"
+original_source_XWS_10k_hazard_zip_sha256 = "631ef3b4f25ac5512bb8c71d936fc2d1ee6922af2f3ab01df17ca3f987a0f918"
+original_source_XWS_10k_hazard_csv_sha256 = "80ad88ddcb8860d7f2396a35a2e3ce57d3b73eb4b98353503e9a04bd3dac8cdf"
+source_fictional_NRW_10k_oed_zip_sha256 = "5b0055ce71314f7d7baf4f67008cd4abba3df28a4bce0690bbe9521a3cc35757"
+source_2022_HU_physical_zip_sha256 = "10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da"
+original_published_climada_numerical_parameters_url = "https://climada-python.readthedocs.io/en/latest/_modules/climada/entity/impact_funcs/storm_europe.html"
+original_publication_doi = "10.1007/s10584-009-9712-1"
+original_CLIMADA_code_license_notice = "GNU General Public License v3; no CLIMADA implementation code vendored"
+calculation_implementation = "Original stdlib Python, tabulated documented numeric Schwierz PAA and MDD, separate linear interpolation then product"
+value_basis = "EUR 2025 FICTIONAL synthetic BuildingTIV values, not observed R+V insured replacement cost"
+published_calibration_scope = "European winter storm empirical reference, not licensed insurer-specific German structural vulnerability"
+fictional_NRW_site_count = 10000
+fictional_NRW_Kreis_count = 53
+fictional_total_TIV_eur = 4826029500
+original_source_proof_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42110341601"
+results_per_county_csv_sha256 = "d106dac99d6981cd0c4cb3c30839b97f40c5df75aef4076f6b3b3fe01b96c40b"
+results_machine_summary_json_sha256 = "cfe72cab3ffa39a66244dd463eba609f2f51e3fcc6316d66e5ecc97cb3623409"
+county_output_row_count = 636
+source_historical_storm_variants_are_alternative_weather_fields_not_independent_events = true
+lower_upper_95_original_wind_variants_are_not_loss_confidence_interval = true
+factor_0_5_and_2_are_unfitted_sensitivity_assumptions = true
+conditional_expected_loss_is_not_a_sampled_GUL = true
+insured_contract_terms_deductibles_limits_applied = false
+real_RV_assets_tiv_or_loss_observed = false
+German_residential_wind_vulnerability_calibrated = false
+source_annual_event_frequency_established = false
+Oasis_or_NextGen_native_Kyrill_GUL_IL_RI_executed = false
+annual_gross_net_OEP_AEP_authorized = false
+third_party_original_XWS_NetCDF_republished = false
+fictional_10k_site_coordinates_republished_in_receipt = false
+
+[[wind_scenario]]
+name = "recalibrated_lower95"
+loss_reference_0_5_eur = "4.84"
+loss_reference_1_0_eur = "13.13"
+loss_reference_2_0_eur = "27.25"
+
+[[wind_scenario]]
+name = "recalibrated_mean"
+loss_reference_0_5_eur = "26845.16"
+loss_reference_1_0_eur = "53686.91"
+loss_reference_2_0_eur = "107374.62"
+
+[[wind_scenario]]
+name = "recalibrated_upper95"
+loss_reference_0_5_eur = "5518768.68"
+loss_reference_1_0_eur = "11037541.04"
+loss_reference_2_0_eur = "22075083.03"
+
+[[wind_scenario]]
+name = "uncontaminated_raw"
+loss_reference_0_5_eur = "5689.49"
+loss_reference_1_0_eur = "11384.17"
+loss_reference_2_0_eur = "22763.46"
