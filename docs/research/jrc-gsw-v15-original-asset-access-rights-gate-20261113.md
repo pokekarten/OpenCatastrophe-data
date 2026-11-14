@@ -300,6 +300,52 @@ and original response/asset identities.
 
 **No Earth Engine project/billing authorization was created or inferred.**
 
+## Native JRC v1.5 CRS/affine georegistration preflight (2026-11-14)
+
+The official [Google Earth Engine affine transform API](https://developers.google.com/earth-engine/reference/rest/v1/AffineTransform)
+defines six ordered values
+`[xScale,xShear,xTranslate,yShear,yScale,yTranslate]` and explicitly
+maps `(0,0)` to the upper-left pixel **corner** (PixelIsArea). The
+[Earth Engine exporting guide](https://developers.google.com/earth-engine/guides/exporting_images)
+warns that setting `scale` alone can cause an unintended
+**half-pixel shift**, even if the output pixel size matches. The
+[FAO JRC v1.5 Occurrence metadata](https://data.fao.org/catalog/iso/f1b1d45a-e360-44bd-95a9-d628c468a7f6)
+records `EPSG:4326`, nominal `0.00025°` cells, Byte pixels and
+`255=NoData`.
+
+The same offline `scripts/compare_jrc_gsw_v15_native_windows_v0.py`
+now exposes `inspect_supplied_native_window_grid_pair(tiff_grid, gee_grid)`
+and `compare_native_occurrence_windows_with_grid(...)`. The caller supplies
+**separately acquired** native source metadata for each parent raster:
+exact CRS, ordered affine transformation, parent width/height, start
+column/row, window width/height. The checker requires north-up,
+unrotated `0.00025°` native cells, valid in-bounds windows of at most
+65,536 cells and compatible geographic coordinates for the upper-left
+and lower-right **window corner** in both sources, within `1e-12°`
+(a strict comparison tolerance; not a calibration parameter). Matching
+global GEE parent raster and 10-degree GeoTIFF tile origins/offsets
+are allowed when they actually address the same cells.
+
+Synthetic negative tests catch half-pixel and full-pixel translation
+shifts, differing scale, shear, CRS, window dimensions, out-of-range
+grid offsets, incorrect pixel-array count, malformed/boolean/NaN/huge
+affine inputs and non-byte source arrays. A synthetic positive test
+pairs `40000×40000` local tile metadata to a `1440000×560000`
+global metadata window at the **same assumed coordinates**. These
+numbers and metadata are synthetic inputs, *not read from JRC sources*.
+
+**Fail-closed provenance:** The output distinguishes
+`caller_supplied_grid_metadata_compatible=true` from
+`grid_metadata_provider_authenticated=false`,
+`native_unresampled_source_data_independently_verified=false`
+and `geospatial_grid_alignment_independently_verified=false`.
+It does **not** authenticate a real original TIFF/GEE CRS or band,
+exclude an export with resampling, prove tile-window identity,
+confirm the **2026-11-10** original correction, store original pixels,
+perform a provider request or admit a CAT model input. The grid
+preflight is a required *syntactic/spatial consistency check*, not a
+license or science validation.
+
 ## Checks included
 
 ```bash
