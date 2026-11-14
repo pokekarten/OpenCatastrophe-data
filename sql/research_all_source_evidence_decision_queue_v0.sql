@@ -32,6 +32,10 @@
 -- receipt join. Individual rights use cases remain product-scoped: aggregate
 -- lists are evidence, never a blanket rights entitlement across all versions.
 --
+-- JRC GSW v1.5: official corrected Copernicus dataset allows attributed
+-- reuse; publisher website metadata sample #129 is NOT a CloudFerro tile,
+-- native pixel nor approved anonymous Swift/Range API transport receipt.
+-- Explicitly hold at source-specific P1 service terms before first tile.
 -- PostgreSQL + pgcrypto sha256(bytea); exact canonical JSONB digest is checked
 -- rather than copying or reading provider data outside the research database.
 WITH
@@ -242,6 +246,10 @@ SELECT *,
     THEN 'P4_commercial_use_restricted'
   WHEN record_type='admitted_manifest'
     THEN 'P6_existing_manifest_validate_separately'
+  WHEN source_id='ec-jrc.global-surface-water.1984-2024'
+       AND recorded_direct_github_original_exact_urls=0
+       AND scoped_api_automation_results LIKE '%unknown%'
+    THEN 'P1_resolve_CloudFerro_anonymous_transport_before_original_tile'
   WHEN last_api_shape_status='inconclusive' AND recorded_direct_github_original_exact_urls=0
     THEN 'P1_retest_provider_with_trusted_runner'
   WHEN sample_rows=0 AND registry_commercial_verdict='allowed_verified'
@@ -268,6 +276,9 @@ ORDER BY
   WHEN registry_commercial_verdict='prohibited' THEN 5
   WHEN registry_commercial_verdict='restricted' THEN 4
   WHEN record_type='admitted_manifest' THEN 6
+  WHEN source_id='ec-jrc.global-surface-water.1984-2024'
+       AND recorded_direct_github_original_exact_urls=0
+       AND scoped_api_automation_results LIKE '%unknown%' THEN 1
   WHEN last_api_shape_status='inconclusive' AND recorded_direct_github_original_exact_urls=0 THEN 1
   WHEN sample_rows=0 AND registry_commercial_verdict='allowed_verified'
     THEN 1
