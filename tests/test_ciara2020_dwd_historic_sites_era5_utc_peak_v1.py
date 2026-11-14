@@ -73,6 +73,20 @@ def accepted_real_peak_grid():
 
 
 class Historical2020SiteCorrectedGustResearch(unittest.TestCase):
+    def test_live_nominal_hour_pair_aggregate_receipt_keeps_no_go_boundaries(self):
+        path=(ROOT/"research/observations/ciara2020_dwd_era5_nominal_hourly_pair_v0.toml")
+        with path.open("rb") as f:
+            receipt=tomllib.load(f)
+        self.assertEqual(receipt["github_actions_run_id"],43618572466)
+        self.assertEqual(receipt["github_actions_job_id"],132518942937)
+        self.assertEqual(receipt["matched_nominal_UTC_hour_labels_per_station"],96)
+        self.assertEqual(receipt["DWD_QN8_3_hours_per_station"],96)
+        self.assertFalse(receipt["exact_sensor_and_model_sampling_equivalence_proven"])
+        self.assertFalse(receipt["model_bias_or_skill_admitted"])
+        self.assertFalse(receipt["loss_or_vulnerability_calibrated"])
+        self.assertFalse(receipt["raw_hourly_values_or_station_hour_pair_rows_published"])
+        self.assertEqual([s["station_id"] for s in receipt["stations"]],list(m.EXPECTED))
+
     def test_nominal_hourly_pairing_aggregates_without_claiming_method_equivalence(self):
         observed={}; quality={}; model=[]
         for i in range(96):

@@ -3,8 +3,8 @@
 
 # Ciara 2020 DWD FX_911 and ERA5 10fg nominal hourly pairs
 
-**Status:** reproducible aggregate diagnostic implemented; this workspace could
-not complete the live source replay. No model-skill or loss admission.
+**Status:** original-source replay completed in GitHub Actions; descriptive
+diagnostic only. No model-skill or loss admission.
 
 The repository already pins the original DWD FX_911 station archives and
 historical February 2020 site, device and parameter records for stations
@@ -31,16 +31,26 @@ grid-cell reanalysis. No height, terrain, exposure or representativeness
 adjustment is made. Treat the paired metrics as descriptive diagnostics only,
 not as model bias, calibrated skill, or a correction factor.
 
-## Execution status in this workspace
+## Original-source replay result
 
-The live replay was attempted but stopped before source values were read:
-`xarray`, `zarr` and `gcsfs` were absent. The repository's pinned requirements
-are in `requirements-google-arco-2020-original-smoke.txt`; installing them was
-blocked by the workspace filesystem being full (115 MB available at the time
-of the attempt). Therefore no live hourly-pair result is claimed here. The
-unit tests exercise the pairing and fail-closed aggregation logic using
-synthetic fixtures. Run the live command in CI or another environment with the
-pinned dependencies to produce actual aggregate metrics.
+The live replay succeeded in GitHub Actions run
+[`43618572466`, job `132518942937`](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43618572466/job/132518942937).
+It re-read the pinned DWD archives and historical metadata, plus all 96
+original public ERA5 hourly fields. Each DWD station had 96 valid observations;
+all 96 carried QN_8=3, so the strict and all-valid metrics coincide.
+
+| DWD station | Historical site | 2020 ERA5 node | Paired hours | Mean ERA5−DWD (m/s) | MAE (m/s) | RMSE (m/s) |
+|---|---|---|---:|---:|---:|---:|
+| 02667 Köln/Bonn | 50.8645 N, 7.1575 E | 50.75 N, 7.25 E | 96 | 2.787 | 2.952 | 3.805 |
+| 15200 Wuppertal | 51.2531 N, 7.2157 E | 51.25 N, 7.25 E | 96 | 1.258 | 2.396 | 3.316 |
+| 00603 Königswinter-Heiderhof | 50.7350 N, 7.1931 E | 50.75 N, 7.25 E | 96 | 2.270 | 2.718 | 3.426 |
+
+The aggregate-only source receipt is
+[`ciara2020_dwd_era5_nominal_hourly_pair_v0.toml`](../../research/observations/ciara2020_dwd_era5_nominal_hourly_pair_v0.toml).
+The unit tests separately exercise pairing and fail-closed aggregation using
+synthetic fixtures. This workspace itself still lacks `xarray`, `zarr` and
+`gcsfs`; its attempted local installation stopped because only 115 MB were
+available. The successful CI replay supplies the live source evidence.
 
 The original 72-hour CLIMK-WINDS footprint audit remains separate: its
 multi-day 3-second gust footprint cannot be transformed into same-hour pairs
