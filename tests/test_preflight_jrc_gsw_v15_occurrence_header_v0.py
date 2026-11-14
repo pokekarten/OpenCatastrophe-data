@@ -170,6 +170,25 @@ class JRCGSWOccurrenceHeaderTests(unittest.TestCase):
         with self.assertRaisesRegex(jrc.JRCHeaderBlocked,"implausible"):
             jrc.inspect_tiff_prefix(classic(width=400000))
 
+    def test_tiff_sample_architecture_requires_short_tag_types(self):
+        # The byte value '8' or '1' is NOT a valid typed assertion of
+        # BitsPerSample / SamplesPerPixel if the IFD tag declares LONG.
+        # Previously either malformed field created a false positive.
+        for entry_index, tag, val, missing in (
+            (2, 258, 8, "bits_per_sample_if_inline"),
+            (4, 277, 1, "samples_per_pixel_if_inline"),
+        ):
+            with self.subTest(tag=tag):
+                raw = bytearray(classic())
+                struct.pack_into("<HHII", raw, 10 + entry_index * 12,
+                                 tag, 4, 1, val)
+                parsed = jrc.inspect_tiff_prefix(bytes(raw))
+                self.assertIsNone(parsed[missing])
+                self.assertFalse(parsed["single_8bit_band_if_inline"])
+                self.assertFalse(parsed["model_input_approved"])
+        valid = jrc.inspect_tiff_prefix(classic())
+        self.assertTrue(valid["single_8bit_band_if_inline"])
+
     def test_unexpected_shape_only_signals_not_actual_asset_rejection(self):
         rec=jrc.inspect_tiff_prefix(classic(width=35000,height=40000))
         self.assertFalse(rec["expected_10_degree_tile_40000x40000_if_inline"])
