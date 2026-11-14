@@ -12,8 +12,8 @@ extreme-wind directory. The DWD station list and archive index contained 564
 station records and 448 historical FX ZIP links when retrieved. Candidate
 stations were chosen on distinct nearest CLIMK ERA5 grid cells, excluding the
 three stations in the first audit; archive filename date ranges covered 35–50
-of the CLIMK top-50 72-hour windows. This was a purposive spatial screen, not a
-random sample.
+of the selected event-context windows centered on the CLIMK `Storm_Dates`
+labels. The archive screen is a purposive spatial sample, not a random sample.
 
 The runner replays the original CLIMK-WINDS v2 ERA5 NetCDF, the two DWD
 directory sources and all 15 original station archives against the exact
@@ -46,47 +46,52 @@ cells. Combined with the two cells from the earlier comparison, the current
 German station screen touches 16 cells. This count is spatial coverage, not 16
 independent validations.
 
-Only windows with all 72 valid DWD hourly observations enter the paired
-metrics. The QN_8=3 column is a stricter subset requiring every hour in the
-window to have that quality code. Heights and elevations below are from
-original DWD event-era metadata, counted only for windows with DWD readings.
-No sensor-height or terrain adjustment was made.
+The table compares each CLIMK per-storm daily field with the maximum of DWD's
+24 hourly gust observations on the same `Storm_Dates` calendar date. It
+requires a complete DWD day; the QN_8=3 subset requires all 24 values to have
+that quality code. The 72-hour context columns describe data coverage around
+the event label and do not define the daily comparison values. CLIMK's exact
+UTC day boundaries and gust averaging duration remain unproven. Heights and
+elevations are from original DWD event-era metadata. No sensor-height or
+terrain adjustment was made.
 
-| Station | Archive-supported windows | DWD windows with readings | Complete 72h | Complete 72h, all QN_8=3 | DWD sensor height (m AGL) | DWD station elevation (m) | Mean ERA5−DWD (m/s) | MAE (m/s) | RMSE (m/s) | Pearson r |
-|---|---:|---:|---:|---:|---|---|---:|---:|---:|---:|
-| 00183 Arkona | 50 | 50 | 28 | 23 | 24 | 42 | −11.10 | 11.41 | 14.88 | 0.832 |
-| 00222 Aue | 37 | 36 | 12 | 9 | 13 | 391 | −7.52 | 13.82 | 15.06 | 0.577 |
-| 00460 Berus | 50 | 50 | 27 | 23 | 12 | 362.33–363 | −7.84 | 9.31 | 13.95 | 0.510 |
-| 01228 UFS TW Ems | 50 | 41 | 8 | 6 | 15 | 0 | −12.35 | 12.45 | 16.97 | 0.788 |
-| 01346 Feldberg/Schwarzwald | 50 | 50 | 27 | 21 | 18.4 | 1486.07 | −25.07 | 25.07 | 27.46 | 0.659 |
-| 01684 Görlitz | 50 | 50 | 29 | 23 | 12–13 | 238–238.48 | −10.11 | 11.28 | 14.90 | 0.655 |
-| 01832 Großer Arber | 50 | — | — | — | — | — | blocked | — | — | — |
-| 01975 Hamburg-Fuhlsbüttel | 50 | 50 | 29 | 23 | 10 | 10.65–13 | −2.50 | 6.38 | 8.82 | 0.785 |
-| 02494 Kalkar | 43 | 20 | 0 | 0 | 10 | 31.33 | — | — | — | — |
-| 02925 Leinefelde | 50 | 50 | 28 | 22 | 11.6–12 | 355.87–356 | −3.56 | 6.83 | 10.10 | 0.738 |
-| 03032 List auf Sylt | 50 | 50 | 29 | 23 | 10–12 | 24.7 | −10.11 | 10.51 | 14.28 | 0.763 |
-| 03167 Bad Marienberg | 50 | 50 | 26 | 20 | 10–12 | 545.37–546.66 | −0.82 | 7.24 | 9.85 | 0.414 |
-| 03552 Neuruppin | 50 | 49 | 27 | 22 | 18 | 38.44 | −7.56 | 8.49 | 11.42 | 0.815 |
-| 03603 Niederstetten | 50 | 21 | 0 | 0 | 10 | 463 | — | — | — | — |
-| 03730 Oberstdorf | 50 | 44 | 24 | 22 | 10 | 805.76–806 | −0.55 | 11.62 | 12.17 | 0.686 |
+| Station | Archive-supported event windows | DWD windows with readings | Complete 72h context | Complete Storm_Dates days | Complete days, all QN_8=3 | Sensor height (m AGL) | Station elevation (m) | Mean paired difference CLIMK−DWD (m/s) | Mean absolute paired difference (m/s) | RMS paired difference (m/s) | Pearson r |
+|---|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|
+| 00183 Arkona | 50 | 50 | 28 | 28 | 23 | 24 | 42 | −9.03 | 10.92 | 13.84 | 0.729 |
+| 00222 Aue | 37 | 36 | 12 | 14 | 10 | 13 | 391 | −4.75 | 12.82 | 14.01 | 0.554 |
+| 00460 Berus | 50 | 50 | 27 | 27 | 23 | 12 | 362.33–363 | −5.24 | 10.35 | 13.93 | 0.226 |
+| 01228 UFS TW Ems | 50 | 41 | 8 | 17 | 12 | 15 | 0 | −2.82 | 7.32 | 11.22 | 0.620 |
+| 01346 Feldberg/Schwarzwald | 50 | 50 | 27 | 28 | 22 | 18.4 | 1486.07 | −21.59 | 22.11 | 25.37 | 0.383 |
+| 01684 Görlitz | 50 | 50 | 29 | 29 | 23 | 12–13 | 238–238.48 | −7.66 | 11.81 | 14.55 | 0.331 |
+| 01832 Großer Arber | 50 | — | — | — | — | — | — | blocked | — | — | — |
+| 01975 Hamburg-Fuhlsbüttel | 50 | 50 | 29 | 29 | 23 | 10 | 10.65–13 | −0.50 | 7.23 | 9.08 | 0.678 |
+| 02494 Kalkar | 43 | 20 | 0 | 0 | 0 | 10 | 31.33 | — | — | — | — |
+| 02925 Leinefelde | 50 | 50 | 28 | 29 | 23 | 11.6–12 | 355.87–356 | −1.23 | 7.78 | 10.21 | 0.525 |
+| 03032 List auf Sylt | 50 | 50 | 29 | 29 | 23 | 10–12 | 24.7 | −7.11 | 10.58 | 13.54 | 0.599 |
+| 03167 Bad Marienberg | 50 | 50 | 26 | 27 | 21 | 10–12 | 545.37–546.66 | 1.46 | 7.88 | 9.62 | 0.439 |
+| 03552 Neuruppin | 50 | 49 | 27 | 28 | 22 | 18 | 38.44 | −5.08 | 8.00 | 10.27 | 0.764 |
+| 03603 Niederstetten | 50 | 21 | 0 | 0 | 0 | 10 | 463 | — | — | — | — |
+| 03730 Oberstdorf | 50 | 44 | 24 | 28 | 22 | 10 | 805.76–806 | 0.25 | 11.46 | 12.00 | 0.640 |
 
-Among the 14 stations with verified event-era metadata, 11 have at least 10
-complete 72-hour windows; three have fewer than 10 or none. An archive filename
-covering a storm date does not guarantee actual hourly readings: 02494 had 20
-partial windows but none complete, and 03603 had 21 partial windows but no
-complete window. Station 01228 had only eight complete windows.
+Among the 14 stations with verified event-era metadata, 12 have at least 10
+complete Storm_Dates days; two have none. An archive filename covering an
+event window does not guarantee actual hourly readings: 02494 had 20 windows
+with partial context data but no complete Storm_Dates day, and 03603 had 21
+windows with some readings but no complete Storm_Dates day. Station 01228 had
+eight complete 72-hour context windows but 17 complete Storm_Dates days.
 
 ## What the discrepancies do and do not say
 
-The complete-window mean ERA5-minus-DWD differences are negative at all 12
-stations with at least one complete pair, but their magnitudes vary widely.
-For example, Feldberg/Schwarzwald has a sensor at 18.4 m above ground and a
-reported station elevation near 1,486 m; its 27-window mean difference is
-−25.07 m/s. Arkona's 24 m sensor has a −11.10 m/s mean difference, while
-10–12 m sensors at Hamburg and Bad Marienberg show −2.50 and −0.82 m/s. These
-are not grounds for a common multiplicative or additive correction. They
-highlight the unresolved role of sensor height, local terrain, exposure,
-offshore setting, historical siting and different model/observation support.
+The mean paired differences are negative at 10 of the 12 stations with at
+least one complete Storm_Dates day; two are positive. For example,
+Feldberg/Schwarzwald has a sensor at 18.4 m above ground and a reported
+station elevation near 1,486 m; its 28-day mean paired difference is −21.59
+m/s. Arkona's 24 m sensor has a −9.03 m/s mean paired difference, while
+10–12 m sensors at Hamburg and Bad Marienberg show −0.50 and 1.46 m/s. These
+arithmetic contrasts are not error metrics or grounds for a common
+multiplicative or additive correction. They highlight the unresolved role of
+sensor height, local terrain, exposure, offshore setting, historical siting
+and measurement definitions.
 
 The station sample is purposive, all windows reuse the same source-selected
 CLIMK storms, several station readings share each storm, and two long-record

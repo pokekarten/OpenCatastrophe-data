@@ -21,7 +21,7 @@ import climk_era5_dwd_50event_station_audit_v0 as audit
 
 def fixture_windows():
     return [{
-        "dwd_hourly_gust_qn":[[20.0,3] for _ in range(72)],
+        "dwd_hourly_gust_qn":[[20.0,3] for _ in range(24)],
         "dwd_storm_date_gust_qn":[[20.0,3] for _ in range(24)],
         "climk_per_storm_gust_mps":18.0,
         "era5_grid_node":[50.75,7.25],
@@ -94,6 +94,13 @@ class CLIMKDWDSpatialCandidateScreenTests(unittest.TestCase):
             receipt=screen.audit_candidate_sources(source,station_list,index,archives,manifest)
         self.assertEqual(receipt["candidate_count"],15)
         self.assertEqual(receipt["candidate_count_with_verified_historical_metadata_and_hourly_semantics"],15)
+        self.assertEqual(receipt["candidate_count_with_any_complete_storm_date_day"],15)
+        self.assertEqual(receipt["candidate_count_with_10_or_more_complete_storm_date_days"],15)
+        self.assertEqual(receipt["candidate_count_with_zero_complete_storm_date_days"],0)
+        self.assertFalse(receipt["DWD_and_CLIMK_temporal_support_equivalence_proven"])
+        self.assertFalse(receipt["gust_averaging_duration_equivalence_proven"])
+        self.assertTrue(all(s["status"] == "AUDITED_COMPLETE_STORM_DATE_DAILY_CONTRASTS_DESCRIPTIVE_ONLY"
+                            for s in receipt["stations"]))
         self.assertFalse(receipt["raw_hourly_values_or_event_level_rows_in_receipt"])
         self.assertFalse(receipt["model_skill_or_bias_correction_admitted"])
         self.assertEqual(receipt["unique_nearest_CLIMK_ERA5_grid_nodes_across_audited_candidates"],1)
