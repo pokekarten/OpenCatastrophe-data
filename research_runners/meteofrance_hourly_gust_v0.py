@@ -25,7 +25,7 @@ from pathlib import Path
 CATALOGUE_URL = "https://www.data.gouv.fr/api/1/datasets/donnees-climatologiques-de-base-horaires/"
 DOCUMENT_URL = "https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/HOR/H_descriptif_champs.csv"
 RESOURCE_TITLE = "HOR_departement_75_periode_2020-2024"
-RESOURCE_FILENAME = "H_75_2020-2024.csv.gz"
+RESOURCE_FILENAME = "H_75_previous-2020-2024.csv.gz"
 ALLOWED_HOSTS = frozenset(("www.data.gouv.fr", "meteofrance.s3.sbg.io.cloud.ovh.net"))
 MAX_CATALOGUE_BYTES = 12 * 1024 * 1024
 MAX_DOCUMENT_BYTES = 64 * 1024

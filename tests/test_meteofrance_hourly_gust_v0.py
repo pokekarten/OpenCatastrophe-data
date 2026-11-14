@@ -45,7 +45,7 @@ class TestOriginalGust(unittest.TestCase):
 
     def test_frozen_resource_identity(self):
         base = {'title': 'HOR_departement_75_periode_2020-2024',
-                'url': 'https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/HOR/H_75_2020-2024.csv.gz',
+                'url': 'https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/HOR/H_75_previous-2020-2024.csv.gz',
                 'id': 'placeholder-public-resource', 'filesize': 2000000}
         resolved = resolve_resource(json.dumps({'resources': [base]}).encode())
         self.assertEqual(resolved['declared_bytes'], 2000000)

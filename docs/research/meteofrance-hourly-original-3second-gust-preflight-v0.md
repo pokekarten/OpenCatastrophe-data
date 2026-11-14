@@ -11,7 +11,7 @@ The original dictionary **actually enumerates** `FF` = 10-minute averaged 10 m w
 
 ## Executable acquisition and model boundary
 
-`research_runners/meteofrance_hourly_gust_v0.py` can download public, unauthenticated official bytes **only for one fixed test profile**: `HOR_departement_75_periode_2020-2024` / `H_75_2020-2024.csv.gz`. It first resolves the official `data.gouv.fr` catalogue resource, validates a bounded downloaded field dictionary, caps compressed/inflated bytes and CSV rows, checks station/hour schemas, and reports only SHA-256 of the original compressed file, aggregates of data coverage/quality and permanent NO-to-admission flags. It does **not** commit or upload original observations, attach source files to CI artifacts, store station IDs, or claim annual EP, measured gust equivalence, or property damage. Original resource absence, changed title, unsafe redirect, missing quality or implausible data should fail closed. The separate CI workflow deliberately runs original retrieval only on the specific PR paths or manually.
+`research_runners/meteofrance_hourly_gust_v0.py` can download public, unauthenticated official bytes **only for one fixed test profile**: `HOR_departement_75_periode_2020-2024` / `H_75_previous-2020-2024.csv.gz`. It first resolves the official `data.gouv.fr` catalogue resource, validates a bounded downloaded field dictionary, caps compressed/inflated bytes and CSV rows, checks station/hour schemas, and reports only SHA-256 of the original compressed file, aggregates of data coverage/quality and permanent NO-to-admission flags. It does **not** commit or upload original observations, attach source files to CI artifacts, store station IDs, or claim annual EP, measured gust equivalence, or property damage. Original resource absence, changed title, unsafe redirect, missing quality or implausible data should fail closed. The separate CI workflow deliberately runs original retrieval only on the specific PR paths or manually.
 
 Execute:
 
@@ -20,6 +20,8 @@ python -m unittest tests.test_meteofrance_hourly_gust_v0 -v
 python -m research_runners.meteofrance_hourly_gust_v0 --live
 ```
 
-The second command requires a public-network-enabled host such as GitHub Actions. An offline original `--original-gz /private/H_75_2020-2024.csv.gz --expected-sha256 <sha256>` is also supported. A failed live run is evidence of a live access/schema block, not proof that data do not exist. This is a research-level preflight and does not change `manifests/` or source-admission state.
+The second command requires a public-network-enabled host such as GitHub Actions. An offline original `--original-gz /private/H_75_previous-2020-2024.csv.gz --expected-sha256 <sha256>` is also supported. A failed live run is evidence of a live access/schema block, not proof that data do not exist. This is a research-level preflight and does not change `manifests/` or source-admission state.
 
 **Next scientific gate:** pin the precise official file metadata/release and observed source SHA-256, select a complete physical storm time window (Ciara/Sabine 2020), identify station-specific measured vs derived `FXI3S` availability, pair model grid support and station siting, and perform a held-out bias/tail check before ingesting any fitted response or annual loss model.
+
+**Observed live provider identity:** the official resource selected under catalogue title `HOR_departement_75_periode_2020-2024` links to the *different literal filename* `H_75_previous-2020-2024.csv.gz`, verified by an authenticated-by-none public CI metadata request on 2026-11-14. That filename is now frozen in the audit rather than inferred from the title; the file's actual observation period and format remain to be checked by source-byte execution.
