@@ -17,12 +17,21 @@ def resample_config(config,simulation_years,seed):
     years=config['year_ids']
     if not years or any(type(y) is not int for y in years) or len(set(years))!=len(years):
         raise ValueError('unique explicit source years including zero-event years required')
+    if not isinstance(config['occurrences'],list):raise ValueError('explicit source occurrence list required')
     years=sorted(years);blocks={year:[] for year in years};seen=set()
+    identities={}
     for entry in config['occurrences']:
         year=entry['year_id'];identity=entry['occurrence_id']
+        if type(entry.get('storm_index')) is not int or not 0<=entry['storm_index']<50:
+            raise ValueError('invalid source storm index, including in unselected years')
+        if type(entry.get('sample_id')) is not int or entry['sample_id']<0:
+            raise ValueError('invalid source sample ID, including in unselected years')
         if type(year) is not int or year not in blocks:raise ValueError('occurrence year outside source measure')
         if not isinstance(identity,str) or not identity or (year,identity) in seen:
             raise ValueError('invalid or duplicate source occurrence')
+        if identity in identities and identities[identity]!=entry['storm_index']:
+            raise ValueError('source occurrence identity maps to different physical storms')
+        identities[identity]=entry['storm_index']
         seen.add((year,identity));blocks[year].append(entry)
     result=copy.deepcopy(config);result['year_ids']=list(range(1,simulation_years+1));result['occurrences']=[]
     mapping=[]

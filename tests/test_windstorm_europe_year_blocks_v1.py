@@ -19,6 +19,18 @@ class YearBlocksTests(unittest.TestCase):
         self.assertEqual(c['year_ids'],[2001,2002])
         self.assertNotEqual(receipt['mapping'],resample_config(c,1000,8)[1]['mapping'])
 
+    def test_invalid_unsampled_event_is_rejected_before_random_selection(self):
+        for bad in [dict(storm_index=True,sample_id=0),dict(storm_index=50,sample_id=0),
+                    dict(storm_index=0,sample_id=-1),dict(storm_index=0,sample_id=True)]:
+            c=dict(year_ids=[1,2],occurrences=[dict(year_id=2,occurrence_id='bad',**bad)])
+            # Many seeds select empty year 1. Validation must never depend on
+            # whether source year 2 happens to appear in the one-year draw.
+            for seed in range(20):
+                with self.subTest(bad=bad,seed=seed),self.assertRaises(ValueError):
+                    resample_config(c,1,seed)
+        c=dict(year_ids=[1,2],occurrences=[dict(year_id=y,occurrence_id='same',storm_index=y,sample_id=0) for y in (1,2)])
+        with self.assertRaises(ValueError):resample_config(c,1,7)
+
     def test_invalid_source_measure_and_unknown_year(self):
         for c in [dict(year_ids=[1,1],occurrences=[]),dict(year_ids=[1],occurrences=[dict(year_id=2,occurrence_id='a')])]:
             with self.assertRaises(ValueError):resample_config(c,10,7)

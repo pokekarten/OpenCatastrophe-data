@@ -203,3 +203,10 @@ The annual financial EP calculation now sorts annual totals/event maxima
 once and counts strict exceedances by binary search. This replaces repeated
 full scans per threshold, while preserving zero years, ties, strict `>`
 semantics and distinct AEP/OEP values.
+
+Source schedule validation now runs before any year selection: every event
+must have an integer source storm index 0..49 and a nonnegative integer
+sample ID (booleans rejected). The same occurrence identity cannot refer to
+different physical source storms across years. An invalid event in a year
+that happens not to be drawn still rejects the run. Regression checks cover
+20 bootstrap seeds so source validity cannot depend on a lucky empty draw.
