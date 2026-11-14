@@ -18,7 +18,7 @@ spec.loader.exec_module(probe)
 
 WMS = b"""<?xml version="1.0"?>
 <WMS_Capabilities xmlns="http://www.opengis.net/wms" version="1.3.0">
- <Service><Name>WMS</Name><Title>NRW HWRM flood hazard WMS</Title></Service>
+ <Service><Name>WMS</Name><Title>NRW HWRM flood hazard WMS</Title><AccessConstraints>Datenlizenz Deutschland Namensnennung 2.0; Land NRW</AccessConstraints></Service>
  <Capability>
   <Request><GetCapabilities/><GetMap/></Request>
   <Layer><Layer><Name>river_depth</Name></Layer>
@@ -34,6 +34,9 @@ class CologneHwrmProbeTests(unittest.TestCase):
         self.assertEqual(result["first_layer_names"], ["river_depth", "river_velocity"])
         self.assertEqual(len(result["sha256"]), 64)
         self.assertFalse(result["verified_live"])
+        self.assertTrue(result["service_mentions_attribution"])
+        self.assertEqual(len(result["service_access_constraints_sha256"]), 64)
+        self.assertFalse(result["rights_reviewed"])
         self.assertFalse(result["model_admitted"])
         self.assertFalse(result["external_bytes_persisted"])
 
@@ -157,6 +160,21 @@ class CologneHwrmProbeTests(unittest.TestCase):
         with mock.patch.object(probe, "build_opener", return_value=Opener()):
             with self.assertRaises(probe.SourceProbeError):
                 probe.probe_live()
+
+    def test_missing_wms_access_constraints_rejected(self):
+        invalid = WMS.replace(
+            b"<AccessConstraints>Datenlizenz Deutschland Namensnennung 2.0; Land NRW</AccessConstraints>",
+            b"",
+        )
+        with self.assertRaises(probe.SourceProbeError):
+            probe.parse_wms_capabilities(invalid)
+
+    def test_no_automatic_rights_grant_from_service_notice(self):
+        notice = WMS.replace(b"Namensnennung", b"Zero")
+        result = probe.parse_wms_capabilities(notice)
+        self.assertFalse(result["service_mentions_attribution"])
+        self.assertFalse(result["rights_reviewed"])
+        self.assertFalse(result["model_admitted"])
 
 
 if __name__ == "__main__":
