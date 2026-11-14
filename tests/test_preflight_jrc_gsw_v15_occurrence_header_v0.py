@@ -94,6 +94,44 @@ class JRCGSWOccurrenceHeaderTests(unittest.TestCase):
         self.assertFalse(rec["first_ifd_fully_within_prefix"])
         self.assertEqual(rec["first_ifd_entry_count_if_visible"],100)
 
+    def test_first_ifd_requires_terminal_next_pointer_inside_prefix(self):
+        # The count and all IFD entries can fit, yet the 4/8 byte next-IFD
+        # pointer is outside the exact 4096-byte original prefix.
+        # In that case the word 'fully' would be a false-positive.
+        classic_raw = bytearray(classic())
+        struct.pack_into("<I", classic_raw, 4, 4092)
+        struct.pack_into("<H", classic_raw, 4092, 0)
+        rec = jrc.inspect_tiff_prefix(bytes(classic_raw))
+        self.assertEqual(rec["first_ifd_entry_count_if_visible"], 0)
+        self.assertFalse(rec["first_ifd_fully_within_prefix"])
+        self.assertFalse(rec["expected_10_degree_tile_40000x40000_if_inline"])
+
+        big_raw = bytearray(big_tiff())
+        struct.pack_into(">Q", big_raw, 8, 4088)
+        struct.pack_into(">Q", big_raw, 4088, 0)
+        rec = jrc.inspect_tiff_prefix(bytes(big_raw))
+        self.assertEqual(rec["first_ifd_entry_count_if_visible"], 0)
+        self.assertFalse(rec["first_ifd_fully_within_prefix"])
+        self.assertIsNone(rec["width_if_inline"])
+
+        # Exact-end boundaries with the terminal pointer should pass.
+        classical_end = bytearray(classic())
+        struct.pack_into("<I", classical_end, 4, 4090)
+        struct.pack_into("<H", classical_end, 4090, 0)
+        self.assertTrue(
+            jrc.inspect_tiff_prefix(bytes(classical_end))[
+                "first_ifd_fully_within_prefix"
+            ]
+        )
+        big_end = bytearray(big_tiff())
+        struct.pack_into(">Q", big_end, 8, 4080)
+        struct.pack_into(">Q", big_end, 4080, 0)
+        self.assertTrue(
+            jrc.inspect_tiff_prefix(bytes(big_end))[
+                "first_ifd_fully_within_prefix"
+            ]
+        )
+
     def test_invalid_bytes_and_tiff_word_sizes_are_blocked(self):
         for raw in (b"",b"hello",bytes(jrc.PREFIX_BYTES),
                     classic()[:4095],classic()+b"x"):
