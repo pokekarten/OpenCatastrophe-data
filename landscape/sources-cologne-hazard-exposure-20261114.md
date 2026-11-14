@@ -54,14 +54,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Provider:** LANUK Nordrhein-Westfalen / Bezirksregierungen NRW / Open.NRW  
 **Categories:** `germany`, `north_rhine_westphalia`, `cologne`, `flood`, `river_flood`, `hazard_depth`, `gis`  
 **Spatial scope:** North Rhine-Westphalia, Germany; to be clipped to Cologne only after geospatial and rights review  
-**Temporal scope:** Publisher high-probability HQ10-HQ50 HWRM product listing; Open.NRW catalogue item shows resource update 2025-05-08; exact underlying tile vintage must be checked  
-**Resolution / granularity:** Official EPSG:25832 TIFF ZIP for depth and Shapefile ZIP for flood boundaries and flow velocities; WMS GetCapabilities available for display; exact grid cell size, units, nodata and layer names pending original-asset inspection  
+**Temporal scope:** Original publisher HWRM folder lists original high-probability Shape ZIP updates on 2026-01-29 and GeoTIFF ZIP updates on 2026-01-30; exact archive content digest and underlying model-vintage semantics pending source acquisition  
+**Resolution / granularity:** EPSG:25832 state-wide depth GeoTIFF ZIP (publisher-listed 2.4 GB), depth-in-risk-area GeoTIFF ZIP (1.1 GB), flood boundaries (142.9 MB) and velocities (5.2 MB) as Shapefile ZIP; WMS for display; no download performed  
 **Potential roles:** `cologne_fluvial_hazard_overlay_candidate`, `flood_depth_damage_function_research`, `official_flood_extent_validation`  
 **Access hint:** `official_open_nrw_catalogue_dl_de_zero_2_0_distributions_tiff_shape_wms_no_original_asset_bytes_acquired`  
 **Authoritative source:** <https://open.nrw/dataset/053549cf-b9c4-4633-80f9-680888ae5a04>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Original Open.NRW resource provides specific high-probability depth TIFF ZIP https://www.opengeodata.nrw.de/produkte/umwelt_klima/wasser/hochwasser/hwrm/HQhaeufig-Tiefen-Ueberschwemmungsgebiete_EPSG25832_TIFF.zip and WMS https://www.wms.nrw.de/umwelt/HW_Gefahrenkarte?REQUEST=GetCapabilities&amp;SERVICE=WMS ; catalogue shows Datenlizenz Deutschland Zero 2.0 for named distributions. High probability HQ10-HQ50 is a regulatory scenario grouping, not a stochastic single-event loss frequency or building-level measured water height. Must pin original ZIP bytes, depth units, NoData, flood defence assumptions and version before admitted hazard raster or commercial use. Capabilities probe code is metadata-only.
+**Note:** Original Open.NRW resource provides specific high-probability depth TIFF ZIP https://www.opengeodata.nrw.de/produkte/umwelt_klima/wasser/hochwasser/hwrm/HQhaeufig-Tiefen-UeberschwemmungsGebiete_EPSG25832_TIFF.zip and WMS https://www.wms.nrw.de/umwelt/HW_Gefahrenkarte?REQUEST=GetCapabilities&amp;SERVICE=WMS ; catalogue shows Datenlizenz Deutschland Zero 2.0 for named distributions. High probability HQ10-HQ50 is a regulatory scenario grouping, not a stochastic single-event loss frequency or building-level measured water height. Must pin original ZIP bytes, depth units, NoData, flood defence assumptions and version before admitted hazard raster or commercial use. Capabilities probe code is metadata-only. Exact original publisher index: https://www.opengeodata.nrw.de/produkte/umwelt_klima/wasser/hochwasser/hwrm/ ; direct release filenames and sizes were cross-checked there on 2026-11-14.
 
 ## StEB Köln interactive 3D pluvial and flood hazard viewer (2025)
 
