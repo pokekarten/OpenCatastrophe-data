@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+schema_version = "1.0.0"
+source_id = "ec-jrc.global-surface-water.1984-2024"
+access_id = "ec-jrc.global-surface-water.1984-2024"
+publisher = "European Commission Joint Research Centre"
+delivery_host = "s3.waw4-1.cloudferro.com"
+delivery_protocol = "https"
+delivery_service = "OpenStack Swift public object access"
+fixed_tile_url = "https://s3.waw4-1.cloudferro.com/swift/v1/global-surface-water/download2024/Aggregated/VER1-5/occurrence/occurrence_10E_50N_v1_5_2024.tif"
+fixed_product = "GSW v1.5 1984-2024 corrected 2026-11-10 Occurrence"
+dataset_reuse_status = "allowed_with_attribution"
+required_attribution = "Source: EC JRC/Google"
+publisher_script_status = "verified_direct_cloudferro_downloader"
+publisher_docs_url = "https://global-surface-water.appspot.com/download"
+publisher_downloader_instructions = "https://global-surface-water.appspot.com/gsw/Download_Instructions.html"
+provider_host_customer_general_terms = "https://cloudferro.s3.waw3-1.cloudferro.com/wp-content/uploads/2024/05/general_terms_and_conditions.pdf"
+customer_terms_clause = "section V.11; page 10: avoid excessive and unnecessary API server load and follow technical service specifications"
+customer_terms_applicability_to_anonymous_reader = "unverified"
+public_anonymous_download_permission = "unknown"
+anonymous_http_rate_cap = "unknown"
+range_support_verified = false
+redirect_policy_verified = false
+approved_network_requests = 0
+approved_original_download_bytes = 0
+safe_metadata_only_access_status = "documented_only"
+live_provider_probe_approved = false
+original_provider_bytes_acquired = false
+original_tiff_values_acquired = false
+full_source_sha_verified = false
+post_2026_11_10_pixel_correction_verified = false
+monthly_recurrence_science_validated = false
+insurer_model_input_approved = false
+next_gate = "manually_review_public_anonymous_cloudferro_service_terms_then_frozen_single_request"
+evidence_note = "CloudFerro customer contract rules are contextual only and not a legal permission for an anonymous crawler. Official JRC v1.5 scripted delivery establishes distribution route, not a numeric rate entitlement. Keep the current source contract fail closed. No rights or API request entitlements are inferred."
