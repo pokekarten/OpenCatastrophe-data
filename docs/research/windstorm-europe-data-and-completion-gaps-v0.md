@@ -102,3 +102,7 @@ rule; adding their building counts would double count assets.
   project archive. Original acquisition receipts and licence notices must
   accompany a durable copy. No raw portfolio or licensed curve arrays are
   published by this review.
+
+The German-language continuation entry point, including required access,
+input fields, persistent storage and acceptance evidence, is now
+[Windstorm Europe: Modellstand und Voraussetzungen](../WINDSTORM_EUROPE.md).
