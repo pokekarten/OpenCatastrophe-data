@@ -309,6 +309,8 @@ def validate_contract(contract: Any) -> dict[str, Any]:
     _text(rights["notes"], "rights_and_policy.notes")
     if dataset_rights != "verified" and (commercial == "allowed" or redistribution == "allowed"):
         raise SourceAccessError("non-verified dataset rights cannot claim allowed commercial automation or redistribution")
+    if api_terms not in {"same_as_dataset", "separate_reviewed"} and commercial == "allowed":
+        raise SourceAccessError("unreviewed API terms cannot claim allowed commercial automation")
 
     probe = _exact_keys(obj["probe_contract"], {"mode", "operation", "requires_credentials", "expected_evidence"}, "probe_contract")
     probe_mode = _enum(probe["mode"], PROBE_MODES, "probe_contract.mode")
