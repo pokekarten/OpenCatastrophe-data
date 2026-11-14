@@ -38,6 +38,14 @@ def construction_curve(path,column):
 
 
 def execute(config,base,hazard_loader=None,validate_only=False):
+    if 'year_block_resampling' in config:
+        from research_runners.windstorm_europe_year_blocks_v1 import resample_config
+        import copy
+        source=copy.deepcopy(config);settings=source.pop('year_block_resampling')
+        sampled,receipt=resample_config(source,settings['simulation_years'],settings['seed'])
+        result=execute(sampled,base,hazard_loader,validate_only)
+        result['year_block_resampling']=receipt
+        return result
     if config.get('profile')!='windstorm-europe-research-v1': raise ValueError('unsupported model profile')
     if config.get('annual_schedule_basis')!='explicit_user_scenario_not_calibrated':
         raise ValueError('this version supports explicit scenario years only')
