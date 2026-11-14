@@ -48,7 +48,7 @@ service-automation state are distinct.
 
 See [JRC GSW v1.5 — separate publisher and CloudFerro public host policy](jrc-gsw-v15-cloudferro-public-host-policy-20261114.md)
 and the machine-readable
-`research_runners/policies/jrc_gsw_v15_cloudferro_host_scope_v0.json`.
+`research_runners/policies/jrc_gsw_v15_cloudferro_host_scope_v0.jsonl`.
 
 CloudFerro's [published General Terms of Service](https://cloudferro.s3.waw3-1.cloudferro.com/wp-content/uploads/2024/05/general_terms_and_conditions.pdf)
 **section V.11(a–b), page 10** require **customers** using an API to
