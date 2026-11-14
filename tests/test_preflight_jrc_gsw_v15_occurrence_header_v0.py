@@ -86,9 +86,10 @@ class JRCGSWOccurrenceHeaderTests(unittest.TestCase):
     def test_truncated_first_ifd_stays_inconclusive(self):
         raw=bytearray(classic())
         struct.pack_into("<I",raw,4,4080)
+        struct.pack_into("<H",raw,4080,100)  # Declared directory cannot fit.
         rec=jrc.inspect_tiff_prefix(bytes(raw))
         self.assertFalse(rec["first_ifd_fully_within_prefix"])
-        self.assertEqual(rec["first_ifd_entry_count_if_visible"],0)
+        self.assertEqual(rec["first_ifd_entry_count_if_visible"],100)
 
     def test_invalid_bytes_and_tiff_word_sizes_are_blocked(self):
         for raw in (b"",b"hello",bytes(jrc.PREFIX_BYTES),
