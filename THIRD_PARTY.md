@@ -28,7 +28,7 @@ The direct PyYAML version is exact but wheel/source hashes are not pinned in thi
 ## Validation-only historical building spatial dependencies
 
 The French 2016 BD TOPO / RNB geometry research tests added by PR #937
-require the exact validation pins `pyproj==3.7.2` (MIT), `shapely==2.1.2`
+require the exact validation pins `pyproj==3.7.2` (MIT), `shapely==2.2.0`
 (BSD-3-Clause) and `pyshp==2.3.1` (MIT). `pyproj` and `shapely` are
 already declared in `requirements-eu-flood-spatial.txt`; `pyshp` is
 pinned explicitly in the synthetic geometry GitHub Actions jobs.
