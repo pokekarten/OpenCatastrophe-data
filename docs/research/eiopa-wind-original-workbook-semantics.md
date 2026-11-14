@@ -50,3 +50,19 @@ Expositionsnenner. Fehlende Event-IDs werden explizit markiert; ein
 fehlender Schlüssel darf nicht automatisch durch einen fremden ersetzt werden.
 Die lokale vollständige Auswertung liegt unter
 `/dev/shm/eiopa-ciara-lob-reconciliation.json`.
+
+## Länderüberlappung der Originaldateien
+
+Der ausgeführte Abgleich mit `eiopa_country_coverage.compare` findet
+für 12 der 15 Ciara-Länder-/Restgruppen ein gleichnamiges Land im
+Windstorm-Expositionsblatt. **Schweiz, UK und Other haben dort keinen
+passenden Landesnenner.** Other erhält keine erfundene Länderzuordnung.
+
+Die 250 Windstorm-Zeilen verteilen sich auf 30 Länder. Alle geprüften
+NUTS-Kennungen sind vier Zeichen lang, ohne doppelte Kennung innerhalb
+eines Landes. Das bestätigt keine NUTS-Version oder lückenlose regionale
+Abdeckung. Landesüberlappung allein beweist auch keinen gleichen
+versicherten Bestand: Sparten, Deckungen und Meldeabdeckung bleiben offen.
+Der neue Abgleich gibt deshalb ausdrücklich keine Schadenquote frei.
+Die lokale Originalauswertung liegt in `/dev/shm/eiopa-country-overlap.json`.
+Sechs lokale Tests der EIOPA-Werkzeuge bestehen.
