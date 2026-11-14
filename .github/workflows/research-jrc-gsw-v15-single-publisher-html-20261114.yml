@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Trigger ONLY when this exact new workflow file is added/edited on its
+# research branch; one original JRC PUBLISHER HTML GET in one job.
+# No CloudFerro listing, no raster tile, no secrets or raw-byte artifacts.
+name: JRC GSW v1.5 original public publisher HTML one-shot
+on:
+  push:
+    branches:
+      - research/20261113-jrc-gsw-v15-rights-transport-gate
+    paths:
+      - .github/workflows/research-jrc-gsw-v15-single-publisher-html-20261114.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jrc-gsw-v15-publisher-html-one-shot-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  one_original_publisher_html:
+    if: github.ref == 'refs/heads/research/20261113-jrc-gsw-v15-rights-transport-gate'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Synthetic negative-only tests (no provider network)
+        run: python -m unittest tests.test_jrc_gsw_v15_publisher_page_one_shot_v0 -v
+      - name: Exactly one bounded official JRC publisher HTML GET; never CloudFerro
+        run: python -m research_runners.jrc_gsw_v15_publisher_page_one_shot_v0 --one-shot
