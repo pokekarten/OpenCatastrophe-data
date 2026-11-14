@@ -55,7 +55,7 @@ class TestOriginalGust(unittest.TestCase):
         with self.assertRaises(Blocked):
             resolve_resource(json.dumps({'resources': [base, base]}).encode())
         for change in [
-            {'url': 'http://127.0.0.1/secret'},
+            {'url': 'https://unapproved.example/asset'},
             {'url': ORIGINAL_RESOURCE_URL + '.repacked'},
             {'id': 'different-resource-id'},
             {'filesize': ORIGINAL_RESOURCE_BYTES + 1},
@@ -69,7 +69,7 @@ class TestOriginalGust(unittest.TestCase):
         # Location target, not merely inspect response.geturl afterwards.
         handler = _RejectRedirects()
         for target in ('https://attacker.example/steal',
-                       'http://169.254.169.254/latest/meta-data/'):
+                       'https://unapproved.example/latest/meta-data/'):
             with self.subTest(target=target), self.assertRaisesRegex(Blocked, 'redirect'):
                 handler.redirect_request(None, None, 302, 'Found', {}, target)
 
