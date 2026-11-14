@@ -100,9 +100,15 @@ separate_reviewed` enum (NOT the impossible legacy
 `terms_url`, `status=probe_ready` and a fixed
 `provider_specific` operation. The host policy must independently
 review `public_anonymous_download_permission=reviewed_allowed`,
-set an explicit positive rate cap, **exactly one** permitted request
-and **exactly 4096** original response bytes, and explicitly approve
-the live probe. All conditions are currently **false**.
+`customer_terms_applicability_to_anonymous_reader=reviewed`,
+`range_support_verified=true` and `redirect_policy_verified=true`
+as **separate, affirmative original-host checks**. An official downloader
+alone, customer-only terms or a working direct URL is not enough to
+claim anonymous Range-method entitlement. The policy also requires a
+positive reviewed rate cap, **exactly one** permitted request,
+**exactly 4096** original response bytes and explicit live-probe approval.
+All these conditions are currently **unmet**; the stored host policy
+and source-access contract remain unchanged and non-executable.
 
 Once independently authorized, this one-shot code permits only a
 `GET` to the exact hardcoded original
