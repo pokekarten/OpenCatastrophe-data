@@ -48,6 +48,9 @@ def hypothetical_review(policy, contract):
     policy = deepcopy(policy)
     contract = deepcopy(contract)
     policy["public_anonymous_download_permission"] = "reviewed_allowed"
+    policy["customer_terms_applicability_to_anonymous_reader"] = "reviewed"
+    policy["range_support_verified"] = True
+    policy["redirect_policy_verified"] = True
     policy["anonymous_http_rate_cap"] = 1
     policy["approved_network_requests"] = 1
     policy["approved_original_download_bytes"] = jrc.PREFIX_BYTES
@@ -82,6 +85,9 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
         self.assertTrue(reasons)
         self.assertIn("independently reviewed public anonymous source-asset GET permission", reasons)
         self.assertIn("independently reviewed active probe contract", reasons)
+        self.assertIn("CloudFerro anonymous-reader service scope independently reviewed", reasons)
+        self.assertIn("HTTP Range method/service entitlement independently verified", reasons)
+        self.assertIn("no-redirect original-host transport policy independently verified", reasons)
         calls = []
         def forbidden(req, timeout):
             calls.append(req.full_url)
@@ -98,6 +104,11 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
         self.assertEqual(jrc.authorization_blockers(policy, contract), [])
         for target, key, bad in (
             ("p", "public_anonymous_download_permission", "unknown"),
+            ("p", "customer_terms_applicability_to_anonymous_reader", "unverified"),
+            ("p", "range_support_verified", False),
+            ("p", "range_support_verified", 1),
+            ("p", "redirect_policy_verified", False),
+            ("p", "redirect_policy_verified", 1),
             ("p", "approved_network_requests", 2),
             ("p", "approved_network_requests", True),
             ("p", "approved_original_download_bytes", 8192),
