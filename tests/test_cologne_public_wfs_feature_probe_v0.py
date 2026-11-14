@@ -42,9 +42,35 @@ class CologneFeatureProbeTests(unittest.TestCase):
     def test_projected_tree_never_gets_geographic_approval(self):
         result = probe.inspect_geojson(as_bytes(TREE), "tree")
         self.assertEqual(result["source_crs_declaration"], "not_declared")
-        self.assertIn("not_approved", result["coordinate_status"])
+        self.assertIn("not_model_approved", result["coordinate_status"])
+        self.assertEqual(result["source_order"], "Baumnummer_ascending")
+        self.assertEqual(len(result["tree_identifier_sha256"]), 64)
         self.assertFalse(result["model_admitted"])
         self.assertFalse(result["external_bytes_persisted"])
+
+
+    def test_tree_source_request_pins_tree_identifier_order(self):
+        self.assertIn("SORTBY=Baumnummer", probe.SOURCES["tree"]["url"])
+
+    def test_tree_coordinate_range_outlier_rejected(self):
+        for coord in ([6.91, 50.94], [950000, 100000], [float("inf"), 5648000]):
+            wrong = json.loads(json.dumps(TREE))
+            wrong["features"][0]["geometry"]["coordinates"] = coord
+            with self.subTest(coord=coord), self.assertRaises(probe.WfsSampleError):
+                probe.inspect_geojson(as_bytes(wrong), "tree")
+
+    def test_missing_stable_tree_key_rejected(self):
+        for value in ("", None, 123, " "):
+            wrong = json.loads(json.dumps(TREE))
+            wrong["features"][0]["properties"]["Baumnummer"] = value
+            with self.subTest(value=value), self.assertRaises(probe.WfsSampleError):
+                probe.inspect_geojson(as_bytes(wrong), "tree")
+
+    def test_tree_declared_geographic_crs_with_projected_values_rejected(self):
+        wrong = json.loads(json.dumps(TREE))
+        wrong["crs"] = {"type": "name", "properties": {"name": "EPSG:4326"}}
+        with self.assertRaises(probe.WfsSampleError):
+            probe.inspect_geojson(as_bytes(wrong), "tree")
 
     def test_declared_kgg_lonlat_is_only_schema_checked(self):
         result = probe.inspect_geojson(as_bytes(KGG), "kgg")
