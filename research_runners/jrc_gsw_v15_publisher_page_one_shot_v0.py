@@ -21,6 +21,9 @@ import sys
 from urllib import error, request
 
 from scripts.preflight_jrc_gsw_v15_publisher_js_routes_v0 import (
+    CLOUDFERRO_ACTIVE,
+    GCS_2021_OLD,
+    GCS_2024_OVERWRITTEN,
     JSRouteBlocked,
     inspect_inline_tile_routes,
 )
