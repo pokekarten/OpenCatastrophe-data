@@ -35,13 +35,10 @@ observations are held in memory only and are not written into the repository.
 
 ## Hour-ending correction
 
-The numerical tables below record the earlier 00:00–23:00 label selection.
-Because FX_911 describes the preceding hour, those labels span 23:00 on the
-previous date to 23:00 on Storm_Dates, not the full calendar day. The V3
-audit now selects 01:00 through 00:00 of the following date to represent
-Storm_Dates 00:00–24:00 UTC. The tables require a V3 source replay before
-being used as calendar-day results. CLIMK day-boundary equivalence remains
-unproven.
+The numerical tables were replayed from the pinned original CLIMK and DWD
+files using V3 hour-ending labels 01:00 through 00:00 of the following date.
+These represent Storm_Dates 00:00–24:00 UTC in DWD. CLIMK day-boundary and
+gust-duration equivalence remain unproven.
 
 ## Same-date daily descriptive contrasts
 
@@ -59,12 +56,12 @@ context; it does not define the values in the daily-comparison table.
 
 | Station / subset | n | Mean paired difference CLIMK − DWD (m/s) | Mean absolute paired difference (m/s) | Root mean square paired difference (m/s) | Pearson r |
 |---|---:|---:|---:|---:|---:|
-| 02667 / complete Storm_Dates day | 29 | 0.04 | 7.86 | 10.15 | 0.358 |
-| 02667 / all QN_8=3 | 23 | −0.54 | 9.16 | 11.23 | 0.324 |
-| 00603 / complete Storm_Dates day | 25 | 1.93 | 8.68 | 10.09 | 0.368 |
-| 00603 / all QN_8=3 | 21 | 1.26 | 9.29 | 10.74 | 0.362 |
-| 15200 / complete Storm_Dates day | 7 | −3.25 | 8.25 | 11.77 | 0.458 |
-| 15200 / all QN_8=3 | 7 | −3.25 | 8.25 | 11.77 | 0.458 |
+| 02667 / complete Storm_Dates day | 29 | 0.00 | 7.86 | 10.21 | 0.352 |
+| 02667 / all QN_8=3 | 23 | -0.45 | 9.25 | 11.30 | 0.315 |
+| 00603 / complete Storm_Dates day | 25 | 2.05 | 8.72 | 10.07 | 0.376 |
+| 00603 / all QN_8=3 | 21 | 1.30 | 9.24 | 10.66 | 0.379 |
+| 15200 / complete Storm_Dates day | 7 | -3.25 | 8.25 | 11.77 | 0.458 |
+| 15200 / all QN_8=3 | 7 | -3.25 | 8.25 | 11.77 | 0.458 |
 
 The two longer DWD series map to the same nearest ERA5 grid cell. Station
 15200's archive begins in 2013, leaving 43 of the earlier CLIMK dates without

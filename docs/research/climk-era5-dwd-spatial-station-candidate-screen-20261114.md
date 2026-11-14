@@ -38,13 +38,10 @@ are held in memory and are not written to the repository.
 
 ## Hour-ending correction
 
-The numerical tables below record the earlier 00:00–23:00 label selection.
-Because FX_911 describes the preceding hour, those labels span 23:00 on the
-previous date to 23:00 on Storm_Dates, not the full calendar day. The V3
-audit now selects 01:00 through 00:00 of the following date to represent
-Storm_Dates 00:00–24:00 UTC. The tables require a V3 source replay before
-being used as calendar-day results. CLIMK day-boundary equivalence remains
-unproven.
+The numerical tables were replayed from the pinned original CLIMK and DWD
+files using V3 hour-ending labels 01:00 through 00:00 of the following date.
+These represent Storm_Dates 00:00–24:00 UTC in DWD. CLIMK day-boundary and
+gust-duration equivalence remain unproven.
 
 ## Coverage and results
 
@@ -67,21 +64,21 @@ terrain adjustment was made.
 
 | Station | Archive-supported event windows | DWD windows with readings | Complete 72h context | Complete Storm_Dates days | Complete days, all QN_8=3 | Sensor height (m AGL) | Station elevation (m) | Mean paired difference CLIMK−DWD (m/s) | Mean absolute paired difference (m/s) | RMS paired difference (m/s) | Pearson r |
 |---|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|
-| 00183 Arkona | 50 | 50 | 28 | 28 | 23 | 24 | 42 | −9.03 | 10.92 | 13.84 | 0.729 |
-| 00222 Aue | 37 | 36 | 12 | 14 | 10 | 13 | 391 | −4.75 | 12.82 | 14.01 | 0.554 |
-| 00460 Berus | 50 | 50 | 27 | 27 | 23 | 12 | 362.33–363 | −5.24 | 10.35 | 13.93 | 0.226 |
-| 01228 UFS TW Ems | 50 | 41 | 8 | 17 | 12 | 15 | 0 | −2.82 | 7.32 | 11.22 | 0.620 |
-| 01346 Feldberg/Schwarzwald | 50 | 50 | 27 | 28 | 22 | 18.4 | 1486.07 | −21.59 | 22.11 | 25.37 | 0.383 |
-| 01684 Görlitz | 50 | 50 | 29 | 29 | 23 | 12–13 | 238–238.48 | −7.66 | 11.81 | 14.55 | 0.331 |
+| 00183 Arkona | 50 | 50 | 28 | 28 | 23 | 24 | 42 | -8.96 | 11.13 | 13.83 | 0.722 |
+| 00222 Aue | 37 | 36 | 12 | 14 | 10 | 13 | 391 | -4.83 | 12.75 | 13.95 | 0.581 |
+| 00460 Berus | 50 | 50 | 27 | 27 | 23 | 12 | 362.33–363 | -5.28 | 10.39 | 14.04 | 0.210 |
+| 01228 UFS TW Ems | 50 | 41 | 8 | 17 | 12 | 15 | 0 | -2.76 | 7.38 | 11.23 | 0.616 |
+| 01346 Feldberg/Schwarzwald | 50 | 50 | 27 | 28 | 22 | 18.4 | 1486.07 | -21.66 | 22.03 | 25.33 | 0.401 |
+| 01684 Görlitz | 50 | 50 | 29 | 29 | 23 | 12–13 | 238–238.48 | -8.04 | 11.29 | 14.36 | 0.425 |
 | 01832 Großer Arber | 50 | — | — | — | — | — | — | blocked | — | — | — |
-| 01975 Hamburg-Fuhlsbüttel | 50 | 50 | 29 | 29 | 23 | 10 | 10.65–13 | −0.50 | 7.23 | 9.08 | 0.678 |
+| 01975 Hamburg-Fuhlsbüttel | 50 | 50 | 29 | 29 | 23 | 10 | 10.65–13 | -0.43 | 7.30 | 9.15 | 0.668 |
 | 02494 Kalkar | 43 | 20 | 0 | 0 | 0 | 10 | 31.33 | — | — | — | — |
-| 02925 Leinefelde | 50 | 50 | 28 | 29 | 23 | 11.6–12 | 355.87–356 | −1.23 | 7.78 | 10.21 | 0.525 |
-| 03032 List auf Sylt | 50 | 50 | 29 | 29 | 23 | 10–12 | 24.7 | −7.11 | 10.58 | 13.54 | 0.599 |
-| 03167 Bad Marienberg | 50 | 50 | 26 | 27 | 21 | 10–12 | 545.37–546.66 | 1.46 | 7.88 | 9.62 | 0.439 |
-| 03552 Neuruppin | 50 | 49 | 27 | 28 | 22 | 18 | 38.44 | −5.08 | 8.00 | 10.27 | 0.764 |
+| 02925 Leinefelde | 50 | 50 | 28 | 29 | 23 | 11.6–12 | 355.87–356 | -1.40 | 7.89 | 10.38 | 0.502 |
+| 03032 List auf Sylt | 50 | 50 | 29 | 29 | 23 | 10–12 | 24.7 | -7.11 | 10.56 | 13.48 | 0.606 |
+| 03167 Bad Marienberg | 50 | 50 | 26 | 27 | 21 | 10–12 | 545.37–546.66 | 1.42 | 7.84 | 9.60 | 0.442 |
+| 03552 Neuruppin | 50 | 49 | 27 | 28 | 22 | 18 | 38.44 | -5.23 | 8.29 | 10.37 | 0.756 |
 | 03603 Niederstetten | 50 | 21 | 0 | 0 | 0 | 10 | 463 | — | — | — | — |
-| 03730 Oberstdorf | 50 | 44 | 24 | 28 | 22 | 10 | 805.76–806 | 0.25 | 11.46 | 12.00 | 0.640 |
+| 03730 Oberstdorf | 50 | 44 | 24 | 28 | 22 | 10 | 805.76–806 | 0.10 | 11.68 | 12.23 | 0.601 |
 
 Among the 14 stations with verified event-era metadata, 12 have at least 10
 complete Storm_Dates days; two have none. An archive filename covering an
