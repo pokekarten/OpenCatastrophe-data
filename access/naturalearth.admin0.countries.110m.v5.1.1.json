@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "naturalearth.admin0.countries.110m.v5.1.1",
+  "source_ids": [
+    "naturalearth.public-domain.admin-geography"
+  ],
+  "provider": "Natural Earth / NACIS contributors",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://www.naturalearthdata.com/downloads/110m-cultural-vectors/110m-admin-0-countries/",
+  "service_root": "https://www.naturalearthdata.com",
+  "api_version": "Natural Earth Admin 0 Countries 1:110m, theme version 5.1.1",
+  "access_scope": [
+    "bulk"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "download_admin0_countries_110m_v511"
+    ],
+    "path_templates": [
+      "/download/110m/cultural/ne_110m_admin_0_countries.zip"
+    ],
+    "parameter_rules": "One publisher-listed 1:110m Admin 0 Countries ZIP only, as linked from the official v5.1.1 product page; no caller-selected URL, version, geography, host, headers, query, range or recursive links. The publisher page currently links a legacy download route. The final download host, redirect chain and service automation permission have not been verified; this documented_only contract authorizes no network execution or archive acquisition."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/zip",
+      "application/octet-stream"
+    ],
+    "format": "Publisher-listed approximately 210.08 KB ZIP of ESRI Shapefile components for ne_110m_admin_0_countries, theme version 5.1.1. The published listing size is approximate, not a measured Content-Length or original-asset hash.",
+    "scientific_semantics": "Generalized global 1:110m cultural cartography of Admin-0 countries with provider de facto boundary choices and some UN/CIA-derived thematic attributes. Intended only as country-level cartographic/context and coarse aggregation research; not a cadastral building, historical border, precise parcel, hazard-intensity, NUTS-code or insured-loss source. Disputed borders, dependent territories, attribute codes, CRS and precision require independent archive-level screening before joins."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 524288,
+    "max_sample_bytes": 1048576,
+    "retry_policy": "none",
+    "rate_limit_notes": "Provider website documents public-domain dataset reuse, but no specific automated-download rate/robots policy has been reviewed for this legacy download route. Do not run automated retrieval or schedule polls until that separate access/service boundary and redirects are verified; at most one bounded manual read-only acquisition should be proposed after review.",
+    "mutability_notes": "The publisher labels the selected 1:110m Admin-0 Countries theme as v5.1.1 on 2026-11-14, but the page/link can change and is not an immutable source-byte identity. Future acquisition must record exact final URL, redirect chain, UTC, original ZIP byte count and SHA-256 separately from extracted or transformed files."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "allowed",
+    "notes": "Natural Earth's official Terms of Use explicitly put all website map-vector/raster versions in the public domain and allow personal, educational and commercial modification and redistribution without mandatory attribution. This establishes dataset reuse rights only, not separate automation/rate/redirect permission for the download website or approval by this repository. Terms include notices about contributing upstream components; a model-facing property/geometry quality and external-rights review is still needed. No original archive or derivative is admitted, hashed or copied into public Git."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-14",
+  "evidence_urls": [
+    "https://www.naturalearthdata.com/downloads/110m-cultural-vectors/110m-admin-0-countries/",
+    "https://www.naturalearthdata.com/downloads/110m-cultural-vectors/",
+    "https://www.naturalearthdata.com/about/terms-of-use/"
+  ],
+  "notes": "T0: official product v5.1.1, map role and source reuse terms read on 2026-11-14. Not verified: executable link/final host, website automation policy, original byte/sample SHA-256, ZIP/DBF/geometry/CRS semantics, sample storage, Neon staging and independent CAT quality. T1-T4 not_tested. Next causal action: review allowed automated retrieval and redirect endpoints, then build one bounded no-redirect ZIP receipt/parser with synthetic negative tests before a strictly limited live sample. No admission or model-input approval."
+}
