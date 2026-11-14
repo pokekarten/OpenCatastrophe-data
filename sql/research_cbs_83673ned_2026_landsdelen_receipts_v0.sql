@@ -45,11 +45,40 @@ WITH pinned AS (
       AND s.sample_json->>'raw_original_response_body_persisted' = 'false'
       AND s.sample_json->>'direct_trusted_repository_runner_executed' = 'false'
 ),
+trusted_original_github AS (
+    SELECT s.sample_id, s.source_url, s.provider_response_sha256,
+           s.sample_json->>'original_response_bytes' AS original_response_bytes,
+           ROW_NUMBER() OVER (PARTITION BY s.source_url ORDER BY s.sample_id DESC) AS proof_rank
+    FROM research.source_sample_v0 s
+    WHERE s.source_id = 'nl.cbs.new-housing-permit-eur-per-m3-region-tenure.83673ned'
+      AND s.sample_kind = 'public_metadata'
+      AND s.research_only IS TRUE
+      AND s.model_input_approved IS FALSE
+      AND s.source_byte_persistence_authorized IS FALSE
+      AND s.sample_sha256 = encode(sha256(convert_to(s.sample_json::text, 'UTF8')), 'hex')
+      AND s.sample_json->>'profile' =
+          'oc-cbs-83673ned-2026-regional-two-github-trusted-original-direct-v0'
+      AND s.sample_json->>'github_run_id' = '43580334849'
+      AND s.sample_json->>'github_job_id' = '132403533534'
+      AND s.sample_json->>'github_job_conclusion' = 'success'
+      AND s.sample_json->>'original_period_status' = 'Voorlopig'
+      AND s.sample_json->>'source_revision' = '2026-08-20T02:00:00'
+      AND s.sample_json->>'original_response_sha256' = s.provider_response_sha256
+      AND s.sample_json->>'direct_github_runner_executed' = 'true'
+      AND s.sample_json->>'strict_repository_runner_executed' = 'true'
+      AND s.sample_json->>'raw_original_response_bytes_saved' = 'false'
+      AND s.sample_json->>'model_input_approved' = 'false'
+      AND s.sample_json->>'original_aggregate_region_rows' = '5'
+),
 receipts AS (
-    SELECT * FROM pinned
-    WHERE checked_tenure IS NOT NULL
-      AND version_rank = 1
-      AND jsonb_array_length(sample_json->'actual_public_aggregate_rows') = 5
+    SELECT p.* FROM pinned p
+    JOIN trusted_original_github d ON d.source_url = p.source_url
+       AND d.provider_response_sha256 = p.provider_response_sha256
+       AND d.original_response_bytes = p.sample_json->>'original_response_bytes'
+       AND d.proof_rank = 1
+    WHERE p.checked_tenure IS NOT NULL
+      AND p.version_rank = 1
+      AND jsonb_array_length(p.sample_json->'actual_public_aggregate_rows') = 5
 ),
 unpacked AS (
     SELECT
@@ -103,10 +132,20 @@ SELECT
   u.native_row_id, u.bounded_response_sha256,
   '2026VJ06 preliminary; new-dwelling permit 12-month rolling mean; excluded VAT'
     AS source_context,
-  CASE WHEN q.passes_completeness_and_units
-       THEN 'research_only_intermediary_sha_and_jsonb_valid; NOT model approved'
-       ELSE 'BLOCKED_missing_or_malformed_research_evidence' END AS research_gate
+  'research_only_trusted_original_GitHub_HTTP_and_SHA_valid; NOT model approved'::text AS research_gate
 FROM unpacked u
 CROSS JOIN quality q
-ORDER BY CASE u.region_code WHEN 'NL01  ' THEN 0 ELSE 1 END,
-         u.region_code, u.tenure;
+WHERE q.passes_completeness_and_units IS TRUE
+UNION ALL
+SELECT
+  NULL::bigint, NULL::text,
+  NULL::text, NULL::text,
+  NULL::text,
+  NULL::integer, NULL::integer, NULL::integer,
+  NULL::integer, NULL::integer,
+  NULL::integer, NULL::text,
+  '2026VJ06 one or both direct original GitHub receipts absent, SHA-invalid or source values malformed'::text,
+  'BLOCKED_missing_or_malformed_research_evidence_or_direct_original_proof'::text
+FROM quality q
+WHERE q.passes_completeness_and_units IS NOT TRUE
+ORDER BY region_code NULLS LAST, tenure;
