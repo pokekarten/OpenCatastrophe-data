@@ -207,6 +207,51 @@ historical API receipts or any licensing status.
   single bounded original request. Original pixel/science/model admission
   remains separately blocked.
 
+### Independently verified JRC *publisher HTML* sample #129, 2026-11-14
+
+The separate source-development [PR #1533](https://github.com/pokekarten/OpenCatastrophe-data/pull/1533)
+executed a new original **publisher HTML** request at
+`https://global-surface-water.appspot.com/download` via
+[public GitHub Actions run 43591889218/job 132438178397](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43591889218/job/132438178397),
+commit `bf9f5a729bebb069492d1fc94e4d0db6cababd74`:
+**HTTP200, 85,581 HTML bytes, SHA-256
+`510b4bc273c743b8789afb3ffa57db31077e1f2ac617aca4869870c123995a08`**.
+The original page establishes the exact official link to JRC's
+CloudFerro public catalogue and announces the **2026-11-10 Occurrence
+fix**, but it does not authenticate **catalogue bytes, a TIFF, pixel
+values or CloudFerro automated access permission**.
+
+Actual private Neon `research.source_sample_v0` **sample ID #129** now
+contains only bounded documentation metadata; its canonical JSONB SHA
+`51371cac6fb550d76d2606e54f846d83fce0ec2df7d79a054920e7c2e02d6d98`
+was validated in PostgreSQL. No original web body was saved.
+The catalog tile path was also observed by a separate read-only public
+catalog browser, but no **full catalogue byte SHA** was measured.
+
+The 707-source overlay now exposes **two disjoint evidence tiers**:
+
+1. **Three** exact original DWD/NOAA/GFZ provider response-shape proofs
+   from public PR branch, with immutable response, code and run hashes.
+2. **One** exact original JRC publisher **HTML** (not a source asset)
+   proof: `jrc_publisher_html_original_receipts_not_tile_proofs=1`,
+   `publisher_html_metadata_sample_id=129`, with exact product-scoped
+   internal metadata licence and 200/byte/SHA/run/commit gates.
+
+Crucially, the canonical JRC queue's historical priority automatically
+changes from `P1_review_bounded_first_source_sample` to
+`P2_review_native_observation_sample` upon seeing one *metadata-only*
+publisher page. The evidence-adjusted queue must **override that
+misleading promotion back to** 
+`P1_review_cloudferro_service_terms_before_original_occurrence_sample`,
+while JRC has no native/raster samples and the CloudFerro host API rights
+remain unknown. Thus the source documentation milestone cannot silently
+close the original geo-raster acquisition gate.
+
+Executed after the Neon addition, the read-only live query returned:
+**707 inventory entries, three original-source response proofs, one
+JRC publisher-page proof, two changed next-action priorities, zero new
+trusted-main or CAT-model approvals**.
+
 DWD RADKLIM remains `P2_review_native_observation_sample` because a 2,048-byte
 original corrected NetCDF compressed archive prefix has **no rainfall data**.
 GFZ remains `P2_scientific_native_sample_validation` because the definitive
