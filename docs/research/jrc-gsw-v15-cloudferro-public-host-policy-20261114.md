@@ -148,6 +148,23 @@ receipt including an **original-prefix-only** SHA-256,
 a 4096-byte first-IFD TIFF shape preflight and explicit negative
 whole-asset, corrected-pixel and CAT-model flags.
 
+**Transport framing and source-release identity (2026-11-14):**
+The original TIFF one-shot runner rejects **duplicate**
+`Content-Type`, `Content-Range`, `Content-Length` and
+`Content-Encoding` headers, including case-insensitive duplicates
+that some parsers would silently collapse. It also rejects any
+`Transfer-Encoding` alongside this fixed content-length/range
+contract, and refuses to read the body until that framing is
+unambiguous. A 4,096-byte source-prefix SHA is merely a digest of
+the received prefix. Neither a matching HTTPS final URL nor an
+intact TIFF header independently authenticates the publisher's
+**corrected** asset release. Accordingly the receipt deliberately
+sets `http_206_exact_requested_url_and_range_observed=true` but
+`original_provider_source_identity_verified=false` and
+`original_asset_release_identity_independently_verified=false`.
+A publisher-signed source manifest or complete verified original
+release identity is still missing.
+
 **Crucial:** successful HTTP206 proves neither the
 post-2026-11-10 corrected original TIFF nor a full-file hash or
 decoded numeric pixels. Authorization of this prefix probe is
