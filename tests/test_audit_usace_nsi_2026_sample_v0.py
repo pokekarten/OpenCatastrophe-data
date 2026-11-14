@@ -84,6 +84,15 @@ class NSI2026ScientificScreenTests(unittest.TestCase):
                 with self.assertRaises(NSI2026SampleBlocked):
                     inspect_nsi_2026_geojson(original)
 
+    def test_reject_float_exponent_overflow_in_ignored_fields(self):
+        base = raw(feature())
+        tampered = base[:-1] + b',"supposedly_ignored":1e999}'
+        with self.assertRaises(NSI2026SampleBlocked):
+            inspect_nsi_2026_geojson(tampered)
+        tampered2 = base.replace(b'"fullrep": 120.0', b'"fullrep": 1e999')
+        with self.assertRaises(NSI2026SampleBlocked):
+            inspect_nsi_2026_geojson(tampered2)
+
     def test_empty_too_many_and_oversize_rejected(self):
         with self.assertRaises(NSI2026SampleBlocked):
             inspect_nsi_2026_geojson(raw())
