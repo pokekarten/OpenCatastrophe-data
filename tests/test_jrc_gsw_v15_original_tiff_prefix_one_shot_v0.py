@@ -133,7 +133,7 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
             return response
         result = jrc.probe_original_prefix(p, c, open_request=fake_open)
         self.assertEqual(len(calls), 1)
-        self.assertEqual(response.read_sizes, [4097])
+        self.assertEqual(response.read_sizes, [4096])
         self.assertEqual(result["http_status"], 206)
         self.assertEqual(result["original_range_bytes_received"], 4096)
         self.assertEqual(result["original_range_sha256"], hashlib.sha256(raw).hexdigest())
@@ -178,6 +178,10 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
             {"Content-Type":"image/tiff","Content-Range":"bytes 0-4095/10000000",
              "Content-Length":"8192"},
             {"Content-Type":"image/tiff","Content-Range":"bytes 0-4095/10000000"},
+            {"Content-Type":"image/tiff","Content-Range":"bytes 0-4095/" + "9"*5000,
+             "Content-Length":"4096"},
+            {"Content-Type":"image/tiff","Content-Range":"bytes 0-4095/10000000",
+             "Content-Length":"9"*5000},
         ):
             with self.subTest(headers=headers), self.assertRaises(jrc.OriginalPrefixBlocked):
                 jrc.probe_original_prefix(p,c,
@@ -210,7 +214,7 @@ class JRCOriginalPrefixOneShotTests(unittest.TestCase):
         self.assertNotIn("follow_redirects=True",code)
         self.assertIn("ProxyHandler({})",code)
         self.assertIn("NoRedirect()",code)
-        self.assertIn("read(PREFIX_BYTES + 1)",code)
+        self.assertIn("read(PREFIX_BYTES)",code)
         self.assertNotIn("open(",code.split("def probe_original_prefix(",1)[1].split("def main(",1)[0].replace("open_request(", ""))
 
 
