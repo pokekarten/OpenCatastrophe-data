@@ -233,6 +233,11 @@ class StrictBranchReceiptContractTests(unittest.TestCase):
             "d2ba746281468b520c5ac3b73db8f40f2d1438d471b2a08c385fbb71b6cfd3f7",
             "s.sample_json->>'source_original_catalogue_bytes_hashed'='false'",
             "s.sample_json->>'individual_tile_original_bytes_hashed'='false'",
+            "s.sample_json->>'cloudferro_service_api_terms_reviewed'='false'",
+            "jr.use_case='internal_neon_metadata'",
+            "jr.rights_result='allowed'",
+            "NOT jr.scientific_model_admission",
+            "NOT jr.original_asset_admitted",
             "AND q.native_or_observed_value_samples=0",
             "AND q.native_pixel_receipts_classified_preview=0",
         ):
