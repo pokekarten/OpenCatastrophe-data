@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Fixed 2048-byte original DWD CDC Range experiment: publicly reviewable.
+# One branch-only push run was completed on 2026-11-13, GitHub run
+# 43488656039. Automated live access disabled afterwards. Future original
+# requests are strictly manual workflow_dispatch only.
+name: DWD corrected 2021 original 2KiB Range proof
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/dwd-radklim-2021-corrected-original-range.yml"
+      - "research_runners/dwd_radklim_2021_corrected_bounded_live_v0.py"
+      - "research_runners/dwd_radklim_2021_corrected_prefix_header_v0.py"
+      - "tests/test_dwd_radklim_2021_corrected_bounded_live_v0.py"
+permissions:
+  contents: read
+jobs:
+  one-original-range:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Offline synthetic original-response and strict HTTP gate checks
+        run: |
+          python3 -m unittest tests.test_dwd_radklim_2021_corrected_prefix_header_v0 tests.test_dwd_radklim_2021_corrected_bounded_live_v0 -v
+      - name: Direct original DWD HTTPS request once, fixed 2KiB, no retry or data persistence
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python3 -m research_runners.dwd_radklim_2021_corrected_bounded_live_v0 --live
