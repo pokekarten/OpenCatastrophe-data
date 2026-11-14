@@ -6,8 +6,8 @@
 **Status:** source-replayed descriptive comparison; no model-skill admission.
 
 On 14 November 2026, the runner replayed the original CLIMK-WINDS v2 ERA5
-NetCDF and the original DWD hourly FX_911 station archives for stations 02667
-and 00603. It compared each CLIMK event's 72-hour `absolute_maxwindgusts`
+NetCDF and the original DWD hourly FX_911 station archives for stations 02667,
+00603 and 15200. It compared each CLIMK event's 72-hour `absolute_maxwindgusts`
 grid-cell value with the maximum observed DWD hourly gust over the 72 UTC hour
 labels centered on the published `Storm_Dates` midpoint. The dates are the
 source's selected top 50 European winter storms ranked by LI3D severity; they
@@ -38,6 +38,7 @@ metadata coverage are shown because they differ between stations.
 |---|---:|---:|---:|---:|---|---:|
 | 02667 | 50 | 50 | 29 | 23 | 10 m: 50 | 1 |
 | 00603 | 36 | 36 | 25 | 21 | 10 m: 5; 12 m: 31 | 1 |
+| 15200 | 7 | 7 | 7 | 7 | 12 m: 7 | 1 |
 
 | Station / subset | n | Mean CLIMK − DWD (m/s) | MAE (m/s) | RMSE (m/s) | Pearson r |
 |---|---:|---:|---:|---:|---:|
@@ -45,16 +46,21 @@ metadata coverage are shown because they differ between stations.
 | 02667 / all QN_8=3 | 23 | −2.63 | 7.35 | 9.93 | 0.610 |
 | 00603 / complete 72h | 25 | −0.75 | 6.80 | 9.09 | 0.572 |
 | 00603 / all QN_8=3 | 21 | −1.60 | 7.39 | 9.75 | 0.599 |
+| 15200 / complete 72h | 7 | −4.90 | 7.74 | 12.15 | 0.609 |
+| 15200 / all QN_8=3 | 7 | −4.90 | 7.74 | 12.15 | 0.609 |
 
-The CLIMK and DWD series map to the same nearest ERA5 grid cell for both
-stations. Thus the two station comparisons are not independent spatial
-validations; the combined support is one ERA5 grid node. Three pairs of the
-selected CLIMK 72-hour event windows overlap in time.
+The two longer DWD series map to the same nearest ERA5 grid cell. Station
+15200's archive begins in 2013, leaving 43 of the earlier CLIMK windows without
+DWD observations at that station. It maps to one additional cell, so all three
+stations cover two distinct ERA5 grid nodes. Station 15200 contributes only
+seven of the selected windows;
+that small subset does not establish independent spatial validation. Three
+pairs of the selected CLIMK 72-hour event windows overlap in time.
 
 ## Interpretation and limits
 
 The selected complete windows show negative mean ERA5-minus-DWD differences
-at both stations, but these descriptive results do **not** establish a
+at all three stations, but these descriptive results do **not** establish a
 correctable model bias or predictive skill. CLIMK's field is a postprocessed
 maximum 3-second gust associated with an ERA5 storm footprint; DWD FX_911 is
 the maximum gust during the previous hour. Exact aggregation-time support and
@@ -74,8 +80,10 @@ model is calibrated or complete.
 - CLIMK-WINDS v2 ERA5, Flynn et al. (2025), Zenodo record 15305753, CC BY 4.0;
   original SHA-256 `92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102`.
 - DWD CDC hourly extreme wind FX_911 archives, CC BY 4.0 with DWD attribution;
-  station archive hashes and original metadata member hashes are in the JSON
-  receipt. Archive hashes match the previously accepted source receipt.
+  archives match the previously accepted source receipt. SHA-256: station
+  02667 `e88536b7eebb6c7f94de63de56b1af85a0981fdd769e727f45f6d7db7c93ae78`,
+  00603 `4a61a6394344bba05a06553794ac1a2d5edb4c4e3ac39ae1f26407e5f4e2f62b`,
+  and 15200 `748ffdbc8f6ebf04a014ebf3d8fdc177e9a903349cc5b36e19f4c425998bfaa0`.
 
 The local test suite verifies complete-window gating, the QN_8 sensitivity,
 historical-metadata coverage, source parsing, status-only stdout, and

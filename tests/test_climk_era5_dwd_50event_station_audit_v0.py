@@ -31,6 +31,9 @@ def windows_fixture():
 
 
 class ClimkEra5DWDTop50AuditTests(unittest.TestCase):
+    def test_source_population_includes_third_dwd_station(self):
+        self.assertEqual(m.STATIONS,("02667","00603","15200"))
+
     def test_partial_windows_excluded_and_qn3_subset_separate(self):
         result=m.summarize_windows(windows_fixture())
         self.assertEqual(result["CLIMK_top50_rows"],50)
