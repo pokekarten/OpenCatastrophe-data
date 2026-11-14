@@ -8,13 +8,21 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from pyproj import CRS, Transformer
-import shapefile
-from shapely.geometry import Polygon, mapping
-
-from research_runners.fr_bdtopo_2016_rnb_polygon_bridge_v0 import (
-    BridgeError, RNB_IDS, compare, current_rnb_shape, historical_bounded_shapes,
-)
+# Exact native polygon validation belongs in the pinned IGN-only workflow.
+# Generic repository CI can run without optional geo packages; other missing
+# imports remain real errors rather than being accidentally swallowed.
+try:
+    from pyproj import CRS, Transformer
+    import shapefile
+    from shapely.geometry import Polygon, mapping
+    from research_runners.fr_bdtopo_2016_rnb_polygon_bridge_v0 import (
+        BridgeError, RNB_IDS, compare, current_rnb_shape, historical_bounded_shapes,
+    )
+    HAS_SPATIAL = True
+except ModuleNotFoundError as exc:
+    if exc.name not in {"pyproj", "shapefile", "shapely"}:
+        raise
+    HAS_SPATIAL = False
 
 
 def square(x, y, radius):
@@ -24,6 +32,7 @@ def square(x, y, radius):
             (x-radius, y-radius)]
 
 
+@unittest.skipUnless(HAS_SPATIAL, "optional historic spatial dependencies; run dedicated pinned workflow")
 class HistoricalRnbBridgeTests(unittest.TestCase):
     def setUp(self):
         self.tmp = TemporaryDirectory()
