@@ -20,6 +20,14 @@
 -- successful GitHub original-run/job identities and provider SHA/URL evidence
 -- are counted separately; counts are OBSERVATIONS, not distinct sources,
 -- licence or admission permissions. All CAT model approvals remain false.
+-- Additionally count TWO already-observed, original-source GitHub PR-branch
+-- receipts: NOAA SWPC rolling magnetometer (#124) and GFZ definitive-day
+-- Kp (#126), with independent hashes, source-specific status and no model
+-- admission. Their source-specific metadata schema differs from CBS; neither
+-- has a trusted-main-run claim. SWPC still has CONDITIONAL automated API
+-- rights and unresolved continuous spacecraft/sensor lineage. A former
+-- inconclusive external smoke must not overrule a separate successful direct
+-- technical proof; missing direct proof still requires retest.
 -- The one PEGELONLINE access-contract alias is normalized only for the API
 -- receipt join. Individual rights use cases remain product-scoped: aggregate
 -- lists are evidence, never a blanket rights entitlement across all versions.
@@ -82,6 +90,64 @@ sample_evidence AS (
  FROM research.source_sample_v0
  GROUP BY source_id
 ),
+non_cbs_github_originals AS (
+ SELECT s.source_id,
+   COUNT(*)::int AS verified_additional_github_original_rows,
+   COUNT(DISTINCT s.source_url)::int AS verified_additional_github_exact_urls
+ FROM research.source_sample_v0 s
+ WHERE s.sample_kind='public_metadata' AND s.research_only IS TRUE
+   AND s.model_input_approved IS FALSE
+   AND s.source_byte_persistence_authorized IS FALSE
+   AND s.sample_sha256=encode(sha256(convert_to(s.sample_json::text,'UTF8')),'hex')
+   AND EXISTS(
+      SELECT 1 FROM research.source_usage_rights_v0 rights
+      WHERE rights.source_id=s.source_id AND rights.use_case='internal_neon_metadata'
+        AND rights.rights_result='allowed' AND rights.scientific_model_admission IS FALSE
+   )
+   AND s.sample_json->>'source_id'=s.source_id
+   AND s.sample_json->>'original_source_url'=s.source_url
+   AND s.sample_json->>'http_status'='200'
+   AND CASE
+     WHEN s.source_id='noaa.swpc.real-time-solar-wind' THEN
+       s.sample_id=124
+       AND s.source_url='https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json'
+       AND s.provider_response_sha256='bc35b0a375b85efe559f132cfae46d8c79b7e8f19400299ae223d067f6091159'
+       AND s.sample_json->>'original_provider_response_sha256'=s.provider_response_sha256
+       AND s.sample_json->>'original_response_bytes'='1719377'
+       AND s.sample_json->>'github_run_id'='43489514680'
+       AND s.sample_json->>'github_job_id'='132106651956'
+       AND s.sample_json->>'github_head_sha'='4a579279e240c9429e6e66360194446c7c6e48b9'
+       AND s.sample_json->>'profile'='noaa-swpc-rtsw-2026-direct-public-github-source-metadata-v1'
+       AND s.sample_json->>'verified_shape'='noaa_swpc_rtsw_mag_2026_multispacecraft'
+       AND s.sample_json->>'probe_code_sha256'='80b80b5b214c471eb43ae3d303e95748afb7be624dea351f663a057f52333281'
+       AND s.sample_json->>'request_sha256'='9c8cff6ed4aa0ba97edb2a8d179728c5696e446c25437fbf9dfc758d20ac31d2'
+       AND s.sample_json->>'source_is_rolling'='true'
+       AND s.sample_json->>'rolling_window_complete'='false'
+       AND s.sample_json->>'scientific_values_verified'='false'
+       AND s.sample_json->>'sensor_lineage_verified'='false'
+       AND s.sample_json->>'provider_body_or_sensor_rows_stored'='false'
+       AND s.sample_json->>'model_input_approved'='false'
+     WHEN s.source_id='gfz.geomagnetic-kp' THEN
+       s.sample_id=126
+       AND s.source_url='https://kp.gfz.de/app/json/?start=2024-01-01T00:00:00Z&end=2024-01-01T23:59:59Z&index=Kp&status=def'
+       AND s.provider_response_sha256='f03506f678672a99c4c5a2c1d251740bd484b064853db18177b9b5ba4ad27d0a'
+       AND s.sample_json->>'original_response_sha256'=s.provider_response_sha256
+       AND s.sample_json->>'original_response_bytes'='361'
+       AND s.sample_json->>'github_run_id'='43491158483'
+       AND s.sample_json->>'github_job_id'='132112397671'
+       AND s.sample_json->>'github_head_sha'='17da6a4a3250bc63e7c363a47f74213472196eeb'
+       AND s.sample_json->>'profile'='strict_public_original_pr_branch_github_receipt_metadata_v1'
+       AND s.sample_json->>'product_version'='GFZ definitive Kp 2024-01-01 8x3h'
+       AND s.sample_json->>'runner_code_sha256'='423e21bda179d5664a74f3c3bbe2a5e6d955aa4386305545d292a627b191affa'
+       AND s.sample_json->>'request_sha256'='f766594d3b83d42a9a16ef247c7119f1a435a2ea00d5c004876e4cfab3cd7dfd'
+       AND s.sample_json->>'github_pr_branch_proof'='true'
+       AND s.sample_json->>'original_response_shape_verified'='true'
+       AND s.sample_json->>'scientific_values_verified'='false'
+       AND s.sample_json->>'insurer_cat_model_admitted'='false'
+       AND s.sample_json->>'original_provider_body_stored'='false'
+     ELSE FALSE END
+ GROUP BY s.source_id
+),
 api_norm AS (
  SELECT CASE WHEN source_id='wsv.pegelonline.rest-v2.dresden'
              THEN 'wsv.pegelonline.elbe-dresden-discharge.2020-2023'
@@ -140,9 +206,11 @@ joined AS (
         COALESCE(s.native_pixel_receipts_classified_preview,0)::int
           AS native_pixel_receipts_classified_preview,
         COALESCE(s.bad_sample_json_hashes,0)::int AS bad_sample_json_hashes,
-        COALESCE(s.recorded_direct_github_original_proof_metadata_rows,0)::int
+        (COALESCE(s.recorded_direct_github_original_proof_metadata_rows,0)
+         + COALESCE(d.verified_additional_github_original_rows,0))::int
           AS recorded_direct_github_original_proof_metadata_rows,
-        COALESCE(s.recorded_direct_github_original_exact_urls,0)::int
+        (COALESCE(s.recorded_direct_github_original_exact_urls,0)
+         + COALESCE(d.verified_additional_github_exact_urls,0))::int
           AS recorded_direct_github_original_exact_urls,
         COALESCE(s.sample_model_approvals,0)::int AS sample_model_approvals,
         s.sample_ids,s.most_recent_sample,
@@ -159,6 +227,7 @@ joined AS (
           AS candidate_snapshot_stale
  FROM research.all_source_inventory_v0 i
  LEFT JOIN sample_evidence s ON s.source_id=i.source_id
+ LEFT JOIN non_cbs_github_originals d ON d.source_id=i.source_id
  LEFT JOIN api_totals a ON a.registry_source_id=i.source_id
  LEFT JOIN api_recent r ON r.registry_source_id=i.source_id
  LEFT JOIN rights_evidence e ON e.source_id=i.source_id
@@ -173,7 +242,7 @@ SELECT *,
     THEN 'P4_commercial_use_restricted'
   WHEN record_type='admitted_manifest'
     THEN 'P6_existing_manifest_validate_separately'
-  WHEN last_api_shape_status='inconclusive'
+  WHEN last_api_shape_status='inconclusive' AND recorded_direct_github_original_exact_urls=0
     THEN 'P1_retest_provider_with_trusted_runner'
   WHEN sample_rows=0 AND registry_commercial_verdict='allowed_verified'
     THEN 'P1_review_bounded_first_source_sample'
@@ -199,7 +268,7 @@ ORDER BY
   WHEN registry_commercial_verdict='prohibited' THEN 5
   WHEN registry_commercial_verdict='restricted' THEN 4
   WHEN record_type='admitted_manifest' THEN 6
-  WHEN last_api_shape_status='inconclusive' THEN 1
+  WHEN last_api_shape_status='inconclusive' AND recorded_direct_github_original_exact_urls=0 THEN 1
   WHEN sample_rows=0 AND registry_commercial_verdict='allowed_verified'
     THEN 1
   WHEN sample_rows>0 AND registry_commercial_verdict='allowed_verified'
