@@ -46,7 +46,18 @@ def inspect_original_listing(payload: bytes) -> dict[str, object]:
     # Do not normalize provider object names: whitespace trimming can turn a
     # different original object key into our exact fixed target, falsely
     # asserting that the target path appeared in the original byte stream.
-    paths = [line for line in listing.splitlines() if line]
+    # Python str.splitlines() treats vertical tabs, Unicode NEL and other
+    # control characters as line separators. In an object listing that would
+    # silently turn a DIFFERENT original key into our exact selected key.
+    # Swift plain-text listings separate keys with LF; tolerate only CRLF,
+    # preserving all other characters for the strict safety check below.
+    paths = []
+    for raw_line in listing.split("\n"):
+        if not raw_line:
+            continue
+        line = raw_line[:-1] if raw_line.endswith("\r") else raw_line
+        if line:
+            paths.append(line)
 
     # No URL synthesis, fuzzy matching, or falling back to deprecated v1.4.
     selected_count = sum(line == SELECTED_ASSET for line in paths)
