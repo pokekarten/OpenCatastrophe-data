@@ -36,6 +36,9 @@ def big_tiff() -> bytes:
     for i,entry in enumerate(((256,16,1,40000),(257,16,1,40000),
                               (277,3,1,1))):
         struct.pack_into(">HHQQ",raw,24+20*i,*entry)
+    # Big-endian TIFF SHORT scalar is left-justified in 8-byte BigTIFF value.
+    # pack(">Q", 1) alone would put it in the wrong final two bytes.
+    struct.pack_into(">H",raw,24+20*2+12,1)
     return bytes(raw)
 
 
