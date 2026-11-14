@@ -1,11 +1,14 @@
 -- SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 -- SPDX-License-Identifier: Apache-2.0
 --
--- Research-only CBS 83673NED: compare definitive 2025VJ06 with
+-- Research-only CBS 83673NED: require SIX exact live GitHub original
+-- source receipts (2025 two regional + period and 2026 two regional + period)
+-- and compare definitive 2025VJ06 with
 -- provisional 2026VJ06 *permit project averages*, not individual
 -- property inflation, an insurance replacement-cost index or CAT model.
 -- One read-only SQL SELECT; all original source replies are bounded
--- intermediary-retrieved public JSON bodies with separate SHA256 proofs.
+-- intermediary-retrieved public JSON bodies with separate SHA256 proofs,
+-- plus distinct GitHub direct original HTTPS 200/SHA/byte metadata records.
 WITH expected(period, tenure, url, digest, byte_count) AS (
   VALUES
     ('2025VJ06','rental','https://opendata.cbs.nl/ODataApi/OData/83673NED/TypedDataSet?$filter=Perioden%20eq%20%272025VJ06%27%20and%20Eigendom%20eq%20%27A028867%27&$top=5','70731cf7be6e73813059c250db9f1f21ad4024f0fb7cba5075ad8af666d90a5e',1457),
@@ -17,6 +20,61 @@ expected_status(period, url, digest, byte_count, official_status) AS (
   VALUES
     ('2025VJ06','https://opendata.cbs.nl/ODataApi/OData/83673NED/Perioden?$filter=Key%20eq%20%272025VJ06%27&$top=1','626dac3ab357839e615bcf0260237651d4a3983a88a0f18f6c8e3bfc24272c4d',234,'Definitief'),
     ('2026VJ06','https://opendata.cbs.nl/ODataApi/OData/83673NED/Perioden?$filter=Key%20eq%20%272026VJ06%27&$top=1','ebe2b837bc17b3b48b14df38c2abc078ea2da4056ff37f32b77653c3a85e6fe0',251,'Voorlopig')
+),
+trusted_direct AS (
+  SELECT s.source_url,s.provider_response_sha256,
+     CASE
+       WHEN s.sample_json->>'profile'='oc-cbs-83673ned-2025-github-trusted-original-direct-https-proof-v0'
+         THEN (s.sample_json->>'exact_original_body_bytes')::int
+       WHEN s.sample_json->>'profile'='oc-cbs-83673ned-2026-regional-two-github-trusted-original-direct-v0'
+         THEN (s.sample_json->>'original_response_bytes')::int
+       WHEN s.sample_json->>'profile'='oc-cbs-github-trusted-direct-original-20261113-v0'
+         THEN (s.sample_json->>'full_original_provider_response_bytes')::int
+     END AS direct_provider_bytes
+  FROM research.source_sample_v0 s
+  WHERE s.source_id='nl.cbs.new-housing-permit-eur-per-m3-region-tenure.83673ned'
+    AND s.sample_kind='public_metadata'
+    AND s.research_only IS TRUE
+    AND s.model_input_approved IS FALSE
+    AND s.source_byte_persistence_authorized IS FALSE
+    AND s.sample_sha256=encode(sha256(convert_to(s.sample_json::text,'UTF8')),'hex')
+    AND s.sample_json->>'strict_repository_runner_executed'='true'
+    AND CASE
+      WHEN s.sample_json->>'profile'='oc-cbs-83673ned-2025-github-trusted-original-direct-https-proof-v0'
+       THEN s.sample_json->>'trusted_github_run_id'='43500093202'
+        AND s.sample_json->>'trusted_github_job_id'='132143531309'
+        AND s.sample_json->>'trusted_github_job_conclusion'='success'
+        AND s.sample_json->>'direct_http_200_exact_original_no_redirect'='true'
+        AND s.sample_json->>'original_provider_bytes_persisted'='false'
+        AND s.sample_json->>'source_http_status'='200'
+        AND s.sample_json->>'original_period_status'='Definitief'
+        AND s.sample_json->>'source_revision'='2026-08-20T02:00:00'
+        AND s.sample_json->>'exact_original_url'=s.source_url
+        AND s.sample_json->>'exact_original_body_sha256'=s.provider_response_sha256
+      WHEN s.sample_json->>'profile'='oc-cbs-83673ned-2026-regional-two-github-trusted-original-direct-v0'
+       THEN s.sample_json->>'github_run_id'='43580334849'
+        AND s.sample_json->>'github_job_id'='132403533534'
+        AND s.sample_json->>'github_job_conclusion'='success'
+        AND s.sample_json->>'direct_github_runner_executed'='true'
+        AND s.sample_json->>'raw_original_response_bytes_saved'='false'
+        AND s.sample_json->>'original_response_http_status'='200'
+        AND s.sample_json->>'original_period_status'='Voorlopig'
+        AND s.sample_json->>'source_revision'='2026-08-20T02:00:00'
+        AND s.sample_json->>'original_exact_source_url'=s.source_url
+        AND s.sample_json->>'original_response_sha256'=s.provider_response_sha256
+        AND s.sample_json->>'original_aggregate_region_rows'='5'
+      WHEN s.sample_json->>'profile'='oc-cbs-github-trusted-direct-original-20261113-v0'
+       THEN s.sample_json->>'trusted_github_ci_run_id'='43501313224'
+        AND s.sample_json->>'trusted_github_job_id'='132147517168'
+        AND s.sample_json->>'trusted_github_ci_job_conclusion'='success'
+        AND s.sample_json->>'genuine_direct_http_200_no_redirect_verified'='true'
+        AND s.sample_json->>'source_raw_bytes_persisted'='false'
+        AND s.sample_json->>'provider_original_json_saved'='false'
+        AND s.sample_json->>'original_provider_url'=s.source_url
+        AND s.sample_json->>'full_original_provider_response_sha256'=s.provider_response_sha256
+        AND s.source_url LIKE '%/Perioden?$filter=Key%20eq%20%272026VJ06%27&$top=1'
+      ELSE false
+    END
 ),
 source_data AS (
   SELECT e.period,e.tenure,e.digest,s.sample_id,s.sample_json
@@ -59,6 +117,12 @@ source_data AS (
        AND api.model_input_approved IS FALSE
        AND api.note LIKE '%'||e.digest||'%'
    )
+   AND EXISTS (
+     SELECT 1 FROM trusted_direct t
+     WHERE t.source_url=e.url
+       AND t.provider_response_sha256=e.digest
+       AND t.direct_provider_bytes=e.byte_count
+   )
 ),
 source_status AS (
   SELECT e.period, e.official_status, s.sample_id
@@ -87,6 +151,12 @@ source_status AS (
        AND api.provider_bytes_persisted IS FALSE
        AND api.model_input_approved IS FALSE
        AND api.note LIKE '%'||e.digest||'%'
+   )
+   AND EXISTS (
+     SELECT 1 FROM trusted_direct t
+     WHERE t.source_url=e.url
+       AND t.provider_response_sha256=e.digest
+       AND t.direct_provider_bytes=e.byte_count
    )
 ),
 native AS (
