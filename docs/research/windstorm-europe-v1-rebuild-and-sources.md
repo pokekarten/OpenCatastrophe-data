@@ -62,8 +62,62 @@ Original URLs are the corresponding paths under
 README and both licence files were also downloaded; README declares
 `Apache-2.0 OR CC-BY-4.0`. Preserve attribution and upstream scientific
 references. We do not assert the table equals the missing original WISC
-CURVES.csv. The workbook has been acquired but its cell-level valuation
-semantics have not been validated or inserted into building values.
+CURVES.csv. The workbook has now been inspected at cell/formula level and
+cross-checked against the official [CLIMAAX maximum-damage methodology](https://handbook.climaax.eu/resources/FAQ/maximum_damages.html)
+and the [STORMS wind workflow](https://handbook.climaax.eu/notebooks/workflows/STORMS/01_windstorm/Risk_assessment_STORMS.html).
+It contains 46 LUISA land-use classes, not individual buildings. The workflow
+extracts the `structural €/m²` field as a **modelled maximum structural damage
+proxy per square metre**. The workbook also includes `content €/m²`, calculated
+from a content importance factor, and land-use-specific residential,
+commercial, industrial, and six construction-material shares. The wind
+workflow weights the Feuerstein construction curves with those material
+shares; the mixed land-use share is not an observed building-level occupancy
+or resistance label.
+
+The workbook's example GDP/capita is 32,169 and calculates construction cost
+through `a * GDP^b`; structure value then applies depreciated value,
+undamageable share, and material factor. The official CLIMAAX FAQ specifies
+GDP in **2010 US dollars** and construction costs in **2010 euros**, with
+inflation/currency conversion applied to the resulting costs. Those cached
+workbook figures therefore cannot be treated as current EUR replacement
+values without a documented country GDP input and price-year conversion.
+They are also per-area land-use proxies, not values for a particular building.
+The integrated model correctly continues to require explicit `building_value_eur`;
+converting this proxy requires a validated building/LUISA spatial crosswalk,
+building floor area (or a defensible footprint-to-floor-area model), and
+country/price-year updates. Contents should remain a distinct coverage/value
+component if included.
+
+This establishes a useful regional exposure path for a future raster/portfolio
+adapter, while identifying the missing conversion steps. It does not replace
+observed building-level values or calibrate the existing point-building model.
+
+### Acquired JRC raster and response-mixture contradiction
+
+The exact land-use product used by the CLIMAAX workflow was also downloaded
+from the JRC's pinned `VER2026-07-15` directory. Its source, CC BY 4.0 notice,
+revision, size, SHA-256, raster transform and point-lookups are recorded in the
+[machine-readable raster audit](windstorm-europe-luisa2018-raster-audit-v0.md); its
+companion TOML manifest is `research/windstorm_europe_luisa2018_raster_audit_v0.toml`.
+The TIFF is 50 m in EPSG:3035, 130,000 × 92,000 pixels, one int32 band with
+zero nodata. It is about 1 GB and remains a local original, not a Git asset.
+London, Paris and Cologne fixture coordinates resolve to LUISA codes 1210,
+1111 and 1210 respectively. A point pixel is only a land-use proxy and is not
+a building footprint or validated building classification.
+
+The downloaded construction curve CSV has its second and third columns named
+`outbuilding strong` and `outbuilding`, whereas the published CLIMAAX notebook
+sets its `building_types` list to `outbuilding` then `strong outbuilding` and
+combines them with positional `iloc[:, 1]` and `iloc[:, 2]`. Under the literal
+column names, the two weights are reversed. At 40 m/s the curve values are
+5.5% for `outbuilding strong` and 0.8% for `outbuilding`; LUISA class 2110
+assigns a 50% regular-outbuilding share and zero strong-outbuilding share. A
+name-resolved mixture is therefore 0.40%, while the notebook's positional
+mixture gives 2.75%. This is a measured source-code/data-label discrepancy;
+it does not establish which source label or workflow line should be changed.
+Until the intended semantics are resolved, no mixed LUISA curves are admitted
+to the integrated model. The existing explicit single-response pathway is
+unaffected. See the audit TOML for pinned hashes and details.
 
 ## What changed in the model
 
