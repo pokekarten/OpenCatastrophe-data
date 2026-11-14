@@ -69,6 +69,28 @@ class CBSPermitCostYearPairSQLTests(unittest.TestCase):
         self.assertIn("s.source_byte_persistence_authorized IS FALSE", self.sql)
         self.assertIn("s.model_input_approved IS FALSE", self.sql)
 
+    def test_six_independent_real_github_original_http_receipts_are_now_required(self):
+        self.assertIn("trusted_direct AS (", self.sql)
+        self.assertIn("oc-cbs-83673ned-2025-github-trusted-original-direct-https-proof-v0", self.sql)
+        self.assertIn("oc-cbs-83673ned-2026-regional-two-github-trusted-original-direct-v0", self.sql)
+        self.assertIn("oc-cbs-github-trusted-direct-original-20261113-v0", self.sql)
+        self.assertIn("s.sample_json->>'trusted_github_run_id'='43500093202'", self.sql)
+        self.assertIn("s.sample_json->>'github_run_id'='43580334849'", self.sql)
+        self.assertIn("s.sample_json->>'trusted_github_ci_run_id'='43501313224'", self.sql)
+        self.assertIn("s.sample_json->>'direct_http_200_exact_original_no_redirect'='true'", self.sql)
+        self.assertIn("s.sample_json->>'genuine_direct_http_200_no_redirect_verified'='true'", self.sql)
+        self.assertIn("s.sample_json->>'direct_github_runner_executed'='true'", self.sql)
+        self.assertIn("s.sample_json->>'strict_repository_runner_executed'='true'", self.sql)
+        self.assertIn("s.sample_json->>'source_raw_bytes_persisted'='false'", self.sql)
+        self.assertIn("s.sample_json->>'raw_original_response_bytes_saved'='false'", self.sql)
+        self.assertIn("s.sample_json->>'original_provider_bytes_persisted'='false'", self.sql)
+        self.assertEqual(self.sql.count("SELECT 1 FROM trusted_direct t"), 2)
+        self.assertEqual(self.sql.count("t.provider_response_sha256=e.digest"), 2)
+        self.assertEqual(self.sql.count("t.direct_provider_bytes=e.byte_count"), 2)
+        self.assertIn("BLOCKED_INCOMPLETE_OR_UNVERIFIED_SOURCE_EVIDENCE", self.sql)
+        self.assertIn("q.is_complete IS NOT TRUE", self.sql)
+        self.assertNotIn("model_input_approved IS TRUE", self.sql)
+
     def test_original_euro_units_resolve_source_native_suffix_trap(self):
         self.assertIn("GemiddeldeBouwkostenPerM_2", self.sql)
         self.assertIn("GemiddeldeBouwkostenPerM_3", self.sql)
