@@ -36,8 +36,13 @@ class GHSAGEBlocked(ValueError):
 
 
 def _exact_number(value, expected: float) -> bool:
-    return (type(value) in (int, float)
-            and math.isfinite(value) and value == expected)
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value) and value == expected
+    except (OverflowError, ValueError):
+        # JSON can carry a huge integer that cannot be cast to a float.
+        return False
 
 
 def inspect_window(pixels: bytes, metadata: dict, expected_sha256: str) -> dict:
