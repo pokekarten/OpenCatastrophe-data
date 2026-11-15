@@ -23,7 +23,7 @@ jobs:
   original-roi-structural-proof:
     name: Full original BVV SHP stream and frozen original GHSL 2020 window
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
       - name: Checkout reviewed source revision without reusable credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -39,7 +39,7 @@ jobs:
       - name: Run offline synthetic full-member stream, shape and ROI negative tests
         run: |
           python -m unittest tests.test_bvv_oberbayern_full_shp_roi_stream_v0 -v
-      - name: Read only one complete 166MB original public compressed SHP ZIP member on trusted main
+      - name: Read complete 166MB BVV SHP member via bounded consecutive original 206 ranges on trusted main
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           python -m research_runners.bvv_oberbayern_full_shp_roi_stream_v0 --live

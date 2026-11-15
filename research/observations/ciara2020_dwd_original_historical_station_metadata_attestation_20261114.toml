@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# FACTUAL original publisher metadata for DWD February 2020 at three Ciara
+# measuring sites, actually read at GitHub Actions run 43605892890,
+# live job 132480458101. Geographie, Geraete, Parameter source blob SHA256.
+# DWD data CC BY 4.0 with source attribution; software Apache-2.0.
+schema = "CIARA2020_DWD_ORIGINAL_2020_STATION_GEO_INSTRUMENT_UTC_FX911_ATTESTATION_V0"
+first_original_metadata_github_run_id = 43605892890
+first_original_metadata_github_job_id = 132480458101
+source_original_metadata_unmodified_shas_pinned = true
+source_original_DWD_FX911_UTC_reference_hour_label_attested = true
+source_maximum_gust_last_hour_in_mps_attested = true
+DWD_original_instrument_and_geography_as_of_2020_attested = true
+ERA5_10fg_time_support_aggregation_equal_to_DWD_FX911_verified = false
+DWD_to_ERA5_same_hour_model_bias_or_RMSE_approved = false
+real_2020_RV_insurer_claims_or_insured_sites_observed = false
+native_catastrophe_GUL_IL_RI_OEP_AEP_or_SCR_admitted = false
+source_licence = "DWD CDC CC BY 4.0 with attribution to Deutscher Wetterdienst"
+source_original_source_url = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/extreme_wind/historical/"
+
+[[stations]]
+station_id = "02667"
+name = "Koeln/Bonn"
+original_zip_sha256 = "e88536b7eebb6c7f94de63de56b1af85a0981fdd769e727f45f6d7db7c93ae78"
+geo_member_sha256 = "d71086dfd1c17c7ca01218e5d676bee482a02bf6519eb1ed4fa48366422bf7e4"
+device_member_sha256 = "b5b371bfb728e8baeb8f39ca09a76acb98c772fc7f8ff7f181975a8918eb3fa8"
+parameter_member_sha256 = "0522f71e3be9fff1d9eb94be17cac0c7e8bd75164d345f7b93af3672f4086258"
+2020_original_era5_comparison_grid_lat = 50.75
+2020_original_era5_comparison_grid_lon = 7.25
+feb2020_latitude = 50.8645
+feb2020_longitude = 7.1575
+feb2020_station_elevation_m = 90.91
+feb2020_wind_anemometer_height_above_ground_m = 10.0
+feb2020_instrument_type = "Windsensor Classic 4.3303 (DWDSYN)"
+feb2020_measurement_procedure = "Windmessung, elektr."
+feb2020_geo_valid_from = "20040424"
+feb2020_device_valid_from = "20180122"
+feb2020_device_valid_to = "20260419"
+feb2020_parameter_valid_from = "20010401"
+feb2020_hour_reference = "in UTC"
+feb2020_gust_reference = "hoechste Windspitze der letzten Stunde"
+nearest_original_era5_grid_distance_km = 14.295
+
+[[stations]]
+station_id = "15200"
+name = "Wuppertal"
+original_zip_sha256 = "748ffdbc8f6ebf04a014ebf3d8fdc177e9a903349cc5b36e19f4c425998bfaa0"
+geo_member_sha256 = "36e3447fe5659fca1019ed296aa0cdabc3b11264f7ed877075a1d33c2624bdd9"
+device_member_sha256 = "8c0c513cf271f687a1a9003d7d1bc13bff91292d3f1136de0c06cf4463d1cb2c"
+parameter_member_sha256 = "272a88dbb363c0f193c33da8e41de6b03c1ece0add7c70fa4a83e3a8a0fc6daf"
+2020_original_era5_comparison_grid_lat = 51.25
+2020_original_era5_comparison_grid_lon = 7.25
+feb2020_latitude = 51.2531
+feb2020_longitude = 7.2157
+feb2020_station_elevation_m = 327.0
+feb2020_wind_anemometer_height_above_ground_m = 12.0
+feb2020_instrument_type = "Ultrasonic Anemometer 2D"
+feb2020_measurement_procedure = "Windmessung, elektr."
+feb2020_geo_valid_from = "20130503"
+feb2020_device_valid_from = "20130601"
+feb2020_device_valid_to = "20201104"
+feb2020_parameter_valid_from = "20130601"
+feb2020_hour_reference = "in UTC"
+feb2020_gust_reference = "hoechste Windspitze der letzten Stunde"
+nearest_original_era5_grid_distance_km = 2.412
+
+[[stations]]
+station_id = "00603"
+name = "Koenigswinter-Heiderhof"
+original_zip_sha256 = "4a61a6394344bba05a06553794ac1a2d5edb4c4e3ac39ae1f26407e5f4e2f62b"
+geo_member_sha256 = "c4f61d7b44dcc07173b318c85eb2bdfebfeef585d183e65832a3b7388ced55d0"
+device_member_sha256 = "ed729c8016831592f9b18731080abfdc708c9a1156775cb76d3343ccadef2fa3"
+parameter_member_sha256 = "d4b5c6489d330f7ed70634c2825976fe791923d5f5bcd41667f48c601ff800e9"
+2020_original_era5_comparison_grid_lat = 50.75
+2020_original_era5_comparison_grid_lon = 7.25
+feb2020_latitude = 50.735
+feb2020_longitude = 7.1931
+feb2020_station_elevation_m = 159.0
+feb2020_wind_anemometer_height_above_ground_m = 10.0
+feb2020_instrument_type = "Windsensor Classic 4.3303"
+feb2020_measurement_procedure = "Windmessung, elektr."
+feb2020_geo_valid_from = "19900101"
+feb2020_geo_valid_to = "20200930"
+feb2020_device_valid_from = "20191002"
+feb2020_device_valid_to = "20200930"
+feb2020_parameter_valid_from = "20010403"
+feb2020_hour_reference = "in UTC"
+feb2020_gust_reference = "hoechste Windspitze der letzten Stunde"
+nearest_original_era5_grid_distance_km = 4.337
+after_event_station_move_effective = "20201001"
+after_event_publisher_station_lat = 50.7293
+after_event_publisher_station_lon = 7.204
+after_event_publisher_sensor_height_m = 12.0
