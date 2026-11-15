@@ -117,6 +117,17 @@ class SourceEvidenceQueueTests(unittest.TestCase):
         self.assertIn("metadata sample #129", self.query)
         self.assertIn("NOT a CloudFerro tile", self.query)
 
+    def test_ghs_age_legend_is_not_a_native_raster_pixel(self):
+        self.assertIn("ghs_age_legend_only_observed_labels", self.query)
+        self.assertIn("sample_id=51", self.query)
+        self.assertIn("original_provider_embedded_raster_class_legend", self.query)
+        self.assertIn("no_geo_raster_pixels_downloaded'='true'", self.query)
+        self.assertIn("source_range_sha_scope", self.query)
+        self.assertIn("P1_verify_GHS_AGE_original_raster_pixel_access_and_science", self.query)
+        self.assertEqual(self.query.count("AND ghs_age_legend_only_observed_labels=1"), 2)
+        self.assertIn("native_pixel_receipts_classified_preview=0", self.query)
+        self.assertIn("source_byte_persistence_authorized IS FALSE", self.query)
+
     def test_native_tiff_values_in_preview_are_not_mistaken_for_wms(self):
         self.assertIn("native_geotiff_lzw_window%", self.query)
         self.assertIn("native_pixels_verified", self.query)
