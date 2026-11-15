@@ -3,6 +3,7 @@
 -- HydroATLAS v1, Figshare 9890531 v1: independently repeatable, read-only
 -- research sample #70 metadata/rights/lineage gate in authorized Neon.
 -- Run each SELECT independently. No database writes, provider requests or assets.
+-- Fail closed when sample #70 is absent: aggregate to exactly one verdict row.
 -- Exact original metadata SHA compared against the stored receipt and an
 -- independent 2026-11-15 intermediary original-body replay (7212 bytes).
 -- Intermediary does NOT expose HTTP status, redirect or header evidence:
@@ -11,7 +12,8 @@
 -- Collective CC BY 4.0; HydroATLAS attributes may carry CC BY or ODbL.
 -- Sample #70 is NOT a full original GIS file or scientific CAT model input.
 
-SELECT sample_id, source_id,
+WITH source_checks AS (
+SELECT
  (source_id='hydrosheds.hydroatlas.v1'
    AND sample_kind='public_metadata'
    AND product_version='HydroATLAS version 1.0, Figshare article 9890531 v1') AS product_ok,
@@ -39,7 +41,24 @@ SELECT sample_id, source_id,
    AND provider_license LIKE '%ODbL%'
    AND sample_json->>'attribute_licence_caveat' LIKE '%per-column%') AS per_attribute_licence_gate_noted
 FROM research.source_sample_v0
-WHERE sample_id=70 AND source_id='hydrosheds.hydroatlas.v1';
+WHERE sample_id=70 AND source_id='hydrosheds.hydroatlas.v1'
+), gate AS (
+ SELECT count(*) AS matching_rows,
+   coalesce(bool_and(product_ok), false) AS product_ok,
+   coalesce(bool_and(replay_receipt_match), false) AS replay_receipt_match,
+   coalesce(bool_and(release_identity_ok), false) AS release_identity_ok,
+   coalesce(bool_and(published_inventory_ok), false) AS published_inventory_ok,
+   coalesce(bool_and(original_asset_boundary_ok), false) AS original_asset_boundary_ok,
+   coalesce(bool_and(no_false_repository_or_admission), false) AS no_false_repository_or_admission,
+   coalesce(bool_and(per_attribute_licence_gate_noted), false) AS per_attribute_licence_gate_noted
+ FROM source_checks
+)
+SELECT *,
+ (matching_rows=1 AND product_ok AND replay_receipt_match AND release_identity_ok
+  AND published_inventory_ok AND original_asset_boundary_ok
+  AND no_false_repository_or_admission AND per_attribute_licence_gate_noted)
+ AS metadata_replay_gate_pass
+FROM gate;
 
 -- Independent, invented-value controls challenge the exact source-scope gate.
 WITH cases(id, article, version, file_count, zip_count, pdf_count,
