@@ -119,10 +119,23 @@ def screen_igra22_unzipped_text_bytes(original_text: bytes, *, station_id: str) 
     total_levels = 0
     missing_wind = 0
     first_date = last_date = None
+    previous_observation: tuple[dt.date, int] | None = None
     while idx < len(lines):
         if soundings >= MAX_SOUNDINGS:
             raise Igra22FormatError("too many soundings in research slice")
         date, hour, declared = _header(lines[idx], station_id)
+        # NCEI IGRA station soundings are chronological. A reversed record
+        # would make reported first/last dates scientifically misleading.
+        # A nominal hour of 99 means unknown: compare dates but never infer
+        # an ordering among same-day observations with missing hours.
+        if previous_observation is not None:
+            previous_date, previous_hour = previous_observation
+            if date < previous_date or (
+                date == previous_date and hour != 99 and previous_hour != 99
+                and hour < previous_hour
+            ):
+                raise Igra22FormatError("IGRA station soundings out of chronological order")
+        previous_observation = (date, hour)
         if idx + declared >= len(lines):
             raise Igra22FormatError("truncated IGRA sounding levels")
         for line in lines[idx + 1:idx + 1 + declared]:
