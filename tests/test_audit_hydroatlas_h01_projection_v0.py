@@ -89,6 +89,33 @@ class H01ProjectedQualityTests(unittest.TestCase):
             with self.assertRaises(H01Blocked):
                 inspect(raw, layer="BasinATLAS_v10_lev02")
 
+    def test_long_json_integer_tokens_are_blocked_not_parser_errors(self):
+        # Exact source bytes are synthetic; no provider fields or private IDs.
+        huge = b"9" * 5000
+        bad_rows = (
+            b'{"HYBAS_ID":' + huge +
+            b',"dis_m3_pyr":5,"dis_m3_pmn":1,"dis_m3_pmx":10}\n',
+            b'{"HYBAS_ID":1000000001,"dis_m3_pyr":' + huge +
+            b',"dis_m3_pmn":1,"dis_m3_pmx":10}\n',
+        )
+        for raw in bad_rows:
+            self.assertLess(len(raw), MAX_BYTES)
+            with self.subTest(length=len(raw)), self.assertRaises(H01Blocked):
+                inspect(raw, layer="BasinATLAS_v10_lev02")
+
+        # The public CLI must return BLOCKED without traceback or file leakage.
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "private-identifier.jsonl"
+            path.write_bytes(bad_rows[0])
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = main(["--projected-jsonl", str(path),
+                             "--layer", "BasinATLAS_v10_lev02"])
+            self.assertEqual(code, 2)
+            self.assertEqual(out.getvalue(), "")
+            self.assertIn("BLOCKED:", err.getvalue())
+            self.assertNotIn(str(path), err.getvalue())
+
     def test_reject_climatology_mean_outside_min_max(self):
         for mean, minimum, maximum in ((5., 6., 10.), (5., 1., 4.), (5., 10., 1.)):
             with self.subTest(mean=mean, minimum=minimum), self.assertRaises(H01Blocked):
