@@ -3,7 +3,12 @@
 """Synthetic-only IGRA v2.2 physical-level format and adversarial boundary checks."""
 
 import hashlib
+import json
+import subprocess
+import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 from scripts.igra22_sounding_preflight_v0 import (
     MAX_TEXT_BYTES, Igra22FormatError, screen_igra22_unzipped_text_bytes,
@@ -50,6 +55,21 @@ class Igra22OriginalTextPreflightTests(unittest.TestCase):
         self.assertEqual(r['uncompressed_text_sha256'], hashlib.sha256(raw).hexdigest())
         self.assertEqual(r['zip_original_sha256'], 'not_tested')
         self.assertEqual(r['scientific_and_model_admission'], 'not_admitted')
+
+    def test_bounded_read_only_cli_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "synthetic-igra22.txt"
+            raw = text_block()
+            path.write_bytes(raw)
+            completed = subprocess.run(
+                [sys.executable, "-m", "scripts.igra22_sounding_preflight_v0",
+                 "--station-id", SID, str(path)],
+                check=True, text=True, capture_output=True,
+            )
+            receipt = json.loads(completed.stdout)
+            self.assertEqual(receipt["uncompressed_text_sha256"], hashlib.sha256(raw).hexdigest())
+            self.assertEqual(path.read_bytes(), raw)
+            self.assertEqual(receipt["neon_storage"], "storage_not_verified")
 
     def test_missing_codes_flags_and_two_soundings(self):
         data = text_block(rows=[level(wspd=-8888, press=-9999, temp=-9999, rh=-9999,
