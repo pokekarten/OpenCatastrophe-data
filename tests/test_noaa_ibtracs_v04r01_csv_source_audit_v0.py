@@ -13,7 +13,8 @@ from research_runners.noaa_ibtracs_v04r01_csv_source_audit_v0 import (
 )
 
 
-def synthetic_csv(*, lon="266.9", units=True, malformed=False, duplicate=False):
+def synthetic_csv(*, lon="266.9", units=True, malformed=False, duplicate=False,
+                  iso_time="2001-01-01 00:00:00"):
     header = list(REQUIRED) + [f"FILL_{i}" for i in range(174 - len(REQUIRED))]
     if duplicate:
         header[-1] = header[0]
@@ -22,7 +23,7 @@ def synthetic_csv(*, lon="266.9", units=True, malformed=False, duplicate=False):
     unit_fields[header.index("LON")] = "degrees_east"
     row = ["" for _ in header]
     for name, value in {
-        "SID": "2001011N22345", "ISO_TIME": "2001-01-01 00:00:00",
+        "SID": "2001011N22345", "ISO_TIME": iso_time,
         "LAT": "-16.2", "LON": lon, "SEASON": "2001", "BASIN": "SP",
         "TRACK_TYPE": "main", "WMO_WIND": "", "USA_WIND": "34",
     }.items():
@@ -47,6 +48,20 @@ class IBTrACSOriginalSourceAuditTests(unittest.TestCase):
         ):
             with self.subTest(payload=payload[:40]), self.assertRaises(IBTrACSAuditError):
                 audit_rows(io.StringIO(payload))
+
+    def test_calendar_invalid_dates_fail_closed(self):
+        self.assertEqual(
+            audit_rows(io.StringIO(synthetic_csv(iso_time="2024-02-29 06:00:00")))["data_rows"],
+            1,
+        )
+        for timestamp in (
+            "2023-02-29 00:00:00",
+            "2024-04-31 00:00:00",
+            "2024-01-01 24:00:00",
+            "0000-01-01 00:00:00",
+        ):
+            with self.subTest(timestamp=timestamp), self.assertRaises(IBTrACSAuditError):
+                audit_rows(io.StringIO(synthetic_csv(iso_time=timestamp)))
 
     def test_bad_coordinates_and_nan_fail_closed(self):
         for lon in ("401", "NaN", "inf", "abc"):

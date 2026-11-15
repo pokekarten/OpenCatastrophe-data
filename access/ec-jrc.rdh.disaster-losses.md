@@ -30,7 +30,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Service root:** <https://drmkc.jrc.ec.europa.eu/risk-data-hub-api/risk-data-hub-service>
 
-**Api version:** Risk Data Hub API 3.1.0 / OGC API suite 1.0.1
+**Api version:** Documentation advertises RDH API 3.2.0 (observed 2026-11-14); operation paths last reviewed at 3.1.0 / OGC API suite 1.0.1, not yet revalidated on 3.2.0
 
 ## Access scope
 
@@ -91,7 +91,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Rate limit notes:** RDH documents authenticated programme-level API access and paging up to a provider maximum of 10000 items, but this contract authorizes no request, pagination loop or retry. No repository-specific rate budget or durable commercial automation entitlement was established. Any future canary must keep the page size intentionally tiny, be ephemeral by default and run only through the trusted credential/network plane.
 
-**Mutability notes:** The API is a live service and the Disaster Losses dataset is maintained over time; the current JRC catalogue records annual update frequency, modification on 2026-05-06 and temporal coverage 1980-01-01 through 2025-03-31. Reproducible use must freeze API version, request fingerprint, retrieval UTC, returned feature/schema identity, source-list lineage and any relevant administrative-reference vintage. Do not treat a later API response as byte-identical to an earlier extraction merely because the endpoint is unchanged.
+**Mutability notes:** The API is a live service and the Disaster Losses dataset is maintained over time; the current JRC catalogue records annual update frequency, modification on 2026-05-06 and temporal coverage 1980-01-01 through 2025-03-31. Reproducible use must freeze API version, request fingerprint, retrieval UTC, returned feature/schema identity, source-list lineage and any relevant administrative-reference vintage. Do not treat a later API response as byte-identical to an earlier extraction merely because the endpoint is unchanged. Official RDH API documentation shows 3.2.0 on 2026-11-14, whereas the recorded operation/path details were based on 3.1.0. Do not presume path, token, output-schema or terms parity. Recheck the 3.2.0 OpenAPI specification and rights/terms before a permitted authenticated request; no data retrieval is authorized by this documentation update.
 
 ## Rights and policy
 
@@ -121,7 +121,7 @@ _Empty array._
 
 **Implementation decision:** document_only
 
-**Reviewed at:** 2026-08-12
+**Reviewed at:** 2026-11-14
 
 ## Evidence urls
 
@@ -130,4 +130,4 @@ _Empty array._
 - <https://doi.org/10.2905/JRC.DSZ3GW0>
 - <https://data.jrc.ec.europa.eu/service/6551028a-2af8-4185-8db4-dbb353a2a9d6>
 
-**Notes:** Bounded source-access documentation for Issue \#260 / \#173. RDH documents EU Login followed by an API TOKEN page and a bearer token lifetime of 10 hours; the real token must never enter Git, issue text, logs or receipts. No live request, credential provisioning, provider byte, parser, adapter, workflow, admission promotion or publication decision is introduced. A future first canary should prefer one tiny taxonomy page or tiny loss page only after credentials and source/API rights are intentionally cleared.
+**Notes:** Bounded source-access documentation for Issue \#260 / \#173. RDH documents EU Login followed by an API TOKEN page and a bearer token lifetime of 10 hours; the real token must never enter Git, issue text, logs or receipts. No live request, credential provisioning, provider byte, parser, adapter, workflow, admission promotion or publication decision is introduced. A future first canary should prefer one tiny taxonomy page or tiny loss page only after credentials and source/API rights are intentionally cleared. 2026-11-14 documentation-only version-drift review: provider documentation heading advertises v3.2.0, not v3.1.0. Existing bearer-token block, unresolved commercial/API terms, third-party source rights and non-admission remain unchanged. No original API data fetch or schema regression was performed.

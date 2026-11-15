@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,6 +19,7 @@ class ProjectionFamilyGuardTests(unittest.TestCase):
         (root / "scripts").mkdir()
         (root / "scripts/render_public_views.py").write_text("pass\n", encoding="utf-8")
         (root / "scripts/schema_reference.py").write_text("pass\n", encoding="utf-8")
+        (root / "scripts/insurer_directory_receipt_projection.py").write_text("pass\n", encoding="utf-8")
         return root
 
     def _pair(self, root: Path, relative_json: str) -> None:
@@ -38,9 +40,62 @@ class ProjectionFamilyGuardTests(unittest.TestCase):
             self._pair(root, "manifests/example.json")
             self._pair(root, "landscape/sources-example.json")
             self._pair(root, "schemas/example.schema.json")
+            self._pair(root, "docs/research/insurer-directory-original-page-receipt-20261101.json")
             errors, count = guard.check_inventory(root)
             self.assertEqual(errors, [])
-            self.assertEqual(count, 4)
+            self.assertEqual(count, 5)
+
+    def test_six_named_research_snapshots_are_not_fake_projection_pairs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._root(temporary)
+            for relative, schema in guard.RESEARCH_ONLY_STANDALONE_JSON_SCHEMAS.items():
+                p = root / relative
+                p.parent.mkdir(parents=True, exist_ok=True)
+                if schema == "__SOURCE_DOWNLOAD_RECEIPT_ROWS__":
+                    data = [{"file": "synthetic.nc", "url": "https://example.invalid/synthetic.nc",
+                             "bytes": 10, "sha256": "a" * 64, "status": "downloaded"}]
+                else:
+                    data = {"schema": schema}
+                p.write_text(json.dumps(data) + "\n", encoding="utf-8")
+            errors, count = guard.check_inventory(root)
+            self.assertEqual(errors, [])
+            self.assertEqual(count, 6)
+
+    def test_named_download_receipt_rejects_fake_sha_or_disallowed_url(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._root(temporary)
+            p = root / "research/observations/xws_downloads_20261115.json"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            for row in (
+                {"file": "x.nc", "url": "http://example.invalid/x.nc",
+                 "bytes": 10, "sha256": "a" * 64, "status": "downloaded"},
+                {"file": "x.nc", "url": "https://example.invalid/x.nc",
+                 "bytes": 10, "sha256": "not-a-digest", "status": "downloaded"},
+                {"file": "x.nc", "url": "https://example.invalid/x.nc",
+                 "bytes": True, "sha256": "a" * 64, "status": "downloaded"},
+            ):
+                with self.subTest(row=row):
+                    p.write_text(json.dumps([row]) + "\n", encoding="utf-8")
+                    errors, count = guard.check_inventory(root)
+                    self.assertEqual(count, 1)
+                    self.assertTrue(any("receipt mismatch" in error for error in errors))
+
+    def test_named_research_snapshot_schema_mismatch_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._root(temporary)
+            p = root / "research/observations/knmi_wind_metadata_review.json"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text('{"schema": "WRONG"}\n', encoding="utf-8")
+            errors, count = guard.check_inventory(root)
+            self.assertEqual(count, 1)
+            self.assertTrue(any("schema mismatch" in error for error in errors))
+
+    def test_unlisted_research_json_stays_unregistered(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._root(temporary)
+            self._pair(root, "research/observations/new_unreviewed.json")
+            errors, _ = guard.check_inventory(root)
+            self.assertTrue(any("unregistered JSON projection family" in error for error in errors))
 
     def test_unknown_family_fails_even_with_handwritten_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -86,6 +141,7 @@ class ProjectionFamilyGuardTests(unittest.TestCase):
             (
                 ("scripts/render_public_views.py", "--check"),
                 ("scripts/schema_reference.py", "--check"),
+                ("scripts/insurer_directory_receipt_projection.py", "--check"),
             ),
         )
 
