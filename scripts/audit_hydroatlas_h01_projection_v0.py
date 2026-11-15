@@ -42,6 +42,16 @@ def _reject_constant(_):
     raise H01Blocked("nonfinite JSON constant")
 
 
+def _valid_nonnegative_flow(value) -> bool:
+    if type(value) not in (int, float) or value < 0:
+        return False
+    try:
+        return math.isfinite(value)
+    except (OverflowError, ValueError):
+        # A JSON integer with thousands of digits must fail closed, not crash.
+        return False
+
+
 def inspect(raw: bytes, *, layer: str) -> dict:
     if type(layer) is not str or not LAYER.fullmatch(layer):
         raise H01Blocked("unreviewed BasinATLAS layer")
@@ -70,8 +80,7 @@ def inspect(raw: bytes, *, layer: str) -> dict:
         triple = tuple(row[k] for k in H01)
         # Null means unresolved unknown; never infer zero or guess -9999.
         for v in triple:
-            if v is not None and (type(v) not in (int, float)
-                                  or not math.isfinite(v) or v < 0):
+            if v is not None and not _valid_nonnegative_flow(v):
                 raise H01Blocked("unverified negative, nonfinite or nonnumeric flow")
         if any(v is None for v in triple):
             nulls += 1
