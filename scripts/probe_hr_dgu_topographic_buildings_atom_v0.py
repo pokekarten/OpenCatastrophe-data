@@ -25,6 +25,9 @@ RIGHTS_TEXT = (
     "ograničenje javnog pristupa prema članku 13 stavku 1 točki (e) "
     "INSPIRE Direktive"
 )
+REVIEWED_ATOM_UPDATED = "2024-03-07T17:05:52.000000+01:00"
+REVIEWED_ZIP_ADVERTISED_BYTES = 285995484
+REVIEWED_ATOM_SHA256 = "ef9b09a02579fd101b8015466f069482ff24ea7781850773a5795b324aabcd8f"
 MAX_XML_BYTES = 64 * 1024
 TIMEOUT_SECONDS = 15
 
@@ -62,6 +65,8 @@ def inspect_atom(raw: bytes) -> dict:
         raise AtomMetadataError("invalid ATOM update timestamp") from exc
     if dt.tzinfo is None or dt.utcoffset() is None:
         raise AtomMetadataError("provider update timestamp lacks timezone")
+    if updated != REVIEWED_ATOM_UPDATED:
+        raise AtomMetadataError("unreviewed ATOM release timestamp drift")
     # This title is source-format evidence, not proof of the ZIP contents.
     entry_title = entries[0].findtext(ATOM + "title") or ""
     if "GML 3.2.1" not in entry_title or "ETRS89/LAEA" not in entry_title:
@@ -79,13 +84,18 @@ def inspect_atom(raw: bytes) -> dict:
     if size_text is None or not re.fullmatch(r"[1-9][0-9]{0,11}", size_text):
         raise AtomMetadataError("missing or invalid publisher advertised byte count")
     zip_size = int(size_text)
+    if zip_size != REVIEWED_ZIP_ADVERTISED_BYTES:
+        raise AtomMetadataError("unreviewed advertised ZIP byte-size drift")
+    xml_sha = hashlib.sha256(raw).hexdigest()
     return {
         "receipt_profile": "hr-dgu-topographic-buildings-atom-metadata-v0",
         "source_product": "DGU Basic Topographic Database INSPIRE Buildings ATOM",
         "atom_feed_url": FEED_URL,
         "atom_updated_as_declared": updated,
         "feed_original_bytes": len(raw),
-        "feed_original_sha256": hashlib.sha256(raw).hexdigest(),
+        "feed_original_sha256": xml_sha,
+        "reviewed_original_feed_sha256": REVIEWED_ATOM_SHA256,
+        "matches_reviewed_original_feed_bytes": xml_sha == REVIEWED_ATOM_SHA256,
         "advertised_zip_url": ZIP_URL,
         "advertised_zip_bytes_not_verified": zip_size,
         "advertised_format": "GML 3.2.1 / ETRS89-LAEA / ZIP",
@@ -143,6 +153,12 @@ def main(argv: list[str] | None = None) -> int:
             with args.offline_file.open("rb") as src:
                 raw = src.read(MAX_XML_BYTES + 1)
         receipt = inspect_atom(raw)
+        # Exact-byte pin applies only to an actual network fetch. Offline mode
+        # deliberately permits synthetic fixtures and never proves origin.
+        if args.live and not receipt["matches_reviewed_original_feed_bytes"]:
+            raise AtomMetadataError(
+                "live feed bytes differ from reviewed SHA-256; fresh source review required"
+            )
         receipt["live_original_fetch_in_this_run"] = bool(args.live)
     except (AtomMetadataError, OSError) as exc:
         print("BLOCKED: " + str(exc), file=sys.stderr)
