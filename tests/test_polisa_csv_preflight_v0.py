@@ -43,9 +43,39 @@ class PolisaPreflightTests(unittest.TestCase):
         self.assertEqual(result["market_count"], 2)
         self.assertEqual(result["row_count"], 2)
         self.assertEqual(result["missing_property_premium_cells_not_zeros"], 1)
+        self.assertEqual(result["lei_present_rows"], 1)
+        self.assertEqual(result["lei_missing_rows"], 1)
+        self.assertEqual(result["distinct_upstream_source_links"], 1)
+        self.assertEqual(result["rows_requiring_original_source_rights_review"], 2)
+        self.assertEqual(result["priority_rights_review_rows_by_market"], {"Estonia": 1})
+        self.assertTrue(result["priority_rights_market_flags_are_not_row_licences"])
+        self.assertFalse(result["gleif_original_identity_crosswalk_completed"])
         self.assertFalse(result["provider_original_bytes_authenticated"])
         self.assertFalse(result["commercial_reuse_approved"])
         self.assertFalse(result["cat_model_input_approved"])
+
+    def test_country_flags_prioritize_review_not_commercial_approval(self):
+        result = self.check([
+            sample("Hungary", "A"), sample("Slovenia", "B"),
+            sample("Poland", "C"),
+        ], markets={"Hungary", "Slovenia", "Poland"}, count=3)
+        self.assertEqual(
+            result["priority_rights_review_rows_by_market"],
+            {"Hungary": 1, "Slovenia": 1},
+        )
+        self.assertEqual(result["rows_requiring_original_source_rights_review"], 3)
+        self.assertFalse(result["row_level_upstream_rights_reviewed"])
+        self.assertFalse(result["commercial_reuse_approved"])
+        self.assertFalse(result["cat_model_input_approved"])
+
+    def test_upstream_link_count_is_aggregate_only(self):
+        result = self.check([
+            sample("Poland", "A"),
+            sample("Poland", "B", source="https://example.org/second-report"),
+        ], count=2)
+        self.assertEqual(result["distinct_upstream_source_links"], 2)
+        self.assertNotIn("https://", str(result))
+        self.assertNotIn("Imaginary Insurer", str(result))
 
     def test_duplicate_market_year_insurer_key_blocked(self):
         with self.assertRaisesRegex(Blocked, "duplicate"):
