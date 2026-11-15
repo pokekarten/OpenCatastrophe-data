@@ -77,6 +77,35 @@ A successful trusted run will be a **new** independent result, not an assertion
 that the intermediary observation was trusted. The unit tests use synthetic
 fixtures only.
 
+## Trusted original GitHub-runner receipts (2026-11-14)
+
+After the bounded canary was merged as [PR #1602](https://github.com/pokekarten/OpenCatastrophe-data/pull/1602)
+at `main` squash commit `0f3c02c390e2262d91c5e6d07dd5aa931ca48152`,
+the public [original-source workflow run #43642198655](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43642198655)
+completed **both independent source matrix jobs successfully**.
+
+The individual job logs contain the following machine-checked receipts. These
+are SHA-256 hashes of **transient exact original JSON response entities**,
+not ZIP/archive digests, source geometry checksums, or proof of a frozen
+producer release:
+
+| Exact source ID | Trusted job ID | Response SHA-256 | Checked schema |
+|---|---:|---|---|
+| `uk.ea.aims.spatial-flood-defences.2026` | [132592077710](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43642198655/job/132592077710) | `618384c208e0736cd210b9119edab439d5524a6560c78997843715e7371b2dbd` | One OBJECTID-only ArcGIS JSON, no geometry, EPSG:27700 |
+| `us.usace.nld.public-floodwalls.2026` | [132592077711](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43642198655/job/132592077711) | `e4ae60379a231c7e4bc4e28f96ab00ffa4e34123b59a4c06fd879b2db63f10f8` | One OBJECTID-only ArcGIS JSON, no geometry, EPSG:4269 |
+
+**What this closes:** the initial missing trusted original direct API read
+for two fixed, small and public JSON source capabilities. It is not a
+geometric sample, a full dataset, a provenance-complete product/version
+archive or license/scientific/model admission. The returned provider bytes
+and OID values were neither committed nor written to Neon; the script
+printed `data_persisted=false` and `model_admitted=false`.
+
+The earlier intermediary checks and these trusted runner receipts are
+**separate observations** with different transport trust boundaries;
+do not claim the hashes should match because live provider records and
+serialized JSON can change.
+
 ## Next causal admission steps
 
 1. Review actual public GitHub-runner output for those **exact two** GETs; compare

@@ -61,6 +61,20 @@ class CalFireDinsCkanMetadataTests(TestCase):
     def test_contract_is_scoped_to_one_metadata_only_operation(self):
         p.verify_reviewed_contract()
 
+    def test_contract_rejects_stale_response_version_before_network(self):
+        original = p.validate_path
+
+        def stale(path):
+            c = original(path)
+            c["response_contract"]["format"] = c["response_contract"]["format"].replace(
+                p.CURRENT_METADATA_MODIFIED, "2026-10-21T20:55:50.264159"
+            )
+            return c
+
+        with patch.object(p, "validate_path", side_effect=stale):
+            with self.assertRaisesRegex(p.CkanProbeBlocked, "contract changed"):
+                p.verify_reviewed_contract()
+
     def test_valid_synthetic_receipt_one_read_no_private_fields(self):
         opener = FakeOpener(FakeResponse())
         out = p.probe_one(opener=opener)
