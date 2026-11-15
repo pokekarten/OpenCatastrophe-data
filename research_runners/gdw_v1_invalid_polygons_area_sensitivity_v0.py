@@ -92,14 +92,21 @@ def examine_invalid(geometry, barrier, geod) -> dict | None:
     overlap = p_linework.intersection(p_buffer)
     a, b = _area_km2(p_linework, geod), _area_km2(p_buffer, geod)
     common, either = _area_km2(overlap, geod), _area_km2(union, geod)
-    if common > either * (1 + 1e-8) or either < max(a, b) * (1 - 1e-8):
-        raise GDWSensitivityError("geodesic overlay areas violate conservation")
+    if (either <= 0 or common > either * (1 + 1e-8)
+            or either < max(a, b) * (1 - 1e-8)):
+        raise GDWSensitivityError("empty or inconsistent geodesic overlay footprint")
+    # The alternatives can have the SAME area yet occupy different locations,
+    # changing downstream exposure overlays. Area-delta alone misses this.
+    symmetric_difference_km2 = max(0.0, either - common)
+    footprint_change_fraction = symmetric_difference_km2 / either
     return {
         "linework_area_km2": a,
         "buffer_zero_area_km2": b,
         "overlap_km2": common,
         "union_km2": either,
         "area_abs_delta_km2": abs(a - b),
+        "footprint_symmetric_difference_km2": symmetric_difference_km2,
+        "footprint_change_fraction_of_union": footprint_change_fraction,
         "linework_parts": len(parts_linework),
         "buffer_zero_parts": len(parts_buffer),
         "linework_barrier_covered": p_linework.covers(barrier),
@@ -118,12 +125,24 @@ def summarize(cases: list[dict | None], *, expected: int = EXPECTED_INVALID) -> 
     excluded = len(cases) - len(valid)
     totals = {k: sum(c[k] for c in valid) for k in
               ("linework_area_km2", "buffer_zero_area_km2", "overlap_km2",
-               "union_km2", "area_abs_delta_km2", "linework_parts",
+               "union_km2", "area_abs_delta_km2",
+               "footprint_symmetric_difference_km2", "linework_parts",
                "buffer_zero_parts")}
     n = len(valid)
     significant = sum(
         abs(c["linework_area_km2"] - c["buffer_zero_area_km2"])
         > max(0.000001, 0.01 * max(c["linework_area_km2"], c["buffer_zero_area_km2"]))
+        for c in valid
+    )
+    # These are independent checks. Identical area need not imply identical
+    # polygons or stable insured-building footprint intersections.
+    footprint_changed = sum(c["footprint_change_fraction_of_union"] > 0.01
+                            for c in valid)
+    equal_area_footprint_changed = sum(
+        abs(c["linework_area_km2"] - c["buffer_zero_area_km2"])
+        <= max(0.000001, 0.01 * max(c["linework_area_km2"],
+                                    c["buffer_zero_area_km2"]))
+        and c["footprint_change_fraction_of_union"] > 0.01
         for c in valid
     )
     area_iou = (totals["overlap_km2"] / totals["union_km2"]
@@ -140,6 +159,12 @@ def summarize(cases: list[dict | None], *, expected: int = EXPECTED_INVALID) -> 
         "linework_area_km2_sum": totals["linework_area_km2"],
         "buffer_zero_area_km2_sum": totals["buffer_zero_area_km2"],
         "absolute_per_feature_area_delta_km2_sum": totals["area_abs_delta_km2"],
+        "footprint_symmetric_difference_km2_sum":
+            totals["footprint_symmetric_difference_km2"],
+        "material_footprint_disagreement_over_1pct_count": footprint_changed,
+        "equal_area_but_material_footprint_disagreement_count":
+            equal_area_footprint_changed,
+        "footprint_change_fraction_denominator": "per-feature union geodesic km2",
         "intersection_area_km2_sum": totals["overlap_km2"],
         "union_area_km2_sum": totals["union_km2"],
         "area_weighted_jaccard_of_alternatives": area_iou,
