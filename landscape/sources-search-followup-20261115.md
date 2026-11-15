@@ -39,14 +39,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Provider:** Polisa independent public insurance market compilation  
 **Categories:** `insurance`, `insurer_entity`, `market_share`, `premium`, `claims`, `solvency`, `line_of_business`, `europe`  
 **Spatial scope:** 18 Central and Eastern European insurance markets; national legal-entity and local group reporting  
-**Temporal scope:** Historical annual company and line figures since 2021; README identifies 2026-11-09.d5ad62, website and export status subject to update  
-**Resolution / granularity:** Insurer/year market-level premium, market share, line of business, claims, own funds, SCR, ratios and source URLs; site documentation and README are not proof of an actual complete verified CSV export  
+**Temporal scope:** Historical annual company and line figures since 2021; README vintage 2026-11-09.d5ad62; /data advertises updated CSVs on 2026-11-15 (original bytes unverified)  
+**Resolution / granularity:** Insurer/year market-level premium, market share, line of business, claims, own funds, SCR, ratios and source URLs; publisher advertises 1,772-row all-markets CSV, but completeness and source bytes remain unverified  
 **Potential roles:** `named_insurer_lob_benchmark`, `regional_market_share_prior`, `synthetic_insurer_premium_constraints`, `upstream_regulator_source_linkage`  
-**Access hint:** `official_readme_claims_csv_files_site_export_status_conflicts_source_specific_legal_terms_required`  
+**Access hint:** `publisher_csv_download_links_advertised_exact_bytes_and_market_rights_unreviewed`  
 **Authoritative source:** <https://polisapro.com/data>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** README.txt names a versioned polisa-all-markets.csv and per-market exports, while the data landing page retrieved in this review still says files are being prepared. No CSV bytes, row count or source checksum was independently verified. Polisa licences its own calculations CC BY 4.0 but explicitly preserves original supervisory/reporting licences: among others Serbia NBS commercial reuse requires consent; some Hungary, Slovenia and Bosnia and Herzegovina inputs are noncommercial/restricted; Estonia-derived figures can be CC BY-SA. Require country, legal entity/group level, data vintage, row-level source URL, original source rights and double-count checks before CAT calibration. Do not promote site publication into commercial reuse, model input or individual insured exposure.
+**Note:** README.txt names an all-markets CSV and per-market exports; the publisher /data page on 2026-11-15 advertised CSV/Excel links for 18 markets and an all-markets CSV (1,772 rows, 727 KB according to the publisher). These are advertised counts and sizes, not independently parsed source records; no original CSV bytes, response hash or completeness proof was obtained. Polisa licences its own calculations CC BY 4.0 but explicitly preserves original supervisory/reporting licences: among others Serbia NBS commercial reuse requires consent; some Hungary, Slovenia and Bosnia and Herzegovina inputs are noncommercial/restricted; Estonia-derived figures can be CC BY-SA. Require country, legal entity/group level, data vintage, row-level source URL, original source rights and double-count checks before CAT calibration. Do not promote site publication into commercial reuse, model input or individual insured exposure.
 
 ## USDA Risk Management Agency crop insurance Cause of Loss Summary of Business
 
