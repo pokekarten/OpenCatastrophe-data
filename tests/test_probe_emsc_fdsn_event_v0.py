@@ -138,6 +138,8 @@ class EMSCEventProbeTests(unittest.TestCase):
             {"Content-Length": "-1"},
             {"Content-Length": "wrong"},
             {"Content-Length": str(MAX_RESPONSE_BYTES + 1)},
+            {"Content-Length": "9" * 5000},
+            {"Content-Length": True},
             {"Content-Length": str(len(body) + 1)},
             {"Content-Length": str(len(body) - 1)},
         ):
