@@ -37,6 +37,12 @@ MAX_CENSUS_ROWS = 10000
 GHSL_MEMBER = ("GHS_AGE_1980102020_GLOBE_R2025A_54009_1000_V1_0.csv")
 GHSL_EXPECTED_CRC = 0xabea4f34
 GHSL_EXPECTED_BYTES = 209
+# Exact coarse-age 1 km R2025A V1-0 archive identity, not a different
+# product/epoch/resolution. A class legend without the named raster is NOT
+# a proof of a raster release, even with a matching caller-supplied ZIP hash.
+GHSL_TIFF_MEMBER = GHSL_MEMBER.removesuffix(".csv") + ".tif"
+GHSL_MAX_ZIP_MEMBERS = 32
+GHSL_MAX_DECLARED_UNCOMPRESSED_BYTES = 8_000_000_000
 GHSL_ROWS = [
     (0, 0, "not built-up"),
     (1, 1980, "< 1980"),
@@ -180,23 +186,83 @@ def parse_ghsl_legend(raw: bytes, expected_sha256: str) -> dict:
     }
 
 
+def _verify_original_tiff_header(header: bytes, declared_bytes: int) -> None:
+    """Inspect bounded TIFF magic/IFD offset, not georeferencing or any pixel."""
+    if len(header) < 16 or declared_bytes < 18:
+        raise SourceGateError("GHS-AGE GeoTIFF member too short")
+    if header[:2] == b"II":
+        order = "little"
+    elif header[:2] == b"MM":
+        order = "big"
+    else:
+        raise SourceGateError("GHS-AGE raster lacks TIFF byte order")
+    version = int.from_bytes(header[2:4], order)
+    if version == 42:
+        first_ifd = int.from_bytes(header[4:8], order)
+        minimum = 8
+    elif version == 43:
+        if int.from_bytes(header[4:6], order) != 8 or header[6:8] != b"\\x00\\x00":
+            raise SourceGateError("unsupported BigTIFF header layout")
+        first_ifd = int.from_bytes(header[8:16], order)
+        minimum = 16
+    else:
+        raise SourceGateError("GHS-AGE raster is not TIFF")
+    if not minimum <= first_ifd < declared_bytes:
+        raise SourceGateError("GeoTIFF first directory outside declared member")
+
+
 def verify_ghsl_zip(raw_zip: bytes, expected_sha256: str) -> dict:
+    """Exact-scope ZIP+TIFF *header* preflight, no raster pixel/admission proof."""
     if not raw_zip or len(raw_zip) > MAX_GHSL_ZIP_BYTES:
         raise SourceGateError("unsafe GHSL archive size")
     digest = _sha_matches(raw_zip, expected_sha256)
     try:
         with ZipFile(io.BytesIO(raw_zip)) as arc:
+            members = arc.infolist()
+            if not 2 <= len(members) <= GHSL_MAX_ZIP_MEMBERS:
+                raise SourceGateError("unreviewed GHSL ZIP member count")
+            names = [member.filename for member in members]
+            if len(set(names)) != len(names):
+                raise SourceGateError("duplicate GHSL ZIP member names")
+            if any(
+                not name or name.startswith("/") or "\\\\" in name
+                or any(part in ("", ".", "..") for part in name.split("/") if part)
+                or name.split("/")[0] in (".", "..")
+                for name in names
+            ):
+                raise SourceGateError("unsafe GHSL ZIP member path")
+            if any(m.flag_bits & 0x1 for m in members):
+                raise SourceGateError("encrypted GHSL ZIP members unsupported")
+            if sum(m.file_size for m in members) > GHSL_MAX_DECLARED_UNCOMPRESSED_BYTES:
+                raise SourceGateError("unbounded GHSL uncompressed member lengths")
             member = arc.getinfo(GHSL_MEMBER)
+            raster = arc.getinfo(GHSL_TIFF_MEMBER)
+            if raster.is_dir() or raster.file_size < 18:
+                raise SourceGateError("missing valid GHS-AGE GeoTIFF file member")
             if (member.file_size != GHSL_EXPECTED_BYTES
                 or member.CRC != GHSL_EXPECTED_CRC
                 or member.compress_type != 8):
                 raise SourceGateError("GHSL legend ZIP metadata mismatch")
+            # zipfile validates the exact small CSV member's CRC on read; do not
+            # decompress or hash the whole source raster here.
             legend = arc.read(member)
-    except (BadZipFile, KeyError, OSError) as exc:
-        raise SourceGateError("bad JRC original ZIP or missing class member") from exc
+            with arc.open(raster) as stream:
+                header = stream.read(16)
+            _verify_original_tiff_header(header, raster.file_size)
+    except (BadZipFile, KeyError, OSError, RuntimeError) as exc:
+        raise SourceGateError("bad GHSL ZIP: required legend or raster missing") from exc
     result = parse_ghsl_legend(legend, hashlib.sha256(legend).hexdigest())
     result["full_archive_sha256"] = digest
     result["zip_member_crc_verified"] = True
+    result["archive_member_count"] = len(members)
+    result["reviewed_raster_entry_name"] = GHSL_TIFF_MEMBER
+    result["declared_raster_bytes_not_independently_validated"] = raster.file_size
+    result["tiff_header_only_verified"] = True
+    result["raster_pixel_count_verified"] = False
+    result["raster_crs_verified"] = False
+    result["raster_nodata_verified"] = False
+    result["original_raster_member_sha256_verified"] = False
+    result["model_input_approved"] = False
     return result
 
 
