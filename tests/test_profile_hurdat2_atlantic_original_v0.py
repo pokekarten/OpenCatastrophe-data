@@ -76,6 +76,20 @@ class Hurdat2OriginalProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(Hurdat2StructureError, "duplicate storm id"):
             profile_original(original([first])+original([second]))
 
+    def test_extreme_numeric_strings_fail_closed_without_integer_conversion_crash(self):
+        first = original().decode().splitlines()[1]
+        long_integer = "9" * 5000
+        malformed_wind = first.replace(", 40, 1000,", ", " + long_integer + ", 1000,")
+        malformed_radius = first.replace(", 40, 1000,", ", 40, " + long_integer + ",")
+        malformed_header = "AL092022, SYNTHETIC, " + long_integer + ","
+        for sample in (
+            original([malformed_wind]),
+            original([malformed_radius]),
+            original([first], header=malformed_header),
+        ):
+            with self.subTest(size=len(sample)), self.assertRaises(Hurdat2StructureError):
+                profile_original(sample)
+
     def test_missing_bytes_oversize_non_ascii_and_blank_line_fail(self):
         for raw in [b"", b"x" * (12 * 1024 * 1024 + 1), b"\xff", original() + b"\n"]:
             with self.subTest(size=len(raw)), self.assertRaises(Hurdat2StructureError):
