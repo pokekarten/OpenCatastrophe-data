@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "de.nrw.lanuk.hwrm-hw-gefahrenkarte.wms.2026",
+  "source_ids": [
+    "de.nrw.lanuk.hwrm-hqhaeufig-flood.2026"
+  ],
+  "provider": "Land Nordrhein-Westfalen / Landesamt für Natur, Umwelt und Klima Nordrhein-Westfalen (LANUK)",
+  "interface_type": "wms",
+  "status": "verified_anonymous",
+  "documentation_url": "https://open.nrw/dataset/053549cf-b9c4-4633-80f9-680888ae5a04",
+  "service_root": "https://www.wms.nrw.de",
+  "api_version": "OGC WMS 1.3.0",
+  "access_scope": [
+    "metadata"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "get_capabilities"
+    ],
+    "path_templates": [
+      "/umwelt/wasser/HW_Gefahrenkarte"
+    ],
+    "parameter_rules": "Only ONE explicitly opted-in HTTPS GET https://www.wms.nrw.de/umwelt/wasser/HW_Gefahrenkarte?REQUEST=GetCapabilities&SERVICE=WMS with method GET and the repository's fixed headers. No caller-provided host, port, path, arbitrary query parameters, redirects or content negotiation overrides. WMS GetMap/GetFeatureInfo, GetLegendGraphic, bbox/tiles, images, sampling/polling, raster ZIPs, archive reads and hidden layer enumeration are OUT OF SCOPE. A successful GetCapabilities receipt only verifies bounded service connectivity, WMS identity, operation list, layer names and an exact original service terms digest. A change in version or terms digest fails closed."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/xml",
+      "application/xml",
+      "application/vnd.ogc.wms_xml"
+    ],
+    "format": "Original source WMS_Capabilities XML, WMS version 1.3.0, Service/Name WMS, valid Service/AccessConstraints, Capability/GetCapabilities and GetMap operation declarations and nonempty bounded named-layer inventory. The recorded original response on 2026-11-14 and independently reconfirmed 2026-11-15 contained 112777 bytes, SHA-256 b5d72228b7c3c926c9765e79be3ee516237fa2a31054578e57e4ea2cbb4e095e, 19 named layers and 2026-11-15 unchanged Service/AccessConstraints SHA-256 2b280a54d318695d430248562d1fbc0d074349dd27df444d3e72633e2f978c03. The full XML SHA identifies one mutable live response, NOT an immutable hazard raster or future expected digest.",
+    "scientific_semantics": "This source route is a cartographic river-flood WMS service describing NRW hazard map layers. The service metadata and images are NOT numerical authoritative GeoTIFF depth input, event loss tables, annual event rates, probabilistic flood curves or insured building exposure. Regulatory HQ10-50, HQ100 and HQextrem hazard scenarios require exact source asset, vintage, native CRS, vertical datum, pixel units, depth semantics and explicit independent science approval before CAT-model use. A WMS display route must not be substituted for original large downloaded data archives. No model admission."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 4000000,
+    "max_sample_bytes": 4000000,
+    "retry_policy": "none",
+    "rate_limit_notes": "One explicitly manually invoked fixed GetCapabilities request. Public metadata service is anonymously readable; no numerical service polling quota was established. Automated recurrence, GetMap, GetFeatureInfo or broad metadata harvesting require additional provider policy, scientific and rate-limit review.",
+    "mutability_notes": "GetCapabilities is a mutable provider service reply. Record exact request URL, retrieval UTC, original byte count/SHA256, service version, layer count, service AccessConstraints exact digest, validation-code version and WMS operation identity for every renewed research receipt. The 2026-11-14 and 2026-11-15 byte-identical observations are not a frozen model release. Service license drift must block the runner; original raster archive products are separately licensed and independently versioned."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "same_as_dataset",
+    "terms_url": "https://www.govdata.de/dl-de/by-2-0",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "unknown",
+    "notes": "The original official WMS 1.3.0 GetCapabilities Service/AccessConstraints says Datenlizenz Deutschland Namensnennung 2.0 (dl-de/by-2-0), required attribution 'Land NRW'; its original exact terms SHA-256 is 2b280a54d318695d430248562d1fbc0d074349dd27df444d3e72633e2f978c03. This licence permits commercial and noncommercial use WITH source attribution, licence URI and change indication when relevant. This ACCESS contract only permits ONE bounded manually opted-in metadata-only service read and records a reviewed technical/legal route, NOT broad recurring automated service calls, public raw response material, map tiles or model input admission. The provider's separately distributed original HWRM raster archive directory instead states DL-DE Zero 2.0: do not conflate service and asset-level licensing. Asset-specific model usage, privacy, attribution preservation and redistribution must be independently accepted."
+  },
+  "probe_contract": {
+    "mode": "metadata_get",
+    "operation": "get_capabilities",
+    "requires_credentials": false,
+    "expected_evidence": [
+      "Exactly one anonymous HTTPS 200 GetCapabilities original WMS 1.3.0 XML on the reviewed official endpoint with no redirects.",
+      "Content-Type whitelisted, fixed 20s timeout, at most 4000000 original bytes, no DTD/entity expansion.",
+      "Service WMS identity; GetCapabilities and GetMap metadata operations; nonempty named layers; one exact original Service/AccessConstraints SHA-256 matching the reviewed DL-DE BY 2.0 notice and attribution Land NRW.",
+      "Original whole-response SHA-256, response byte count and reproducible code identity; receipt-only, original XML bytes not persisted in Git or model storage.",
+      "Candidate science and rights admission remain not_reviewed/not_admitted; no WMS GetMap, GeoTIFF ZIP, numerical flood depth or production NeonDB import."
+    ]
+  },
+  "implementation_decision": "build_later",
+  "reviewed_at": "2026-11-15",
+  "evidence_urls": [
+    "https://open.nrw/dataset/053549cf-b9c4-4633-80f9-680888ae5a04",
+    "https://www.wms.nrw.de/umwelt/wasser/HW_Gefahrenkarte?REQUEST=GetCapabilities&SERVICE=WMS",
+    "https://www.govdata.de/dl-de/by-2-0",
+    "https://www.opengeodata.nrw.de/produkte/umwelt_klima/wasser/hochwasser/hwrm/",
+    "https://www.geoportal.de/info/1CFD885F-C083-4CF9-A443-5C8B6B0856E9"
+  ],
+  "notes": "Verified original public service GetCapabilities response read 2026-11-15 (HTTP 200, exact URL, text/xml, version 1.3.0, 112777 bytes, 19 names, full-body SHA256 b5d72228b7c3c926c9765e79be3ee516237fa2a31054578e57e4ea2cbb4e095e). Crosschecked original Service/AccessConstraints hash and 'Land NRW' attribution with 2026-11-14 observation; exact service rights SHA256 2b280a54d318695d430248562d1fbc0d074349dd27df444d3e72633e2f978c03. Research runner research_runners/cologne_hwrm_service_probe_v0.py now rejects licence/version drift before setting verified_live. No original provider XML or raster bytes are committed, no model or production DB input permitted."
+}
