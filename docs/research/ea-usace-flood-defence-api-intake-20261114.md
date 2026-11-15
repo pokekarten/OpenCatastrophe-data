@@ -138,4 +138,19 @@ Source metadata lists `esriGeometryPolyline`, `hasZ=true`, horizontal `EPSG:4269
 
 PR #1673 extends the existing offline-tested, trusted-main-only runner for a **third fixed NLD source**: Embankments layer 11. Its exact request selects just `OBJECTID,EMBANK_ID` from a single response feature with `returnGeometry=false`, no pagination, no retries, no auth/proxy/redirect and an 8,192-byte cap. A source-specific double-typed `EMBANK_ID` schema distinguishes the layer from the already qualified Floodwalls source. The emitted receipt includes the source ID, CRS, whether this join key is non-null, and a SHA-256 of the transient exact response entity, **never** the record identifiers, geometry, elevations or source bytes. Synthetic negative tests reject floodwall field confusion, extra fields, unexpected geometry, invalid join IDs and malformed payloads.
 
-No trusted live embankment read has been completed merely by adding this code: the workflow performs **network reads only on trusted `main`**, never PR branches. A successful CI/CodeQL check on the draft PR is not equivalent to an original provider response. This remains `not_admitted`; exact vertical-unit resolution, whole-system topology, conditions/rights and hydraulic science remain blocked.
+At the initial code-only PR stage no trusted live embankment read was yet completed. The workflow performs **network reads only on trusted `main`**, never PR branches; the subsequent trusted-main results are captured below. A successful CI/CodeQL check on the draft PR is not equivalent to an original provider response. This remains `not_admitted`; exact vertical-unit resolution, whole-system topology, conditions/rights and hydraulic science remain blocked.
+
+## Three verified direct original-provider receipts (2026-11-15)
+
+Following [merged PR #1673](https://github.com/pokekarten/OpenCatastrophe-data/pull/1673), main commit `662d56f5a4a96d7bc6d83659c08e00c1438de888` triggered [trusted source workflow run #43741910265](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43741910265). The source-specific GitHub job logs were inspected individually. All three jobs succeeded:
+
+| Exact source candidate | Trusted job | SHA-256 of exact transient JSON HTTP response | Validated scope |
+|---|---|---|---|
+| `uk.ea.aims.spatial-flood-defences.2026` | [132896765587](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43741910265/job/132896765587) | `618384c208e0736cd210b9119edab439d5524a6560c78997843715e7371b2dbd` | EPSG:27700, exactly one OID, no geometry |
+| `us.usace.nld.public-floodwalls.2026` | [132896765568](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43741910265/job/132896765568) | `e4ae60379a231c7e4bc4e28f96ab00ffa4e34123b59a4c06fd879b2db63f10f8` | EPSG:4269, exactly one OID, no geometry |
+| `us.usace.nld.public-embankments.2026` | [132896765575](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43741910265/job/132896765575) | `44404674d28a78de0dc9bde57919410480447a76a56412a1976d86ce6fbe2d16` | EPSG:4269, one OID and numeric `EMBANK_ID`, `join_id_present=true`, no geometry |
+
+Each independently observed source receipt explicitly reports `data_persisted=false` and `model_admitted=false`. The hashes bind **only tiny ephemeral original JSON responses**, not a frozen dataset release, a ZIP, a levee/polyline feature geometry, protection level, crest/Z elevation or reproducible nationwide snapshot. No source bytes or individual identifiers were placed into public Git or Neon.
+
+The original-runner access gate is now proven for all three identities, including USACE Embankments layer 11. Rights and attribution, precise source vintage, vertical-unit compatibility (US Survey Feet versus International Feet), geospatial topology, flood-hazard protection physics and independent scientific validation **remain unresolved**. Do not translate this technical success into insurance-model admission or insured-loss reduction.
+
