@@ -8,12 +8,16 @@ on:
     paths:
       - "research_runners/probe_aims_nld_flood_defences_v0.py"
       - "tests/test_probe_aims_nld_flood_defences_v0.py"
+      - "research_runners/probe_nld_embankment_vertical_metadata_v0.py"
+      - "tests/test_probe_nld_embankment_vertical_metadata_v0.py"
       - ".github/workflows/ea-usace-flood-defence-original-receipts.yml"
   push:
     branches: [main]
     paths:
       - "research_runners/probe_aims_nld_flood_defences_v0.py"
       - "tests/test_probe_aims_nld_flood_defences_v0.py"
+      - "research_runners/probe_nld_embankment_vertical_metadata_v0.py"
+      - "tests/test_probe_nld_embankment_vertical_metadata_v0.py"
       - ".github/workflows/ea-usace-flood-defence-original-receipts.yml"
   workflow_dispatch:
 
@@ -33,8 +37,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Exercise synthetic-only three-source contract tests
-        run: python -m unittest tests.test_probe_aims_nld_flood_defences_v0 -v
+      - name: Exercise synthetic-only original source and NLD vertical metadata gates
+        run: |
+          python -m unittest tests.test_probe_aims_nld_flood_defences_v0 -v
+          python -m unittest tests.test_probe_nld_embankment_vertical_metadata_v0 -v
 
   trusted-original-one-record:
     name: Direct public source original receipt (${{ matrix.source }})
@@ -69,4 +75,29 @@ jobs:
             echo ""
             echo "Research-only original provider receipt: SHA-256 of transient one-record OID/optional join-field response."
             echo "No geometry, original raw bytes, TIV, claims or model inputs stored; no rights or science admission."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  trusted-nld-vertical-metadata:
+    name: Direct public NLD embankment metadata unit/version conflict receipt
+    needs: offline-contract-and-negative-tests
+    # Never read original provider data from untrusted PR code.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Checkout trusted main without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate synthetic service identity and vertical-unit conflicts
+        run: python -m unittest tests.test_probe_nld_embankment_vertical_metadata_v0 -v
+      - name: One fixed no-feature original layer metadata GET and SHA-256 receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m research_runners.probe_nld_embankment_vertical_metadata_v0 --live | tee -a "$GITHUB_STEP_SUMMARY"
+          {
+            echo ""
+            echo "NLD vertical units remain unresolved: service metadata us-foot vs current dictionary international-foot."
+            echo "No geometry, source feature values, elevations, credentials or raw response saved. No model admission."
           } >> "$GITHUB_STEP_SUMMARY"
