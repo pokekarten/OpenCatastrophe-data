@@ -19,6 +19,10 @@ DATASET_TAG = "Seamless 1-m DEM (S1M)"
 LEGACY_TAG = "Digital Elevation Model (DEM) 1 meter"
 MAX_BYTES = 131072
 DOWNLOAD_HOST = "prd-tnm.s3.amazonaws.com"
+# Provider namespace and safe S1M tile path; a matching label alone is not an asset identity.
+S1M_TIFF_PATH = re.compile(
+    r"/StagedProducts/Elevation/S1M/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.tif\Z"
+)
 # One externally verified bounded TNM S1M example, not an admitted source asset.
 # The TNM API may return "datasets": [] even with the exact S1M filter;
 # do not accept that absence for any other product.
@@ -121,11 +125,15 @@ def check_products(value: object) -> dict[str, object]:
     url = item.get("downloadURL")
     if type(url) is not str:
         raise Blocked("missing product URL")
-    parsed = urlsplit(url)
-    if (parsed.scheme != "https" or parsed.hostname != DOWNLOAD_HOST or parsed.username or parsed.password
-            or parsed.query or parsed.fragment or not parsed.path.startswith("/StagedProducts/Elevation/")
-            or not parsed.path.lower().endswith(".tif")):
-        raise Blocked("untrusted external or non-TIFF product URL")
+    try:
+        parsed = urlsplit(url)
+        port = parsed.port
+    except ValueError as exc:
+        raise Blocked("malformed S1M product URL") from exc
+    if (parsed.scheme != "https" or parsed.hostname != DOWNLOAD_HOST or port is not None
+            or parsed.username or parsed.password or parsed.query or parsed.fragment
+            or not S1M_TIFF_PATH.fullmatch(parsed.path)):
+        raise Blocked("untrusted or non-S1M TIFF product URL")
     bounds = item.get("boundingBox")
     if type(bounds) is not dict:
         raise Blocked("no product bounding box")
