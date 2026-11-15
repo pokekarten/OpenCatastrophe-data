@@ -197,6 +197,22 @@ class CroatianGmlWindowTest(unittest.TestCase):
             with self.subTest(points=points), self.assertRaises(BuildingGmlError):
                 inspect_gml(sample(points=points))
 
+    def test_reject_mixed_linear_ring_coordinate_encodings(self):
+        # A single posList is insufficient if the same LinearRing also
+        # contains an incompatible second encoding or another GML child.
+        clean = sample()
+        for extra in (
+            b"<gml:pos>459120 5074620</gml:pos>",
+            b"<gml:pointProperty/>",
+            b"<gml:coordinates>459100,5074600</gml:coordinates>",
+        ):
+            with self.subTest(extra=extra), self.assertRaisesRegex(
+                BuildingGmlError, "ambiguous GML exterior posList"
+            ):
+                inspect_gml(clean.replace(
+                    b"</gml:posList>", b"</gml:posList>" + extra, 1
+                ))
+
     def test_reject_unreviewed_interior_ring(self):
         raw = sample().replace(b"</gml:Polygon>", b"<gml:interior/>" + b"</gml:Polygon>")
         with self.assertRaisesRegex(BuildingGmlError, "interior rings"):
