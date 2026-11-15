@@ -92,7 +92,7 @@ class PSMSLRLRMonthlyTests(unittest.TestCase):
     def test_oversized_monthly_integer_cli_is_blocked_without_traceback(self):
         with TemporaryDirectory() as tmp:
             file = Path(tmp) / 'sensitive-local-input-only.txt'
-            file.write_bytes(series([f'2025.0417;{'9'*5000};0;000']))
+            file.write_bytes(series(['2025.0417;' + '9' * 5000 + ';0;000']))
             cmd = [
                 sys.executable, '-m', 'scripts.audit_psmsl_rlr_monthly_v0',
                 str(file), '--station-id', '7',
