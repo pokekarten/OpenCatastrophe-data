@@ -191,9 +191,12 @@ def main(argv: list[str] | None = None) -> int:
         proof = station_pdf_proof(args.department, original, station_catalogue)
         print(json.dumps(proof, sort_keys=True, indent=2))
         return 0
-    except (Blocked, OSError, ValueError) as exc:
-        # Avoid exposing station IDs, PDF URLs or publisher row content through
-        # an upstream urllib exception that may contain its request location.
+    except Blocked as exc:
+        # Blocked exceptions use only fixed, non-identifying diagnostic text.
+        print("BLOCKED: " + str(exc), file=sys.stderr)
+        return 2
+    except (OSError, ValueError) as exc:
+        # urllib errors may contain the station URL: never print their details.
         print("BLOCKED: " + type(exc).__name__, file=sys.stderr)
         return 2
 
