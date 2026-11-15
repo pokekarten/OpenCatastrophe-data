@@ -91,7 +91,7 @@ def inspect_atom(raw: bytes) -> dict:
         "advertised_format": "GML 3.2.1 / ETRS89-LAEA / ZIP",
         "rights_notice_verbatim": RIGHTS_TEXT,
         "rights_reconciliation_required": True,
-        "independent_cadastral_wfs_source": True,
+        "distinct_product_identity_from_cadastral_wfs": True,
         "zip_downloaded": False,
         "raw_geometry_verified": False,
         "public_redistribution_approved": False,
