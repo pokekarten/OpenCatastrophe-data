@@ -7,6 +7,7 @@
 -- Run once on the authorized insurance-risk-core research database.
 -- Expected: "observed_original_metadata" and all synthetic controls have
 -- control_pass=true. Only observed_original_metadata may have gate_pass=true.
+-- RGB triples are display palette metadata, never pixel observations.
 WITH receipts AS (
   SELECT
     (SELECT sample_json FROM research.source_sample_v0 WHERE sample_id=51
@@ -32,6 +33,7 @@ cases(id, expected_pass) AS (
         ('synthetic_wrong_epoch',false),
         ('synthetic_member_overlap',false),
         ('synthetic_bad_eocd',false),
+        ('synthetic_bad_rgb',false),
         ('synthetic_false_raster_claim',false),
         ('synthetic_false_admission',false)
 ),
@@ -43,6 +45,7 @@ variants AS (
     WHEN 'synthetic_wrong_csv_crc' THEN jsonb_set(r.legend,'{zip_member_crc32}','"00000000"')
     WHEN 'synthetic_missing_age_class' THEN r.legend #- '{gridcode_legend,5}'
     WHEN 'synthetic_wrong_epoch' THEN jsonb_set(r.legend,'{gridcode_legend,2,epoch_num}','1981')
+    WHEN 'synthetic_bad_rgb' THEN jsonb_set(r.legend,'{gridcode_legend,0,display_rgb,1}','300')
     WHEN 'synthetic_false_raster_claim' THEN jsonb_set(r.legend,'{no_geo_raster_pixels_downloaded}','false')
     WHEN 'synthetic_false_admission' THEN jsonb_set(r.legend,'{model_input_approved}','true')
     ELSE r.legend END AS legend,
@@ -72,6 +75,15 @@ age_gate AS (
    ])[ord]
    AND jsonb_typeof(age->'display_rgb')='array'
    AND jsonb_array_length(age->'display_rgb')=3
+   AND (SELECT coalesce(bool_and(
+         CASE WHEN jsonb_typeof(rgb.value)='number'
+                   AND rgb.value::text ~ '^[0-9]{1,3}$'
+              THEN rgb.value::text::integer BETWEEN 0 AND 255
+              ELSE false END),false)
+        FROM jsonb_array_elements(
+          CASE WHEN jsonb_typeof(age->'display_rgb')='array'
+               THEN age->'display_rgb' ELSE '[]'::jsonb END
+        ) AS rgb(value))
   ),false) AS scientific_legend_ok
  FROM age_rows GROUP BY id
 ),
