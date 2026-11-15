@@ -111,6 +111,15 @@ class ProbeTests(unittest.TestCase):
         with self.assertRaises(s.ProbeBlocked):
             s.inspect_original(json.dumps(j).encode())
 
+    def test_labelled_s1m_but_wrong_asset_family_blocked(self):
+        payload = example()
+        payload["items"][0]["datasets"] = [s.PILOT_TITLE]
+        payload["items"][0]["downloadURL"] = (
+            "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/other.tif"
+        )
+        with self.assertRaises(s.ProbeBlocked):
+            s.inspect_original(json.dumps(payload).encode())
+
     def test_unsafe_product_url_blocked(self):
         j = example()
         j["items"][0]["downloadURL"] = "https://example.org/other.tif"
