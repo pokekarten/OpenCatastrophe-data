@@ -84,6 +84,7 @@ class GHSLAGEWindowTest(unittest.TestCase):
             {"crs_identifier": "EPSG:4326"},
             {"data_type": "UInt16"}, {"band_count": True}, {"band_count": 3},
             {"pixel_width_m": 100}, {"pixel_height_m": 1000},
+            {"pixel_width_m": 10 ** 1000}, {"pixel_width_m": float("nan")},
             {"rotation_x": 1}, {"rotation_y": -0.5},
         )
         for mutate in changes:
