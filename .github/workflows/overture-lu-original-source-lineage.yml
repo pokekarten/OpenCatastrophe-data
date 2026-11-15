@@ -39,4 +39,5 @@ jobs:
       - name: Source-free lineage regression tests
         run: python -m unittest tests.test_overture_lu_original_source_family_mix_v0 -v
       - name: Read original source dataset labels, never provider record IDs
+        if: github.event_name == 'workflow_dispatch'
         run: python -m research_runners.overture_lu_original_source_family_mix_v0 --live
