@@ -13,7 +13,7 @@ import tempfile
 import unittest
 
 from research_runners.dlr_wsf_evolution_stac_collection_preflight_v0 import (
-    WSFMetadataBlocked, inspect_original_collection,
+    WSFMetadataBlocked, inspect_original_collection, interpret_detection_and_idc,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -90,6 +90,26 @@ class WSFCollectionTests(unittest.TestCase):
         for invalid in [b"", b"x" * 131073, b"\xff", b'{"id":"A","id":"B"}', b'{"foo":NaN}']:
             with self.subTest(invalid=invalid[:12]), self.assertRaises(WSFMetadataBlocked):
                 inspect_original_collection(invalid, hashlib.sha256(invalid).hexdigest())
+
+    def test_detection_year_and_idc_never_become_building_age(self):
+        no_data = interpret_detection_and_idc(0, None)
+        self.assertEqual(no_data["pixel_state"], "NO_DATA_NOT_NO_SETTLEMENT")
+        self.assertIsNone(no_data["detection_year"])
+        self.assertIsNone(no_data["construction_year"])
+        expected = ["very_low", "low", "moderate", "fair", "good", "very_good"]
+        for score in range(1, 7):
+            row = interpret_detection_and_idc(1995, score)
+            self.assertEqual(row["detection_year"], 1995)
+            self.assertEqual(row["idc_quality"], expected[score-1])
+            self.assertIsNone(row["construction_year"])
+            self.assertFalse(row["model_input_admitted"])
+
+    def test_bad_year_idc_and_unpaired_nodata_fail_closed(self):
+        for year, idc in [(-1, None), (1, 3), (1984, 2), (2016, 6),
+                          (1995, 0), (1995, 7), (1995, None), (0, 1),
+                          (True, None), (1995, True), (2000.0, 5), (1995, "6")]:
+            with self.subTest(year=year, idc=idc), self.assertRaises(WSFMetadataBlocked):
+                interpret_detection_and_idc(year, idc)
 
     def test_cli_does_not_overwrite_source(self):
         with tempfile.TemporaryDirectory() as td:
