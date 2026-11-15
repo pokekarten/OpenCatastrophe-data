@@ -1,0 +1,65 @@
+[
+  {
+    "url": "https://www.europeanwindstorms.org/repository/Kyrill/Kyrill_rawFoot.nc",
+    "file": "Kyrill_rawFoot.nc",
+    "bytes": 122304,
+    "sha256": "1d9d996210bd08668624f7a2e625501c851f7cd58f0cff15bd73bb5c3d39d9a0",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://www.europeanwindstorms.org/repository/Kyrill/Kyrill_rawFootUncon.nc",
+    "file": "Kyrill_rawFootUncon.nc",
+    "bytes": 122304,
+    "sha256": "bf18bd37b0fa441bd02a00860c0fa74474c77691efe316efd46bde0ca8b483f5",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://www.europeanwindstorms.org/repository/Kyrill/Kyrill_track.csv",
+    "file": "Kyrill_track.csv",
+    "bytes": 7503,
+    "sha256": "3d80465a18d9855d7e81c79d8886526da0c273d3b044bd1c64f9dbb77bab89d2",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://www.europeanwindstorms.org/repository/Xynthia/Xynthia_rawFoot.nc",
+    "file": "Xynthia_rawFoot.nc",
+    "bytes": 122304,
+    "sha256": "a0033e177adee4374a156fd4bd06b0f526c42d323b613b7d6a8f3944e3ba4701",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://www.europeanwindstorms.org/repository/Xynthia/Xynthia_rawFootUncon.nc",
+    "file": "Xynthia_rawFootUncon.nc",
+    "bytes": 122304,
+    "sha256": "df202f1470c572230dbd67c71b6b471bc0dfc114ed6477bd67e75d5bd26245ca",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://www.europeanwindstorms.org/repository/Xynthia/Xynthia_track.csv",
+    "file": "Xynthia_track.csv",
+    "bytes": 15764,
+    "sha256": "c193e76c957c9eb94eb33ce27a44e13c70586ce5fc0845262f102e1dce9588ff",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://www.europeanwindstorms.org/repository/Daria/Daria_rawFoot.nc",
+    "file": "Daria_rawFoot.nc",
+    "bytes": 122304,
+    "sha256": "2bc87e6e47c6b88301aa680efa9020e084fb396debc28c495b2ca711ccf8f647",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://www.europeanwindstorms.org/repository/Daria/Daria_rawFootUncon.nc",
+    "file": "Daria_rawFootUncon.nc",
+    "bytes": 122304,
+    "sha256": "6dff4c6eba39735636de1c1c262dc42ec33ca41372dd4feaf80c7fcbf9932bb6",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://www.europeanwindstorms.org/repository/Daria/Daria_track.csv",
+    "file": "Daria_track.csv",
+    "bytes": 8841,
+    "sha256": "745f81bacde108c159c35087bc63e59ef471567829b716d39a370ad6688506f9",
+    "status": "downloaded"
+  }
+]
