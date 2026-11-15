@@ -52,13 +52,20 @@ def audit(path: Path, *, expected_md5: str = PUBLISHER_MD5) -> dict:
         raise InvalidOriginal("ambiguous_ari500_zero_sigma_column")
     if header != (set(REQUIRED) | (set(aliases) & header)):
         raise InvalidOriginal("unexpected_columns")
+    # Spatial duplicates can invalidate supposedly independent training/holdout sites,
+    # even when FIDs differ or longitude is encoded in two equivalent conventions.
+    # Retain only bounded in-memory signatures, never original locations in a report.
+    zero_sigma_column = next(column for column in aliases if column in header)
+    curve_columns = (*RATES, *HEIGHTS, *OTHER, zero_sigma_column)
     counts = {name: 0 for name in (
         "nonmonotonic_exceedance_rates", "nonmonotonic_return_heights",
         "uncertainty_interval_inverted", "point_outside_95pct_bounds",
+        "duplicate_spatial_sites", "duplicate_spatial_sites_conflicting_curves",
         "left_censored_0p1m", "right_censored_20m",
         "longitudes_using_0_to_360", "rows",
     )}
     seen = set()
+    seen_sites = {}
     for row in reader:
         if counts["rows"] >= MAX_ROWS:
             raise InvalidOriginal("too_many_rows")
@@ -66,7 +73,7 @@ def audit(path: Path, *, expected_md5: str = PUBLISHER_MD5) -> dict:
             raise InvalidOriginal("row_fields_missing")
         try:
             fid = int(row["FID"])
-            fields = {k: float(row[k]) for k in (*RATES, *HEIGHTS, *OTHER, *(set(aliases) & header), "POINT_X", "POINT_Y")}
+            fields = {k: float(row[k]) for k in (*curve_columns, "POINT_X", "POINT_Y")}
         except (ValueError, TypeError, OverflowError) as exc:
             raise InvalidOriginal("non_numeric_original_field") from exc
         if fid in seen:
@@ -79,9 +86,19 @@ def audit(path: Path, *, expected_md5: str = PUBLISHER_MD5) -> dict:
             raise InvalidOriginal("coordinate_out_of_bounds")
         if x > 180:
             counts["longitudes_using_0_to_360"] += 1
+        # 190E and -170E are the same site. 180E and -180E are also identical.
+        canonical_lon = x - 360 if x > 180 else (-180.0 if x == 180 else x)
+        site = (canonical_lon, y)
+        signature = tuple(fields[column] for column in curve_columns)
+        if site in seen_sites:
+            counts["duplicate_spatial_sites"] += 1
+            if seen_sites[site] != signature:
+                counts["duplicate_spatial_sites_conflicting_curves"] += 1
+        else:
+            seen_sites[site] = signature
         rates = [fields[k] for k in RATES]
         heights = [fields[k] for k in HEIGHTS]
-        extra_heights = [fields[k] for k in (*OTHER, *(set(aliases) & header))]
+        extra_heights = [fields[k] for k in (*OTHER, zero_sigma_column)]
         if any(v < 0 for v in rates) or any(not 0.1 <= v <= 20 for v in (*heights, *extra_heights)):
             raise InvalidOriginal("rate_or_height_out_of_domain")
         if any(b > a + 1e-12 for a, b in zip(rates, rates[1:])):
@@ -101,10 +118,11 @@ def audit(path: Path, *, expected_md5: str = PUBLISHER_MD5) -> dict:
     return {
         "status": "quality_anomalies" if any(counts[k] for k in (
             "nonmonotonic_exceedance_rates", "nonmonotonic_return_heights",
-            "uncertainty_interval_inverted", "point_outside_95pct_bounds")) else "parsed_with_no_flagged_anomalies",
+            "uncertainty_interval_inverted", "point_outside_95pct_bounds",
+            "duplicate_spatial_sites")) else "parsed_with_no_flagged_anomalies",
         "source": "zenodo:16964551/globalPTHA.txt",
         "size_bytes": size, "md5": expected_md5, "sha256": sha256,
-        "zero_sigma_column": next(c for c in aliases if c in header),
+        "zero_sigma_column": zero_sigma_column,
         "semantics": "annual_mean_exceedance_rates_not_event_frequency_or_event_set",
         "admission": "none", "checks": counts,
     }
