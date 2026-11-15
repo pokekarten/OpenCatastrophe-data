@@ -107,6 +107,7 @@ def screen_gfwed_geos5_fwi_header_receipt(receipt: Mapping[str, object]) -> dict
     axes = fwi.get("dimensions")
     shape = fwi.get("shape")
     if (not isinstance(axes, list) or not isinstance(shape, list) or len(axes) not in (2, 3) or
+            any(not isinstance(ax, str) for ax in axes) or
             len(axes) != len(set(axes)) or any(ax not in dimensions for ax in axes) or
             set(axes) - {lat_dim, lon_dim, "time"} or
             lat_dim not in axes or lon_dim not in axes or shape != [dimensions[ax] for ax in axes]):
