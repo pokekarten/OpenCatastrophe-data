@@ -47,8 +47,8 @@ def _coordinate(raw: str, axis: str, line: int) -> float:
 
 
 def _measurement(raw: str, line: int, name: str) -> int | None:
-    if not re.fullmatch(r"-?[0-9]+", raw):
-        raise Hurdat2StructureError(f"line {line}: invalid {name}")
+    if len(raw) > 10 or not re.fullmatch(r"-?[0-9]{1,9}", raw):
+        raise Hurdat2StructureError(f"line {line}: invalid or unbounded {name}")
     value = int(raw)
     if value in {-999, -99}:
         return None
@@ -83,8 +83,8 @@ def profile_original(raw: bytes) -> dict[str, object]:
         if storm_id in storm_ids:
             raise Hurdat2StructureError(f"line {line}: duplicate storm id {storm_id}")
         storm_ids.add(storm_id)
-        if not re.fullmatch(r"[1-9][0-9]*", count_raw):
-            raise Hurdat2StructureError(f"line {line}: invalid positive track count")
+        if not re.fullmatch(r"[1-9][0-9]{0,5}", count_raw):
+            raise Hurdat2StructureError(f"line {line}: invalid or unbounded positive track count")
         count = int(count_raw)
         if count > len(lines) - index - 1:
             raise Hurdat2StructureError(f"line {line}: truncated storm track")
