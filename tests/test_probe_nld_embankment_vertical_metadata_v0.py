@@ -34,7 +34,7 @@ def fixture():
         "hasZ": True,
         "hasM": False,
         "objectIdField": "OBJECTID",
-        "isDataVersioned": False,
+        "isDataVersioned": True,
         "isDataArchived": False,
         "archivingInfo": {"supportsQueryWithHistoricMoment": False},
         "sourceSpatialReference": {"wkid": 4269},
@@ -64,6 +64,7 @@ class TestNldEmbankmentVerticalMetadata(unittest.TestCase):
         self.assertEqual(report["service_height_unit"], "us-foot")
         self.assertEqual(DICTIONARY_REFERENCE_UNIT, "international-foot")
         self.assertTrue(report["unit_conflict_unresolved"])
+        self.assertTrue(report["service_is_data_versioned"])
         for name in ("historic_snapshot_supported", "elevation_values_examined", "data_persisted", "model_admitted"):
             self.assertFalse(report[name])
         self.assertNotIn("features", report)
@@ -74,7 +75,7 @@ class TestNldEmbankmentVerticalMetadata(unittest.TestCase):
             ("id", 12), ("id", True), ("name", "Floodwalls"),
             ("type", "Map Layer"), ("geometryType", "esriGeometryPolygon"),
             ("hasZ", False), ("hasZ", 1), ("hasM", True),
-            ("objectIdField", "EMBANK_ID"), ("isDataVersioned", True),
+            ("objectIdField", "EMBANK_ID"), ("isDataVersioned", False),
             ("isDataArchived", True),
         ):
             data = fixture()
