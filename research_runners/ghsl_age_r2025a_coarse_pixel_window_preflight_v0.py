@@ -59,7 +59,7 @@ def inspect_window(pixels: bytes, metadata: dict, expected_sha256: str) -> dict:
         raise GHSAGEBlocked("coarse 1km version or raster member mismatch")
     if metadata["crs_identifier"] != "ESRI:54009":
         raise GHSAGEBlocked("GHS-AGE raster must be World Mollweide")
-    if metadata["data_type"] != "UInt8" or type(metadata["band_count"]) is not int
+    if (metadata["data_type"] != "UInt8" or type(metadata["band_count"]) is not int
             or metadata["band_count"] != 1):
         raise GHSAGEBlocked("GHS-AGE raster must be one UInt8 band")
     width, height = metadata["window_width"], metadata["window_height"]
