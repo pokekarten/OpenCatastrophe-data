@@ -325,6 +325,22 @@ URL, with `text/xml`, **112,777 bytes**, WMS **1.3.0**, service name
   independently advertises **DL-DE Zero 2.0** and must be reviewed
   by exact asset/version before any raster ingest.
 
+The **exact repository-authored Python runner** was also executed
+live in a separate network-enabled execution environment, by loading
+the immutable GitHub source from commit
+`b4f68daa8a3120ca01f2233fdaf58598d9821d1a`
+and invoking its own `probe_live()` function with the real NRW provider
+(not merely reimplementing a similar HTTP request). Script source:
+7,949 bytes, SHA-256
+`29df0619690ee49f2a49938c318424c8be60956adc767e1c086b1295afd5b001`.
+It returned `verified_live=true`,
+`reviewed_service_terms_match=true`,
+`named_layer_count=19`, the 112,777-byte original-body SHA-256 above,
+`model_admitted=false`, `external_bytes_persisted=false`.
+No original XML pixels/bytes were printed or persisted. The script is
+source-commit pinned, while the service response is only a mutable-time
+receipt.
+
 The new canonical source-access contract
 `access/de.nrw.lanuk.hwrm-hw-gefahrenkarte.wms.2026.json` (and its
 deterministic generated Markdown view) registers only a **single
