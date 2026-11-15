@@ -137,6 +137,47 @@ class CroatianGmlWindowTest(unittest.TestCase):
             with self.assertRaises(BuildingGmlError):
                 inspect_gml(sample(points=coords))
 
+    def test_reject_disjoint_concave_polygon_despite_envelope_overlap(self):
+        # A valid L-shaped ring wraps around the lower-left search-window
+        # corner. Its envelope overlaps the BBOX, but no geometry does.
+        outside_l = (
+            "458900 5074600 458900 5074400 459100 5074400 "
+            "459100 5074450 458950 5074450 458950 5074600 "
+            "458900 5074600"
+        )
+        with self.assertRaisesRegex(BuildingGmlError, "polygon itself"):
+            inspect_gml(sample(points=outside_l))
+
+    def test_accept_window_fully_enclosed_by_polygon(self):
+        # None of the corners of the outer polygon lies inside the window,
+        # and no polygon edge crosses the window. A corner-in-polygon check
+        # is needed to prove actual intersection.
+        enclosing = (
+            "458900 5074400 459700 5074400 459700 5075200 "
+            "458900 5075200 458900 5074400"
+        )
+        receipt = inspect_gml(sample(points=enclosing))
+        self.assertTrue(receipt["actual_polygon_intersects_fixed_window"])
+        self.assertFalse(receipt["model_input_admitted"])
+
+    def test_accept_crossing_and_boundary_touch_without_area_claim(self):
+        # Polygon vertices all outside BBOX, its edges cross the BBOX.
+        crossing = (
+            "459250 5074400 459350 5074400 459350 5075200 "
+            "459250 5075200 459250 5074400"
+        )
+        # A zero-area boundary contact is geometric intersection, but is
+        # NOT evidence that a building has positive area inside the window.
+        touching = (
+            "458900 5074600 459000 5074600 459000 5074650 "
+            "458900 5074650 458900 5074600"
+        )
+        for points in (crossing, touching):
+            with self.subTest(points=points):
+                result = inspect_gml(sample(points=points))
+                self.assertTrue(result["actual_polygon_intersects_fixed_window"])
+                self.assertNotIn("positive_area_inside_window", result)
+
     def test_reject_crossing_exterior_with_nonzero_signed_area(self):
         # The shoelace sum is nonzero, so an area-only test would pass.
         crossing = (
