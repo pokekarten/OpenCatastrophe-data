@@ -23,7 +23,7 @@ METADATA_UUID = "ecb22f233db3b5c3dfbe94939df786605a2cac3c"
 CANDIDATE_NAMES = frozenset({
     "ispra:landslide_pol_100k", "ispra:landslide_pol_100k_2023",
 })
-MAX_BYTES = 1024 * 1024
+MAX_BYTES = 262144
 MAX_FEATURE_TYPES = 10000
 WFS = "{http://www.opengis.net/wfs/2.0}"
 REVIEWED_CRS = frozenset({
