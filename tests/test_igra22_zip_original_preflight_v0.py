@@ -57,6 +57,17 @@ class Igra22OriginalZipPreflightTests(unittest.TestCase):
         self.assertLess(r["screened_prefix_bytes"], r["unzipped_member_bytes"])
         self.assertFalse(r["full_member_scientifically_screened"])
 
+    def test_original_station_zip_rejects_reverse_sounding_dates(self):
+        # The ZIP route must preserve the same NOAA chronological invariant.
+        reversed_original_member = (
+            text_block(h=header(day=3))
+            + text_block(h=header(day=2))
+        )
+        with self.assertRaisesRegex(Igra22FormatError, "chronological"):
+            screen_igra22_original_station_zip(
+                make_zip(body=reversed_original_member), station_id=SID,
+            )
+
     def test_refuse_filename_confusion_bombs_and_bad_science(self):
         cases = [
             (b"", SID),

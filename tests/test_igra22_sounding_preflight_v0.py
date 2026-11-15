@@ -80,6 +80,32 @@ class Igra22OriginalTextPreflightTests(unittest.TestCase):
         self.assertEqual(r['levels_without_wind_speed'], 2)
         self.assertEqual(r['last_date_utc'], '2025-06-02')
 
+    def test_station_sounding_chronology_rejects_reverse_dates_and_hours(self):
+        # IGRA POR station files are published in chronological order.
+        later_day = text_block(h=header(day=3))
+        earlier_day = text_block(h=header(day=2))
+        with self.assertRaisesRegex(Igra22FormatError, "chronological"):
+            screen_igra22_unzipped_text_bytes(later_day + earlier_day, station_id=SID)
+
+        later_hour = text_block(h=header(day=2, hh=12))
+        earlier_hour = text_block(h=header(day=2, hh=0))
+        with self.assertRaisesRegex(Igra22FormatError, "chronological"):
+            screen_igra22_unzipped_text_bytes(later_hour + earlier_hour, station_id=SID)
+
+        # No inference about same-day sorting when the nominal hour is missing.
+        unknown_hour = text_block(h=header(day=2, hh=99))
+        for raw in (unknown_hour + earlier_hour, later_hour + unknown_hour):
+            r = screen_igra22_unzipped_text_bytes(raw, station_id=SID)
+            self.assertEqual(r["soundings"], 2)
+            self.assertEqual(r["first_date_utc"], "2025-06-02")
+            self.assertEqual(r["last_date_utc"], "2025-06-02")
+
+    def test_station_sounding_chronology_increasing_days(self):
+        raw = text_block(h=header(day=1, hh=12)) + text_block(h=header(day=2, hh=0))
+        r = screen_igra22_unzipped_text_bytes(raw, station_id=SID)
+        self.assertEqual(r["first_date_utc"], "2025-06-01")
+        self.assertEqual(r["last_date_utc"], "2025-06-02")
+
     def test_rejects_malformed_source_or_science(self):
         negatives = [
             (text_block(), "INVALID-ID"),
