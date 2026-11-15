@@ -64,7 +64,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - text/xml
 - application/xml
-- application/vnd.ogc.wms_xml
 
 **Format:** Original source WMS_Capabilities XML, WMS version 1.3.0, Service/Name WMS, valid Service/AccessConstraints, Capability/GetCapabilities and GetMap operation declarations and nonempty bounded named-layer inventory. The recorded original response on 2026-11-14 and independently reconfirmed 2026-11-15 contained 112777 bytes, SHA-256 b5d72228b7c3c926c9765e79be3ee516237fa2a31054578e57e4ea2cbb4e095e, 19 named layers and 2026-11-15 unchanged Service/AccessConstraints SHA-256 2b280a54d318695d430248562d1fbc0d074349dd27df444d3e72633e2f978c03. The full XML SHA identifies one mutable live response, NOT an immutable hazard raster or future expected digest.
 
