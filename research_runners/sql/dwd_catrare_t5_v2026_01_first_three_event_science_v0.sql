@@ -9,6 +9,11 @@
 -- Eight adversarial source-record/header mutations per event reject safely.
 -- Date_START/END are UNTYPED timezone-naive values, NOT validated UTC.
 -- W3 shares RADKLIM input: do not infer independent event frequencies.
+-- DWD v2026.01 FieldDescription: Duration is a significant accumulation
+-- window (1..72 hours), NOT necessarily End_Time minus Start_Time; Tmax/Tmean
+-- can be right-censored as >100 or >>100 years. Start_Time/End_Time are UTC
+-- by publisher documentation, but historical research ledger retains its
+-- previous timezone-not-validated marker and is not rewritten in this PR.
 WITH s AS (
  SELECT sample_json j,provider_response_sha256 original_range_sha,sample_kind
  FROM research.source_sample_v0
@@ -48,6 +53,14 @@ WITH s AS (
  UNION ALL SELECT n,'records_are_null',false,jsonb_set(j,'{original_source_records}','null'::jsonb),r,original_range_sha,sample_kind FROM ev
  UNION ALL SELECT n,'records_missing',false,j - 'original_source_records',r,original_range_sha,sample_kind FROM ev
  UNION ALL SELECT n,'records_two_only',false,jsonb_set(j,'{original_source_records}',(j->'original_source_records') - 2),r,original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'synthetic_significant_duration_72',true,j,jsonb_set(r,'{Duration}','"72"'),original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'synthetic_censored_tmax_gt100',true,j,jsonb_set(r,'{Tmax}','">100"'),original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'synthetic_censored_tmax_gt1000',true,j,jsonb_set(r,'{Tmax}','">>100"'),original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'synthetic_censored_mean_and_max',true,j,
+   jsonb_set(jsonb_set(r,'{Tmax}','">>100"'),'{Tmean}','">100"'),original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'invalid_tmax_censor',false,j,jsonb_set(r,'{Tmax}','">1000"'),original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'invalid_tmean_censor',false,j,jsonb_set(r,'{Tmean}','"~100"'),original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'censored_mean_exceeds_numeric_max',false,j,jsonb_set(r,'{Tmean}','">>100"'),original_range_sha,sample_kind FROM ev
 ), typed AS (
  SELECT cases.*,
  CASE WHEN r->>'Duration' ~ '^[0-9]{1,3}$' THEN (r->>'Duration')::int END h,
@@ -101,13 +114,19 @@ WITH s AS (
  AND start_unzoned>='2001-01-01'::timestamp AND end_unzoned<'2026-01-01'::timestamp
  AND r->>'Start_Time'=to_char(start_unzoned,'YYYYMMDDHH24MI')
  AND r->>'End_Time'=to_char(end_unzoned,'YYYYMMDDHH24MI')
- AND h=extract(epoch FROM (end_unzoned-start_unzoned))/3600
  AND h=ANY(ARRAY[1,2,3,4,6,9,12,18,24,48,72])
  AND area>0 AND within_g BETWEEN 0 AND area AND laea>0
  AND pct BETWEEN 0 AND 100
  AND abs(pct-100*within_g/NULLIF(area,0))<=0.75
  AND rrmax>=rrmean AND rrmean>0
- AND eta>0 AND tmax>=5 AND tmean>0 AND tmean<=tmax
+ AND eta>0
+ AND (tmax>=5 OR r->>'Tmax' IN ('>100','>>100'))
+ AND (tmean>0 OR r->>'Tmean' IN ('>100','>>100'))
+ -- Tmean/Tmax numbers are exact; the two documented sentinels are censored
+ -- lower bounds, so never coerce ">100"/">>100" to exact 100/1000.
+ AND (tmax IS NULL OR tmean IS NULL OR tmean<=tmax)
+ AND (tmax IS NULL OR r->>'Tmean' NOT IN ('>100','>>100')
+      OR tmax > CASE WHEN r->>'Tmean'='>100' THEN 100 ELSE 1000 END)
  ,false) actual FROM typed
 ), distinct_set AS (
  SELECT
