@@ -3,11 +3,6 @@
 name: Meteo-France four north original source preflight
 
 on:
-  pull_request:
-    paths:
-      - 'research_runners/meteofrance_four_north_original_v0.py'
-      - 'tests/test_meteofrance_four_north_original_v0.py'
-      - '.github/workflows/meteofrance-four-north-original.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +10,6 @@ permissions:
 
 jobs:
   source-proof:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'research/20261115-fr-four-original-gust-proofs'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     strategy:

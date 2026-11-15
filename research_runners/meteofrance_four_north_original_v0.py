@@ -26,10 +26,10 @@ from research_runners.meteofrance_north_hourly_catalogue_v0 import audit_catalog
 # ID, compressed byte count, initial original SHA-256 (not yet observed).
 # SHA-256 must be set from actual first CI proof before further use.
 ASSETS = {
-    "02": ("3ae65545-9ce4-4227-a184-111bad9d0185", 19_437_733, None),
-    "62": ("fb9e6687-3ae8-4ed9-b106-be22db8d1fa1", 25_053_359, None),
-    "76": ("31c4683e-5538-4832-96ef-1f2568051019", 26_582_693, None),
-    "80": ("1a936a45-b6ad-4c2b-84cf-cb4c853938b7", 21_177_200, None),
+    "02": ("3ae65545-9ce4-4227-a184-111bad9d0185", 19_437_733, "4c093caad74f854612485504d6d21ba67c7879e4d005e6b51ca6d1acb2b017e3"),
+    "62": ("fb9e6687-3ae8-4ed9-b106-be22db8d1fa1", 25_053_359, "12a33b7c67f703aad2bcc95c06d91b81cb8e2cba95738da7e9bbb7971a81db7f"),
+    "76": ("31c4683e-5538-4832-96ef-1f2568051019", 26_582_693, "406dbf752f042254bfade674f606c2035eeb2560d06314324c9bd4694936780d"),
+    "80": ("1a936a45-b6ad-4c2b-84cf-cb4c853938b7", 21_177_200, "1d46879bd4c3ba1180b881cfb28eacccc4e8a5405e783bdc09ab5dae5418124f"),
 }
 MAX_COMPRESSED = 32 * 1024 * 1024
 MAX_INFLATED = 384 * 1024 * 1024

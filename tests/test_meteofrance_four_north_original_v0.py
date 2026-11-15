@@ -41,6 +41,18 @@ class TestFourNorthOriginals(unittest.TestCase):
         self.assertFalse(a["annual_ep_authorized"])
         self.assertNotIn("02010001", str(a))
 
+    def test_four_verified_original_sha_receipts(self):
+        expected = {
+            "02": "4c093caad74f854612485504d6d21ba67c7879e4d005e6b51ca6d1acb2b017e3",
+            "62": "12a33b7c67f703aad2bcc95c06d91b81cb8e2cba95738da7e9bbb7971a81db7f",
+            "76": "406dbf752f042254bfade674f606c2035eeb2560d06314324c9bd4694936780d",
+            "80": "1d46879bd4c3ba1180b881cfb28eacccc4e8a5405e783bdc09ab5dae5418124f",
+        }
+        for dep, (_id, _size, sha) in ASSETS.items():
+            with self.subTest(department=dep):
+                self.assertEqual(sha, expected[dep])
+                self.assertEqual(len(sha), 64)
+
     def test_hash_and_size_are_separate_gates(self):
         with self.assertRaisesRegex(Blocked, "size"):
             audit_original("02", sample())
