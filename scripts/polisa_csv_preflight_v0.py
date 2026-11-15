@@ -43,6 +43,18 @@ COLUMNS = tuple((
 ).split(","))
 NUMERIC = tuple(c for c in COLUMNS if c.endswith(("_eur_m", "_pct")))
 LEI = re.compile(r"^[A-Z0-9]{18}[0-9]{2}$")
+# Market flags prioritize a future per-source legal review; these are NOT blanket
+# country licences or proof that any given row came from a restricted source.
+# Evidence: https://polisapro.com/data/README.txt and /terms (2026-11-15).
+PRIORITY_RIGHTS_MARKETS = {
+    "Estonia": "upstream_statistics_estonia_cc_by_sa_review",
+    "Serbia": "nbs_noncommercial_commercial_consent_review",
+    "Hungary": "mabisz_mixed_original_source_review",
+    "Slovenia": "szz_mixed_original_source_review",
+    "Bosnia and Herzegovina": "azobih_anofbih_azors_mixed_review",
+    "North Macedonia": "mse_and_other_original_source_review",
+}
+
 
 
 class Blocked(ValueError):
@@ -100,6 +112,8 @@ def inspect(raw: bytes, *, expected_rows: int = EXPECTED_ROWS,
         raise Blocked("frozen 42-column schema/order drift")
     keys: set[tuple[str, str, str]] = set()
     markets: Counter[str] = Counter()
+    source_urls: set[str] = set()
+    leis_present = 0
     missing_property = 0
     for line, fields in enumerate(reader, 2):
         if len(fields) != len(COLUMNS):
@@ -120,8 +134,11 @@ def inspect(raw: bytes, *, expected_rows: int = EXPECTED_ROWS,
             raise Blocked(f"row {line}: mixed/stale data version")
         if not _source_ok(row["source"]):
             raise Blocked(f"row {line}: missing/unsafe upstream source")
-        if row["lei"] and not valid_lei(row["lei"]):
-            raise Blocked(f"row {line}: invalid LEI shape or check digits")
+        source_urls.add(row["source"])
+        if row["lei"]:
+            if not valid_lei(row["lei"]):
+                raise Blocked(f"row {line}: invalid LEI shape or check digits")
+            leis_present += 1
         for col in NUMERIC:
             cell = row[col]
             if cell == "":
@@ -150,6 +167,16 @@ def inspect(raw: bytes, *, expected_rows: int = EXPECTED_ROWS,
         "row_count": len(keys),
         "market_count": len(markets),
         "missing_property_premium_cells_not_zeros": missing_property,
+        "lei_present_rows": leis_present,
+        "lei_missing_rows": len(keys) - leis_present,
+        "gleif_original_identity_crosswalk_completed": False,
+        "distinct_upstream_source_links": len(source_urls),
+        "rows_requiring_original_source_rights_review": len(keys),
+        "priority_rights_review_rows_by_market": {
+            market: markets[market] for market in sorted(PRIORITY_RIGHTS_MARKETS)
+            if markets[market] > 0
+        },
+        "priority_rights_market_flags_are_not_row_licences": True,
         "provider_original_bytes_authenticated": False,
         "row_level_upstream_rights_reviewed": False,
         "commercial_reuse_approved": False,
