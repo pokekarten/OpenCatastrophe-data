@@ -201,7 +201,7 @@ def _verify_original_tiff_header(header: bytes, declared_bytes: int) -> None:
         first_ifd = int.from_bytes(header[4:8], order)
         minimum = 8
     elif version == 43:
-        if int.from_bytes(header[4:6], order) != 8 or header[6:8] != b"\\x00\\x00":
+        if int.from_bytes(header[4:6], order) != 8 or header[6:8] != b"\x00\x00":
             raise SourceGateError("unsupported BigTIFF header layout")
         first_ifd = int.from_bytes(header[8:16], order)
         minimum = 16
@@ -225,7 +225,7 @@ def verify_ghsl_zip(raw_zip: bytes, expected_sha256: str) -> dict:
             if len(set(names)) != len(names):
                 raise SourceGateError("duplicate GHSL ZIP member names")
             if any(
-                not name or name.startswith("/") or "\\\\" in name
+                not name or name.startswith("/") or "\\" in name
                 or any(part in ("", ".", "..") for part in name.split("/") if part)
                 or name.split("/")[0] in (".", "..")
                 for name in names
