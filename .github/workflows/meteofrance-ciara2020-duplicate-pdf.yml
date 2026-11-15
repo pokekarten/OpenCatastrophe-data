@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Ciara original French duplicate station PDF byte comparison
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/meteofrance_ciara2020_duplicate_pdf_v0.py'
+      - 'tests/test_meteofrance_ciara2020_duplicate_pdf_v0.py'
+      - '.github/workflows/meteofrance-ciara2020-duplicate-pdf.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-comparison:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'research/20261115-ciara-pdf-duplicate-comparison'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Synthetic negative and positive byte comparison tests
+        run: python -m unittest tests.test_meteofrance_ciara2020_duplicate_pdf_v0 -v
+      - name: Check one original hourly archive and all exact duplicate official PDFs
+        run: python -m research_runners.meteofrance_ciara2020_duplicate_pdf_v0 --live
