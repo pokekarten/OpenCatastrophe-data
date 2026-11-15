@@ -30,6 +30,28 @@ class GDWInvalidAreaSensitivityTests(unittest.TestCase):
         self.assertLess(a["buffer_zero_area_km2"], a["linework_area_km2"])
         self.assertGreater(a["area_abs_delta_km2"], 0)
         self.assertLess(a["overlap_km2"], a["union_km2"])
+        self.assertGreater(a["footprint_symmetric_difference_km2"], 0)
+        self.assertGreater(a["footprint_change_fraction_of_union"], 0)
+        self.assertLessEqual(a["footprint_change_fraction_of_union"], 1)
+
+    def test_equal_area_can_hide_material_spatial_disagreement(self):
+        # Synthetic geometry-comparison receipt: identical alternative areas,
+        # zero area difference, but ZERO spatial overlap. Never call this safe.
+        first = s.examine_invalid(self.bowtie, Point(0.4, 1.4), self.geod)
+        case = dict(first)
+        case.update({
+            "linework_area_km2": 10.0, "buffer_zero_area_km2": 10.0,
+            "area_abs_delta_km2": 0.0, "overlap_km2": 0.0,
+            "union_km2": 20.0, "footprint_symmetric_difference_km2": 20.0,
+            "footprint_change_fraction_of_union": 1.0,
+        })
+        receipt = s.summarize([case], expected=1)
+        self.assertEqual(receipt["material_area_difference_over_1pct_count"], 0)
+        self.assertEqual(receipt["material_footprint_disagreement_over_1pct_count"], 1)
+        self.assertEqual(receipt["equal_area_but_material_footprint_disagreement_count"], 1)
+        self.assertEqual(receipt["area_weighted_jaccard_of_alternatives"], 0.0)
+        self.assertEqual(receipt["footprint_symmetric_difference_km2_sum"], 20.0)
+        self.assertFalse(receipt["CAT_model_input_approved"])
 
     def test_never_treat_valid_or_empty_as_original_invalid(self):
         with self.assertRaises(s.GDWSensitivityError):
@@ -59,6 +81,9 @@ class GDWInvalidAreaSensitivityTests(unittest.TestCase):
         self.assertFalse(r["independent_gis_engine_checked"])
         self.assertTrue(r["method_difference_is_not_a_ground_truth_error"])
         self.assertEqual(r["original_invalid_polygon_count"], 2)
+        self.assertIn("material_footprint_disagreement_over_1pct_count", r)
+        self.assertIn("equal_area_but_material_footprint_disagreement_count", r)
+        self.assertFalse(r["CAT_model_input_approved"])
         self.assertNotIn("gdw_id", r)
 
     def test_wrong_or_absent_original_archive_is_rejected(self):
