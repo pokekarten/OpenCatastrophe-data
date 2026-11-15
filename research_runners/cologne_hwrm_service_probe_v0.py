@@ -24,6 +24,14 @@ CAPABILITIES_URL = (
 )
 MAX_RESPONSE_BYTES = 4_000_000
 MAX_REPORTED_LAYERS = 10
+# SHA-256 of the original NRW WMS *Service/AccessConstraints text* from
+# provider GetCapabilities on 2026-11-14, reconfirmed 2026-11-15.
+# This is a metadata/rights drift guard, never a dataset asset hash.
+REVIEWED_WMS_SERVICE_TERMS_SHA256 = (
+    "2b280a54d318695d430248562d1fbc0d074349dd27df444d3e72633e2f978c03"
+)
+REVIEWED_WMS_VERSION = "1.3.0"
+
 
 
 class SourceProbeError(ValueError):
@@ -95,6 +103,32 @@ def parse_wms_capabilities(payload: bytes) -> dict[str, object]:
     }
 
 
+def verify_reviewed_service_metadata(receipt: dict[str, object]) -> dict[str, object]:
+    """Fail closed when the exact source service/rights identity drifts.
+
+    The full XML body is mutable, so only the original Service-level terms
+    are pinned. This does NOT grant rights to separately licensed raster ZIPs,
+    data acquisition, persistence, attribution-free reuse or model admission.
+    """
+    if receipt.get("wms_version") != REVIEWED_WMS_VERSION:
+        raise SourceProbeError("reviewed WMS service version has changed")
+    if receipt.get("service_access_constraints_sha256") != REVIEWED_WMS_SERVICE_TERMS_SHA256:
+        raise SourceProbeError("reviewed original WMS licence/terms have changed")
+    if receipt.get("service_mentions_attribution") is not True:
+        raise SourceProbeError("reviewed WMS attribution condition disappeared")
+    if not isinstance(receipt.get("named_layer_count"), int) or receipt["named_layer_count"] < 1:
+        raise SourceProbeError("reviewed WMS has no named layers")
+    return {
+        **receipt,
+        "reviewed_service_terms_match": True,
+        "wms_service_licence": "dl-de/by-2-0",
+        "required_attribution": "Land NRW",
+        # Technical metadata identity does not imply an admitted raster asset.
+        "rights_reviewed": False,
+        "model_admitted": False,
+    }
+
+
 def probe_live() -> dict[str, object]:
     """Single exact-host HTTPS GET with redirect/size/content-type hard gates."""
     request = Request(
@@ -116,7 +150,7 @@ def probe_live() -> dict[str, object]:
             payload = response.read(MAX_RESPONSE_BYTES + 1)
     except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
         raise SourceProbeError("network/status/size gate failed") from exc
-    result = parse_wms_capabilities(payload)
+    result = verify_reviewed_service_metadata(parse_wms_capabilities(payload))
     result["verified_live"] = True
     result["operation"] = "WMS GetCapabilities"
     result["source_id"] = "de.nrw.lanuk.hwrm-hqhaeufig-flood.2026"
