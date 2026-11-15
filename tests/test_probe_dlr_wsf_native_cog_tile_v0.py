@@ -3,6 +3,9 @@
 """Offline fail-closed tests; original DLR TIFF bytes are never fixture-committed."""
 import hashlib
 import unittest
+from pathlib import Path
+
+from scripts.validate_source_access import validate_path
 
 from scripts.probe_dlr_wsf_native_cog_tile_v0 import (
     HEADER_SIZE, HEADER_SHA256, LZW_CLEAR, LZW_EOI, NATIVE_TILE_BYTES,
@@ -30,6 +33,34 @@ class DLRNativeCogTests(unittest.TestCase):
         for start, size in ((100, 200), (0, 100), (NATIVE_TILE_OFFSET, 262144)):
             with self.assertRaises(NativeCOGBlocked):
                 _fetch_range(start, size)
+
+    def test_wsf2019_canonical_original_access_contract_is_document_only(self):
+        path = Path(__file__).resolve().parents[1] / "access" / "dlr.wsf.2019.native-geotiff.json"
+        contract = validate_path(path)
+        self.assertEqual(contract["source_ids"], [SOURCE])
+        self.assertEqual(contract["interface_type"], "http_file")
+        self.assertEqual(contract["status"], "documented_only")
+        self.assertEqual(contract["service_root"] + contract["request_contract"]["path_templates"][0], URL)
+        self.assertEqual(contract["authentication"]["mode"], "none")
+        self.assertEqual(contract["probe_contract"], {
+            "mode": "none", "operation": None,
+            "requires_credentials": False, "expected_evidence": [],
+        })
+        self.assertEqual(contract["rights_and_policy"]["dataset_rights_status"], "verified")
+        self.assertEqual(contract["rights_and_policy"]["api_terms_status"], "unknown")
+        self.assertEqual(contract["rights_and_policy"]["commercial_automation_status"], "unknown")
+        self.assertEqual(contract["implementation_decision"], "document_only")
+        self.assertEqual(contract["operational_constraints"]["max_probe_bytes"], HEADER_SIZE)
+        self.assertEqual(contract["operational_constraints"]["max_sample_bytes"],
+                         HEADER_SIZE + NATIVE_TILE_BYTES)
+        self.assertIn(f"bytes={NATIVE_TILE_OFFSET}-{NATIVE_TILE_OFFSET + NATIVE_TILE_BYTES - 1}",
+                      contract["request_contract"]["parameter_rules"])
+        self.assertIn(HEADER_SHA256, contract["operational_constraints"]["mutability_notes"])
+        self.assertIn(NATIVE_TILE_SHA256, contract["operational_constraints"]["mutability_notes"])
+        self.assertIn("NOT the full GeoTIFF SHA-256",
+                      contract["operational_constraints"]["mutability_notes"])
+        self.assertIn("not individual buildings",
+                      contract["response_contract"]["scientific_semantics"])
 
     def test_tiff_lzw_msb_code_decoding_early_clear_and_eoi(self):
         compressed = pack_codes_9([LZW_CLEAR, 0, 255, LZW_EOI])
