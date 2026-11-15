@@ -188,6 +188,7 @@ class FixedSourceProbesTests(unittest.TestCase):
             changed("Kp", 0, -0.1),
             changed("Kp", 0, 9.1),
             changed("Kp", 0, float("inf")),
+            changed("Kp", 0, 10 ** 400),  # JSON-parsed huge finite integer must fail closed
             changed("datetime", 0, "2024-01-02T00:00:00Z"),
             changed("datetime", 1, "2024-01-01T00:00:00Z"),
             changed("status", 0, "now"),
@@ -303,7 +304,10 @@ class FixedSourceProbesTests(unittest.TestCase):
             "features": [{
                 "type": "Feature", "id": "synthetic-not-real",
                 "geometry": {"type": "Point", "coordinates": [12.5, 45.0, 11.0]},
-                "properties": {"source_id": "synthetic-source", "mag": 5.2},
+                "properties": {
+                    "source_id": "synthetic-source", "mag": 5.2,
+                    "time": "2026-11-14T21:30:19.0Z", "unid": "synthetic-not-real",
+                },
             }],
         }
         payload = json.dumps(event).encode("utf-8")
