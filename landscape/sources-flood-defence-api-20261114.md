@@ -13,10 +13,10 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 > This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
 
 **Schema version:** `1.0.0`  
-**Review date:** `2026-11-14`  
+**Review date:** `2026-11-15`  
 **Purpose:** Non-admission discovery and source-specific bounded access preflight for public England Environment Agency and USACE flood-defence inventories, with no CAT-model approval or external data redistribution.
 
-**Entries:** 3
+**Entries:** 4
 
 ## Environment Agency AIMS spatial flood defences (standardised attributes)
 
@@ -62,3 +62,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** USACE explicitly states that public NLD data may be downloaded/shared/used, but public GIS records and non-public detailed NLD records differ; independently review each API service's conditions and source provenance before publication or commercial modelling. Original https://geospatial.sec.usace.army.mil/dls/rest/services/NLD/Public/FeatureServer/12 responds with public floodwalls schema (OBJECTID, FLOODWALL_ID, WALL_HEIGHT_FEET, SYSTEM_ID). On 2026-11-14 intermediary one-record no-geometry JSON was returned, EPSG:4269. No trusted original runner receipt or source-file hash. Do not assume height is certified protection, complete national coverage, hydraulic connectivity, or actual failure probability. No geometry, TIV or raw payload admitted.
+
+## USACE National Levee Database public embankment GIS layer
+
+**Candidate ID:** `us.usace.nld.public-embankments.2026`  
+**Provider:** U.S. Army Corps of Engineers, National Levee Database  
+**Categories:** `flood`, `flood_defence`, `levees`, `embankments`, `infrastructure`, `united_states`, `geo_api`  
+**Spatial scope:** United States and available territories; only levee systems represented in public NLD submissions, with variable completeness and update dates  
+**Temporal scope:** Continuously updated public NLD service; individual SURVEY_DATE and system update vintage vary; no immutable 2026 file snapshot verified  
+**Resolution / granularity:** USACE NLD/Public ArcGIS FeatureServer layer 11 Embankments; polyline hasZ=true, horizontal NAD83 EPSG:4269, vertical NAVD88, with EMBANK_ID/SEGMENT_ID/SYSTEM_ID, PRIMARY_MATERIAL and SURVEY_DATE fields; original feature data unexamined  
+**Potential roles:** `levee_embankment_source_schema_preflight`, `flood_defence_material_and_vintage_context`, `levee_system_geometry_join_challenge`, `flood_hazard_protection_sensitivity`  
+**Access hint:** `public_usace_arcgis_layer11_metadata_examined_original_feature_bytes_rights_and_scientific_admission_pending`  
+**Authoritative source:** <https://geospatial.sec.usace.army.mil/dls/rest/services/NLD/Public/FeatureServer/11>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official NLD layer 11 metadata was inspected 2026-11-15. It identifies an independent Embankments polyline feature layer, NOT the previously registered Floodwalls layer 12, and includes Z-enabled geometry and survey/material identifiers; no original feature, line or response-byte digest was obtained. Critical vertical-unit discrepancy: layer heightModelInfo labels NAVD88_height_(ftUS) with us-foot, while current official NLD data dictionary says reference units recently moved to international feet. Resolve the exact data-version/unit/vertical datum per geometry and check Z missingness before any height comparison or flood-depth overlay; hasZ=true is not proof of populated or validated crest elevation. USACE notes that public NLD is not a complete inventory and records from partner submitters have uneven quality. Public download/share language is not a completed commercial service-terms, derived-redistribution or source-specific scientific review. Do not infer breach probability, defended footprint, reduced depths, insurer TIV or model approval.
