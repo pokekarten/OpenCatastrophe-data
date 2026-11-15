@@ -66,6 +66,16 @@ class DARTScreenTests(unittest.TestCase):
             ):
                 self.run_screen(bad)
 
+    def test_inclusive_seven_calendar_day_ceiling(self):
+        # Both request endpoints are inclusive: 18..24 Jan is exactly 7 dates.
+        seven = GOOD.replace("end 2004-01-22", "end 2004-01-24")
+        report = self.run_screen(seven, end="2004-01-24")
+        self.assertEqual(report["requested_end_utc_date"], "2004-01-24")
+        # 18..25 Jan spans eight calendar dates, even though date difference=7.
+        eight = GOOD.replace("end 2004-01-22", "end 2004-01-25")
+        with self.assertRaisesRegex(DARTPreflightError, "seven days"):
+            self.run_screen(eight, end="2004-01-25")
+
     def test_request_identity_must_match_body(self):
         for args in ({"station": "43412"}, {"start": "2004-01-19"},
                      {"end": "2004-01-21"}):
