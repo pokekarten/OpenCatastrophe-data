@@ -11,7 +11,7 @@ from unittest.mock import patch
 from research_runners import meteofrance_four_north_original_v0 as fr
 from research_runners.meteofrance_ciara2020_station_pdf_proof_v0 import (
     Blocked, complete_quality_station_ids, resolve_station_sheets,
-    station_pdf_proof, verify_pdf_bytes,
+    station_pdf_proof, verify_pdf_bytes, COMP_PREFIX,
 )
 
 HEADER = "NUM_POSTE;AAAAMMJJHH;FF;FXI;FXI3S;QFXI3S;STATUS_FXI3S;LAT\n"
@@ -61,7 +61,7 @@ class TestStationPdfProvenance(unittest.TestCase):
         with self.assertRaisesRegex(Blocked, "ambiguous"):
             resolve_station_sheets(station_catalogue(duplicate=True),
                                    {"62001001"}, "62", min_resources=1)
-        with self.assertRaisesRegex(Blocked, "missing"):
+        with self.assertRaisesRegex(Blocked, "no exact"):
             resolve_station_sheets(station_catalogue(),
                                    {"62001002"}, "62", min_resources=1)
 
@@ -84,6 +84,44 @@ class TestStationPdfProvenance(unittest.TestCase):
         self.assertEqual(receipt["eligible_station_pdf_unmatched_exact_title_count"], 0)
         self.assertTrue(receipt["eligible_station_pdf_exact_match_complete"])
         self.assertFalse(receipt["station_site_and_instrument_history_verified_for_2020"])
+
+    def test_complementary_publisher_assets_require_exact_id_and_path(self):
+        alt = ("https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/"
+               "BASE/INFOS_POSTES_COMP/62/62001001_62_TEST-VILLE.pdf")
+        matches, digest = resolve_station_sheets(
+            station_catalogue(url=alt), {"62001001"}, "62",
+            min_resources=1, prefix=COMP_PREFIX
+        )
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(len(digest), 64)
+        with self.assertRaises(Blocked):
+            resolve_station_sheets(station_catalogue(), {"62001001"}, "62",
+                                   min_resources=1, prefix=COMP_PREFIX)
+
+    def test_missing_primary_can_only_match_exact_complementary_station(self):
+        source = archive()
+        assets = {"62": (fr.ASSETS["62"][0], len(source), None)}
+        primary = json.dumps({"resources": [
+            {"title":"Departement_62_station_62001002_commune_OTHER",
+             "id":"aaaaaaaa-bbbb-cccc-dddd-000000000002",
+             "url":"https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/"
+                   "BASE/INFOS_POSTES/62/62001002_62_OTHER.pdf",
+             "filesize":2048}
+        ]}).encode()
+        alt = ("https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/"
+               "BASE/INFOS_POSTES_COMP/62/62001001_62_TEST-VILLE.pdf")
+        with patch.object(fr,"ASSETS",assets):
+            result = station_pdf_proof(
+                "62", source, primary,
+                supplemental_catalogue=station_catalogue(url=alt),
+                download_pdf=lambda *_: synthetic_pdf(),
+                min_resources=1, min_supplemental_resources=1
+            )
+        self.assertEqual(result["official_station_pdf_primary_count"],0)
+        self.assertEqual(result["official_station_pdf_complementary_count"],1)
+        self.assertEqual(result["eligible_station_pdf_unmatched_exact_title_count"],0)
+        self.assertFalse(result["station_site_and_instrument_history_verified_for_2020"])
+        self.assertNotIn("62001001",json.dumps(result))
 
     def test_wrong_host_and_station_path_block(self):
         bad = "https://unapproved.example/62/62001001.pdf"

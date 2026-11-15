@@ -26,7 +26,9 @@ from research_runners import meteofrance_four_north_original_v0 as fr
 from research_runners.meteofrance_ciara2020_four_original_window_v0 import event_envelope
 
 CATALOGUE_URL_STATIONS = "https://www.data.gouv.fr/api/1/datasets/fiches-dinformations-sur-les-stations/"
+CATALOGUE_URL_COMPLEMENTARY = "https://www.data.gouv.fr/api/1/datasets/fiches-dinformations-sur-les-stations-complementaires/"
 PDF_PREFIX = "https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/INFOS_POSTES/"
+COMP_PREFIX = "https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/INFOS_POSTES_COMP/"
 CATALOGUE_LIMIT = 40 * 1024 * 1024
 MAX_RESOURCES = 25_000
 MAX_PDF_BYTES = 5 * 1024 * 1024
@@ -59,7 +61,7 @@ def complete_quality_station_ids(original: bytes) -> set[str]:
     return {station for station, stamps in hours.items() if len(stamps) == REQUIRED_HOURS}
 
 
-def _station_resource(raw: object, station: str, department: str) -> dict:
+def _station_resource(raw: object, station: str, department: str, *, prefix: str = PDF_PREFIX) -> dict:
     if not isinstance(raw, dict):
         raise Blocked("station catalogue resource malformed")
     uid = raw.get("id")
@@ -75,10 +77,10 @@ def _station_resource(raw: object, station: str, department: str) -> dict:
         raise Blocked("station PDF catalogue title/source identity differs")
     if type(size) is not int or not 1024 <= size <= MAX_PDF_BYTES:
         raise Blocked("station PDF original byte count unavailable or exceeds bound")
-    if not isinstance(url, str) or not url.startswith(PDF_PREFIX):
+    if prefix not in (PDF_PREFIX, COMP_PREFIX) or not isinstance(url, str) or not url.startswith(prefix):
         raise Blocked("station PDF original publisher URL not approved")
     parts = urlsplit(url)
-    expected_path = PDF_PREFIX + department + "/" + station + "_" + department + "_"
+    expected_path = prefix + department + "/" + station + "_" + department + "_"
     if (parts.scheme != "https" or parts.hostname != "meteofrance.s3.sbg.io.cloud.ovh.net"
             or parts.username or parts.password or parts.port or parts.query or parts.fragment
             or not url.startswith(expected_path) or not url.lower().endswith(".pdf")
@@ -89,7 +91,8 @@ def _station_resource(raw: object, station: str, department: str) -> dict:
 
 def resolve_station_sheets(catalogue: bytes, selected: set[str], dep: str,
                            *, min_resources: int = 10_000,
-                           allow_unmatched: bool = False):
+                           allow_unmatched: bool = False,
+                           prefix: str = PDF_PREFIX):
     if dep not in ALLOWED_DEPARTMENTS or any(
         not re.fullmatch(r"\d{8}", x) or not x.startswith(dep) for x in selected
     ):
@@ -128,7 +131,7 @@ def resolve_station_sheets(catalogue: bytes, selected: set[str], dep: str,
             continue
         if len(candidates) != 1:
             raise Blocked("ambiguous multiple PDF metadata identities for station")
-        selected_out[station] = _station_resource(candidates[0], station, dep)
+        selected_out[station] = _station_resource(candidates[0], station, dep, prefix=prefix)
     if len({x["resource_id"] for x in selected_out.values()}) != len(selected_out):
         raise Blocked("station resource UUID reused for distinct original stations")
     if allow_unmatched:
@@ -145,7 +148,9 @@ def verify_pdf_bytes(body: bytes, record: dict) -> str:
 
 
 def station_pdf_proof(dep: str, original: bytes, catalogue: bytes,
-                      *, download_pdf=_read_url, min_resources: int = 10_000) -> dict:
+                      *, supplemental_catalogue: bytes | None = None,
+                      download_pdf=_read_url, min_resources: int = 10_000,
+                      min_supplemental_resources: int = 500) -> dict:
     if dep not in ALLOWED_DEPARTMENTS:
         raise Blocked("department not in approved observed-station cohort")
     event = event_envelope(dep, original)
@@ -156,6 +161,22 @@ def station_pdf_proof(dep: str, original: bytes, catalogue: bytes,
         catalogue, selected, dep, min_resources=min_resources,
         allow_unmatched=True,
     )
+    regular_count = len(matched)
+    supplemental_sha = None
+    supplemental_count = 0
+    if unmatched and supplemental_catalogue is not None:
+        # Distinct authoritative partner-station dataset. Use only exact
+        # station identities absent from the primary publisher catalogue.
+        remaining = selected.difference(matched)
+        extra, supplemental_sha, unmatched = resolve_station_sheets(
+            supplemental_catalogue, remaining, dep,
+            min_resources=min_supplemental_resources,
+            allow_unmatched=True, prefix=COMP_PREFIX,
+        )
+        if set(extra).intersection(matched):
+            raise Blocked("station sheet cohort overlaps primary and complementary")
+        matched.update(extra)
+        supplemental_count = len(extra)
     hashes = []
     pdf_bytes = 0
     for station in sorted(matched):
@@ -177,6 +198,9 @@ def station_pdf_proof(dep: str, original: bytes, catalogue: bytes,
         "hourly_source_72h_qualified_station_count": len(selected),
         "official_station_catalogue_sha256": metadata_sha,
         "official_station_catalogue_pdf_resource_count": len(matched),
+        "official_station_pdf_primary_count": regular_count,
+        "official_station_pdf_complementary_count": supplemental_count,
+        "complementary_station_catalogue_sha256": supplemental_sha,
         "eligible_station_pdf_unmatched_exact_title_count": unmatched,
         "eligible_station_pdf_exact_match_complete": unmatched == 0,
         "pdf_original_bytes_verified": pdf_bytes,
@@ -202,7 +226,11 @@ def main(argv: list[str] | None = None) -> int:
         fr.check_identity(official, args.department)
         original = _read_url(fr.asset_url(args.department), fr.MAX_COMPRESSED)
         station_catalogue = _read_url(CATALOGUE_URL_STATIONS, CATALOGUE_LIMIT)
-        proof = station_pdf_proof(args.department, original, station_catalogue)
+        supplemental_catalogue = _read_url(CATALOGUE_URL_COMPLEMENTARY, CATALOGUE_LIMIT)
+        proof = station_pdf_proof(
+            args.department, original, station_catalogue,
+            supplemental_catalogue=supplemental_catalogue,
+        )
         print(json.dumps(proof, sort_keys=True, indent=2))
         return 0
     except Blocked as exc:
