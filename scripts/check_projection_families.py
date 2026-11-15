@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -47,6 +48,18 @@ class ProjectionFamily:
         raise RuntimeError(f"unknown projection-family implementation: {self.name}")
 
 
+# Explicitly scoped non-canonical research snapshots already on main.
+# These are NOT generated source projections; unknown research JSON stays rejected.
+RESEARCH_ONLY_STANDALONE_JSON_SCHEMAS = {
+    PurePosixPath("research/observations/knmi_historical_downloads.json"):
+        "KNMI_HISTORICAL_ACQUISITION_V1",
+    PurePosixPath("research/observations/knmi_wind_metadata_review.json"):
+        "KNMI_WIND_METADATA_REVIEW_V1",
+    PurePosixPath("research/source_screening/windstorm_whole_chain.json"):
+        "WINDSTORM_WHOLE_CHAIN_SCREEN_V1",
+}
+
+
 FAMILIES = (
     ProjectionFamily("access", ("scripts/render_public_views.py", "--check")),
     ProjectionFamily("manifests", ("scripts/render_public_views.py", "--check")),
@@ -78,6 +91,19 @@ def check_inventory(root: Path = ROOT) -> tuple[list[str], int]:
 
     for path in json_files:
         relative = PurePosixPath(path.relative_to(root).as_posix())
+        required_research_schema = RESEARCH_ONLY_STANDALONE_JSON_SCHEMAS.get(relative)
+        if required_research_schema is not None:
+            try:
+                research_record = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeError, json.JSONDecodeError):
+                errors.append(f"invalid standalone research JSON: {relative}")
+                continue
+            if (
+                not isinstance(research_record, dict)
+                or research_record.get("schema") != required_research_schema
+            ):
+                errors.append(f"standalone research JSON schema mismatch: {relative}")
+            continue
         matches = [family for family in FAMILIES if family.matches(relative)]
         if len(matches) != 1:
             if not matches:
