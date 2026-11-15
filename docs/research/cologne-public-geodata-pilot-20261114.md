@@ -305,6 +305,62 @@ and asset admission stay **not reviewed / not admitted**.
 These receipts are ephemeral observations at the date above, not frozen
 complete provider files and not an approved warehouse import.
 
+## 2026-11-15 follow-up — NRW original WMS rights-drift gate
+
+The official NRW WMS `GetCapabilities` response was independently
+re-examined as **original HTTPS response bytes**, not through a transformed
+search snippet. The service still returned HTTP 200 at the exact official
+`https://www.wms.nrw.de/umwelt/wasser/HW_Gefahrenkarte?REQUEST=GetCapabilities&SERVICE=WMS`
+URL, with `text/xml`, **112,777 bytes**, WMS **1.3.0**, service name
+`WMS`, both GetCapabilities and GetMap operations, and **19 named layers**.
+
+- Full original GetCapabilities body SHA-256:
+  `b5d72228b7c3c926c9765e79be3ee516237fa2a31054578e57e4ea2cbb4e095e`.
+- Original WMS `Service/AccessConstraints` string SHA-256:
+  `2b280a54d318695d430248562d1fbc0d074349dd27df444d3e72633e2f978c03`.
+- The service terms still state **Datenlizenz Deutschland –
+  Namensnennung 2.0**, with attribution to **Land NRW**. The independent
+  licence text is at `https://www.govdata.de/dl-de/by-2-0`.
+  These rights apply to this WMS service; the archive download distribution
+  independently advertises **DL-DE Zero 2.0** and must be reviewed
+  by exact asset/version before any raster ingest.
+
+The new canonical source-access contract
+`access/de.nrw.lanuk.hwrm-hw-gefahrenkarte.wms.2026.json` (and its
+deterministic generated Markdown view) registers only a **single
+metadata-only, read-only, manually opted-in GetCapabilities operation**.
+The contract records the immutable-reviewed service-rights text hash,
+technical limits, authoritative attribution and independent dataset
+archive licensing. The *full* WMS XML byte hash is only a specific live
+observation, **not a pinned numerical hazard product release**.
+
+The corresponding research runner
+`research_runners/cologne_hwrm_service_probe_v0.py` now blocks its
+`verified_live` receipt if WMS service version, service rights hash
+or attribution signal deviate from this reviewed original metadata.
+A successful service call is therefore no longer treated as
+unconditionally unchanged legal/technical access. Deterministic
+offline synthetic tests additionally pin the exact licence digest,
+service route, status, scope and no-admission invariants:
+
+```bash
+python -m unittest tests.test_cologne_hwrm_service_probe_v0
+python -m unittest tests.test_cologne_hwrm_access_contract_v0
+# One real external call, manual and opt-in only:
+python research_runners/cologne_hwrm_service_probe_v0.py --live
+```
+
+The access contract's `verified_anonymous` status applies only to
+technical, narrowly reviewed public **metadata** connectivity. It does
+not change the NRW candidate `rights_review_status=not_reviewed`,
+`scientific_review_status=not_reviewed` or
+`admission_status=not_admitted`: no model input, numerical raster,
+production NeonDB import, GetMap tile extraction or public vendor XML
+bytes are approved. The next causal step is exact per-archive original
+raster identity and geospatial metadata verification outside Git,
+followed by a source/rights/science admission, *not* a model run on
+unchecked service screenshots.
+
 ## Boundaries for model consumers
 
 - Cologne statistics GeoPackage: confirm **exact ZIP/WFS distribution URLs**,
