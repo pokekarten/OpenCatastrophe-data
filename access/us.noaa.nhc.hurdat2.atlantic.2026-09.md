@@ -87,17 +87,17 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ## Rights and policy
 
-**Dataset rights status:** unknown
+**Dataset rights status:** verified
 
 **Api terms status:** unknown
 
-**Terms url:** `null`
+**Terms url:** <https://www.nhc.noaa.gov/mobile/disclaimer.html>
 
 **Commercial automation status:** unknown
 
-**Redistribution status:** unknown
+**Redistribution status:** allowed
 
-**Notes:** NOAA/NWS government-server disclaimer describes public-domain content unless otherwise annotated and prohibits presenting modified material as official. However this has not yet resolved exact HURDAT2 asset-specific third-party rights, allowed automatic retrieval rate/terms, repository redistribution or independent CAT scientific admission; keep dataset/API/commercial-automation/redistribution verdicts unknown and execution disabled.
+**Notes:** T0 dataset-rights review 2026-11-15, exact NOAA/NHC Atlantic HURDAT2 archived product hurdat2-1851-2025-092326.txt (not a separate Hurricane Research Division aircraft/research dataset): official NHC/NWS disclaimer states that public government-server material is in the public domain unless expressly annotated otherwise; no contrary annotation was identified on the NHC HURDAT2 product/listing. It permits lawful downstream internal/commercial data reuse and redistribution of the NOAA product subject to no false government endorsement, authorship or altered-official representation, and preservation of scholarly attribution and exact release. This source-rights ceiling DOES NOT authorize web scraping, rate-limited service automation, file HEAD/GET, raw-file publication through this repository, scientific/CAT use or model admission. Separate automatic access/service policy and original-byte identity remain unverified; commercial_automation_status stays unknown, status documented_only, probe none. If third-party or version-specific markings appear in the selected original bytes, revisit this provisional scope and fail closed before downstream use.
 
 ## Probe contract
 
@@ -113,7 +113,7 @@ _Empty array._
 
 **Implementation decision:** document_only
 
-**Reviewed at:** 2026-11-14
+**Reviewed at:** 2026-11-15
 
 ## Evidence urls
 
@@ -121,5 +121,7 @@ _Empty array._
 - <https://www.nhc.noaa.gov/data/hurdat/>
 - <https://www.nhc.noaa.gov/data/hurdat/hurdat2-1851-2025-092326.txt>
 - <https://www.nhc.noaa.gov/mobile/disclaimer.html>
+- <https://www.weather.gov/disclaimer>
+- <https://www.nhc.noaa.gov/disclaimer.shtml>
 
-**Notes:** T0 official original-directory evidence: two separate September 2026 Atlantic file revisions were listed (091226 and 092326). This contract selects only 092326, published as HURDAT2 Atlantic 1851-2025, approx 6.7 MB in the provider index; its original bytes, exact SHA-256, historical row parsing and windfield independence are not acquired or verified. Provider data rights and automated service terms remain unknown. No network file download, Neon write or CAT model admission.
+**Notes:** T0 2026-11-15: NHC archive identifies two distinct 2026-09 revisions (091226 and 092326); selected exact original is hurdat2-1851-2025-092326.txt. NOAA/NHC government data-rights ceiling was reviewed against official public-domain disclaimers, while automated service permission, exact original bytes/hash and scientific admission remain unverified. No provider data GET/HEAD, sample, Neondb write or model admission performed.
