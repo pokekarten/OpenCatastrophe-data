@@ -101,6 +101,18 @@ class NSI2026ScientificScreenTests(unittest.TestCase):
         with self.assertRaises(NSI2026SampleBlocked):
             inspect_nsi_2026_geojson(b' ' * (MAX_BYTES + 1))
 
+    def test_extreme_json_integer_values_block_without_uncaught_overflow(self):
+        base = raw(feature())
+        large = b"9" * 650
+        huge = b"9" * 5000
+        for body in (
+            base.replace(b'"fullrep": 120.0', b'"fullrep": ' + large),
+            base.replace(b'"x": -80.0', b'"x": ' + large),
+            base.replace(b'"fd_id": 1', b'"fd_id": ' + huge),
+        ):
+            with self.subTest(length=len(body)), self.assertRaises(NSI2026SampleBlocked):
+                inspect_nsi_2026_geojson(body)
+
     def test_never_leaks_source_specific_fields(self):
         obj = feature()
         obj["properties"]["private_vendor_token"] = "synthetic-test-secret"
