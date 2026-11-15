@@ -42,6 +42,11 @@
 -- API smoke check in place of scientific invalidity/repair-impact assessment.
 -- This exception is fail-closed to exact frozen receipt fields, with no model
 -- input, archive persistence, licence or dissemination permission inferred.
+-- GHSL GHS-AGE R2025A: metadata sample #51 is only an original ZIP-range
+-- embedded class LEGEND, not any raster cell. When this exact observation
+-- is the only observed_values row, prioritize a rights-checked native
+-- pixel/transport proof, not native scientific validation. Fail back to
+-- normal queue logic if the exact sample identity/evidence changes.
 -- PostgreSQL + pgcrypto sha256(bytea); exact canonical JSONB digest is checked
 -- rather than copying or reading provider data outside the research database.
 WITH
@@ -50,6 +55,19 @@ sample_evidence AS (
         COUNT(*)::int AS sample_rows,
         COUNT(*) FILTER(WHERE sample_kind='public_metadata')::int AS metadata_samples,
         COUNT(*) FILTER(WHERE sample_kind='observed_values')::int AS native_or_observed_value_samples,
+        COUNT(*) FILTER (
+          WHERE source_id='ec-jrc.ghsl.ghs-age.r2025a'
+            AND sample_id=51
+            AND sample_kind='observed_values'
+            AND product_version='GHS_AGE_1980102020_GLOBE_R2025A_54009_1000_V1_0'
+            AND sample_json->>'sample_type'='original_provider_embedded_raster_class_legend'
+            AND sample_json->>'no_geo_raster_pixels_downloaded'='true'
+            AND sample_json->>'source_range_sha_scope'='ONLY source ZIP byte range, NOT complete ZIP archive'
+            AND sample_json->>'model_input_approved'='false'
+            AND research_only IS TRUE AND model_input_approved IS FALSE
+            AND source_byte_persistence_authorized IS FALSE
+            AND sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex')
+        )::int AS ghs_age_legend_only_observed_labels,
         COUNT(*) FILTER(WHERE sample_kind='geospatial_preview')::int AS preview_samples,
         COUNT(*) FILTER (
           WHERE sample_kind='geospatial_preview'
@@ -233,6 +251,8 @@ joined AS (
         COALESCE(s.metadata_samples,0)::int AS metadata_samples,
         COALESCE(s.native_or_observed_value_samples,0)::int
           AS native_or_observed_value_samples,
+        COALESCE(s.ghs_age_legend_only_observed_labels,0)::int
+          AS ghs_age_legend_only_observed_labels,
         COALESCE(s.preview_samples,0)::int AS preview_samples,
         COALESCE(s.native_pixel_receipts_classified_preview,0)::int
           AS native_pixel_receipts_classified_preview,
@@ -282,6 +302,11 @@ SELECT *,
   WHEN source_id='globaldamwatch.gdw.v1.0'
        AND gdw_crossformat_original_receipts=1
     THEN 'P2_quantify_GDW_native_invalid_polygon_consequences'
+  WHEN source_id='ec-jrc.ghsl.ghs-age.r2025a'
+       AND native_or_observed_value_samples=ghs_age_legend_only_observed_labels
+       AND ghs_age_legend_only_observed_labels=1
+       AND native_pixel_receipts_classified_preview=0
+    THEN 'P1_verify_GHS_AGE_original_raster_pixel_access_and_science'
   WHEN last_api_shape_status='inconclusive' AND recorded_direct_github_original_exact_urls=0
     THEN 'P1_retest_provider_with_trusted_runner'
   WHEN sample_rows=0 AND registry_commercial_verdict='allowed_verified'
@@ -313,6 +338,10 @@ ORDER BY
        AND scoped_api_automation_results LIKE '%unknown%' THEN 1
   WHEN source_id='globaldamwatch.gdw.v1.0'
        AND gdw_crossformat_original_receipts=1 THEN 2
+  WHEN source_id='ec-jrc.ghsl.ghs-age.r2025a'
+       AND native_or_observed_value_samples=ghs_age_legend_only_observed_labels
+       AND ghs_age_legend_only_observed_labels=1
+       AND native_pixel_receipts_classified_preview=0 THEN 1
   WHEN last_api_shape_status='inconclusive' AND recorded_direct_github_original_exact_urls=0 THEN 1
   WHEN sample_rows=0 AND registry_commercial_verdict='allowed_verified'
     THEN 1
