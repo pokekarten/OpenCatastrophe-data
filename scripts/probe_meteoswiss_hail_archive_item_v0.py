@@ -132,7 +132,9 @@ def probe(opener=None) -> dict:
                 raise ArchiveBlocked("compressed metadata response not reviewed")
             declared = response.headers.get("Content-Length")
             if declared is not None and (
-                not declared.isdecimal() or int(declared) < 1 or int(declared) > MAX_BYTES
+                type(declared) is not str or len(declared) > 10
+                or not declared.isascii() or not declared.isdecimal()
+                or not 1 <= int(declared) <= MAX_BYTES
             ):
                 raise ArchiveBlocked("oversized declared metadata body")
             raw = response.read(MAX_BYTES + 1)
