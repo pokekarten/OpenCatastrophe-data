@@ -82,6 +82,7 @@ class GFWEDFWIHeaderGateTests(unittest.TestCase):
         bad(lambda r: r["netcdf_header_inventory"]["variables"][-1].update(units="m/s"))
         bad(lambda r: r["netcdf_header_inventory"]["variables"][-1].update(dtype_label_unverified="object"))
         bad(lambda r: r["netcdf_header_inventory"]["variables"][-1].update(dimensions=["lat", "time", "height"]))
+        bad(lambda r: r["netcdf_header_inventory"]["variables"][-1].update(dimensions=["lat", ["invalid"]]))
         bad(lambda r: r["netcdf_header_inventory"]["variables"][-1].update(shape=[2, 3, 4]))
         bad(lambda r: r["netcdf_header_inventory"]["variables"][0].update(units="degrees_east"))
         bad(lambda r: r["netcdf_header_inventory"]["variables"][1].update(dtype_label_unverified="int32"))
