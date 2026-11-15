@@ -70,7 +70,7 @@ class CmrCollectionPreflightTests(unittest.TestCase):
 
     def test_no_arbitrary_url_or_redirect_or_http_error(self):
         for kw in ({"request_url": FIXED_REQUEST + "&page_size=9999"},
-                   {"request_url": "http://127.0.0.1/"},
+                   {"request_url": "https://example.invalid/non-provider-endpoint"},
                    {"redirect_count": 1}, {"status": 429}, {"status": True}):
             with self.subTest(kw=kw), self.assertRaises(CmrCollectionBlocked):
                 run(**kw)
