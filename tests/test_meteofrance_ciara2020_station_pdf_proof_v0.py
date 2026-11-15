@@ -65,6 +65,26 @@ class TestStationPdfProvenance(unittest.TestCase):
             resolve_station_sheets(station_catalogue(),
                                    {"62001002"}, "62", min_resources=1)
 
+    def test_partial_exact_title_match_is_explicitly_unadmitted(self):
+        matched, _catalogue_digest, unmatched = resolve_station_sheets(
+            station_catalogue(), {"62001001", "62001002"}, "62",
+            min_resources=1, allow_unmatched=True
+        )
+        self.assertEqual(len(matched), 1)
+        self.assertEqual(unmatched, 1)
+        source = archive()
+        assets = {"62": (fr.ASSETS["62"][0], len(source), None)}
+        # This separate test also verifies a partial metadata catalogue never
+        # falsely upgrades source, site or instrument review status.
+        with patch.object(fr, "ASSETS", assets):
+            receipt = station_pdf_proof(
+                "62", source, station_catalogue(),
+                download_pdf=lambda *_: synthetic_pdf(), min_resources=1
+            )
+        self.assertEqual(receipt["eligible_station_pdf_unmatched_exact_title_count"], 0)
+        self.assertTrue(receipt["eligible_station_pdf_exact_match_complete"])
+        self.assertFalse(receipt["station_site_and_instrument_history_verified_for_2020"])
+
     def test_wrong_host_and_station_path_block(self):
         bad = "https://unapproved.example/62/62001001.pdf"
         with self.assertRaises(Blocked):

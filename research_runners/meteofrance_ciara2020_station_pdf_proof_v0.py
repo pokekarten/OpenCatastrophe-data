@@ -88,7 +88,8 @@ def _station_resource(raw: object, station: str, department: str) -> dict:
 
 
 def resolve_station_sheets(catalogue: bytes, selected: set[str], dep: str,
-                           *, min_resources: int = 10_000) -> tuple[dict[str, dict], str]:
+                           *, min_resources: int = 10_000,
+                           allow_unmatched: bool = False):
     if dep not in ALLOWED_DEPARTMENTS or any(
         not re.fullmatch(r"\d{8}", x) or not x.startswith(dep) for x in selected
     ):
@@ -115,13 +116,23 @@ def resolve_station_sheets(catalogue: bytes, selected: set[str], dep: str,
         if m and m.group(1) == dep and m.group(2) in matches:
             matches[m.group(2)].append(item)
     selected_out: dict[str, dict] = {}
+    unmatched = 0
     for station in sorted(selected):
         candidates = matches[station]
+        if not candidates:
+            # A negative match is not proof that the station lacks a provider
+            # PDF; the publisher may use another resource naming convention.
+            if not allow_unmatched:
+                raise Blocked("no exact PDF metadata title match for eligible station")
+            unmatched += 1
+            continue
         if len(candidates) != 1:
-            raise Blocked("missing or ambiguous PDF metadata for eligible Ciara station")
+            raise Blocked("ambiguous multiple PDF metadata identities for station")
         selected_out[station] = _station_resource(candidates[0], station, dep)
     if len({x["resource_id"] for x in selected_out.values()}) != len(selected_out):
         raise Blocked("station resource UUID reused for distinct original stations")
+    if allow_unmatched:
+        return selected_out, sha256(catalogue), unmatched
     return selected_out, sha256(catalogue)
 
 
@@ -141,8 +152,9 @@ def station_pdf_proof(dep: str, original: bytes, catalogue: bytes,
     selected = complete_quality_station_ids(original)
     if len(selected) != event["quality_checked_full_72_hour_stations"]:
         raise Blocked("selected station count inconsistent with validated Ciara event proof")
-    matched, metadata_sha = resolve_station_sheets(
-        catalogue, selected, dep, min_resources=min_resources
+    matched, metadata_sha, unmatched = resolve_station_sheets(
+        catalogue, selected, dep, min_resources=min_resources,
+        allow_unmatched=True,
     )
     hashes = []
     pdf_bytes = 0
@@ -165,11 +177,13 @@ def station_pdf_proof(dep: str, original: bytes, catalogue: bytes,
         "hourly_source_72h_qualified_station_count": len(selected),
         "official_station_catalogue_sha256": metadata_sha,
         "official_station_catalogue_pdf_resource_count": len(matched),
+        "eligible_station_pdf_unmatched_exact_title_count": unmatched,
+        "eligible_station_pdf_exact_match_complete": unmatched == 0,
         "pdf_original_bytes_verified": pdf_bytes,
         "official_station_pdf_cohort_sha256": cohort_sha,
         "station_identifiers_or_locations_published": False,
         "original_pdf_bytes_or_station_rows_published": False,
-        "pdf_metadata_presence_verified": True,
+        "pdf_metadata_presence_verified": bool(matched),
         "station_site_and_instrument_history_verified_for_2020": False,
         "hourly_gust_interval_equivalence_to_era5_verified": False,
         "production_hazard_calibration_authorized": False,
