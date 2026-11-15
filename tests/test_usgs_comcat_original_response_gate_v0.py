@@ -75,6 +75,15 @@ class OriginalComCatGateTests(unittest.TestCase):
             with self.subTest(body=body[:40]), self.assertRaises(gate.ComCatOriginalBlocked):
                 self.verify(body)
 
+    def test_excessive_json_nesting_and_integer_length_fail_closed(self):
+        adversarial = (
+            b"[" * 1500 + b"0" + b"]" * 1500,
+            b'{"very_long_integer":' + b"9" * 5000 + b"}",
+        )
+        for body in adversarial:
+            with self.subTest(bytes=len(body)), self.assertRaises(gate.ComCatOriginalBlocked):
+                self.verify(body)
+
     def test_feature_cardinality_and_identity(self):
         for bad in ("count", "empty", "not_earthquake", "bad_id"):
             payload = invented_feature_collection()
