@@ -23,7 +23,7 @@ MAX_ROWS = 10_000
 MAX_DAYS = 7
 _STATION = re.compile(r"[A-Za-z0-9]{4,8}\Z")
 _HEIGHT = re.compile(r"\d+(?:\.\d+)?\Z")
-_HEADER = "YYYY MM DD hh mm ss T HEIGHT (meters)"
+_HEADER_TOKENS = ("YYYY", "MM", "DD", "hh", "mm", "ss", "T", "HEIGHT", "(meters)")
 
 
 class DARTPreflightError(ValueError):
@@ -63,8 +63,9 @@ def preflight(path: Path, *, station: str, start: str, end: str) -> dict:
     if "\x00" in body or "<" in body or ">" in body:
         raise DARTPreflightError("HTML, markup or binary contamination")
     lines = [line.strip() for line in body.splitlines() if line.strip()]
-    expected = [f"station {station}", f"start {start}", f"end {end}", _HEADER]
-    if len(lines) < 5 or lines[:4] != expected:
+    expected = [f"station {station}", f"start {start}", f"end {end}"]
+    if (len(lines) < 5 or lines[:3] != expected
+            or tuple(lines[3].split()) != _HEADER_TOKENS):
         raise DARTPreflightError("NDBC response header/request identity mismatch")
     if len(lines) - 4 > MAX_ROWS:
         raise DARTPreflightError("too many observations")
