@@ -67,13 +67,33 @@ coverage/geometry/model admission remain blocked. Do not infer `approved_raw`,
 `approved_derived`, commercial bulk permission, building count or CAT
 exposure from this ATOM feed.
 
+**Exact reviewed-release check (added 2026-11-15):** The first
+validator version parsed any positive advertised ZIP length and any
+timezone-aware `updated`, even when the publisher's release identity changed.
+This was a false-positive identity path. The current version now **fails
+closed** on departures from the observed `2024-03-07T17:05:52.000000+01:00`
+timestamp and 285,995,484 advertised archive bytes. An explicitly requested
+`--live` run additionally requires SHA-256 equality with the observed 1,958-byte
+feed; offline synthetic tests never claim provider byte provenance, even when
+all schema fields appear plausible. This is a *reviewed metadata version pin*,
+**not** a SHA of the unacquired 286 MB archive. A genuinely refreshed provider
+feed requires independent review and a deliberate profile update.
+
+**Article 13(1)(e) meaning:** The Croatian NIPP
+[LimitationsOnPublicAccess code list](https://www.nipp.hr/default.aspx?id=3582)
+identifies this particular INSPIRE access-limit code as protection of
+**intellectual property rights**, not an assertion about national security or
+a claim of confirmed copyright infringement. This increases the need to
+reconcile the open-licence catalogue record with the ATOM product's exact
+terms before commercial model or public redistribution.
+
 A new bounded validator, `scripts/probe_hr_dgu_topographic_buildings_atom_v0.py`,
 inspects a caller-provided XML receipt offline or optionally makes **one
 explicit `--live` GET of the exact ATOM feed**. It pins the product identity,
 ATOM XML shape, authoritative-restriction notice, timezone-aware update,
 exact advertised download link and declared size, and emits only source
 metadata/hash and **explicit non-admission** flags. It **never downloads the
-ZIP**; the 11 deterministic synthetic tests under
+ZIP**; the 14 deterministic synthetic tests under
 `tests/test_probe_hr_dgu_topographic_buildings_atom_v0.py` challenge missing
 restrictions, wrong links, changed size, dates, duplicate entries and unsafe XML.
 
