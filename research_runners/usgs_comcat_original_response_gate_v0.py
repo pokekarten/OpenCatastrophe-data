@@ -80,8 +80,8 @@ def verify_original_response(
             object_pairs_hook=_object_no_duplicates,
             parse_constant=_reject_nonfinite,
         )
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ComCatOriginalBlocked("invalid UTF-8 JSON original response") from exc
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError) as exc:
+        raise ComCatOriginalBlocked("invalid or unbounded UTF-8 JSON original response") from exc
     if not isinstance(obj, dict) or obj.get("type") != "FeatureCollection":
         raise ComCatOriginalBlocked("not a ComCat GeoJSON FeatureCollection")
     features = obj.get("features")
