@@ -139,6 +139,41 @@ def inspect_original_collection(raw: bytes, independently_pinned_sha256: str) ->
     }
 
 
+
+IDC_QUALITY = {
+    1: "very_low", 2: "low", 3: "moderate",
+    4: "fair", 5: "good", 6: "very_good",
+}
+
+
+def interpret_detection_and_idc(detection_year: int, idc_score: int | None) -> dict:
+    """Interpret paired *synthetic or externally validated* native pixels.
+
+    This deliberately cannot compute building age or an insured location.
+    Real pixel use requires independent source asset hashes, paired CRS,
+    co-registration, correct IDC year band and a licensed original sample.
+    """
+    if type(detection_year) is not int or not (detection_year == 0 or 1985 <= detection_year <= 2015):
+        raise WSFMetadataBlocked("invalid WSF Evolution year code; 0 is NoData, not no buildings")
+    if detection_year == 0:
+        if idc_score is not None:
+            raise WSFMetadataBlocked("cannot interpret IDC score for a NoData year pixel")
+        return {
+            "detection_year": None, "pixel_state": "NO_DATA_NOT_NO_SETTLEMENT",
+            "idc_quality": None, "construction_year": None,
+            "model_input_admitted": False,
+        }
+    if type(idc_score) is not int or idc_score not in IDC_QUALITY:
+        raise WSFMetadataBlocked("paired IDC score 1..6 required for an observed year code")
+    return {
+        "detection_year": detection_year,
+        "pixel_state": "ESTIMATED_FIRST_SETTLEMENT_DETECTION_NOT_CONSTRUCTION",
+        "idc_quality": IDC_QUALITY[idc_score],
+        "construction_year": None,
+        "model_input_admitted": False,
+    }
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("original_collection_json", type=Path)
