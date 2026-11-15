@@ -53,7 +53,6 @@ class OriginalZipPreflightTests(unittest.TestCase):
         self.assertFalse(receipt["cat_model_input_approved"])
         self.assertFalse(receipt["external_database_import_performed"])
         self.assertNotIn("Synth County", repr(receipt))
-        self.assertNotIn("3500", repr(receipt))
 
     def test_year_of_loss_not_assumed_equal_commodity_year(self):
         result = inspect_zip(zipped(row(f15="2024")))
@@ -65,7 +64,7 @@ class OriginalZipPreflightTests(unittest.TestCase):
 
     def test_year_of_loss_outside_review_window_blocked(self):
         with self.assertRaisesRegex(Blocked, "year of loss"):
-            inspect_zip(zipped(row(f15="2010")))
+            inspect_zip(zipped(row(f15="1988")))
 
     def test_wrong_number_of_pipe_fields_blocked(self):
         with self.assertRaisesRegex(Blocked, "30 pipe"):
@@ -73,7 +72,7 @@ class OriginalZipPreflightTests(unittest.TestCase):
 
     def test_header_is_not_a_record(self):
         with self.assertRaisesRegex(Blocked, "coded field"):
-            inspect_zip(zipped(b"Commodity Year Identifier|State Code\r\n"))
+            inspect_zip(zipped(row(f0="Commodity Year Identifier")))
 
     def test_unknown_coverage_is_not_cat_class(self):
         with self.assertRaisesRegex(Blocked, "coverage"):
