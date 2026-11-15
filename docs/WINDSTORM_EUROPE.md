@@ -23,6 +23,8 @@ sind noch nicht als europäisch kalibriert nachgewiesen.
 - [Datenbestand und fachliche Lücken](research/windstorm-europe-data-and-completion-gaps-v0.md)
 - [Maschinenlesbarer Quellenindex](research/windstorm-europe-source-index-v0.toml)
 - [LUISA-2018-Raster- und Kurvenmischungs-Audit](research/windstorm-europe-luisa2018-raster-audit-v0.md)
+- [Korrigierter 46-Klassen-Vergleich der LUISA-Kurvenmischung](research/windstorm-europe-luisa-mixture-sensitivity-v0.md)
+- [LUISA-Pixel- und Kyrill-Sensitivitätslauf](research/windstorm-europe-luisa-point-sensitivity-v0.md)
 - [Physische und finanzielle Modellschritte](research/germany-wind-executable-scenarios-v0.md)
 
 Der Kern wurde über PR #1586 auf `main` integriert, Commit
@@ -92,9 +94,13 @@ Beim Reproduzieren der CLIMAAX-Mischkurven wurde ein konkreter
 Spaltenordnungswiderspruch gefunden: Die gepinnte Kurven-CSV nennt ihre zweite
 und dritte Spalte `outbuilding strong` und `outbuilding`; das Notebook baut die
 Gewichtungsliste als `outbuilding`, `strong outbuilding` und multipliziert
-positionsweise. Für LUISA-Klasse 2110 bei 40 m/s ergeben die benannten
-Spalten 0,40 %, die positionsweise Notebook-Reihenfolge 2,75 %. Der Unterschied
-ist noch nicht mit den Autoren geklärt. Die integrierte Engine mischt diese
+positionsweise. Die früher hier genannten 0,40 % und 2,75 % betreffen nur
+den strittigen regulären Outbuilding-Teilbeitrag. Für die vollständige
+LUISA-Klasse 2110 bei 40 m/s ergeben alle Anteile zusammen 29,40 % bei
+Namenszuordnung und 31,75 % bei historischer Positionszuordnung. Der
+[46-Klassen-Audit](research/windstorm-europe-luisa-mixture-sensitivity-v0.md)
+weist Unterschiede in 29 Klassen nach; die größte Abweichung beträgt 32,5
+Prozentpunkte bei Klasse 2110 und 63 m/s. Die Zuordnung bleibt ungeklärt. Die integrierte Engine mischt diese
 Spalten nicht automatisch; bis zur Klärung muss jede Verwendung eine explizite
 benannte Zuordnung offenlegen.
 
@@ -143,3 +149,21 @@ vollständigen Ereigniskatalog beschaffen; parallel bestehende Gebäudeextrakte
 klassifizieren und bewerten. Danach Hazard-Abdeckung und Schadenantwort auf
 einem größeren länderübergreifenden Portfolio prüfen, die neue Modellkette
 unabhängig mit Oasis vergleichen und erst dann Jahresrisiken kalibrieren.
+
+## Aktueller Stand des Stationsvergleichs
+
+Der [Dreistationen-Audit](research/climk-era5-dwd-top50-station-audit-20261114.md)
+und der [15-Stationen-Screen](research/climk-era5-dwd-spatial-station-candidate-screen-20261114.md)
+verwenden DWD-Stundenendpunkte 01:00 bis 00:00 des Folgetags für den
+Kalendertag des CLIMK-Datumslabels. Die Originaldateien wurden mit dieser
+V3-Aggregation erneut ausgewertet. Von den 15 zusätzlichen Stationen haben
+12 mindestens zehn vollständige Tage, zwei keinen vollständigen Tag und
+eine unzureichende historische Metadaten. Zusammen werden 16 ERA5-Zellen
+berührt; das ist räumliche Abdeckung, kein Nachweis unabhängiger Validierung.
+
+Die CLIMK-Datei enthält keine Zeitachse mit den zugrunde liegenden
+Stundenintervallen. Tagesgrenze und Böenmittelung sind daher weiter offen.
+Die Stationskontraste rechtfertigen keine Bias-Korrektur oder Kalibrierung
+der Vulnerabilität. Für den nächsten fachlichen Nachweis müssen originale
+stündliche ERA5-Böen an denselben Zellen und Tagen gegen den CLIMK-Feldwert
+rekonstruiert werden; erst dann lässt sich die Aggregationshypothese prüfen.

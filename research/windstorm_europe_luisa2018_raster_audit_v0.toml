@@ -63,10 +63,24 @@ status = "Unresolved semantic conflict. Do not build or admit mixed LUISA respon
 landuse_code = 2110
 landuse_description = "Non irrigated arable land"
 wind_speed_m_s = 40
+workbook_weakest_outbuilding_share = 0.5
 workbook_regular_outbuilding_share = 0.5
 workbook_strong_outbuilding_share = 0.0
+csv_weakest_outbuilding_damage_percent = 58.0
 csv_outbuilding_strong_damage_percent = 5.5
 csv_outbuilding_damage_percent = 0.8
-name_resolved_weighted_damage_percent = 0.4
-notebook_positional_weighted_damage_percent = 2.75
-interpretation = "The 6.875x ratio is a diagnostic of the column-order ambiguity, not a selected correction or validated vulnerability estimate."
+name_resolved_regular_outbuilding_component_percent = 0.4
+notebook_positional_regular_outbuilding_component_percent = 2.75
+name_resolved_total_damage_percent = 29.4
+notebook_positional_total_damage_percent = 31.75
+total_curve_difference_percentage_points = 2.35
+disputed_component_ratio = 6.875
+interpretation = "0.4% and 2.75% are the disputed regular-outbuilding component only; totals include the separate 50% weakest-outbuilding share. The 2.35 pp total-curve difference diagnoses the mapping ambiguity; neither alternative is selected or validated."
+
+[upstream_history]
+initial_curve_csv_commit = "7c49e1f3939cd4b6509112c5c6fde43d12a82461"
+initial_curve_csv_date = "2023-08-02"
+initial_curve_csv_sha256 = "d960e67ab726815974feb08e5850054d7fac2873ea5bb3b02956e6262da7fd81"
+initial_notebook = "WIND_raster_LUISA.ipynb at the same commit"
+current_notebook_commit = "38613ba890d2b4506112aef4254766f6a4753d06"
+history_finding = "The first available CSV and notebook already contained the header/category order mismatch with positional mixing; the CSV bytes are unchanged in the pinned 2026 source. No upstream correction or intent decision was found in inspected file history."

@@ -87,6 +87,18 @@ def read_spdx_lines(path: Path) -> tuple[bool, bool, list[str]]:
     return has_copyright, has_licence, expressions
 
 
+def read_tracked_spdx_metadata(relative: Path, tracked: set[Path]) -> tuple[bool, bool, list[str]]:
+    """Resolve the REUSE sidecar for an already tracked file, otherwise inline tags.
+
+    A sidecar counts only when it is both checked into Git and present on disk;
+    arbitrary untracked .license files cannot make release checks pass.
+    """
+    sidecar = Path(relative.as_posix() + ".license")
+    if relative.suffix != ".license" and sidecar in tracked and (ROOT / sidecar).is_file():
+        return read_spdx_lines(ROOT / sidecar)
+    return read_spdx_lines(ROOT / relative)
+
+
 def referenced_licences(expressions: list[str]) -> set[str]:
     result: set[str] = set()
     for expression in expressions:
@@ -112,11 +124,11 @@ def main() -> int:
         return 2
 
     all_expressions: list[str] = []
+    tracked = set(paths)
     for relative in paths:
         if is_reuse_exempt(relative) or covered_by_reuse(relative, annotations):
             continue
-        absolute = ROOT / relative
-        has_copyright, has_licence, expressions = read_spdx_lines(absolute)
+        has_copyright, has_licence, expressions = read_tracked_spdx_metadata(relative, tracked)
         all_expressions.extend(expressions)
         if not has_copyright:
             failures.append(f"{relative}: missing SPDX-FileCopyrightText or REUSE annotation")
