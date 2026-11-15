@@ -28,9 +28,9 @@ class HailItemVintageTests(unittest.TestCase):
         self.assertIsNone(got["verified_asset_observation_month"])
 
     def test_outside_hail_season_not_observed_zero(self):
-        got = screen_item_vintage(row("202510-ch", "CH at 10.2025", "2026-10-31T04:00:18Z"))
+        got = screen_item_vintage(row("202410-ch", "CH at 10.2024", "2025-10-31T04:00:18Z"))
         self.assertFalse(got["item_month_in_hail_season"])
-        self.assertEqual(got["item_year_month"], "2025-10")
+        self.assertEqual(got["item_year_month"], "2024-10")
         self.assertIn("outside_april_september_hail_computation_season", got["blockers"])
         self.assertIn("nominal_datetime_item_month_mismatch", got["blockers"])
         self.assertFalse(got["independent_hail_observation_verified"])
