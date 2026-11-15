@@ -13,6 +13,14 @@ class IntegratedEuropeTests(unittest.TestCase):
     def test_invalid_schedule_and_duplicate_buildings_fail_before_source_io(self):
         fixture=Path(__file__).resolve().parents[1]/'research/fixtures/windstorm_europe_v1_synthetic.toml'
         with fixture.open('rb') as f: original=tomllib.load(f)
+        conflict=deepcopy(original)
+        event=dict(conflict['occurrences'][0])
+        other_year=max(conflict['year_ids'])+1
+        conflict['year_ids'].append(other_year)
+        event.update(year_id=other_year,storm_index=(event['storm_index']+1)%50)
+        conflict['occurrences'].append(event)
+        with self.assertRaisesRegex(ValueError,'different physical storms'):
+            execute(conflict,Path('/nonexistent-inputs'),validate_only=True)
         mutations=[lambda c:c['occurrences'][0].update(year_id=99),
                    lambda c:c['occurrences'].append(dict(c['occurrences'][0])),
                    lambda c:c['occurrences'][0].update(sample_id=-1),

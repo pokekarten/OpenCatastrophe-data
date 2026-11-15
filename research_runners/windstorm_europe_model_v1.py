@@ -57,12 +57,16 @@ def execute(config,base,hazard_loader=None,validate_only=False):
     aggregate(config['year_ids'],[],config['policies'],config['treaty'])
     seen_occurrences=set()
     if not isinstance(config['occurrences'],list):raise ValueError('occurrence list required')
+    identity_to_source_storm={}
     for entry in config['occurrences']:
         year=entry['year_id'];identity=entry['occurrence_id']
         if type(entry['storm_index']) is not int or not 0<=entry['storm_index']<50:raise ValueError('CLIMK index must be 0..49')
         if type(year) is not int or year not in config['year_ids']:raise ValueError('unknown occurrence year')
         if not isinstance(identity,str) or not identity or (year,identity) in seen_occurrences:
             raise ValueError('missing or duplicate occurrence identity')
+        if identity in identity_to_source_storm and identity_to_source_storm[identity] != entry['storm_index']:
+            raise ValueError('same occurrence identity references different physical storms')
+        identity_to_source_storm[identity] = entry['storm_index']
         seen_occurrences.add((year,identity))
         if type(entry['sample_id']) is not int or entry['sample_id']<0:raise ValueError('nonnegative integer sample ID required')
     groups={}; countries=set();building_ids=set()

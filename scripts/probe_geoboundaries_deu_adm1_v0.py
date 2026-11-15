@@ -189,7 +189,16 @@ def probe(
             media_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             if media_type != "application/json":
                 raise GeoBoundariesProbeError("unexpected metadata content type")
+            if response.headers.get("Content-Encoding", "identity").strip().lower() != "identity":
+                raise GeoBoundariesProbeError("unexpected metadata content encoding")
+            declared = response.headers.get("Content-Length")
+            if declared is not None:
+                if (type(declared) is not str or not declared.isascii()
+                        or not declared.isdecimal() or int(declared) > MAX_RESPONSE_BYTES):
+                    raise GeoBoundariesProbeError("invalid original metadata Content-Length")
             raw = response.read(MAX_RESPONSE_BYTES + 1)
+            if declared is not None and len(raw) != int(declared):
+                raise GeoBoundariesProbeError("original metadata body truncated or length mismatch")
     except GeoBoundariesProbeError:
         raise
     except (error.HTTPError, error.URLError, OSError, TimeoutError) as exc:
