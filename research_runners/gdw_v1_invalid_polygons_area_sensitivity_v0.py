@@ -125,10 +125,56 @@ def examine_invalid(geometry, barrier, geod) -> dict | None:
     }
 
 
+def _validate_counterfactual_case(case: dict) -> None:
+    """Reject corrupted or nonconservative per-feature scientific receipts.
+
+    Only in-memory aggregate quantities are examined; never log or export
+    provider geometry, coordinates or GDW IDs. A case that did not originate
+    from the trusted GEOS/Geod evaluator cannot be accepted by shape alone.
+    """
+    if type(case) is not dict:
+        raise GDWSensitivityError("invalid counterfactual summary case")
+    numeric = (
+        "linework_area_km2", "buffer_zero_area_km2", "overlap_km2",
+        "union_km2", "area_abs_delta_km2",
+        "footprint_symmetric_difference_km2",
+        "footprint_change_fraction_of_union",
+    )
+    for key in numeric:
+        value = case.get(key)
+        if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+            raise GDWSensitivityError("nonfinite, negative or missing scientific area metric")
+    for key in ("linework_parts", "buffer_zero_parts"):
+        if type(case.get(key)) is not int or case[key] < 0:
+            raise GDWSensitivityError("invalid polygon component count")
+    for key in ("linework_barrier_covered", "buffer_zero_barrier_covered",
+                "any_nonpolygonal_linework_output"):
+        if type(case.get(key)) is not bool:
+            raise GDWSensitivityError("invalid counterfactual categorical field")
+    a, b = case["linework_area_km2"], case["buffer_zero_area_km2"]
+    common, either = case["overlap_km2"], case["union_km2"]
+    delta = case["area_abs_delta_km2"]
+    difference = case["footprint_symmetric_difference_km2"]
+    fraction = case["footprint_change_fraction_of_union"]
+    tolerance = max(1e-6, 1e-4 * max(a + b, common + either))
+    if (either <= 0 or common > min(a, b) + tolerance
+            or common > either + tolerance
+            or either + tolerance < max(a, b)
+            or abs((a + b) - (common + either)) > tolerance
+            or abs(delta - abs(a - b)) > tolerance
+            or abs(difference - (either - common)) > tolerance
+            or fraction > 1 + 1e-8
+            or abs(fraction - difference / either) > 1e-6):
+        raise GDWSensitivityError("inconsistent counterfactual area conservation")
+
+
 def summarize(cases: list[dict | None], *, expected: int = EXPECTED_INVALID) -> dict:
-    if len(cases) != expected:
+    if (type(cases) is not list or type(expected) is not int
+            or expected < 1 or len(cases) != expected):
         raise GDWSensitivityError("full invalid-polygon population not processed")
     valid = [case for case in cases if case is not None]
+    for case in valid:
+        _validate_counterfactual_case(case)
     excluded = len(cases) - len(valid)
     totals = {k: sum(c[k] for c in valid) for k in
               ("linework_area_km2", "buffer_zero_area_km2", "overlap_km2",
