@@ -155,7 +155,13 @@ def _inspect_gfz_definitive_kp_day(payload: object) -> dict:
     if any(type(status) is not str or status != "def" for status in statuses):
         raise ProbeBlocked("GFZ Kp response contains non-definitive status")
     for value in values:
-        if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 9:
+        if type(value) not in (int, float):
+            raise ProbeBlocked("GFZ Kp reading is not numeric")
+        try:
+            finite = math.isfinite(value)
+        except (OverflowError, ValueError):
+            finite = False
+        if not finite or not 0 <= value <= 9:
             raise ProbeBlocked("GFZ Kp reading is not a finite in-range number")
     return {
         "verified_shape": "gfz_definitive_kp_2024_01_01_eight_3h_bins",
