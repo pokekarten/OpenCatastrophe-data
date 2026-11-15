@@ -10,7 +10,7 @@ import unittest
 from scripts.probe_hr_dgu_topographic_buildings_atom_v0 import (
     AtomMetadataError, FEED_URL, MAX_XML_BYTES, RIGHTS_TEXT, ZIP_URL,
     REVIEWED_ATOM_SHA256, REVIEWED_ATOM_UPDATED, REVIEWED_ZIP_ADVERTISED_BYTES,
-    _NoRedirect, inspect_atom, main,
+    _NoRedirect, inspect_atom, main, validate_feed_content_length,
 )
 
 
@@ -142,6 +142,21 @@ class DguTopographicAtomMetadataTest(unittest.TestCase):
         ):
             with self.subTest(raw=raw[:40]), self.assertRaises(AtomMetadataError):
                 inspect_atom(raw)
+
+    def test_content_length_is_bounded_before_integer_conversion(self):
+        validate_feed_content_length(None, 1958)
+        validate_feed_content_length("1958", 1958)
+        for declared in ("9" * 5000, 1958, True, "-1", "+1958", "1958x",
+                         "１９５８", "0", str(MAX_XML_BYTES + 1), "1957", ""):
+            with self.subTest(declared=str(declared)[:30]), self.assertRaises(AtomMetadataError):
+                validate_feed_content_length(declared, 1958)
+
+    def test_nested_rights_cannot_substitute_for_feed_level_rights(self):
+        raw = synthetic_atom().replace(b"<rights>", b"<category><rights>").replace(
+            b"</rights>", b"</rights></category>"
+        )
+        with self.assertRaisesRegex(AtomMetadataError, "restriction text"):
+            inspect_atom(raw)
 
     def test_reject_redirects(self):
         with self.assertRaisesRegex(AtomMetadataError, "redirect denied"):
