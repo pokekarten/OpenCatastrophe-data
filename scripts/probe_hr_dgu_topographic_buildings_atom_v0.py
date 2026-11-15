@@ -52,7 +52,7 @@ def inspect_atom(raw: bytes) -> dict:
     entries = root.findall(ATOM + "entry")
     if len(entries) != 1:
         raise AtomMetadataError("exactly one reviewed topographic entry required")
-    rights = root.findall(".//" + ATOM + "rights")
+    rights = root.findall(ATOM + "rights")
     if len(rights) != 1 or rights[0].text != RIGHTS_TEXT:
         raise AtomMetadataError("restriction text missing or changed: fresh rights review required")
     updated = root.findtext(ATOM + "updated")
@@ -109,13 +109,30 @@ def inspect_atom(raw: bytes) -> dict:
     }
 
 
+def validate_feed_content_length(declared: object, actual_bytes: int) -> None:
+    """Reject unbounded or ambiguous HTTP Content-Length before parsing it."""
+    if declared is None:
+        return
+    if (
+        type(declared) is not str
+        or not (1 <= len(declared) <= 10)
+        or not declared.isascii()
+        or not declared.isdecimal()
+    ):
+        raise AtomMetadataError("invalid ATOM Content-Length")
+    value = int(declared)
+    if value == 0 or value > MAX_XML_BYTES or value != actual_bytes:
+        raise AtomMetadataError("incomplete or oversized ATOM Content-Length")
+
+
 class _NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         raise AtomMetadataError("ATOM metadata redirect denied")
 
 
 def live_feed() -> bytes:
-    opener = request.build_opener(_NoRedirect())
+    # Pin direct provider transport; do not inherit ambient proxy routing.
+    opener = request.build_opener(request.ProxyHandler({}), _NoRedirect())
     req = request.Request(
         FEED_URL,
         headers={"Accept": "application/atom+xml, application/xml"},
@@ -129,10 +146,7 @@ def live_feed() -> bytes:
                 raise AtomMetadataError("unexpected compressed transfer")
             raw = response.read(MAX_XML_BYTES + 1)
             declared = response.headers.get("Content-Length")
-            if declared is not None and (
-                not declared.isdecimal() or int(declared) != len(raw)
-            ):
-                raise AtomMetadataError("incomplete original ATOM byte response")
+            validate_feed_content_length(declared, len(raw))
     except (error.URLError, TimeoutError) as exc:
         raise AtomMetadataError("original ATOM metadata unavailable") from exc
     return raw
