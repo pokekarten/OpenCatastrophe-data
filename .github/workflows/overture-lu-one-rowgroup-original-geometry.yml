@@ -41,4 +41,5 @@ jobs:
       - name: Offline source-private and cardinality regression tests
         run: python -m unittest tests.test_overture_lu_one_rowgroup_geometry_observation_v0 -v
       - name: Scan exact original S3 row group 182 in ephemeral memory
+        if: github.event_name == 'workflow_dispatch'
         run: python -m research_runners.overture_lu_one_rowgroup_geometry_observation_v0 --live
