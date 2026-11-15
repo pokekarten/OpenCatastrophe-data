@@ -50,3 +50,23 @@ Datei und GUNTER als belegtes Join-Datum verwendbar; 20050110 bleibt das
 unveränderte rohe Metadatum. Der DWD-Feldvergleich wurde in diesem Lauf
 nicht erneut ausgeführt. Andere Datumsabweichungen bleiben separat zu prüfen.
 Diese Auflösung erzeugt weder neue Ereignisse noch jährliche Häufigkeiten.
+
+## Weitere Datumsbelege
+
+Der ausgeführte XWS-Trackreader findet für Xynthia 82 eindeutige, aufsteigende
+Zeitlabels vom 25.02.2010 00 bis 07.03.2010 03. Sowohl CLIMK-Label
+20100227 als auch 20100228 liegen darin. Das grenzt den Widerspruch ein,
+belegt aber keine identischen Footprintfenster. Track-Zeitzone bleibt separat
+zu bestätigen; aus Zeitbereichsüberlappung wird keine Identitätsfreigabe.
+
+Der bereits vorhandene [Supplement-/Aliasnachweis](https://github.com/pokekarten/OpenCatastrophe/blob/774fa78b176026ecde76ac951367d6e6e1581e8f/research/ruv_reference_evidence_v1/climk_supplement_alias_audit_v0.json)
+dokumentiert, dass Tabelle 2 u19950216/u19950217 ausdrücklich zusammenfasst.
+Die andere mögliche Zuordnung u20000302/u20000303 bleibt unbestätigt:
+Der vorhandene räumliche Überlappungsvergleich ist unspezifisch, und die
+im Supplement erwähnte zusätzliche CSV war nicht verfügbar. Aggregate
+Ereigniszahlen allein rechtfertigen keine Zusammenführung.
+
+`xws_track_date_support.py` ermöglicht die reproduzierbare zeitliche
+Prüfung der heruntergeladenen Tracks. Ein Offline-Test prüft Datumslabels
+und die Ablehnung doppelter Zeitstempel. Die anderen Datumsabweichungen
+sind durch diese Untersuchung noch nicht pauschal aufgelöst.
