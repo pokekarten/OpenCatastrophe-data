@@ -94,6 +94,21 @@ class SourceEvidenceQueueTests(unittest.TestCase):
         self.assertIn("recorded_direct_github_original_exact_urls=0", self.query)
         self.assertNotIn("strict_repository_runner_executed IS TRUE", self.query)
 
+    def test_gdw_exact_crossformat_source_receipt_takes_science_lane_not_retest(self):
+        self.assertIn("gdw_crossformat_original_receipts", self.query)
+        self.assertIn("sample_id=31 AND sample_kind='observed_values'", self.query)
+        self.assertIn("source_polygon_repairs_performed'='false'", self.query)
+        self.assertIn("invalid_polygon_ids_shared_between_formats'='221'", self.query)
+        self.assertIn("invalid_polygon_ids_unique_to_either_format'='0'", self.query)
+        self.assertIn("github.com/pokekarten/OpenCatastrophe-data/actions/runs/41893588594", self.query)
+        self.assertIn("P2_quantify_GDW_native_invalid_polygon_consequences", self.query)
+        self.assertEqual(
+            self.query.count("AND gdw_crossformat_original_receipts=1"), 2
+        )
+        self.assertIn("model_input_approved IS FALSE", self.query)
+        self.assertIn("source_byte_persistence_authorized IS FALSE", self.query)
+        self.assertIn("sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex')", self.query)
+
     def test_jrc_license_does_not_authorize_cloudferro_transport(self):
         self.assertIn("ec-jrc.global-surface-water.1984-2024", self.query)
         self.assertIn("P1_resolve_CloudFerro_anonymous_transport_before_original_tile", self.query)
