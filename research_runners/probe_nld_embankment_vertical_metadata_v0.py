@@ -72,7 +72,7 @@ def validate_metadata(raw: bytes) -> dict[str, str | bool]:
         "hasZ": True,
         "hasM": False,
         "objectIdField": "OBJECTID",
-        "isDataVersioned": False,
+        "isDataVersioned": True,
         "isDataArchived": False,
     }
     for key, expected in required.items():
@@ -123,6 +123,7 @@ def validate_metadata(raw: bytes) -> dict[str, str | bool]:
         "service_height_unit": expected_height["heightUnit"],
         "current_dictionary_reference_unit": DICTIONARY_REFERENCE_UNIT,
         "unit_conflict_unresolved": True,
+        "service_is_data_versioned": True,
         "historic_snapshot_supported": False,
         "elevation_values_examined": False,
         "data_persisted": False,
