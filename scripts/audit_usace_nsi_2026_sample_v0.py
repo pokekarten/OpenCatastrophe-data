@@ -46,11 +46,17 @@ def _strict_float(value: str) -> float:
 
 
 def _number(value: Any, name: str, *, minimum: float | None = None) -> float:
-    if type(value) not in (int, float) or not math.isfinite(value):
+    if type(value) not in (int, float):
         raise NSI2026SampleBlocked(f"invalid {name} number")
-    if minimum is not None and value < minimum:
+    try:
+        number = float(value)
+    except (OverflowError, ValueError) as exc:
+        raise NSI2026SampleBlocked(f"unbounded {name} number") from exc
+    if not math.isfinite(number):
+        raise NSI2026SampleBlocked(f"invalid {name} number")
+    if minimum is not None and number < minimum:
         raise NSI2026SampleBlocked(f"negative {name} value")
-    return float(value)
+    return number
 
 
 def inspect_nsi_2026_geojson(original: bytes) -> dict[str, Any]:
@@ -64,7 +70,7 @@ def inspect_nsi_2026_geojson(original: bytes) -> dict[str, Any]:
             parse_constant=_reject_nonfinite,
             parse_float=_strict_float,
         )
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError, OverflowError) as exc:
         raise NSI2026SampleBlocked("not strict UTF-8 GeoJSON") from exc
     if type(doc) is not dict or doc.get("type") != "FeatureCollection" or "error" in doc:
         raise NSI2026SampleBlocked("not a GeoJSON FeatureCollection")
