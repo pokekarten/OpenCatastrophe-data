@@ -2,11 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 """Offline synthetic tests; no original provider bytes, requests, or bulk downloads."""
 import hashlib
+import io
+from contextlib import redirect_stderr, redirect_stdout
+from unittest.mock import patch
 import unittest
 
 from scripts.probe_hr_dgu_topographic_buildings_atom_v0 import (
     AtomMetadataError, FEED_URL, MAX_XML_BYTES, RIGHTS_TEXT, ZIP_URL,
-    _NoRedirect, inspect_atom,
+    REVIEWED_ATOM_SHA256, REVIEWED_ATOM_UPDATED, REVIEWED_ZIP_ADVERTISED_BYTES,
+    _NoRedirect, inspect_atom, main,
 )
 
 
@@ -38,6 +42,10 @@ class DguTopographicAtomMetadataTest(unittest.TestCase):
         self.assertFalse(receipt["zip_downloaded"])
         self.assertFalse(receipt["raw_geometry_verified"])
         self.assertFalse(receipt["model_input_admitted"])
+        self.assertFalse(receipt["matches_reviewed_original_feed_bytes"])
+        self.assertEqual(receipt["reviewed_original_feed_sha256"], REVIEWED_ATOM_SHA256)
+        self.assertEqual(receipt["atom_updated_as_declared"], REVIEWED_ATOM_UPDATED)
+        self.assertEqual(receipt["advertised_zip_bytes_not_verified"], REVIEWED_ZIP_ADVERTISED_BYTES)
 
     def test_reject_wrong_feed_identity(self):
         raw = synthetic_atom().replace(FEED_URL.encode(), b"https://example.com/feed")
@@ -86,6 +94,38 @@ class DguTopographicAtomMetadataTest(unittest.TestCase):
         ):
             with self.subTest(raw=raw[:150]), self.assertRaises(AtomMetadataError):
                 inspect_atom(raw)
+
+    def test_reject_stale_or_changed_timestamp_identity(self):
+        for updated in (
+            "2024-03-07T17:05:52+01:00",
+            "2024-03-07T16:05:52.000000+00:00",
+            "2025-03-07T17:05:52.000000+01:00",
+        ):
+            with self.subTest(updated=updated), self.assertRaisesRegex(
+                AtomMetadataError, "timestamp drift"
+            ):
+                inspect_atom(synthetic_atom(updated=updated))
+
+    def test_reject_changed_but_well_formed_advertised_size(self):
+        for bytes_declared in ("285995485", "285995483", "1", "999999999999"):
+            with self.subTest(size=bytes_declared), self.assertRaisesRegex(
+                AtomMetadataError, "byte-size drift"
+            ):
+                inspect_atom(synthetic_atom(size=bytes_declared))
+
+    def test_live_identity_requires_exact_reviewed_original_bytes(self):
+        # A perfectly structured synthetic feed is NOT the original provider
+        # byte identity. The live entry point must block rather than claiming
+        # proof just because the metadata fields look plausible.
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch(
+            "scripts.probe_hr_dgu_topographic_buildings_atom_v0.live_feed",
+            return_value=synthetic_atom(),
+        ), redirect_stdout(stdout), redirect_stderr(stderr):
+            exit_code = main(["--live"])
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("live feed bytes differ from reviewed SHA-256", stderr.getvalue())
 
     def test_reject_multiple_entries(self):
         raw = synthetic_atom()
