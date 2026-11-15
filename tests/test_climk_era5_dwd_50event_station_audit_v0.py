@@ -22,6 +22,7 @@ def windows_fixture():
         qn=3 if i<20 else 1
         result.append({
             "dwd_hourly_gust_qn":[[20.0+i,qn] for _ in range(count)],
+            "dwd_storm_date_gust_qn":[[20.0+i,qn] for _ in range(24 if i<30 else 16)],
             "climk_per_storm_gust_mps":22.0+i,
             "era5_grid_node":[50.75,7.25],
             "sensor_height_m":10.0 if i<30 else 12.0,
@@ -32,16 +33,28 @@ def windows_fixture():
 
 
 class ClimkEra5DWDTop50AuditTests(unittest.TestCase):
+    def test_hour_endpoints_cover_day_across_year_boundary(self):
+        from datetime import datetime
+        labels = m.daily_hour_end_labels(datetime(2007, 12, 31))
+        self.assertEqual(len(labels), 24)
+        self.assertEqual(labels[0], "2007123101")
+        self.assertEqual(labels[-1], "2008010100")
+        self.assertNotIn("2007123100", labels)
+
     def test_source_population_includes_third_dwd_station(self):
         self.assertEqual(m.STATIONS,("02667","00603","15200"))
 
     def test_partial_windows_excluded_and_qn3_subset_separate(self):
         result=m.summarize_windows(windows_fixture())
-        self.assertIn("daily maximum wind gust derived from hourly gust data",m.CLIMK_PARAMETER_DESCRIPTION)
+        self.assertIn("per-storm maximum wind gust derived from hourly/daily gust data",m.CLIMK_PARAMETER_DESCRIPTION)
         self.assertEqual(result["CLIMK_top50_rows"],50)
         self.assertEqual(result["station_windows_with_any_valid_DWD_hours_and_unmasked_model_value"],50)
         self.assertEqual(result["station_windows_with_complete_72h_DWD"],25)
         self.assertEqual(result["station_windows_with_complete_72h_DWD_QN8_3"],20)
+        self.assertEqual(result["station_storm_dates_with_complete_24h_DWD"],30)
+        self.assertEqual(result["station_storm_dates_with_complete_24h_DWD_QN8_3"],20)
+        self.assertGreater(result["station_storm_dates_with_complete_24h_DWD"],
+                           result["station_windows_with_complete_72h_DWD"])
         self.assertEqual(result["station_windows_with_partial_DWD_hours"],25)
         self.assertEqual(result["event_windows_with_verified_historical_site_instrument_and_UTC_semantics"],40)
         self.assertEqual(result["unique_nearest_CLIMK_ERA5_grid_nodes"],1)
@@ -49,13 +62,13 @@ class ClimkEra5DWDTop50AuditTests(unittest.TestCase):
                          {"10.0":30,"12.0":20})
         self.assertEqual(result["historical_station_elevation_counts_m_above_sea_level_for_windows_with_observations"],
                          {"100.0":50})
-        primary=result["complete_72h_unmatched_support_contrasts_descriptive_only"]
-        self.assertEqual(primary["paired_values"],25)
-        self.assertAlmostEqual(primary["mean_pairwise_difference_CLIMK_minus_DWD_mps"],2.0)
-        self.assertAlmostEqual(primary["root_mean_square_pairwise_difference_mps"],2.0)
-        self.assertIn("not error, bias, or skill",primary["interpretation"])
-        qn3=result["complete_72h_QN8_3_unmatched_support_contrasts_descriptive_only"]
-        self.assertEqual(qn3["paired_values"],20)
+        daily=result["complete_storm_date_24h_unmatched_support_contrasts_descriptive_only"]
+        self.assertEqual(daily["paired_values"],30)
+        self.assertAlmostEqual(daily["mean_pairwise_difference_CLIMK_minus_DWD_mps"],2.0)
+        self.assertAlmostEqual(daily["root_mean_square_pairwise_difference_mps"],2.0)
+        self.assertIn("not error, bias, or skill",daily["interpretation"])
+        daily_qn3=result["complete_storm_date_24h_QN8_3_unmatched_support_contrasts_descriptive_only"]
+        self.assertEqual(daily_qn3["paired_values"],20)
         self.assertFalse(result["partial_DWD_windows_imputed_or_used_in_primary_metrics"])
         self.assertFalse(result["sensor_height_adjustment_applied"])
 

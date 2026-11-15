@@ -30,7 +30,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Service root:** <https://www.nhc.noaa.gov>
 
-**Api version:** Atlantic HURDAT2 1851-2025, 2026-September historical 1971-1975 reanalysis revision; exact original filename and content hash to be pinned
+**Api version:** Atlantic HURDAT2 1851-2025; exact archived file hurdat2-1851-2025-092326.txt (September 2026 reanalysis of 1971-1975), original content hash still unverified
 
 ## Access scope
 
@@ -57,8 +57,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /data/
 - /data/hurdat/
+- /data/hurdat/hurdat2-1851-2025-092326.txt
 
-**Parameter rules:** Documentation-only, no automatic source request or caller-selected path, unbounded domain, secrets, crawler, bulk extraction or retries. Metadata path(s) are only candidate exact origins; actual provider GET requires independently reviewed provider machine-use terms, exact URL, byte cap, body hash and source-specific approved workflow.
+**Parameter rules:** Documentation-only T0 file identity: original provider archive enumerates two distinct September 2026 Atlantic revisions, including 091226 and 092326; the later selected filename is hurdat2-1851-2025-092326.txt (Atlantic best tracks through 2025). Listing URL and exact file path are documentary source identities, not executable download authorization. No file HEAD/GET, ranged sample, free-form path, caller-selected URL/headers, archive crawling, mirroring, redirects or retries may be executed under this contract. Obtain separate exact dataset/API terms and reviewed one-shot bounded access contract before retrieval.
 
 ## Response contract
 
@@ -82,7 +83,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Rate limit notes:** No live archive sweep or file download under this documentation-only contract; review fixed original text path, caching, contact and one-shot request budget before parser.
 
-**Mutability notes:** NHC periodically issues HURDAT2 revisions; pin exact filename, modification date, SHA and reanalysis window before comparing with IBTrACS.
+**Mutability notes:** The original NHC archive lists two distinct September 2026 Atlantic releases: hurdat2-1851-2025-091226.txt and hurdat2-1851-2025-092326.txt. Do not merge their revisions or mistake directory last-modified dates for original content-hash identity. Pin downloaded full original SHA-256, file bytes, storm-row semantics and 1971-1975 reanalysis scope before comparisons or CAT model use.
 
 ## Rights and policy
 
@@ -96,7 +97,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** unknown
 
-**Notes:** NHC's official archival description is public but exact original file's redistribution/third-party lineage and service automation terms have not been independently reviewed; no blanket public-domain or insurer CAT model entitlement inferred.
+**Notes:** NOAA/NWS government-server disclaimer describes public-domain content unless otherwise annotated and prohibits presenting modified material as official. However this has not yet resolved exact HURDAT2 asset-specific third-party rights, allowed automatic retrieval rate/terms, repository redistribution or independent CAT scientific admission; keep dataset/API/commercial-automation/redistribution verdicts unknown and execution disabled.
 
 ## Probe contract
 
@@ -118,5 +119,7 @@ _Empty array._
 
 - <https://www.nhc.noaa.gov/data/>
 - <https://www.nhc.noaa.gov/data/hurdat/>
+- <https://www.nhc.noaa.gov/data/hurdat/hurdat2-1851-2025-092326.txt>
+- <https://www.nhc.noaa.gov/mobile/disclaimer.html>
 
-**Notes:** Original September 2026 archive revision is confirmed on publisher page, but 6.8-MB original text file URL, byte SHA, header parser, historical revisions and independent windfield challenge are not yet fixed. No provider asset download/Neon write/model admission.
+**Notes:** T0 official original-directory evidence: two separate September 2026 Atlantic file revisions were listed (091226 and 092326). This contract selects only 092326, published as HURDAT2 Atlantic 1851-2025, approx 6.7 MB in the provider index; its original bytes, exact SHA-256, historical row parsing and windfield independence are not acquired or verified. Provider data rights and automated service terms remain unknown. No network file download, Neon write or CAT model admission.
