@@ -92,7 +92,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ## Rights and policy
 
-**Dataset rights status:** not_reviewed
+**Dataset rights status:** verified
 
 **Api terms status:** separate_reviewed
 
@@ -100,9 +100,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Commercial automation status:** unknown
 
-**Redistribution status:** unknown
+**Redistribution status:** allowed
 
-**Notes:** The provider record and its actual README.txt state copyright NGI/Geoscience Australia 2017 and CC BY 3.0 AU, whose licence deed permits commercial reuse/adaptation with attribution, licence link and modification notice. Zenodo Terms of Use v1.3 separately restrict service/content access to non-military purposes and require compliance with the uploader licence; Zenodo enforces rate limits. The public record's separate Rights/License UI metadata was not independently matched to the README, and the source-specific repository rights/admission review is not complete. Do not infer blanket permission for commercial automated harvesting, original publication, local CAT underwriting use, military purposes or third-party content. No probe/sample/storage is enabled.
+**Notes:** Exact publisher original README.txt and Zenodo record 16964551 v1 independently display copyright NGI/Geoscience Australia 2017 and the CC BY 3.0 AU licence for globalPTHA.txt. The licence explicitly grants copying, adaptation and commercial use subject to attribution, licence link, preservation of relevant notices and change notice. This verifies the SOURCE-LICENCE legal ceiling for this identified original product, NOT current automated Zenodo download/service permission, service retention, user-specific third-party data rights, scientific adequacy, local-scale CAT modelling, or OpenCatastrophe raw/derived publication admission. Zenodo Terms of Use v1.3 additionally restrict platform use to non-military purposes and require following the uploader licence. Commercial automation remains unknown and the reviewed probe mode remains none until one exact bounded network operation and its service limits are separately cleared. Redistribution_status allowed describes only the upstream CC BY licence ceiling; no raw original files or derivatives are authorized for Git publication by this access contract.
 
 ## Probe contract
 
@@ -118,7 +118,7 @@ _Empty array._
 
 **Implementation decision:** document_only
 
-**Reviewed at:** 2026-11-14
+**Reviewed at:** 2026-11-15
 
 ## Evidence urls
 
@@ -127,5 +127,6 @@ _Empty array._
 - <https://creativecommons.org/licenses/by/3.0/au/>
 - <https://about.zenodo.org/terms/>
 - <https://developers.zenodo.org/>
+- <https://zenodo.org/records/16964551/preview/README.txt?include_deleted=0>
 
-**Notes:** T0 documentary access and product-scope evidence only. Official record lists globalPTHA.txt (approx. 7.3 MB; MD5 d8dd8ad55fe89bd56b455e392387a99e) and README.txt (approx. 2.8 kB; MD5 f52a37706b789f343b970e51b0076980). Their publisher MD5 values were not recalculated and no source file was saved as original data. The existing research_runners/ngi_global_ptha_preflight_v0.py checks original input after separate acquisition and existing tests/test_ngi_global_ptha_preflight_v0.py uses synthetic fixtures. Complete exact product rights and API-automation review, a bounded reviewed downloader, actual original SHA-256/sample QA, independent benchmark validation, Neon storage and any model admission remain open.
+**Notes:** T0 documentary access and product-scope evidence only. Official record lists globalPTHA.txt (approx. 7.3 MB; MD5 d8dd8ad55fe89bd56b455e392387a99e) and README.txt (approx. 2.8 kB; MD5 f52a37706b789f343b970e51b0076980). Their publisher MD5 values were not recalculated and no source file was saved as original data. The existing research_runners/ngi_global_ptha_preflight_v0.py checks original input after separate acquisition and existing tests/test_ngi_global_ptha_preflight_v0.py uses synthetic fixtures. The exact upstream CC BY 3.0 AU source-rights ceiling is now reviewed, but service automation/download permission, a bounded reviewed downloader, actual original SHA-256/sample QA, independent benchmark validation, Neon storage and any model admission remain open.
