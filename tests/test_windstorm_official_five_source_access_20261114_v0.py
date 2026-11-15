@@ -60,7 +60,12 @@ class OfficialEuropeWindAndNHCSourceAccessTests(unittest.TestCase):
 
     def test_noaa_track_is_not_european_windfield_or_independent_ibtracs(self):
         source = self._contract("us.noaa.nhc.hurdat2.atlantic.2026-09")
-        self.assertEqual(source["request_contract"]["path_templates"], ["/data/", "/data/hurdat/"])
+        self.assertEqual(
+            source["request_contract"]["path_templates"],
+            ["/data/", "/data/hurdat/", "/data/hurdat/hurdat2-1851-2025-092326.txt"],
+        )
+        self.assertEqual(source["status"], "documented_only")
+        self.assertEqual(source["probe_contract"]["mode"], "none")
         self.assertIn("IBTrACS", source["response_contract"]["scientific_semantics"])
         self.assertIn("not independent", source["response_contract"]["scientific_semantics"])
         self.assertEqual(source["rights_and_policy"]["commercial_automation_status"], "unknown")
