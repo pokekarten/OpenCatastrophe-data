@@ -95,7 +95,7 @@ class NRWOfficialWmsContractTests(unittest.TestCase):
 
     def test_original_xml_receipt_is_not_a_scientific_admission(self):
         self.assertIn("not_admitted", self.contract["probe_contract"]["expected_evidence"][4])
-        self.assertIn("metadata", self.contract["response_contract"]["format"].lower())
+        self.assertIn("wms_capabilities", self.contract["response_contract"]["format"].lower())
         self.assertIn("no model admission", self.contract["response_contract"]["scientific_semantics"].lower())
 
 
