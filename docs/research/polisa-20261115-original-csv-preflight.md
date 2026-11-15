@@ -20,7 +20,10 @@ python -m scripts.polisa_csv_preflight_v0 --csv /private/polisa-all-markets.csv
 python -m unittest tests.test_polisa_csv_preflight_v0 -v
 ~~~
 
-The pinned 2026-11-15 profile fails on an unexpected or reordered 42-column header, any mixed/stale row data_version, unexpected market/year, duplicate (market, year, insurer_id), an invalid LEI shape, missing/unsafe HTTPS source URL, invalid numeric values, missing/negative gross premium, or departure from the advertised 1,772 rows across 18 named markets. Missing optional amounts remain null/unknown, **never zero-filled**. It emits only local-byte SHA-256, byte size, row count, market count, number of missing property-premium values and **explicit false admission indicators**. It does not authenticate the publisher response merely by hashing a local file.
+The pinned 2026-11-15 profile fails on an unexpected or reordered 42-column header, any mixed/stale row data_version, unexpected market/year, duplicate (market, year, insurer_id), an invalid LEI shape **or MOD 97-10 check digit**, missing/non-HTTPS/non-public-IP source URL, invalid numeric values, missing/negative gross premium, or departure from the advertised 1,772 rows across 18 named markets. Missing optional amounts remain null/unknown, **never zero-filled**. It emits only local-byte SHA-256, byte size, row count, market count, number of missing property-premium values and **explicit false admission indicators**. It does not authenticate the publisher response merely by hashing a local file.
+
+
+**LEI validation scope:** The [GLEIF LEI CDF Q&A](https://www.gleif.org/en/lei-data/access-and-use-lei-data) describes the 20-character LEI structure and check digits by ISO 17442 / ISO 7064. This offline preflight checks uppercase ASCII shape, two trailing decimal check digits, and the MOD 97-10 remainder of one. Passing that arithmetic does **not** establish that a legal entity is registered, current, solvent, a member of the stated insurer group, or the rightful owner of the number. An exact-version GLEIF Level 1/Level 2 registry join remains a separate source-rights and identity review. Original report URLs remain provenance text; the script never connects to them. Literal non-public IP targets are rejected as provenance evidence.
 
 ## Rights / financial semantics
 
