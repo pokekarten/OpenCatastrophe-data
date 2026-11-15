@@ -134,6 +134,23 @@ def inspect_gml(raw: bytes) -> dict:
     }
 
 
+def validate_content_length(declared: object, actual_bytes: int) -> None:
+    """Reject malformed provider lengths before integer conversion."""
+    if declared is None:
+        return
+    if (
+        type(declared) is not str
+        or len(declared) == 0
+        or len(declared) > 10
+        or not declared.isascii()
+        or not declared.isdecimal()
+    ):
+        raise BuildingGmlError("invalid original WFS Content-Length")
+    length = int(declared)
+    if length == 0 or length > MAX_BYTES or length != actual_bytes:
+        raise BuildingGmlError("incomplete or invalid declared Content-Length")
+
+
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         raise BuildingGmlError("redirect rejected for pinned WFS query")
@@ -151,8 +168,7 @@ def live_one_original() -> bytes:
                 raise BuildingGmlError("compressed transfer encoding not part of this byte profile")
             data = response.read(MAX_BYTES + 1)
             declared = response.headers.get("Content-Length")
-            if declared is not None and (not declared.isdecimal() or int(declared) != len(data)):
-                raise BuildingGmlError("incomplete or invalid declared Content-Length")
+            validate_content_length(declared, len(data))
     except (error.URLError, TimeoutError) as exc:
         raise BuildingGmlError("original WFS unavailable; no source admission") from exc
     return data
