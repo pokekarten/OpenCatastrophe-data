@@ -78,6 +78,7 @@ def screen_nbpw_projected_multiline(original: bytes, *, declared_crs: str) -> di
     for line in lines:
         if not isinstance(line, list) or len(line) < 2:
             raise NbpwGeometryError("each line must have at least two vertices")
+        previous_point = None
         for point in line:
             if not isinstance(point, list) or len(point) != 2:
                 raise NbpwGeometryError("only 2D coordinates supported")
@@ -91,6 +92,9 @@ def screen_nbpw_projected_multiline(original: bytes, *, declared_crs: str) -> di
                 raise NbpwGeometryError("coordinate is nonnumeric, boolean or nonfinite")
             if not (0 <= x <= 300000 and 280000 <= y <= 650000):
                 raise NbpwGeometryError("coordinate outside generous Netherlands RD New screening bounds")
+            if previous_point is not None and (x, y) == previous_point:
+                raise NbpwGeometryError("zero-length consecutive segment")
+            previous_point = (x, y)
             min_x, max_x = min(min_x, x), max(max_x, x)
             min_y, max_y = min(min_y, y), max(max_y, y)
             vertices += 1
