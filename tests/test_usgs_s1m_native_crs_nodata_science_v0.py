@@ -7,7 +7,7 @@ import json
 import unittest
 from pathlib import Path
 
-from research_runners.usgs_s1m_tnm_metadata_preflight_v0 import (
+from research_runners.usgs_s1m_native_raster_science_gate_v0 import (
     Blocked,
     PUBLISHED_S1M_HORIZONTAL_EPSG,
     PUBLISHED_S1M_VERTICAL_EPSG,
