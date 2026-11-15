@@ -10,6 +10,8 @@ on:
       - "tests/test_probe_aims_nld_flood_defences_v0.py"
       - "research_runners/probe_nld_embankment_vertical_metadata_v0.py"
       - "tests/test_probe_nld_embankment_vertical_metadata_v0.py"
+      - "research_runners/probe_nld_embankment_one_geometry_v0.py"
+      - "tests/test_probe_nld_embankment_one_geometry_v0.py"
       - ".github/workflows/ea-usace-flood-defence-original-receipts.yml"
   push:
     branches: [main]
@@ -18,6 +20,8 @@ on:
       - "tests/test_probe_aims_nld_flood_defences_v0.py"
       - "research_runners/probe_nld_embankment_vertical_metadata_v0.py"
       - "tests/test_probe_nld_embankment_vertical_metadata_v0.py"
+      - "research_runners/probe_nld_embankment_one_geometry_v0.py"
+      - "tests/test_probe_nld_embankment_one_geometry_v0.py"
       - ".github/workflows/ea-usace-flood-defence-original-receipts.yml"
   workflow_dispatch:
 
@@ -41,6 +45,7 @@ jobs:
         run: |
           python -m unittest tests.test_probe_aims_nld_flood_defences_v0 -v
           python -m unittest tests.test_probe_nld_embankment_vertical_metadata_v0 -v
+          python -m unittest tests.test_probe_nld_embankment_one_geometry_v0 -v
 
   trusted-original-one-record:
     name: Direct public source original receipt (${{ matrix.source }})
@@ -100,4 +105,29 @@ jobs:
             echo ""
             echo "NLD vertical units remain unresolved: service metadata us-foot vs current dictionary international-foot."
             echo "No geometry, source feature values, elevations, credentials or raw response saved. No model admission."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  trusted-nld-one-geometry:
+    name: Direct NLD one original 3D polyline and Z coverage receipt
+    needs: offline-contract-and-negative-tests
+    # Original provider requests are forbidden from untrusted PR heads.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Checkout trusted main without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate synthetic-only one-feature 3D polyline controls
+        run: python -m unittest tests.test_probe_nld_embankment_one_geometry_v0 -v
+      - name: Read one original public feature in-memory, print only Z counts and SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m research_runners.probe_nld_embankment_one_geometry_v0 --live | tee -a "$GITHUB_STEP_SUMMARY"
+          {
+            echo ""
+            echo "Research-only canary; never log or retain coordinates, Z ordinates, source IDs or raw provider bytes."
+            echo "No crest-height certification, historical snapshot, unit conversion, defended area or model admission."
           } >> "$GITHUB_STEP_SUMMARY"
