@@ -100,6 +100,35 @@ class TNMS1MTests(unittest.TestCase):
         with self.assertRaises(Blocked):
             check_products(record)
 
+    def test_frozen_florida_expanded_but_aoi_containing_bbox_blocked(self):
+        # A very large bounding box still contains the exact Florida query;
+        # it must not be mistaken for the frozen 10-km-class S1M tile.
+        record = self.product()
+        record["items"][0].update({
+            "datasets": [], "title": PILOT_TITLE,
+            "sourceId": PILOT_SOURCE_ID, "downloadURL": PILOT_DOWNLOAD_URL,
+            "boundingBox": {
+                "minX": -81.05, "minY": 25.85,
+                "maxX": -80.85, "maxY": 26.10,
+            },
+        })
+        with self.assertRaisesRegex(Blocked, "original product bbox drift"):
+            check_products(record)
+
+    def test_frozen_florida_bbox_tiny_serialization_shift_allowed(self):
+        record = self.product()
+        record["items"][0].update({
+            "datasets": [], "title": PILOT_TITLE,
+            "sourceId": PILOT_SOURCE_ID, "downloadURL": PILOT_DOWNLOAD_URL,
+            "boundingBox": {
+                "minX": -81.0028601420002 + 1e-8,
+                "minY": 25.92070859857935 - 1e-8,
+                "maxX": -80.8895404313893 + 1e-8,
+                "maxY": 26.025030076412904 - 1e-8,
+            },
+        })
+        self.assertEqual(check_products(record)["identity_evidence"], "frozen_florida_s1m_record")
+
     def test_frozen_florida_outside_aoi_rejected(self):
         record = self.product()
         record["items"][0].update({"datasets": [], "title": PILOT_TITLE,
