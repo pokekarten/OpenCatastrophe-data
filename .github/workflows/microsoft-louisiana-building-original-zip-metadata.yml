@@ -38,8 +38,10 @@ jobs:
           tests.test_microsoft_louisiana_original_building_sample_v0
           -v
       - name: One read-only official Microsoft source HEAD and bounded ZIP ranges
+        if: github.event_name == 'workflow_dispatch'
         run: python -m research_runners.microsoft_louisiana_original_zip_receipt_v0 --live
       - name: One bounded 64-KiB compressed original footprint prefix research receipt
+        if: github.event_name == 'workflow_dispatch'
         run: python -m research_runners.microsoft_louisiana_original_building_sample_v0 --live
       # Original complete ZIP is NEVER downloaded; no credentials or source
       # feature values, geolocated buildings or user exposure uploaded.
