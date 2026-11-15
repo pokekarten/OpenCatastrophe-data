@@ -22,6 +22,8 @@ FIELDS = frozenset(("HYBAS_ID", "dis_m3_pyr", "dis_m3_pmn", "dis_m3_pmx"))
 H01 = ("dis_m3_pyr", "dis_m3_pmn", "dis_m3_pmx")
 MAX_BYTES = 131072
 MAX_ROWS = 128
+# Python's JSON integer digit limits vary; bound hostile tokens explicitly.
+MAX_JSON_INTEGER_DIGITS = 64
 LAYER = re.compile(r"BasinATLAS_v10_lev(0[1-9]|1[0-2])\Z")
 
 
@@ -40,6 +42,17 @@ def _unique(pairs):
 
 def _reject_constant(_):
     raise H01Blocked("nonfinite JSON constant")
+
+
+def _bounded_json_int(token: str) -> int:
+    # Source HYBAS identifiers and discharge columns have no reason to carry
+    # thousands of decimal digits. Enforce a version-independent parser cap.
+    if len(token.lstrip("-")) > MAX_JSON_INTEGER_DIGITS:
+        raise H01Blocked("oversized projection JSON integer")
+    try:
+        return int(token)
+    except (ValueError, OverflowError) as exc:
+        raise H01Blocked("invalid projection JSON integer") from exc
 
 
 def _valid_nonnegative_flow(value) -> bool:
@@ -68,7 +81,8 @@ def inspect(raw: bytes, *, layer: str) -> dict:
             raise H01Blocked("blank projection row")
         try:
             row = json.loads(line.decode("utf-8"), object_pairs_hook=_unique,
-                             parse_constant=_reject_constant)
+                             parse_constant=_reject_constant,
+                             parse_int=_bounded_json_int)
         except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
             raise H01Blocked("invalid projection JSON") from exc
         if type(row) is not dict or set(row) != FIELDS:
