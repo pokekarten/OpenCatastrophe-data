@@ -33,7 +33,7 @@
       "application/json"
     ],
     "format": "USGS TNM Access API v1 JSON dataset catalogue and product search metadata only; no GeoTIFF or source point-cloud bytes.",
-    "scientific_semantics": "The S1M is a newer 1-meter bare-earth DEM compiled from many LiDAR projects and published in 10-km COG tiles with pixel-level source lineage. Distinct from project-based 1-meter DEM, it has incomplete and expanding coverage; advertised 1-meter pixel spacing does not imply one-meter vertical accuracy. Elevation represents terrain rather than building roof or finished-floor height; horizontal CRS, vertical datum/epoch, survey vintage, blending and source work-unit quality must be verified before hydrologic or building-overlap use."
+    "scientific_semantics": "The S1M is a newer 1-meter bare-earth DEM compiled from many LiDAR projects and published in 10-km COG tiles with pixel-level source lineage. Distinct from project-based 1-meter DEM, it has incomplete and expanding coverage; advertised 1-meter pixel spacing does not imply one-meter vertical accuracy. Elevation represents terrain rather than building roof or finished-floor height; horizontal CRS, vertical datum/epoch, survey vintage, blending and source work-unit quality must be verified before hydrologic or building-overlap use. Official S1M CONUS collection metadata (USGS S1M DOI 10.5066/P13LJKFS, observed 2026-11-15) specifies horizontal NAD83(2011) / USA Contiguous Albers Equal Area EPSG:6350, vertical NAVD88 EPSG:5703 updated to GEOID18, and metres for both horizontal and elevation units. The float COG has nominal 1-m pixel spacing and -999999 as its NoData value. These are published product-level declarations, NOT a verified TIFF header or per-tile height accuracy. Original source project footprints and processing lineage are in a separate spatial-metadata GeoPackage: voids wider than 10 m may be backfilled from 1/9- or 1/3-arcsecond DEMs, smaller gaps bilinearly interpolated, and work units blended. A one-metre output grid does NOT prove every pixel is a measured one-metre lidar observation. Do not apply the separate legacy project-based 1-m DEM UTM default to S1M or interpret the -999999 sentinel as ground elevation. Source bytes, exact TIFF and GeoPackage hashes, per-tile datum and backfill flags remain unverified."
   },
   "operational_constraints": {
     "timeout_seconds": 20,
@@ -41,7 +41,7 @@
     "max_sample_bytes": 131072,
     "retry_policy": "none",
     "rate_limit_notes": "One manually triggered exact HTTPS GET (max=1 offset=0), no retries, redirects, concurrent calls, pagination, interval schedule, alternate areas or asset download. USGS public-domain statement does not imply a throughput entitlement. No provider bytes saved in repository, Neon or local cache.",
-    "mutability_notes": "TNM S1M product catalogue can change; record original response SHA-256, byte count, retrieval UTC, exact GET request hash, parser and code hash, one vetted source ID and expected TIFF URL. Failure to match the pinned 2026-08-21 Florida record must block rather than search alternate tiles. Source TIFF ~447MB is not touched in this T1 metadata probe."
+    "mutability_notes": "TNM S1M product catalogue can change; record original response SHA-256, byte count, retrieval UTC, exact GET request hash, parser and code hash, one vetted source ID and expected TIFF URL. Failure to match the pinned 2026-08-21 Florida record must block rather than search alternate tiles. Source TIFF ~447MB is not touched in this T1 metadata probe. Independent S1M product science documentation reviewed 2026-11-15: future original TIFF and companion spatial-lineage GeoPackage receipts must be bound to one tile and independently checked for EPSG:6350 horizontal, EPSG:5703/GEOID18 vertical, metre units, -999999 NoData, 1-m pixel spacing, collection vintage and void/backfill/blend flags before any flood-hazard use. A metadata-only TNM catalogue response cannot satisfy these checks."
   },
   "rights_and_policy": {
     "dataset_rights_status": "verified",
@@ -71,7 +71,8 @@
     "https://tnmaccess.nationalmap.gov/api/v1/docs",
     "https://apps.nationalmap.gov/datasets/",
     "https://www.usgs.gov/faqs/there-api-accessing-national-map-data",
-    "https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map"
+    "https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map",
+    "https://catalog.data.gov/dataset/seamless-1-meter-digital-elevation-models-dems-usgs-national-map-3dep-downloadable-data-co"
   ],
-  "notes": "One metadata-only, explicitly opt-in T1 route for the single verified public South Florida S1M product sourceId 6a9785801ba49b050c166274. Dataset is public-domain but any different AOI, raw COG, DEM pixel, footprint overlay, building height or insurer loss requires new source-scientific authorization. No automatic data import or Neon write follows."
+  "notes": "One metadata-only, explicitly opt-in T1 route for the single verified public South Florida S1M product sourceId 6a9785801ba49b050c166274. Dataset is public-domain but any different AOI, raw COG, DEM pixel, footprint overlay, building height or insurer loss requires new source-scientific authorization. No automatic data import or Neon write follows. Additional 2026-11-15 T0 scientific reference: USGS S1M public DOI 10.5066/P13LJKFS publisher catalogue specifies EPSG 6350 / 5703, GEOID18, -999999 NoData and variable source/backfill provenance. New pure-offline synthetic profile checks in research_runners/usgs_s1m_tnm_metadata_preflight_v0.py only compare a caller-supplied profile to published reference values. They do NOT attest original TIFF/GeoPackage bytes, licence/model admission, flood accuracy or T3."
 }
