@@ -99,7 +99,7 @@ def inspect_original_geojson(raw: bytes, *, require_pinned_identity: bool = True
         raise GeojsonBlocked("unreasonable feature count")
     seen_codes: set[str] = set()
     geometry_types: dict[str, int] = {}
-    missing_iso2 = ring_count = coordinate_pairs = 0
+    missing_iso2 = nonstandard_iso2 = ring_count = coordinate_pairs = 0
     for feature in features:
         feature = _require_object(feature, "feature")
         if feature.get("type") != "Feature":
@@ -116,6 +116,9 @@ def inspect_original_geojson(raw: bytes, *, require_pinned_identity: bool = True
             raise GeojsonBlocked("invalid ISO_A2 type; preserve source sentinel")
         if iso2 == "-99":
             missing_iso2 += 1
+        elif iso2 == "CN-TW":
+            # Retain Natural Earth source terminology; do not normalize geopolitics.
+            nonstandard_iso2 += 1
         elif not re.fullmatch(r"[A-Z]{2}", iso2):
             raise GeojsonBlocked("unexpected ISO_A2 value")
         geom = _require_object(feature.get("geometry"), "geometry")
@@ -136,6 +139,7 @@ def inspect_original_geojson(raw: bytes, *, require_pinned_identity: bool = True
 
     if require_pinned_identity and (len(features) != EXPECTED_FEATURES
                                     or missing_iso2 != EXPECTED_MISSING_ISO2
+                                    or nonstandard_iso2 != 1
                                     or coordinate_pairs != 10654):
         raise GeojsonBlocked("pinned source scientific inventory drift")
     return {
@@ -149,6 +153,7 @@ def inspect_original_geojson(raw: bytes, *, require_pinned_identity: bool = True
         "feature_count": len(features),
         "unique_adm0_a3": len(seen_codes),
         "missing_iso2_sentinel_count": missing_iso2,
+        "nonstandard_iso_a2_count": nonstandard_iso2,
         "polygon_ring_count": ring_count,
         "coordinate_pair_count": coordinate_pairs,
         "geometry_type_counts": geometry_types,
