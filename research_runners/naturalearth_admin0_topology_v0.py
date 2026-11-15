@@ -87,14 +87,19 @@ def inspect_topology(original: bytes, *, require_pinned_identity: bool = True) -
             source_geometry_types[geometry.geom_type] += 1
             if geometry.geom_type not in {"Polygon", "MultiPolygon"}:
                 raise NaturalEarthTopologyError("nonpolygon geometry after source gate")
-            if geometry.is_empty or not math.isfinite(geometry.area) or geometry.area <= 0:
+            if geometry.is_empty:
                 empty_or_zero += 1
                 continue
             xmin, ymin, xmax, ymax = geometry.bounds
             if not all(math.isfinite(n) for n in (xmin, ymin, xmax, ymax)):
                 raise NaturalEarthTopologyError("nonfinite original geometry bounds")
+            # An invalid bow-tie ring can have zero Shapely planar area.
+            # Check validity BEFORE area to preserve its causal failure family.
             if not geometry.is_valid:
                 invalid_reasons[_reason_family(explain_validity(geometry))] += 1
+                continue
+            if not math.isfinite(geometry.area) or geometry.area <= 0:
+                empty_or_zero += 1
                 continue
             valid += 1
             # Prevent interpreting Cartesian intersections of wrap-spanning
