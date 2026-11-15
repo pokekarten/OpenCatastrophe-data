@@ -165,11 +165,46 @@ Consequently this is a stronger independently synthetic **preflight**,
 not evidence that the Croatian service actually emits that shape, nor proof
 of positional accuracy, legal usage or nationwide completeness.
 
+## Actual footprint/window intersection — envelope false-positive closed
+
+The preceding WFS preflight rejected a footprint only when its **axis-aligned
+envelope** lay entirely outside the fixed 600 m × 600 m Zagreb window. An
+L-shaped, self-intersection-free building polygon could wrap around the window
+corner without touching the window, while the two bounding boxes still
+overlap. Such a response incorrectly received
+`polygon_envelope_overlaps_fixed_window: true` without spatial evidence
+of a real intersection. An envelope is a fast rejection filter, **not** a
+topological or spatial proof.
+
+The revised deterministic polygon gate now follows this conservative order
+in the fixed EPSG:3765 plane after validating a simple exterior ring:
+
+1. Reject envelopes fully outside the fixed window.
+2. Require a real closed-polygon/closed-rectangle intersection using
+   polygon vertices in the rectangle, 2D edge crossings or boundary contacts,
+   **or** rectangle corners inside the polygon.
+3. Return `actual_polygon_intersects_fixed_window: true` only if that
+   exact geometric predicate succeeds. No geometry coordinates enter receipts.
+
+Synthetic regression cases cover a disjoint concave L-shaped exterior with
+overlapping envelopes (**must fail**), full rectangle containment with no
+vertices or crossed edges (**must pass**), a thin crossing strip (**must
+pass**) and a **boundary-only touch** (**passes as topological intersection,
+not as positive-area exposure**). These deliberately do **not** establish
+building ownership, positional accuracy, positive-area overlap, complete
+country coverage, calibrated insurance value or permission to reuse data.
+
+The official [Croatian DGU Buildings WFS registry (NIPP service 1545)](https://registri.nipp.hr/izvori/1711)
+describes INSPIRE building polygons from the cadastral map, but that catalogue
+claim is not a successful raw WFS geometry receipt. This test improves the
+honesty of future samples; as of this change, original provider
+`GetFeature` GML remains unverified and `model_input_admitted` remains false.
+
 ## Executable fail-closed challenge
 
 `scripts/probe_hr_dgu_buildings_gml_window_v0.py` provides an explicit opt-in `--live` request and an `--offline-file` mode. The only allowed live URL is constructed from the exact official WFS endpoint and a fixed 600 m × 600 m **EPSG:3765** Zagreb research window, `bu:Building`, WFS 2.0, `COUNT=1`, `STARTINDEX=0`; no arbitrary URL, feature ID, authenticated service, unbounded paging or full-country acquisition. WFS request diagonal is approximately 849 m. Network has a 15-second timeout, a 512-KiB response ceiling and refuses redirects, compressed transfer, malformed HTTP framing and unsafe XML declarations.
 
-The XML preflight deliberately supports **only one explicitly reference-marked `footPrint` in an inline 2D GML Polygon exterior under `bu-base:BuildingGeometry2D`**: exactly one WFS member, the expected INSPIRE Building namespace, positive nondegenerate simple closed exterior ring (no repeated vertices, self-crossings, zero-length edges or unreviewed interior holes), finite plausible projected XY coordinates, declared EPSG:3765 and an envelope overlapping the fixed window. It rejects missing geometries, wrong classes, unknown geometry encodings, 3D, axis swaps, out-of-window results, multipart payloads and exception reports. Positive output records only source response length/hash and pass/fail claims; no original feature IDs, polygon coordinates, personal data, addresses or building attributes are printed.
+The XML preflight deliberately supports **only one explicitly reference-marked `footPrint` in an inline 2D GML Polygon exterior under `bu-base:BuildingGeometry2D`**: exactly one WFS member, the expected INSPIRE Building namespace, positive nondegenerate simple closed exterior ring (no repeated vertices, self-crossings, zero-length edges or unreviewed interior holes), finite plausible projected XY coordinates, declared EPSG:3765 and a verified geometric intersection with the fixed window (not envelope intersection alone). It rejects missing geometries, wrong classes, unknown geometry encodings, 3D, axis swaps, out-of-window results, multipart payloads and exception reports. Positive output records only source response length/hash and pass/fail claims; no original feature IDs, polygon coordinates, personal data, addresses or building attributes are printed.
 
 Usage (explicit live network only when a reviewer intentionally invokes it):
 
