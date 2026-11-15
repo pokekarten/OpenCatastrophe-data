@@ -113,11 +113,63 @@ Issue #1458 records a previous **one-feature GeoJSON** Zagreb-area response with
 
 The 2026-11-15 attempted **one-feature original GML request** via remote HTTP fetch timed out after a 20-second limit. The Linux execution environment could not resolve the provider hostname. Accordingly **no live WFS GML polygon was verified this run**, no feature geometry, national count, coverage or original-byte hash is claimed here.
 
+## INSPIRE Core 2D semantic footprint gate (2026-11-15 follow-up)
+
+The European Commission's [INSPIRE Buildings Technical
+Guidelines](https://inspire-mif.github.io/technical-guidelines/data/bu/dataspecification_bu.html)
+and [approved Buildings2D 4.0 feature
+catalogue](https://inspire-mif.github.io/uml-models/approved/fc/)
+make a scientific distinction that an exterior-ring geometry test alone
+cannot establish: `geometry2D` holds a **BuildingsBase**
+`BuildingGeometry2D` object, and its **`referenceGeometry`** and
+**`horizontalGeometryReference`** attributes tell consumers which
+representation should be used and *what physical building element its XY
+coordinates describe*. Roof edges, combined envelopes and building
+footprints are not interchangeable CAT exposure footprints.
+
+The earlier synthetic GML tests incorrectly encoded the full nested
+representation using the **`bu-core2d`** namespace rather than the
+mixed INSPIRE namespace layout, risking a false rejection of schema-correct
+GML. The corrected **single-polygon footprint challenge** expects:
+
+```text
+wfs:FeatureCollection (1 wfs:member)
+  bu-core2d:Building
+    bu-core2d:geometry2D
+      bu-base:BuildingGeometry2D
+        bu-base:geometry / gml:Polygon
+        bu-base:referenceGeometry = true
+        bu-base:horizontalGeometryReference @xlink:href
+          = http://inspire.ec.europa.eu/codelist/HorizontalGeometryReferenceValue/footPrint
+```
+
+The code now rejects a *valid but unsupported* `gml:Point`,
+`gml:Surface` or `gml:MultiSurface`, nil/missing/false or duplicate
+reference flags, non-`footPrint` semantics such as `roofEdge` and
+`combined`, wrong INSPIRE nested namespaces, and lookalike polygons
+that sit outside the one direct `bu-base:geometry` property.
+The parser explicitly **does not assert all legitimate INSPIRE encodings
+are supported**, only that a passed response is within this tightly
+reviewed semantic profile. A provider returning different legal GML must
+trigger an independently tested profile rather than an invented
+footprint.
+
+The [INSPIRE 4.0 canonical GML
+schemas](https://inspire.ec.europa.eu/schemas/bu-core2d/4.0/BuildingsCore2D.xsd)
+and [BuildingsBase
+schema](https://inspire.ec.europa.eu/schemas/bu-base/4.0/BuildingsBase.xsd)
+are the authoritative grammar references; the actual Croatian
+`DescribeFeatureType` service response and its schema dependencies
+are **not yet byte-verified**, as direct provider requests still timed out.
+Consequently this is a stronger independently synthetic **preflight**,
+not evidence that the Croatian service actually emits that shape, nor proof
+of positional accuracy, legal usage or nationwide completeness.
+
 ## Executable fail-closed challenge
 
 `scripts/probe_hr_dgu_buildings_gml_window_v0.py` provides an explicit opt-in `--live` request and an `--offline-file` mode. The only allowed live URL is constructed from the exact official WFS endpoint and a fixed 600 m × 600 m **EPSG:3765** Zagreb research window, `bu:Building`, WFS 2.0, `COUNT=1`, `STARTINDEX=0`; no arbitrary URL, feature ID, authenticated service, unbounded paging or full-country acquisition. WFS request diagonal is approximately 849 m. Network has a 15-second timeout, a 512-KiB response ceiling and refuses redirects, compressed transfer, malformed HTTP framing and unsafe XML declarations.
 
-The XML preflight deliberately supports **only a single explicit inline 2D GML Polygon exterior**: exactly one WFS member, the expected INSPIRE Building namespace, positive nondegenerate simple closed exterior ring (no repeated vertices, self-crossings, zero-length edges or unreviewed interior holes), finite plausible projected XY coordinates, declared EPSG:3765 and an envelope overlapping the fixed window. It rejects missing geometries, wrong classes, unknown geometry encodings, 3D, axis swaps, out-of-window results, multipart payloads and exception reports. Positive output records only source response length/hash and pass/fail claims; no original feature IDs, polygon coordinates, personal data, addresses or building attributes are printed.
+The XML preflight deliberately supports **only one explicitly reference-marked `footPrint` in an inline 2D GML Polygon exterior under `bu-base:BuildingGeometry2D`**: exactly one WFS member, the expected INSPIRE Building namespace, positive nondegenerate simple closed exterior ring (no repeated vertices, self-crossings, zero-length edges or unreviewed interior holes), finite plausible projected XY coordinates, declared EPSG:3765 and an envelope overlapping the fixed window. It rejects missing geometries, wrong classes, unknown geometry encodings, 3D, axis swaps, out-of-window results, multipart payloads and exception reports. Positive output records only source response length/hash and pass/fail claims; no original feature IDs, polygon coordinates, personal data, addresses or building attributes are printed.
 
 Usage (explicit live network only when a reviewer intentionally invokes it):
 
