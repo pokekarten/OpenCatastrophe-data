@@ -5,32 +5,43 @@ import unittest
 from urllib.parse import parse_qs, urlsplit
 
 from scripts.probe_hr_dgu_buildings_gml_window_v0 import (
-    BBOX, BuildingGmlError, NoRedirect, fixed_url, inspect_gml, validate_content_length,
+    BBOX, BuildingGmlError, FOOTPRINT_URI, NoRedirect, fixed_url, inspect_gml, validate_content_length,
 )
 
 
 def sample(
     *, points="459100 5074600 459140 5074600 459140 5074640 459100 5074640 459100 5074600",
     crs="EPSG:3765", geom=True, number="1", feature="Building",
-    duplicate=False, dim="2",
+    duplicate=False, dim="2", ref="true", href=FOOTPRINT_URI,
+    geometry_type="Polygon",
 ):
+    if geometry_type == "Polygon":
+        shape = (
+            '<gml:Polygon srsName="' + crs + '" srsDimension="' + dim + '">'
+            '<gml:exterior><gml:LinearRing><gml:posList>' + points +
+            '</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon>'
+        )
+    elif geometry_type == "Point":
+        shape = '<gml:Point srsName="' + crs + '"><gml:pos>459100 5074600</gml:pos></gml:Point>'
+    else:
+        raise ValueError("unknown synthetic geometry fixture")
     polygon = (
-        '<bu:geometry2D><bu:BuildingGeometry2D><bu:geometry>'
-        '<gml:Polygon srsName="' + crs + '" srsDimension="' + dim + '">'
-        '<gml:exterior><gml:LinearRing><gml:posList>' + points +
-        '</gml:posList></gml:LinearRing></gml:exterior></gml:Polygon>'
-        '</bu:geometry></bu:BuildingGeometry2D></bu:geometry2D>'
+        '<bu:geometry2D><base:BuildingGeometry2D><base:geometry>' + shape +
+        '</base:geometry><base:referenceGeometry>' + ref +
+        '</base:referenceGeometry><base:horizontalGeometryReference xlink:href="' +
+        href + '"/></base:BuildingGeometry2D></bu:geometry2D>'
     ) if geom else ""
     member = '<wfs:member><bu:' + feature + '>' + polygon + '</bu:' + feature + '></wfs:member>'
     raw = (
         '<wfs:FeatureCollection xmlns:wfs="http://www.opengis.net/wfs/2.0" '
         'xmlns:gml="http://www.opengis.net/gml/3.2" '
         'xmlns:bu="http://inspire.ec.europa.eu/schemas/bu-core2d/4.0" '
+        'xmlns:base="http://inspire.ec.europa.eu/schemas/bu-base/4.0" '
+        'xmlns:xlink="http://www.w3.org/1999/xlink" '
         'numberReturned="' + number + '" numberMatched="unknown">'
         + member + (member if duplicate else "") + "</wfs:FeatureCollection>"
     )
     return raw.encode("utf-8")
-
 
 class CroatianGmlWindowTest(unittest.TestCase):
     def test_fixed_provider_count_and_window(self):
@@ -49,6 +60,8 @@ class CroatianGmlWindowTest(unittest.TestCase):
         raw = sample()
         receipt = inspect_gml(raw)
         self.assertEqual(receipt["feature_records_checked"], 1)
+        self.assertTrue(receipt["inspire_reference_geometry_verified"])
+        self.assertEqual(receipt["inspire_horizontal_geometry_reference"], "footPrint")
         self.assertEqual(receipt["declared_crs"], "EPSG:3765")
         self.assertEqual(receipt["original_xml_bytes"], len(raw))
         self.assertFalse(receipt["model_input_admitted"])
@@ -60,6 +73,56 @@ class CroatianGmlWindowTest(unittest.TestCase):
         for raw in (sample(geom=False), sample(feature="BuildingPart")):
             with self.subTest(raw=raw[:75]), self.assertRaises(BuildingGmlError):
                 inspect_gml(raw)
+
+    def test_reject_wrong_insPIRE_namespace_and_nested_decoy(self):
+        raw = sample().replace(b"base:BuildingGeometry2D", b"bu:BuildingGeometry2D")
+        with self.assertRaisesRegex(BuildingGmlError, "bu-base"):
+            inspect_gml(raw)
+        # A Polygon nested in the wrong member of the base data type must not
+        # be promoted to referenceGeometry by broad descendant searches.
+        raw = sample().replace(
+            b"<base:geometry>", b"<base:geometry><gml:Point/>"
+        )
+        with self.assertRaises(BuildingGmlError):
+            inspect_gml(raw)
+
+    def test_reject_missing_or_false_insPIRE_reference_geometry(self):
+        for raw in (
+            sample(ref="false"),
+            sample(ref="1"),
+            sample(ref=""),
+            sample().replace(
+                b"<base:referenceGeometry>true</base:referenceGeometry>", b""
+            ),
+            sample().replace(
+                b"</base:referenceGeometry>",
+                b"</base:referenceGeometry><base:referenceGeometry>true</base:referenceGeometry>",
+            ),
+        ):
+            with self.subTest(raw=raw[:150]), self.assertRaisesRegex(
+                BuildingGmlError, "referenceGeometry"
+            ):
+                inspect_gml(raw)
+
+    def test_reject_unreviewed_geometry_horizontal_reference(self):
+        for raw in (
+            sample(href="http://inspire.ec.europa.eu/codelist/HorizontalGeometryReferenceValue/roofEdge"),
+            sample(href="http://inspire.ec.europa.eu/codelist/HorizontalGeometryReferenceValue/combined"),
+            sample(href="https://example.test/footPrint"),
+            sample(href=""),
+            sample().replace(
+                b'<base:horizontalGeometryReference xlink:href="' + FOOTPRINT_URI.encode() + b'"/>',
+                b'<base:horizontalGeometryReference/>',
+            ),
+        ):
+            with self.subTest(raw=raw[:150]), self.assertRaisesRegex(
+                BuildingGmlError, "footPrint"
+            ):
+                inspect_gml(raw)
+
+    def test_reject_non_polygon_geometry_profile(self):
+        with self.assertRaisesRegex(BuildingGmlError, "unsupported"):
+            inspect_gml(sample(geometry_type="Point"))
 
     def test_reject_wrong_crs_and_3d(self):
         for raw in (sample(crs="EPSG:4326"), sample(crs=""), sample(dim="3")):
