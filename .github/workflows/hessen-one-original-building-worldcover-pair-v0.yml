@@ -36,10 +36,11 @@ jobs:
       - name: Confirm pinned offline PyProj and GEOS dependencies
         run: |
           python -m pip check
-          python -c 'import pyproj, shapely; assert pyproj.__version__ == "3.7.2" and shapely.__version__ == "2.1.2"'
+          python -c 'import pyproj, shapely; assert pyproj.__version__ == "3.7.2" and shapely.__version__ == "2.2.0"'
       - name: Test fabricated single-source GML polygons and raster edges
         run: python -m unittest tests.test_hessen_alkis_one_building_worldcover_pair_v0 -v
       - name: Recheck original TIFF compression and ALKIS one-GML validators
         run: python -m unittest tests.test_probe_esa_worldcover_classified_block185_v0 tests.test_probe_hessen_alkis_one_gml_ring_v0 -v
       - name: One approved WFS source and exactly three original ESA ranges research-only
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         run: python -m research_runners.hessen_alkis_one_building_worldcover_pair_v0 --live
