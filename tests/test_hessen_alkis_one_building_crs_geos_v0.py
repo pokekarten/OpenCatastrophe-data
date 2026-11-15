@@ -116,6 +116,23 @@ class OfficialSourceCRSGeosTests(unittest.TestCase):
         self.assertEqual(len(receipt["source_response_sha256"]),64)
         self.assertFalse(receipt["model_input_approved"])
 
+    def test_truncated_or_overstated_original_gml_http_body_blocked(self):
+        raw=fixture()
+        for declared in (len(raw)-1,len(raw)+1):
+            with self.subTest(declared=declared),self.assertRaisesRegex(
+                crs.CRSBlocked,"Content-Length"
+            ):
+                crs.probe(open_request=lambda req,timeout:Reply(
+                    raw=raw,headers={
+                        "Content-Type":"application/gml+xml",
+                        "Content-Length":str(declared),
+                    }
+                ))
+        valid=crs.probe(open_request=lambda req,timeout:Reply(
+            raw=raw,headers={"Content-Type":"application/gml+xml"}
+        ))
+        self.assertEqual(valid["source_response_bytes"],len(raw))
+
     def test_bad_http_status_redirect_transport_mime_and_size_fail_closed(self):
         standard={"Content-Type":"application/gml+xml",
                   "Content-Length":str(len(fixture()))}
