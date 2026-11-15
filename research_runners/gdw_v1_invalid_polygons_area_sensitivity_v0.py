@@ -162,16 +162,17 @@ def summarize(cases: list[dict | None], *, expected: int = EXPECTED_INVALID) -> 
 
 def audit(original_zip: Path) -> dict:
     """Only pinned full original SHP ZIP, no new downloads, no side effects."""
+    # Fail closed on missing/untrusted original bytes before importing the
+    # optional geodesic runner dependency (not part of repository-wide CI).
+    receipt = pre.inspect(original_zip, expected_sha256=EXACT_SHA256)
+    if (receipt["original_sha256"] != EXACT_SHA256
+            or receipt["dbf_point_only_id_count"] != 5850):
+        raise GDWSensitivityError("frozen original ZIP identity or ID counts changed")
     import shapely
     from pyproj import Geod
     from shapely.geometry import Point, shape
     from shapely.validation import explain_validity
 
-    # Fail closed before source records enter the scientific calculation.
-    receipt = pre.inspect(original_zip, expected_sha256=EXACT_SHA256)
-    if (receipt["original_sha256"] != EXACT_SHA256
-            or receipt["dbf_point_only_id_count"] != 5850):
-        raise GDWSensitivityError("frozen original ZIP identity or ID counts changed")
     points = {}
     cases = []
     seen = set()
