@@ -47,12 +47,12 @@
     "mutability_notes": "The original NHC archive lists two distinct September 2026 Atlantic releases: hurdat2-1851-2025-091226.txt and hurdat2-1851-2025-092326.txt. Do not merge their revisions or mistake directory last-modified dates for original content-hash identity. Pin downloaded full original SHA-256, file bytes, storm-row semantics and 1971-1975 reanalysis scope before comparisons or CAT model use."
   },
   "rights_and_policy": {
-    "dataset_rights_status": "unknown",
+    "dataset_rights_status": "verified",
     "api_terms_status": "unknown",
-    "terms_url": null,
+    "terms_url": "https://www.nhc.noaa.gov/mobile/disclaimer.html",
     "commercial_automation_status": "unknown",
-    "redistribution_status": "unknown",
-    "notes": "NOAA/NWS government-server disclaimer describes public-domain content unless otherwise annotated and prohibits presenting modified material as official. However this has not yet resolved exact HURDAT2 asset-specific third-party rights, allowed automatic retrieval rate/terms, repository redistribution or independent CAT scientific admission; keep dataset/API/commercial-automation/redistribution verdicts unknown and execution disabled."
+    "redistribution_status": "allowed",
+    "notes": "T0 dataset-rights review 2026-11-15, exact NOAA/NHC Atlantic HURDAT2 archived product hurdat2-1851-2025-092326.txt (not a separate Hurricane Research Division aircraft/research dataset): official NHC/NWS disclaimer states that public government-server material is in the public domain unless expressly annotated otherwise; no contrary annotation was identified on the NHC HURDAT2 product/listing. It permits lawful downstream internal/commercial data reuse and redistribution of the NOAA product subject to no false government endorsement, authorship or altered-official representation, and preservation of scholarly attribution and exact release. This source-rights ceiling DOES NOT authorize web scraping, rate-limited service automation, file HEAD/GET, raw-file publication through this repository, scientific/CAT use or model admission. Separate automatic access/service policy and original-byte identity remain unverified; commercial_automation_status stays unknown, status documented_only, probe none. If third-party or version-specific markings appear in the selected original bytes, revisit this provisional scope and fail closed before downstream use."
   },
   "probe_contract": {
     "mode": "none",
@@ -61,12 +61,14 @@
     "expected_evidence": []
   },
   "implementation_decision": "document_only",
-  "reviewed_at": "2026-11-14",
+  "reviewed_at": "2026-11-15",
   "evidence_urls": [
     "https://www.nhc.noaa.gov/data/",
     "https://www.nhc.noaa.gov/data/hurdat/",
     "https://www.nhc.noaa.gov/data/hurdat/hurdat2-1851-2025-092326.txt",
-    "https://www.nhc.noaa.gov/mobile/disclaimer.html"
+    "https://www.nhc.noaa.gov/mobile/disclaimer.html",
+    "https://www.weather.gov/disclaimer",
+    "https://www.nhc.noaa.gov/disclaimer.shtml"
   ],
-  "notes": "T0 official original-directory evidence: two separate September 2026 Atlantic file revisions were listed (091226 and 092326). This contract selects only 092326, published as HURDAT2 Atlantic 1851-2025, approx 6.7 MB in the provider index; its original bytes, exact SHA-256, historical row parsing and windfield independence are not acquired or verified. Provider data rights and automated service terms remain unknown. No network file download, Neon write or CAT model admission."
+  "notes": "T0 2026-11-15: NHC archive identifies two distinct 2026-09 revisions (091226 and 092326); selected exact original is hurdat2-1851-2025-092326.txt. NOAA/NHC government data-rights ceiling was reviewed against official public-domain disclaimers, while automated service permission, exact original bytes/hash and scientific admission remain unverified. No provider data GET/HEAD, sample, Neondb write or model admission performed."
 }
