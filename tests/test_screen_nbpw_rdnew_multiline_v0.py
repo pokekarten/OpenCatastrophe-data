@@ -71,6 +71,30 @@ class NbpwRdNewScreenTests(unittest.TestCase):
             with self.subTest(xy=xy), self.assertRaisesRegex(NbpwGeometryError, "zero-length"):
                 screen_nbpw_projected_multiline(_original(xy=xy), declared_crs="EPSG:28992")
 
+    def test_rejects_huge_json_integers_without_overflow(self) -> None:
+        # math.isfinite(10**400) raises OverflowError on CPython; bounds must
+        # reject huge exact JSON ints as a controlled geometry error instead.
+        for xy in (
+            [[10**400, 463000], [155100, 463100]],
+            [[155000, 10**400], [155100, 463100]],
+        ):
+            with self.subTest(axis="x" if xy[0][0] != 155000 else "y"):
+                with self.assertRaisesRegex(NbpwGeometryError, "outside"):
+                    screen_nbpw_projected_multiline(_original(xy=xy), declared_crs="EPSG:28992")
+
+    def test_rejects_embedded_crs_even_with_plausible_rdnew_values(self) -> None:
+        for scope in ("root", "feature", "geometry"):
+            with self.subTest(scope=scope):
+                payload = json.loads(_original())
+                target = (payload if scope == "root" else
+                          payload["features"][0] if scope == "feature" else
+                          payload["features"][0]["geometry"])
+                target["crs"] = {"type": "name", "properties": {"name": "EPSG:4326"}}
+                with self.assertRaisesRegex(NbpwGeometryError, "CRS"):
+                    screen_nbpw_projected_multiline(
+                        json.dumps(payload).encode("utf-8"), declared_crs="EPSG:28992"
+                    )
+
     def test_rejects_boolean_ordinates_and_empty_geometry(self) -> None:
         with self.assertRaises(NbpwGeometryError):
             screen_nbpw_projected_multiline(_original(xy=[[True, 463000], [155100, 463100]]), declared_crs="EPSG:28992")
