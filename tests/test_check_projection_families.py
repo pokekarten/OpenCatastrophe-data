@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -43,6 +44,34 @@ class ProjectionFamilyGuardTests(unittest.TestCase):
             errors, count = guard.check_inventory(root)
             self.assertEqual(errors, [])
             self.assertEqual(count, 5)
+
+    def test_three_named_research_snapshots_are_not_fake_projection_pairs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._root(temporary)
+            for relative, schema in guard.RESEARCH_ONLY_STANDALONE_JSON_SCHEMAS.items():
+                p = root / relative
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(json.dumps({"schema": schema}) + "\n", encoding="utf-8")
+            errors, count = guard.check_inventory(root)
+            self.assertEqual(errors, [])
+            self.assertEqual(count, 3)
+
+    def test_named_research_snapshot_schema_mismatch_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._root(temporary)
+            p = root / "research/observations/knmi_wind_metadata_review.json"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text('{"schema": "WRONG"}\n', encoding="utf-8")
+            errors, count = guard.check_inventory(root)
+            self.assertEqual(count, 1)
+            self.assertTrue(any("schema mismatch" in error for error in errors))
+
+    def test_unlisted_research_json_stays_unregistered(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._root(temporary)
+            self._pair(root, "research/observations/new_unreviewed.json")
+            errors, _ = guard.check_inventory(root)
+            self.assertTrue(any("unregistered JSON projection family" in error for error in errors))
 
     def test_unknown_family_fails_even_with_handwritten_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
