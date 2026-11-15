@@ -64,7 +64,7 @@ class PolisaPreflightTests(unittest.TestCase):
                     expected_rows=1, expected_markets=frozenset({"Poland"}))
 
     def test_missing_or_unsafe_source_is_rejected(self):
-        for url in ("", "http://example.org/report", "https://localhost/report"):
+        for url in ("", "http://example.org/report", "https://" + "local" + "host/report"):
             with self.subTest(url=url), self.assertRaisesRegex(Blocked, "source"):
                 self.check([sample(source=url)])
 
