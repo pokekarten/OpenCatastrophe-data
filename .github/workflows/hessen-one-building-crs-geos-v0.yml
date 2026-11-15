@@ -36,8 +36,9 @@ jobs:
       - name: Assert mandatory real pinned geospatial dependencies
         run: |
           python -m pip check
-          python -c 'import pyproj, shapely; assert pyproj.__version__ == "3.7.2" and shapely.__version__ == "2.1.2"'
+          python -c 'import pyproj, shapely; assert pyproj.__version__ == "3.7.2" and shapely.__version__ == "2.2.0"'
       - name: Execute synthetic CRS, coordinate, geometry and HTTP negative tests
         run: python -m unittest tests.test_hessen_alkis_one_building_crs_geos_v0 -v
       - name: Exactly one original bounded ALKIS feature source and offline CRS audit
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         run: python -m research_runners.hessen_alkis_one_building_crs_geos_v0 --live
