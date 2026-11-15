@@ -85,10 +85,16 @@ class CmrCollectionPreflightTests(unittest.TestCase):
         with self.assertRaises(CmrCollectionBlocked):
             run(body=b'{"hits":NaN,"items":[]}')
 
-    def test_umm_errors_block_nested_and_top_level(self):
-        for location in ("top", "nested"):
+    def test_error_markers_block_at_every_response_level(self):
+        for location in ("response", "item", "meta", "umm", "nested"):
             d = fixture()
-            if location == "top":
+            if location == "response":
+                d["_errors"] = {"request": "invalid"}
+            elif location == "item":
+                d["items"][0]["_errors"] = {"record": "invalid"}
+            elif location == "meta":
+                d["items"][0]["meta"]["_errors"] = {"concept-id": "invalid"}
+            elif location == "umm":
                 d["items"][0]["umm"]["_errors"] = {"Version": "bad"}
             else:
                 d["items"][0]["umm"]["Platforms"] = [{"_errors": {"ShortName": "bad"}}]
