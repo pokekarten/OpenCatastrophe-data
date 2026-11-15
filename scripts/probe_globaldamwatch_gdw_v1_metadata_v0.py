@@ -87,6 +87,10 @@ def inspect_metadata(raw: bytes) -> dict[str, Any]:
         raise ProbeBlocked("wrong Figshare article identity")
     if type(item.get("version")) is not int or item["version"] != 1:
         raise ProbeBlocked("wrong Figshare article version")
+    if item.get("title") != "Global Dam Watch database version 1.0":
+        raise ProbeBlocked("wrong Figshare article title")
+    if item.get("is_public") is not True or item.get("status") != "public":
+        raise ProbeBlocked("Figshare version is not publicly published")
     if item.get("doi") not in (DOI, "https://doi.org/" + DOI):
         raise ProbeBlocked("missing or changed frozen dataset DOI")
     lic = item.get("license")
@@ -145,14 +149,24 @@ def probe(*, open_request: Callable[[request.Request, int], Any] = _open,
           utc_clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
           contract_path: Path = CONTRACT_PATH) -> dict[str, Any]:
     verify_contract(contract_path)
-    req = request.Request(URL, headers={"Accept": "application/json"}, method="GET")
+    req = request.Request(URL, headers={"Accept": "application/json",
+                                        "Accept-Encoding": "identity"}, method="GET")
     try:
         with open_request(req, TIMEOUT) as response:
             if response.geturl() != URL or type(response.status) is not int or response.status != 200:
                 raise ProbeBlocked("unapproved response URL/status")
             if response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower() != "application/json":
                 raise ProbeBlocked("wrong metadata content type")
+            if response.headers.get("Content-Encoding", "identity").strip().lower() != "identity":
+                raise ProbeBlocked("unexpected metadata content encoding")
+            declared = response.headers.get("Content-Length")
+            if declared is not None:
+                if (type(declared) is not str or not declared.isascii()
+                        or not declared.isdecimal() or int(declared) > MAX_BYTES):
+                    raise ProbeBlocked("invalid original metadata Content-Length")
             raw = response.read(MAX_BYTES + 1)
+            if declared is not None and len(raw) != int(declared):
+                raise ProbeBlocked("original metadata body truncated or length mismatch")
     except ProbeBlocked:
         raise
     except (error.HTTPError, error.URLError, OSError, TimeoutError) as exc:

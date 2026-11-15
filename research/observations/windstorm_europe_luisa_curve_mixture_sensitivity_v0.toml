@@ -1,0 +1,666 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+profile = "windstorm-europe-luisa-mixture-mapping-sensitivity-v0"
+status = "two_unresolved_mappings_compared_no_mapping_selected"
+workbook_sha256 = "a4ddff2c35bbc3536330389334c0fcae378799a49c6b7f3c643276065bbb8276"
+curve_csv_sha256 = "d960e67ab726815974feb08e5850054d7fac2873ea5bb3b02956e6262da7fd81"
+runner_sha256 = "16fc5d5bcd7fb71e53f778371644faf6e54f9201fc7ca02261cfcc3dbbba3ee3"
+class_count = 46
+wind_speed_knot_count = 141
+differing_class_count = 29
+wind_speed_range_m_s = [0.0, 140.0]
+semantic_mapping = "workbook shares matched by class meaning to exact CSV labels; strong outbuilding => outbuilding strong"
+legacy_mapping = "original notebook share order multiplied positionally by the six CSV curve columns"
+
+[global_maximum_difference]
+difference_pp = 32.5
+landuse_code = 2110
+description = "Non irrigated arable land"
+wind_speed_m_s = 63.0
+semantic_percent = 60.5
+legacy_percent = 93.0
+
+[[classes]]
+landuse_code = 1111
+description = "High density urban fabric"
+share_total = 1.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.05
+semantic_percent_at_40m_s = 0.2752
+legacy_percent_at_40m_s = 0.04020000000000001
+difference_pp_at_40m_s = 0.235
+semantic_curve_percent_at_max_difference = 8.12025
+legacy_curve_percent_at_max_difference = 4.8702499999999995
+max_absolute_difference_pp = 3.250000000000001
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 1121
+description = "Medium density urban fabric"
+share_total = 1.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.1
+semantic_percent_at_40m_s = 0.55025
+legacy_percent_at_40m_s = 0.08025000000000002
+difference_pp_at_40m_s = 0.47
+semantic_curve_percent_at_max_difference = 13.385000000000002
+legacy_curve_percent_at_max_difference = 6.885000000000001
+max_absolute_difference_pp = 6.500000000000001
+max_difference_wind_speed_m_s = 64.0
+
+[[classes]]
+landuse_code = 1122
+description = "Low density urban fabric"
+share_total = 1.0
+regular_outbuilding_share = 0.05
+strong_outbuilding_share = 0.1
+semantic_percent_at_40m_s = 0.59035
+legacy_percent_at_40m_s = 0.35535000000000005
+difference_pp_at_40m_s = 0.235
+semantic_curve_percent_at_max_difference = 14.45
+legacy_curve_percent_at_max_difference = 11.2
+max_absolute_difference_pp = 3.25
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 1123
+description = "Isolated or very low density urban fabric"
+share_total = 1.0
+regular_outbuilding_share = 0.12
+strong_outbuilding_share = 0.13
+semantic_percent_at_40m_s = 0.8113500000000001
+legacy_percent_at_40m_s = 0.76435
+difference_pp_at_40m_s = 0.04700000000000015
+semantic_curve_percent_at_max_difference = 19.14
+legacy_curve_percent_at_max_difference = 18.49
+max_absolute_difference_pp = 0.6500000000000021
+max_difference_wind_speed_m_s = 64.0
+
+[[classes]]
+landuse_code = 1130
+description = "Urban vegetation"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 1210
+description = "Industrial or commercial units"
+share_total = 1.0
+regular_outbuilding_share = 0.15
+strong_outbuilding_share = 0.2
+semantic_percent_at_40m_s = 4.1203
+legacy_percent_at_40m_s = 3.8853000000000004
+difference_pp_at_40m_s = 0.23499999999999988
+semantic_curve_percent_at_max_difference = 29.13
+legacy_curve_percent_at_max_difference = 25.88
+max_absolute_difference_pp = 3.25
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 1221
+description = "Road and rail networks and associated land"
+share_total = 1.0
+regular_outbuilding_share = 0.1
+strong_outbuilding_share = 0.1
+semantic_percent_at_40m_s = 6.4301
+legacy_percent_at_40m_s = 6.4301
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 1222
+description = "Major stations"
+share_total = 1.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0002
+legacy_percent_at_40m_s = 0.0002
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 1230
+description = "Port areas"
+share_total = 1.0
+regular_outbuilding_share = 0.1
+strong_outbuilding_share = 0.2
+semantic_percent_at_40m_s = 6.980200000000001
+legacy_percent_at_40m_s = 6.510200000000001
+difference_pp_at_40m_s = 0.46999999999999975
+semantic_curve_percent_at_max_difference = 32.660000000000004
+legacy_curve_percent_at_max_difference = 26.16
+max_absolute_difference_pp = 6.5000000000000036
+max_difference_wind_speed_m_s = 64.0
+
+[[classes]]
+landuse_code = 1241
+description = "Airport areas"
+share_total = 1.0
+regular_outbuilding_share = 0.1
+strong_outbuilding_share = 0.1
+semantic_percent_at_40m_s = 0.6301000000000001
+legacy_percent_at_40m_s = 0.6301000000000001
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 1242
+description = "Airport terminals"
+share_total = 1.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 1310
+description = "Mineral extraction sites"
+share_total = 1.0
+regular_outbuilding_share = 0.2
+strong_outbuilding_share = 0.2
+semantic_percent_at_40m_s = 12.8602
+legacy_percent_at_40m_s = 12.8602
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 1320
+description = "Dump sites"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 1330
+description = "Construction sites"
+share_total = 1.0
+regular_outbuilding_share = 0.3
+strong_outbuilding_share = 0.3
+semantic_percent_at_40m_s = 13.490200000000002
+legacy_percent_at_40m_s = 13.490200000000002
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 1410
+description = "Green urban areas"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 1421
+description = "Sport and leisure green"
+share_total = 1.0
+regular_outbuilding_share = 0.3
+strong_outbuilding_share = 0.4
+semantic_percent_at_40m_s = 14.040100000000002
+legacy_percent_at_40m_s = 13.570100000000002
+difference_pp_at_40m_s = 0.47000000000000064
+semantic_curve_percent_at_max_difference = 63.18
+legacy_curve_percent_at_max_difference = 56.68
+max_absolute_difference_pp = 6.5
+max_difference_wind_speed_m_s = 64.0
+
+[[classes]]
+landuse_code = 1422
+description = "Sport and leisure built-up"
+share_total = 1.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.1
+semantic_percent_at_40m_s = 0.5503
+legacy_percent_at_40m_s = 0.08030000000000001
+difference_pp_at_40m_s = 0.47
+semantic_curve_percent_at_max_difference = 13.780000000000001
+legacy_curve_percent_at_max_difference = 7.28
+max_absolute_difference_pp = 6.500000000000001
+max_difference_wind_speed_m_s = 64.0
+
+[[classes]]
+landuse_code = 2110
+description = "Non irrigated arable land"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 2120
+description = "Permanently irrigated land"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 2130
+description = "Rice fields"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 2210
+description = "Vineyards"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 2220
+description = "Fruit trees and berry plantations"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 2230
+description = "Olive groves"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 2310
+description = "Pastures"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 2410
+description = "Annual crops associated with permanent crops"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 2420
+description = "Complex cultivation patterns"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 2430
+description = "Land principally occupied by agriculture"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 2440
+description = "Agro-forestry areas"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 3110
+description = "Broad-leaved forest"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 3120
+description = "Coniferous forest"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 3130
+description = "Mixed forest"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 3210
+description = "Natural grassland"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 3220
+description = "Moors and heathland"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 3230
+description = "Sclerophyllous vegetation"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 3240
+description = "Transitional woodland shrub"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 3310
+description = "Beaches, dunes and sand plains"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 3320
+description = "Bare rock"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 3330
+description = "Sparsely vegetated areas"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 3340
+description = "Burnt areas"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 3350
+description = "Glaciers and perpetual snow"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 4000
+description = "Wetlands"
+share_total = 1.0
+regular_outbuilding_share = 0.5
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 29.4
+legacy_percent_at_40m_s = 31.75
+difference_pp_at_40m_s = -2.3500000000000014
+semantic_curve_percent_at_max_difference = 60.5
+legacy_curve_percent_at_max_difference = 93.0
+max_absolute_difference_pp = 32.5
+max_difference_wind_speed_m_s = 63.0
+
+[[classes]]
+landuse_code = 5110
+description = "Water courses"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 5120
+description = "Water bodies"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 5210
+description = "Coastal lagoons"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 5220
+description = "Estuaries"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0
+
+[[classes]]
+landuse_code = 5230
+description = "Sea and ocean"
+share_total = 0.0
+regular_outbuilding_share = 0.0
+strong_outbuilding_share = 0.0
+semantic_percent_at_40m_s = 0.0
+legacy_percent_at_40m_s = 0.0
+difference_pp_at_40m_s = 0.0
+semantic_curve_percent_at_max_difference = 0.0
+legacy_curve_percent_at_max_difference = 0.0
+max_absolute_difference_pp = 0.0
+max_difference_wind_speed_m_s = 0.0

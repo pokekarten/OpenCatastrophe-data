@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "us.noaa.nhc.hurdat2.atlantic.2026-09",
+  "source_ids": [
+    "us.noaa.nhc.hurdat2.atlantic.2026-09"
+  ],
+  "provider": "NOAA National Hurricane Center",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://www.nhc.noaa.gov/data/",
+  "service_root": "https://www.nhc.noaa.gov",
+  "api_version": "Atlantic HURDAT2 1851-2025; exact archived file hurdat2-1851-2025-092326.txt (September 2026 reanalysis of 1971-1975), original content hash still unverified",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_nhc_hurdat2_archive_listing"
+    ],
+    "path_templates": [
+      "/data/",
+      "/data/hurdat/",
+      "/data/hurdat/hurdat2-1851-2025-092326.txt"
+    ],
+    "parameter_rules": "Documentation-only T0 file identity: original provider archive enumerates two distinct September 2026 Atlantic revisions, including 091226 and 092326; the later selected filename is hurdat2-1851-2025-092326.txt (Atlantic best tracks through 2025). Listing URL and exact file path are documentary source identities, not executable download authorization. No file HEAD/GET, ranged sample, free-form path, caller-selected URL/headers, archive crawling, mirroring, redirects or retries may be executed under this contract. Obtain separate exact dataset/API terms and reviewed one-shot bounded access contract before retrieval."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html"
+    ],
+    "format": "Official NHC public archive index, not the ~6.8-MB original comma-delimited tropical-cyclone best-track file. No windfield/return-level source bytes included.",
+    "scientific_semantics": "Best-track approximately six-hour storm centers, maximum sustained winds, central pressure, wind radii from 2004. Not an original European extratropical windfield or insurer loss. NHC/HURDAT2 and NOAA IBTrACS may share NHC original tracks; cross-database agreement not independent and events must not be doubled."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "No live archive sweep or file download under this documentation-only contract; review fixed original text path, caching, contact and one-shot request budget before parser.",
+    "mutability_notes": "The original NHC archive lists two distinct September 2026 Atlantic releases: hurdat2-1851-2025-091226.txt and hurdat2-1851-2025-092326.txt. Do not merge their revisions or mistake directory last-modified dates for original content-hash identity. Pin downloaded full original SHA-256, file bytes, storm-row semantics and 1971-1975 reanalysis scope before comparisons or CAT model use."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "unknown",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "NOAA/NWS government-server disclaimer describes public-domain content unless otherwise annotated and prohibits presenting modified material as official. However this has not yet resolved exact HURDAT2 asset-specific third-party rights, allowed automatic retrieval rate/terms, repository redistribution or independent CAT scientific admission; keep dataset/API/commercial-automation/redistribution verdicts unknown and execution disabled."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-14",
+  "evidence_urls": [
+    "https://www.nhc.noaa.gov/data/",
+    "https://www.nhc.noaa.gov/data/hurdat/",
+    "https://www.nhc.noaa.gov/data/hurdat/hurdat2-1851-2025-092326.txt",
+    "https://www.nhc.noaa.gov/mobile/disclaimer.html"
+  ],
+  "notes": "T0 official original-directory evidence: two separate September 2026 Atlantic file revisions were listed (091226 and 092326). This contract selects only 092326, published as HURDAT2 Atlantic 1851-2025, approx 6.7 MB in the provider index; its original bytes, exact SHA-256, historical row parsing and windfield independence are not acquired or verified. Provider data rights and automated service terms remain unknown. No network file download, Neon write or CAT model admission."
+}

@@ -164,6 +164,8 @@ def probe(
             ):
                 raise ProbeBlocked("TNM response length exceeds permitted bound")
             original = reply.read(MAX_BYTES + 1)
+            if content_length is not None and len(original) != int(content_length):
+                raise ProbeBlocked("TNM response body differs from declared Content-Length")
     except ProbeBlocked:
         raise
     except (error.HTTPError, error.URLError, OSError, TimeoutError) as exc:

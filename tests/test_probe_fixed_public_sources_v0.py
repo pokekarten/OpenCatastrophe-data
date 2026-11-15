@@ -191,7 +191,10 @@ class FixedSourceProbesTests(unittest.TestCase):
             "features": [{
                 "type": "Feature", "id": "synthetic-not-real",
                 "geometry": {"type": "Point", "coordinates": [12.5, 45.0, 11.0]},
-                "properties": {"source_id": "synthetic-source", "mag": 5.2},
+                "properties": {
+                    "source_id": "synthetic-source", "mag": 5.2,
+                    "time": "2026-11-14T21:30:19.0Z", "unid": "synthetic-not-real",
+                },
             }],
         }
         payload = json.dumps(event).encode("utf-8")
