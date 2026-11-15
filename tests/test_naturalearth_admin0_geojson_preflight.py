@@ -42,6 +42,7 @@ class NaturalEarthGeojsonPreflightTests(unittest.TestCase):
         self.assertEqual(got["unique_adm0_a3"], 2)
         self.assertEqual(got["coordinate_pair_count"], 8)
         self.assertEqual(got["missing_iso2_sentinel_count"], 1)
+        self.assertEqual(got["nonstandard_iso_a2_count"], 0)
         self.assertEqual(got["geometry_type_counts"], {"Polygon": 1, "MultiPolygon": 1})
         self.assertFalse(got["model_input_admitted"])
         self.assertFalse(got["original_bytes_persisted"])
@@ -66,6 +67,16 @@ class NaturalEarthGeojsonPreflightTests(unittest.TestCase):
                     inspect_original_geojson(encode(obj), require_pinned_identity=False)
         obj = synthetic_collection()
         obj["features"][0]["properties"]["ISO_A2"] = 1
+        with self.assertRaises(GeojsonBlocked):
+            inspect_original_geojson(encode(obj), require_pinned_identity=False)
+
+    def test_publisher_cn_tw_is_flagged_not_silently_normalized(self) -> None:
+        obj = synthetic_collection()
+        obj["features"][1]["properties"]["ISO_A2"] = "CN-TW"
+        got = inspect_original_geojson(encode(obj), require_pinned_identity=False)
+        self.assertEqual(got["nonstandard_iso_a2_count"], 1)
+        self.assertEqual(got["missing_iso2_sentinel_count"], 0)
+        obj["features"][1]["properties"]["ISO_A2"] = "TW-X"
         with self.assertRaises(GeojsonBlocked):
             inspect_original_geojson(encode(obj), require_pinned_identity=False)
 
