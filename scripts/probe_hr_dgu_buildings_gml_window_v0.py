@@ -195,11 +195,13 @@ def inspect_gml(raw: bytes) -> dict:
         raise BuildingGmlError("one polygon exterior is required")
     if len(exteriors[0]) != 1 or exteriors[0][0].tag != GML + "LinearRing":
         raise BuildingGmlError("expected exactly one GML LinearRing exterior")
-    lists = exteriors[0][0].findall(GML + "posList")
-    if len(lists) != 1 or not lists[0].text:
+    # This bounded profile supports exactly one posList child, not a
+    # schema-invalid mixture of posList, pos or other ring encodings.
+    ring = exteriors[0][0]
+    if len(ring) != 1 or ring[0].tag != GML + "posList" or not ring[0].text:
         raise BuildingGmlError("missing or ambiguous GML exterior posList")
     try:
-        vals = [float(n) for n in lists[0].text.split()]
+        vals = [float(n) for n in ring[0].text.split()]
     except ValueError as exc:
         raise BuildingGmlError("non-numeric polygon coordinates") from exc
     if len(vals) < 10 or len(vals) % 2 or len(vals) > 4000 or not all(map(math.isfinite, vals)):
