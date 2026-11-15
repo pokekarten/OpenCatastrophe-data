@@ -115,7 +115,7 @@ class EUGridQA(unittest.TestCase):
                   include_raster=True, duplicate=False, extra_name=None):
         # Tiny synthetic archive; never copied from JRC original.
         if tif_header is None:
-            tif_header = b"II*\\x00\\x08\\x00\\x00\\x00" + b"\\x00" * 24
+            tif_header = b"II*\x00\x08\x00\x00\x00" + b"\x00" * 24
         buf = io.BytesIO()
         with ZipFile(buf, "w", compression=ZIP_DEFLATED) as zf:
             zf.writestr(GHSL_MEMBER, synthetic_ghsl_legend())
@@ -158,9 +158,9 @@ class EUGridQA(unittest.TestCase):
                 verify_ghsl_zip(data, sha(data))
 
     def test_wrong_raster_product_magic_and_ifd_fail_closed(self):
-        wrong_magic = b"not TIFF" + b"\\x00" * 24
-        out_of_bounds = b"II*\\x00" + (1_000_000).to_bytes(4, "little") + b"\\x00" * 24
-        invalid_bigtiff = b"II+\\x00\\x04\\x00\\x00\\x00" + b"\\x00" * 24
+        wrong_magic = b"not TIFF" + b"\x00" * 24
+        out_of_bounds = b"II*\x00" + (1_000_000).to_bytes(4, "little") + b"\x00" * 24
+        invalid_bigtiff = b"II+\x00\x04\x00\x00\x00" + b"\x00" * 24
         cases = (
             self._ghsl_zip(tif_name="GHS_AGE_1975052020_GLOBE_R2025A_54009_1000_V1_0.tif"),
             self._ghsl_zip(tif_header=wrong_magic),
