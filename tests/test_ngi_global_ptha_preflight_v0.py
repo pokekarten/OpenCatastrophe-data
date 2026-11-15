@@ -59,7 +59,7 @@ class TsunamiPreflightTests(unittest.TestCase):
         if rate_25 is not None:
             fields["rate_25"] = str(rate_25)
         lines.append(";".join(fields[col] for col in header))
-        self.path.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+        self.path.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return hashlib.md5(self.path.read_bytes()).hexdigest()
 
     def test_duplicate_site_across_longitude_conventions_is_an_anomaly(self):
