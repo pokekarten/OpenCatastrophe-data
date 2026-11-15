@@ -27,6 +27,8 @@ first_row AS (SELECT j FROM observed WHERE case_id='observed_row_1'),
 cases AS (
  SELECT case_id,expected_valid,j FROM observed
  UNION ALL SELECT 'negative_bad_fips',false,jsonb_set(j,'{fipsCode}','"999"'::jsonb) FROM first_row
+ UNION ALL SELECT 'negative_swapped_fips_valid_syntax',false,jsonb_set(j,'{fipsCode}','"01003"'::jsonb) FROM first_row
+ UNION ALL SELECT 'negative_swapped_county_valid_fips',false,jsonb_set(j,'{county}','"Baldwin"'::jsonb) FROM first_row
  UNION ALL SELECT 'negative_zero_denominator',false,jsonb_set(j,'{totalResStructures}','0'::jsonb) FROM first_row
  UNION ALL SELECT 'negative_wrong_rate',false,jsonb_set(j,'{resPenetrationRate}','0.8'::jsonb) FROM first_row
  UNION ALL SELECT 'negative_negative_contracts',false,jsonb_set(j,'{resContractsInForce}','-1'::jsonb) FROM first_row
@@ -54,6 +56,10 @@ evaluated AS (
    COALESCE(
       (j->>'state')='Alabama' AND (j->>'county') IN ('Autauga','Baldwin')
       AND (j->>'fipsCode') ~ '^[0-9]{5}$'
+      AND (
+           ((j->>'county')='Autauga' AND (j->>'fipsCode')='01001')
+        OR ((j->>'county')='Baldwin' AND (j->>'fipsCode')='01003')
+      )
       AND (j->>'asOfDate')='2026-08-03T00:00:00.000Z'
       AND pg_input_is_valid(coalesce(j->>'asOfDate',''), 'timestamptz')
       AND n>=0 AND n=trunc(n) AND d>0 AND d=trunc(d)
