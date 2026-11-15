@@ -81,6 +81,8 @@ def audit_catalogue(body: bytes) -> dict[str, Any]:
         raise Blocked("original catalogue exceeds size cap")
     try:
         root = json.loads(body.decode("utf-8"), object_pairs_hook=_unique_dict)
+    except Blocked:
+        raise
     except (UnicodeError, ValueError) as exc:
         raise Blocked("invalid original UTF-8 catalogue JSON") from exc
     if type(root) is not dict or type(root.get("resources")) is not list:

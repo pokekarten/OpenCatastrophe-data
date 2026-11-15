@@ -11,7 +11,7 @@ from research_runners.meteofrance_north_hourly_catalogue_v0 import (
 
 def fake(department: str) -> dict:
     return {
-        "id": ("a" * 8 + "-b" * 4 + "-c" * 4 + "-d" * 4 + "-"
+        "id": ("aaaaaaaa-bbbb-cccc-dddd-"
                + str(int(department)).zfill(12)),
         "title": f"HOR_departement_{department}_periode_{PERIOD}",
         "url": f"{BASE}H_{department}_previous-{PERIOD}.csv.gz",
