@@ -5,6 +5,8 @@
 -- and 3 complete first event records staged in private Neon sample #27.
 -- Historical original Range digest only; no new provider request/hash.
 -- SELECT-only scientific event semantics, not full catalogue or CAT admission.
+-- Guard JSON array types before jsonb_array_elements*/jsonb_array_length.
+-- Eight adversarial source-record/header mutations per event reject safely.
 -- Date_START/END are UNTYPED timezone-naive values, NOT validated UTC.
 -- W3 shares RADKLIM input: do not infer independent event frequencies.
 WITH s AS (
@@ -13,7 +15,9 @@ WITH s AS (
  WHERE sample_id=27 AND source_id='dwd.catrare.t5-eta.v2026.01'
 ), ev AS (
  SELECT s.*,r,ord::int n
- FROM s CROSS JOIN LATERAL jsonb_array_elements(s.j->'original_source_records')
+ FROM s CROSS JOIN LATERAL jsonb_array_elements(
+  CASE WHEN jsonb_typeof(s.j->'original_source_records')='array'
+       THEN s.j->'original_source_records' ELSE '[]'::jsonb END)
  WITH ORDINALITY v(r,ord)
 ), cases AS (
  SELECT n,'source_prefix_row' test,true expected,j,r,original_range_sha,sample_kind FROM ev
@@ -36,6 +40,14 @@ WITH s AS (
  UNION ALL SELECT n,'false_w3_independence',false,jsonb_set(j,'{overlap_with_w3_catalogue_possible}','false'),r,original_range_sha,sample_kind FROM ev
  UNION ALL SELECT n,'false_full_file_digest',false,jsonb_set(j,'{full_csv_sha256_verified}','true'),r,original_range_sha,sample_kind FROM ev
  UNION ALL SELECT n,'false_model_admission',false,jsonb_set(j,'{model_input_approved}','true'),r,original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'header_is_json_null',false,jsonb_set(j,'{original_schema_header}','null'::jsonb),r,original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'header_is_object',false,jsonb_set(j,'{original_schema_header}','{}'::jsonb),r,original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'header_duplicate',false,jsonb_set(j,'{original_schema_header,1}',j #> '{original_schema_header,0}'),r,original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'header_changed_name',false,jsonb_set(j,'{original_schema_header,0}','"BogusField"'::jsonb),r,original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'records_are_object',false,jsonb_set(j,'{original_source_records}','{}'::jsonb),r,original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'records_are_null',false,jsonb_set(j,'{original_source_records}','null'::jsonb),r,original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'records_missing',false,j - 'original_source_records',r,original_range_sha,sample_kind FROM ev
+ UNION ALL SELECT n,'records_two_only',false,jsonb_set(j,'{original_source_records}',(j->'original_source_records') - 2),r,original_range_sha,sample_kind FROM ev
 ), typed AS (
  SELECT cases.*,
  CASE WHEN r->>'Duration' ~ '^[0-9]{1,3}$' THEN (r->>'Duration')::int END h,
@@ -66,8 +78,16 @@ WITH s AS (
  AND j->'row_count'='3'::jsonb
  AND j->'range_bytes'='4096'::jsonb
  AND j->>'original_range_request'='bytes=0-4095'
- AND jsonb_array_length(j->'original_schema_header')=67
- AND jsonb_array_length(j->'original_source_records')=3
+ AND jsonb_array_length(CASE WHEN jsonb_typeof(j->'original_schema_header')='array'
+      THEN j->'original_schema_header' ELSE '[]'::jsonb END)=67
+ AND j->'original_schema_header'->>0='CatVersion'
+ AND j->'original_schema_header'->>1='KEY_FIELD'
+ AND j->'original_schema_header'->>2='Event_ID'
+ AND (SELECT count(DISTINCT h.value)=67
+      FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(j->'original_schema_header')='array'
+           THEN j->'original_schema_header' ELSE '[]'::jsonb END) h(value))
+ AND jsonb_array_length(CASE WHEN jsonb_typeof(j->'original_source_records')='array'
+     THEN j->'original_source_records' ELSE '[]'::jsonb END)=3
  AND j->'full_csv_sha256_verified'='false'::jsonb
  AND j->'source_event_time_zone_not_validated'='true'::jsonb
  AND j->'coordinate_reference_projection_not_validated'='true'::jsonb
@@ -95,7 +115,8 @@ WITH s AS (
       AND count(DISTINCT r->>'KEY_FIELD')=3 FROM ev)
   AND
   (SELECT count(DISTINCT h.value)=67 FROM s,
-    jsonb_array_elements_text(j->'original_schema_header') h(value)) valid
+    jsonb_array_elements_text(CASE WHEN jsonb_typeof(j->'original_schema_header')='array'
+      THEN j->'original_schema_header' ELSE '[]'::jsonb END) h(value)) valid
 )
 SELECT n,test,expected,actual,expected=actual pass FROM checked
 UNION ALL SELECT NULL::int,'three_unique_events_67_headers',true,
