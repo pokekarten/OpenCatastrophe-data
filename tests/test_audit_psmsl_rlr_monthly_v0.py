@@ -22,6 +22,9 @@ class PSMSLRLRMonthlyTests(unittest.TestCase):
     def test_synthetic_monthly_padded_missing_and_octal_quality(self):
         result = audit_bytes(series(), station_id=202)
         self.assertEqual(result['calendar_month_count'], 3)
+        self.assertEqual(result['first_month'], '2024-12')
+        self.assertEqual(result['last_month'], '2025-02')
+        self.assertEqual(result['flagged_months'], 2)
         self.assertEqual(result['missing_monthly_means'], 1)
         self.assertEqual(result['interpolated_months'], 1)
         self.assertEqual(result['caution_flag_months'], 2)
