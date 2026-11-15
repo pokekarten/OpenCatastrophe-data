@@ -85,6 +85,16 @@ class TestStationPdfProvenance(unittest.TestCase):
         self.assertTrue(receipt["eligible_station_pdf_exact_match_complete"])
         self.assertFalse(receipt["station_site_and_instrument_history_verified_for_2020"])
 
+    def test_duplicate_titles_remain_unusable_with_partial_ambiguity_report(self):
+        matched, digest, unmatched, ambiguity = resolve_station_sheets(
+            station_catalogue(duplicate=True), {"62001001"}, "62",
+            min_resources=1, allow_unmatched=True, report_ambiguous=True
+        )
+        self.assertEqual(matched, {})
+        self.assertEqual(unmatched, 0)
+        self.assertEqual(len(ambiguity), 1)
+        self.assertEqual(len(digest), 64)
+
     def test_complementary_publisher_assets_require_exact_id_and_path(self):
         alt = ("https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/"
                "BASE/INFOS_POSTES_COMP/62/62001001_62_TEST-VILLE.pdf")

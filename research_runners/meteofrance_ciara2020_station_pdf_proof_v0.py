@@ -92,6 +92,7 @@ def _station_resource(raw: object, station: str, department: str, *, prefix: str
 def resolve_station_sheets(catalogue: bytes, selected: set[str], dep: str,
                            *, min_resources: int = 10_000,
                            allow_unmatched: bool = False,
+                           report_ambiguous: bool = False,
                            prefix: str = PDF_PREFIX):
     if dep not in ALLOWED_DEPARTMENTS or any(
         not re.fullmatch(r"\d{8}", x) or not x.startswith(dep) for x in selected
@@ -120,6 +121,7 @@ def resolve_station_sheets(catalogue: bytes, selected: set[str], dep: str,
             matches[m.group(2)].append(item)
     selected_out: dict[str, dict] = {}
     unmatched = 0
+    ambiguous: set[str] = set()
     for station in sorted(selected):
         candidates = matches[station]
         if not candidates:
@@ -130,10 +132,19 @@ def resolve_station_sheets(catalogue: bytes, selected: set[str], dep: str,
             unmatched += 1
             continue
         if len(candidates) != 1:
+            if report_ambiguous:
+                # Do not select a latest/first PDF for a duplicated identity.
+                # Keep ambiguity IDs ephemeral so no station name is emitted.
+                ambiguous.add(station)
+                continue
             raise Blocked("ambiguous multiple PDF metadata identities for station")
         selected_out[station] = _station_resource(candidates[0], station, dep, prefix=prefix)
     if len({x["resource_id"] for x in selected_out.values()}) != len(selected_out):
         raise Blocked("station resource UUID reused for distinct original stations")
+    if report_ambiguous:
+        if not allow_unmatched:
+            raise Blocked("ambiguous reporting requires partial cohort mode")
+        return selected_out, sha256(catalogue), unmatched, ambiguous
     if allow_unmatched:
         return selected_out, sha256(catalogue), unmatched
     return selected_out, sha256(catalogue)
@@ -157,9 +168,9 @@ def station_pdf_proof(dep: str, original: bytes, catalogue: bytes,
     selected = complete_quality_station_ids(original)
     if len(selected) != event["quality_checked_full_72_hour_stations"]:
         raise Blocked("selected station count inconsistent with validated Ciara event proof")
-    matched, metadata_sha, unmatched = resolve_station_sheets(
+    matched, metadata_sha, unmatched, ambiguous = resolve_station_sheets(
         catalogue, selected, dep, min_resources=min_resources,
-        allow_unmatched=True,
+        allow_unmatched=True, report_ambiguous=True,
     )
     regular_count = len(matched)
     supplemental_sha = None
@@ -167,12 +178,13 @@ def station_pdf_proof(dep: str, original: bytes, catalogue: bytes,
     if unmatched and supplemental_catalogue is not None:
         # Distinct authoritative partner-station dataset. Use only exact
         # station identities absent from the primary publisher catalogue.
-        remaining = selected.difference(matched)
-        extra, supplemental_sha, unmatched = resolve_station_sheets(
+        remaining = selected.difference(matched).difference(ambiguous)
+        extra, supplemental_sha, unmatched, extra_ambiguous = resolve_station_sheets(
             supplemental_catalogue, remaining, dep,
             min_resources=min_supplemental_resources,
-            allow_unmatched=True, prefix=COMP_PREFIX,
+            allow_unmatched=True, report_ambiguous=True, prefix=COMP_PREFIX,
         )
+        ambiguous.update(extra_ambiguous)
         if set(extra).intersection(matched):
             raise Blocked("station sheet cohort overlaps primary and complementary")
         matched.update(extra)
@@ -202,7 +214,8 @@ def station_pdf_proof(dep: str, original: bytes, catalogue: bytes,
         "official_station_pdf_complementary_count": supplemental_count,
         "complementary_station_catalogue_sha256": supplemental_sha,
         "eligible_station_pdf_unmatched_exact_title_count": unmatched,
-        "eligible_station_pdf_exact_match_complete": unmatched == 0,
+        "eligible_station_pdf_ambiguous_multiple_resource_count": len(ambiguous),
+        "eligible_station_pdf_exact_match_complete": unmatched == 0 and not ambiguous,
         "pdf_original_bytes_verified": pdf_bytes,
         "official_station_pdf_cohort_sha256": cohort_sha,
         "station_identifiers_or_locations_published": False,
