@@ -53,6 +53,44 @@ class GDWInvalidAreaSensitivityTests(unittest.TestCase):
         self.assertEqual(receipt["footprint_symmetric_difference_km2_sum"], 20.0)
         self.assertFalse(receipt["CAT_model_input_approved"])
 
+    def test_nonconservative_geodesic_overlay_fails_closed(self):
+        from unittest.mock import patch
+        # Previously accepted: union 7 km2 exceeds total alternative area 5.
+        with patch.object(s, "_area_km2", side_effect=[3.0, 2.0, 1.0, 7.0]):
+            with self.assertRaisesRegex(s.GDWSensitivityError,
+                                        "nonconservative geodesic overlay"):
+                s.examine_invalid(self.bowtie, Point(0.4, 1.4), self.geod)
+
+    def test_unexpected_source_exception_never_leaks_coordinates(self):
+        from contextlib import redirect_stderr
+        from io import StringIO
+        from unittest.mock import patch
+
+        stderr = StringIO()
+        with patch.object(s, "audit", side_effect=RuntimeError(
+            "GEOS topology failed near original coordinates [12.345 67.890]")):
+            with redirect_stderr(stderr):
+                result = s.main(["--original-zip", "/nonexistent/source.zip"])
+        self.assertEqual(result, 2)
+        self.assertIn("BLOCKED: original GDW scientific sensitivity", stderr.getvalue())
+        self.assertNotIn("12.345", stderr.getvalue())
+        self.assertNotIn("67.890", stderr.getvalue())
+        self.assertNotIn("GEOS topology", stderr.getvalue())
+
+    def test_pinned_pyproj_synthetic_geodesic_when_available(self):
+        # This optional dependency is installed in the reviewed original
+        # main-only workflow, not in the repository-wide validation matrix.
+        import importlib.util
+        if importlib.util.find_spec("pyproj") is None:
+            self.skipTest("pyproj is optional outside the GIS research runner")
+        from pyproj import Geod
+        result = s.examine_invalid(self.bowtie, Point(0.4, 1.4),
+                                   Geod(ellps="WGS84"))
+        self.assertAlmostEqual(result["linework_area_km2"], 24615.815, delta=1.0)
+        self.assertAlmostEqual(result["buffer_zero_area_km2"], 12309.710, delta=1.0)
+        self.assertGreater(result["footprint_change_fraction_of_union"], 0.4)
+        self.assertLess(result["footprint_change_fraction_of_union"], 0.6)
+
     def test_never_treat_valid_or_empty_as_original_invalid(self):
         with self.assertRaises(s.GDWSensitivityError):
             s.examine_invalid(Polygon([(0,0), (1,0), (1,1), (0,0)]),
