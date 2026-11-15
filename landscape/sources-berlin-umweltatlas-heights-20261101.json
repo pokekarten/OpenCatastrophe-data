@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission research record for Berlin's historical Umweltatlas building-height 2022 WFS, deliberately kept separate from monthly ALKIS and without geometry or attribute retrieval authorization.",
+  "review_date": "2026-11-01",
+  "entries": [
+    {
+      "candidate_id": "de.berlin.umweltatlas-gebaeudehoehen-2022.wfs",
+      "name": "Berlin Umweltatlas 2022 LoD2 building roof height WFS",
+      "provider": "Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen Berlin",
+      "categories": [
+        "buildings",
+        "building_attributes",
+        "building_height",
+        "roof_form",
+        "floor_count",
+        "germany"
+      ],
+      "spatial_scope": "Berlin, Germany; distinct citywide 2022 Umweltatlas building and building-part height layer, not the current ALKIS building WFS",
+      "temporal_scope": "Published 2022-04-06, dataset portal updated 2023-08-23; underlying ALKIS footprint source dated 2022-04-07 according to official methodology; not current monthly ALKIS",
+      "resolution_or_granularity": "Individual 2D polygon building/part representations derived from 3D LoD2 with first-height metres, roof type, storeys, method and footprint-date fields; source height may be missing or imputed",
+      "potential_roles": [
+        "building_height_source_challenge",
+        "roof_type_uncertainty_review",
+        "building_attribute_crosswalk_research",
+        "geometric_segmentation_version_audit"
+      ],
+      "authoritative_url": "https://daten.berlin.de/datensaetze/gebaudehohen-umweltatlas-wfs-d918088d",
+      "access_class_hint": "public_official_wfs_catalogue_capabilities_metadata_only_no_feature_access_approved",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official catalogue lists dl-de-zero-2.0; exact downstream rights and API terms still require review. Source explicitly derives roof heights from Berlin LoD2 and historical ALKIS geometry; it is NOT independent ground truth or the same vintage as current monthly ALKIS WFS, and 3 m may be assigned when a height cannot be determined. Technical fields include hoehe, dachart, geschosse, role_txt, source-method and footprint-vintage indicators, but documented fields are not proof of populated live WFS attributes. Preserve missing-vs-imputed status and source method before any scientific join; no automatic identity-by-name, address or feature ID; no TIV, insured location, vulnerability, loss or model input inferred."
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg GeoBase2026 vs EUBUCCO original pair audit
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_geobase2026_eubucco_bounded_pair_v0.py'
+      - 'tests/test_luxembourg_geobase2026_eubucco_bounded_pair_v0.py'
+      - '.github/workflows/luxembourg-geobase2026-eubucco-pair.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-original-third-pair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout reviewed implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned spatial and Parquet runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            -r requirements-eu-flood-spatial.txt pyarrow==20.0.0
+          python -m pip check
+      - name: Synthetic-only geospatial source-vintage tests
+        run: python -m unittest tests.test_luxembourg_geobase2026_eubucco_bounded_pair_v0 -v
+      - name: One fixed original GeoBase 2026 and EUBUCCO LU00 research window
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          export GEO_ZIP="$RUNNER_TEMP/lu-geobase2026-original.zip"
+          export GEO_GPKG="$RUNNER_TEMP/lu-geobase2026-original.gpkg"
+          export EUBUCCO="$RUNNER_TEMP/lu-eubucco-v0.2-original.parquet"
+          trap 'rm -f "$GEO_ZIP" "$GEO_GPKG" "$EUBUCCO"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 83886080 --output "$GEO_ZIP" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 115343360 --output "$EUBUCCO" \
+            'https://s3.eubucco.com/eubucco/v0.2/buildings/parquet/nuts_id=LU00/LU00.parquet'
+          python -m research_runners.luxembourg_geobase_buildings_20261001_v0 \
+            --source-zip "$GEO_ZIP" > /dev/null
+          python -m research_runners.eubucco_lu00_lineage_preflight_v0 \
+            --original "$EUBUCCO" \
+            --expected-sha256 d1e554de9db0b1f747575426ebb950ef96bb8b2956657554b5ff2998a91abe8c > /dev/null
+          python - <<'PY'
+          import os
+          from zipfile import ZipFile
+          import shutil
+          import hashlib
+          from pathlib import Path
+          with ZipFile(os.environ["GEO_ZIP"]) as z:
+              members=[m for m in z.infolist() if m.filename.lower().endswith(".gpkg") and not m.is_dir()]
+              if len(members)!=1 or not 0<members[0].file_size<=150*1024*1024:
+                  raise SystemExit("BLOCKED: original GeoPackage membership/size changed")
+              with z.open(members[0]) as src, Path(os.environ["GEO_GPKG"]).open("xb") as dst:
+                  shutil.copyfileobj(src,dst,length=1024*1024)
+          with Path(os.environ["GEO_GPKG"]).open("rb") as src:
+              digest=hashlib.file_digest(src,"sha256").hexdigest()
+          if digest!="ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676":
+              raise SystemExit("BLOCKED: original 2026 GeoPackage SHA-256 drift")
+          PY
+          python -m research_runners.luxembourg_geobase2026_eubucco_bounded_pair_v0 \
+            --geobase-gpkg "$GEO_GPKG" --eubucco-lu00 "$EUBUCCO"
+          # No source bytes, per-feature IDs/geometry, policy data or matching pairs
+          # are retained in repository, Neon or CI artifacts.

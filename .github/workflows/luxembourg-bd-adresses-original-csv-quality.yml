@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg BD-Adresses 2026-11-02 original CSV integrity and aggregate CRS QA
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/lu_bd_adresses_original_csv_quality_v0.py'
+      - 'tests/test_lu_bd_adresses_original_csv_quality_v0.py'
+      - '.github/workflows/luxembourg-bd-adresses-original-csv-quality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-csv-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout reviewed implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Execute offline synthetic parser and receipt tests
+        run: python -m unittest discover -s tests -p 'test_lu_bd_adresses_original_csv_quality_v0.py' -v
+      - name: Install pinned CRS transformation runtime
+        run: python -m pip install --disable-pip-version-check 'pyproj==3.7.2'
+      - name: Fetch exactly one reviewed ACT original, hash bytes and report aggregates
+        run: python -m research_runners.lu_bd_adresses_original_csv_quality_v0 --live --transform
+        # Uses one version-pinned direct HTTPS GET and short-lived tempfile.
+        # No original address CSV/rows, household IDs or customer data uploaded.
+        # A source version/MD5/size/schema mismatch deliberately fails the job.

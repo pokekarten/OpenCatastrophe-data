@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Zenodo EU wind-flood original pair CSV proof
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/zenodo-eu-wind-flood-pairs.yml"
+      - "scripts/zenodo_eu_wind_flood_pairs_preflight_v0.py"
+      - "tests/test_zenodo_eu_wind_flood_pairs_preflight_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-pair-index:
+    name: Verify exact public 801138-byte original CSV, emit aggregate evidence only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact source branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Run deterministic synthetic negative tests
+        run: python -m unittest tests.test_zenodo_eu_wind_flood_pairs_preflight_v0 -v
+      - name: Fetch exact original Zenodo source into memory and verify original-byte identity and semantics
+        run: python scripts/zenodo_eu_wind_flood_pairs_preflight_v0.py --fetch

@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "worldbank.gfdrr.thinkhazard.screening-scores.2021-wb-catalogue",
+  "source_ids": [
+    "worldbank.gfdrr.thinkhazard.screening-scores"
+  ],
+  "provider": "World Bank / GFDRR ThinkHazard archived hazard-ranking dataset",
+  "interface_type": "web_portal",
+  "status": "documented_only",
+  "documentation_url": "https://datacatalog.worldbank.org/search/dataset/0060151/thinkhazard-hazard-ranking",
+  "service_root": "https://datacatalog.worldbank.org",
+  "api_version": "World Bank Data Catalog dataset 0060151, published score-table snapshot 2021-11-29; not 2026 ThinkHazard portal",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_worldbank_2021_licence_and_vintage"
+    ],
+    "path_templates": [
+      "/search/dataset/0060151/thinkhazard-hazard-ranking"
+    ],
+    "parameter_rules": "Documentation-only. This one fixed World Bank catalogue page identifies an archived 2021 Excel release with CC BY 4.0. The 2026 ThinkHazard portal is a scientifically different publication. No data file, generic Data Catalog API query, preview, API Service link, redirect or script download is authorized. Do not follow provider-returned file URLs or synthesize unreviewed URLs; later access needs a separate exact-file, rights and response-byte receipt review."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html"
+    ],
+    "format": "Official World Bank Data Catalog metadata page, not a scoring data API, 2026 dynamic portal or downloaded Excel asset.",
+    "scientific_semantics": "The dataset page metadata was revised in March 2025 but the listed hazard ranking Excel file itself was last updated November 29, 2021. The 2026 ThinkHazard site separately states data published September 18, 2026 and additional city classifications. Neither temporal lineage can be silently substituted. Hazard level classes are screening guidance, not event footprints, exceedance probabilities, observed damage or actuarial losses."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 262144,
+    "max_sample_bytes": 262144,
+    "retry_policy": "none",
+    "rate_limit_notes": "No provider requests are executable under this documented-only contract. World Bank Data Catalog API and download service automation terms require separate exact-path review.",
+    "mutability_notes": "Freeze data product version and file publication date (2021-11-29), catalog metadata date (2025-03-07) and separate live portal publication (2026-09-18) distinctly. Underlying source layers, administrative boundaries, urban-area support and hazard category methods can differ. A later dataset file byte hash and attribution are required before modelling."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "allowed",
+    "notes": "The official World Bank Data Catalog record 0060151 explicitly lists Creative Commons Attribution 4.0 for the dated 2021 hazard-ranking Excel dataset. That dataset-specific licence permits redistribution with attribution but does not prove automated Data Catalog API access terms, the rights for upstream layers or that a newer 2026 portal product uses the same dataset. All executed access remains disabled."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-03",
+  "evidence_urls": [
+    "https://datacatalog.worldbank.org/search/dataset/0060151/thinkhazard-hazard-ranking",
+    "https://int.thinkhazard.org/en/about",
+    "https://gfdrr.github.io/thinkhazard/",
+    "https://datacatalog.worldbank.org/public-licenses"
+  ],
+  "notes": "Research-only source product/version access boundary, not a model admission. Product 2021 file remains unread, no bytes or licence files ingested and no hazard score or data record stored in Neon. The dynamic ThinkHazard 2026 portal requires distinct version and layer-level provenance before use."
+}

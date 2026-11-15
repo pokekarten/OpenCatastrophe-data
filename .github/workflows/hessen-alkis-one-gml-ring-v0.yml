@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hessen original ALKIS Building GML one-ring diagnostic
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_hessen_alkis_one_gml_ring_v0.py'
+      - 'tests/test_probe_hessen_alkis_one_gml_ring_v0.py'
+      - '.github/workflows/hessen-alkis-one-gml-ring-v0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hessen-original-one-gml-ring-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-one-gml-ring:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline 2D GML bounds, simple-ring and source-count discrepancy tests
+        run: python -m unittest tests.test_probe_hessen_alkis_one_gml_ring_v0 -v
+      - name: One fixed original WFS GetFeature geometry-ring diagnostic only
+        run: python -m scripts.probe_hessen_alkis_one_gml_ring_v0 --live

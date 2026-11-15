@@ -1,0 +1,265 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission research index of ten free/open-source geocoding, spatial SQL, raster, grid and web-map tools complementary to active GIS source PR #1239; tools are NOT original CAT data, production geocoding authorization or model inputs.",
+  "review_date": "2026-11-04",
+  "entries": [
+    {
+      "candidate_id": "osm.nominatim.selfhosted-geocoder.workflow",
+      "name": "Nominatim self-hosted OpenStreetMap geocoder",
+      "provider": "osm-search / OpenStreetMap contributors",
+      "categories": [
+        "geocoding",
+        "open_source_software",
+        "address_matching",
+        "reverse_geocoding"
+      ],
+      "spatial_scope": "Worldwide to the extent of an explicitly acquired and version-pinned OpenStreetMap extract",
+      "temporal_scope": "Software release and imported OSM data snapshot are separately versioned; reviewed 2026-11-04",
+      "resolution_or_granularity": "Address and place forward/reverse search returning candidate coordinates and OSM objects, not surveyed building-level truth",
+      "potential_roles": [
+        "self_hosted_address_lookup",
+        "reverse_geocode_diagnostic",
+        "pelias_photon_benchmark"
+      ],
+      "authoritative_url": "https://github.com/osm-search/Nominatim",
+      "access_class_hint": "self_hosted_only_for_repeated_or_bulk_use_public_osmf_api_restricted",
+      "note": "Software licensing differs by component: current repository README lists Python GPL-3.0-or-later, Lua Apache-2.0 and other files GPLv2. OSM data are ODbL; licensed source snapshot and attribution are separate. OSMF's public nominatim.openstreetmap.org service disallows systematic reverse-grid queries and autocomplete, caps requests at 1/s and restricts longer bulk work; do NOT use it as a background world-geocoding worker. This is a software/workflow discovery, not a new independent address dataset, measured building footprint, approved exposure asset, or permission to export customer locations.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "openvenues.libpostal.address-parser.workflow",
+      "name": "libpostal international address parsing and normalization",
+      "provider": "openvenues / libpostal contributors",
+      "categories": [
+        "address_normalization",
+        "open_source_software",
+        "geocoding_preprocessing"
+      ],
+      "spatial_scope": "Global, language and address-format performance dependent on training data and country",
+      "temporal_scope": "Software and model-data releases separately pinned; reviewed 2026-11-04",
+      "resolution_or_granularity": "Tokens and normalized address variants; it does not geocode to surveyed coordinates",
+      "potential_roles": [
+        "multilingual_address_parsing",
+        "geocoder_candidate_preprocessing",
+        "normalization_error_audit"
+      ],
+      "authoritative_url": "https://github.com/openvenues/libpostal",
+      "access_class_hint": "local_software_and_model_download_required_no_public_address_api",
+      "note": "MIT-licensed software per upstream LICENSE. Statistical model artifacts and source/training-data lineage need an exact-version and terms review; parsing errors can reorder units, house numbers or street names. Preserve untouched input, parser/model version, country and language hints, and per-field alternatives. Do not publish sensitive/customer address text or infer an exact building match from a successfully parsed string.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "duckdb.spatial.local-geoparquet-analysis.workflow",
+      "name": "DuckDB Spatial extension for local and external geospatial analysis",
+      "provider": "DuckDB Foundation / DuckDB Spatial",
+      "categories": [
+        "spatial_sql",
+        "geoparquet",
+        "open_source_software",
+        "vector_processing"
+      ],
+      "spatial_scope": "Worldwide, conditional on separately lawfully acquired spatial datasets",
+      "temporal_scope": "Version-pinned DuckDB core and spatial extension required; reviewed 2026-11-04",
+      "resolution_or_granularity": "Geometry SQL and GDAL-backed vector reads; preserves source geometry but does not provide observations",
+      "potential_roles": [
+        "bounded_overture_parquet_screening",
+        "source_vintage_tile_comparison",
+        "offline_spatial_join_quality_control"
+      ],
+      "authoritative_url": "https://duckdb.org/docs/stable/core_extensions/spatial/overview",
+      "access_class_hint": "local_spatial_extension_execution_pin_core_extension_and_driver_versions",
+      "note": "DuckDB core is MIT licensed; verify spatial extension/bundled GDAL dependency and exact binary licenses for deployment. Extension is useful for versioned Overture GeoParquet partitions and bounded joins, not a canonical insurer database or primary record of building identity. Pin CRS, EPSG axis order, geometry validity, polygon-area units, input asset hash, data licence and output count/hash. Do not move provider bytes into public Git.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "postgis.postgresql.spatial-joins.workflow",
+      "name": "PostGIS spatial joins and persistent geometry storage",
+      "provider": "PostGIS / OSGeo",
+      "categories": [
+        "spatial_sql",
+        "geodatabase",
+        "open_source_software",
+        "geometry_matching"
+      ],
+      "spatial_scope": "Worldwide, dependent on independently admitted and versioned source features",
+      "temporal_scope": "Use exact PostgreSQL/PostGIS extension versions on the selected isolated insurance database branch",
+      "resolution_or_granularity": "OGC geometry/geography types and spatial predicates; no bundled global asset inventory",
+      "potential_roles": [
+        "persistent_building_crosswalk",
+        "hazard_polygon_exposure_overlay",
+        "spatial_index_and_reconciliation"
+      ],
+      "authoritative_url": "https://postgis.net/documentation/faq/gpl-license/",
+      "access_class_hint": "existing_isolated_insurance_neon_postgis_branch_not_a_new_database",
+      "note": "PostGIS is GPLv2 and its official FAQ distinguishes database use from distributing modified PostGIS source code. Existing synthetic-only PostGIS/Neon joins in OpenCatastrophe-data are not real insurer exposure admissions. Require exact geometry SRID and source identity, ST_Covers/ST_Intersects semantics, distance buffer CRS, split/merge ambiguity, and rights before ever promoting spatial matches. This is tool discovery, not authorization to write production Neon.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "uber.h3.hexagonal-index.workflow",
+      "name": "H3 hierarchical hexagonal geospatial index",
+      "provider": "Uber / H3 contributors",
+      "categories": [
+        "spatial_indexing",
+        "aggregation",
+        "open_source_software",
+        "grid"
+      ],
+      "spatial_scope": "Global grid on the Earth's surface",
+      "temporal_scope": "Library/API version and chosen resolution fixed per run; reviewed 2026-11-04",
+      "resolution_or_granularity": "Discrete hierarchical hexagonal cells, not building parcel boundaries or geocoded evidence",
+      "potential_roles": [
+        "global_hazard_exposure_screening",
+        "cat_accumulation_aggregation",
+        "shared_world_grid_index"
+      ],
+      "authoritative_url": "https://github.com/uber/h3",
+      "access_class_hint": "local_library_versioned_resolution_declared",
+      "note": "Apache-2.0 software. H3 cell IDs are computational bins, not official postcode/admin boundaries or stable physical building IDs. Boundary crossings, polar distortion, partial-cell and spatial-resolution effects require tests, especially for flood/coastal exposure and multi-peril correlations. A cell intersection is not proof that a specific building is damaged or insured.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "qgis.desktop-gis-quality-control.workflow",
+      "name": "QGIS desktop GIS quality-control and reproducible cartography",
+      "provider": "QGIS project / OSGeo",
+      "categories": [
+        "gis_desktop",
+        "map_visualization",
+        "open_source_software",
+        "manual_review"
+      ],
+      "spatial_scope": "Global, contingent on input datasets, plugins and raster/vector service access",
+      "temporal_scope": "Pin QGIS and plugin versions, saved processing parameters and input data vintages",
+      "resolution_or_granularity": "Interactive vector/raster viewing, overlay and processing; presentation/diagnostics rather than data creation",
+      "potential_roles": [
+        "manual_building_match_adjudication",
+        "flood_raster_crs_review",
+        "research_visual_qc"
+      ],
+      "authoritative_url": "https://github.com/qgis/QGIS",
+      "access_class_hint": "local_desktop_tool_not_public_geocoding_endpoint",
+      "note": "QGIS upstream describes GPL-2.0-or-later licensing. Interactive map inspection is useful for disputed polygons, NoData, elevation and split/merge cases but is not reproducible evidence by itself; export command or processing history, layer CRS, styling, project version and numerical tests. Basemap tiles or third-party plugins may have separate licenses and terms.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "osgeo.gdal.ogr.raster-vector-toolchain.workflow",
+      "name": "GDAL/OGR raster and vector geospatial conversion toolkit",
+      "provider": "GDAL/OSGeo",
+      "categories": [
+        "raster_processing",
+        "vector_processing",
+        "open_source_software",
+        "crs_transform"
+      ],
+      "spatial_scope": "Global spatial formats with supported drivers",
+      "temporal_scope": "Exact GDAL binary, drivers, PROJ and dependent library versions; reviewed 2026-11-04",
+      "resolution_or_granularity": "Raster/vector read, warp, reproject, cutline, translation and format conversion; not a source of hazard measurements",
+      "potential_roles": [
+        "reproducible_geotiff_processing",
+        "geopackage_to_geoparquet_conversion",
+        "crs_and_nodata_validation"
+      ],
+      "authoritative_url": "https://gdal.org/en/stable/license.html",
+      "access_class_hint": "local_command_line_library_pin_driver_and_dependency_versions",
+      "note": "GDAL/OGR source is generally MIT licensed, but official documentation warns binary dependencies and drivers can impose different terms. Reprojection must preserve CRS, axis order, coordinate epoch and vertical datum; raster alignment, pixel-as-area conventions, NoData, resampling and depth units need explicit receipts. GDAL cannot confer reuse rights on transformed upstream data.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "maplibre.gljs.open-map-visualization.workflow",
+      "name": "MapLibre GL JS interactive web map rendering",
+      "provider": "MapLibre community",
+      "categories": [
+        "web_mapping",
+        "open_source_software",
+        "visualization"
+      ],
+      "spatial_scope": "Global map display where authorized vector/raster tile data exist",
+      "temporal_scope": "Versioned JS renderer, style and tileset snapshots; reviewed 2026-11-04",
+      "resolution_or_granularity": "Browser vector tile rendering, layer styling and user interaction; no address geocoder or risk hazard dataset included",
+      "potential_roles": [
+        "nextgen_risk_map_frontend",
+        "exposure_hazard_layers",
+        "inspection_of_geocoding_uncertainty"
+      ],
+      "authoritative_url": "https://github.com/maplibre/maplibre-gl-js",
+      "access_class_hint": "client_library_requires_separately_licensed_tiles_styles_and_attribution",
+      "note": "BSD-3-Clause software; renderer and map styles do not grant map tile, basemap or provider-data rights. Reserve public OpenCatastrophe-data for references and reproducibility metadata, and display only legally permitted spatial layers; never expose confidential insurer positions or loss records in public map tiles. Map visualization alone is not evidence of a model-ready building match.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "protomaps.pmtiles.static-tile-archive.workflow",
+      "name": "PMTiles versioned static geospatial tile archive",
+      "provider": "Protomaps / PMTiles",
+      "categories": [
+        "web_mapping",
+        "geospatial_tiling",
+        "open_source_software",
+        "data_distribution"
+      ],
+      "spatial_scope": "Global or regionally bounded tilesets, based entirely on chosen inputs",
+      "temporal_scope": "Pin PMTiles specification/implementation, generated tileset hash and all source vintages",
+      "resolution_or_granularity": "Single-file tile archive for range-request retrieval and offline/remote static publication",
+      "potential_roles": [
+        "bounded_public_risk_map_tiles",
+        "hazard_layer_visualization_delivery",
+        "reproducible_map_release_artifact"
+      ],
+      "authoritative_url": "https://github.com/protomaps/PMTiles",
+      "access_class_hint": "local_tile_packaging_and_object_store_publication_only_after_asset_rights",
+      "note": "Reference implementations use BSD-3-Clause; format specification public domain/CC0. The license of the PMTiles container is not the license of any tileset or underlying OSM/Overture layers. Tile generalization, dropped attributes, scale thresholds and caching can alter visual detail; risk and loss computations must use original version-pinned numerical geometry or raster, not map-display tiles.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "geoserver.ogc-spatial-services.workflow",
+      "name": "GeoServer OGC map and feature serving",
+      "provider": "GeoServer / OSGeo",
+      "categories": [
+        "ogc_services",
+        "web_mapping",
+        "open_source_software",
+        "spatial_data_publication"
+      ],
+      "spatial_scope": "Global or regional services backed by authorized datasets",
+      "temporal_scope": "Pin GeoServer/OGC extension and layer configuration versions; reviewed 2026-11-04",
+      "resolution_or_granularity": "Server publishes OGC-facing WMS/WFS/related services, not underlying observed data",
+      "potential_roles": [
+        "internal_hazard_layer_services",
+        "bounded_catalogue_interoperability",
+        "nextgen_gis_layer_api"
+      ],
+      "authoritative_url": "https://github.com/geoserver/geoserver",
+      "access_class_hint": "self_hosted_service_optional_not_needed_for_initial_offline_pilot",
+      "note": "GeoServer is GPL-licensed (official source and notices describe GPLv2 or later). Hosting and publishing separate spatial services entail network security, authorization, cache, service and layer-level rights reviews. WMS imagery is not necessarily suitable as analytical numeric hazard input; prefer exact original raster/vector bytes and declared coordinate systems for loss calculations. Start with static PMTiles for approved visualization and add GeoServer only when OGC operations are needed.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    }
+  ]
+}

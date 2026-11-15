@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: CLIMK Kyrill original native cell 24 fictional asset crosswalk
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/climk-kyrill-original-native-area-peril-crosswalk.yml"
+      - "research_runners/climk_kyrill_24_assets_native_peril_crosswalk_v0.py"
+      - "tests/test_climk_kyrill_24_assets_native_peril_crosswalk_v0.py"
+      - "docs/research/climk-kyrill-24-assets-original-oasis-area-peril-v0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: climk-kyrill-native-cell-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-native-cell:
+    name: Original Kyrill gust -> 24 fictional assets -> native Oasis footprint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - name: Checkout validated code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Pin native NetCDF-4 and Oasis converter
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            "netCDF4==1.7.3" "oasislmf==2.5.8"
+          python -m pip check
+          command -v csvtobin
+      - name: Reject synthetic false-join and provenance mutations
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_climk_kyrill_24_assets_native_peril_crosswalk_v0.py' -v
+      - name: Reobtain original Kyrill and reconcile one cell to 24 fictional buildings
+        run: |
+          python research_runners/climk_kyrill_24_assets_native_peril_crosswalk_v0.py \
+            --out "$RUNNER_TEMP/climk-kyrill-one-cell-24-buildings"
+      - name: Accept exact original wind cell in native Oasis footprint converter
+        run: |
+          csvtobin footprint \
+            -i "$RUNNER_TEMP/climk-kyrill-one-cell-24-buildings/footprint.csv" \
+            -o "$RUNNER_TEMP/climk-kyrill-one-cell-24-buildings/footprint.bin" \
+            -x "$RUNNER_TEMP/climk-kyrill-one-cell-24-buildings/footprint.idx" \
+            -m 9
+          test -s "$RUNNER_TEMP/climk-kyrill-one-cell-24-buildings/footprint.bin"
+          test -s "$RUNNER_TEMP/climk-kyrill-one-cell-24-buildings/footprint.idx"
+      - name: Verify scientific research receipt and output identities
+        run: |
+          python - <<'PY'
+          import csv
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])/"climk-kyrill-one-cell-24-buildings"
+          r=json.loads((root/"crosswalk_receipt.json").read_text())
+          assert r["source_sha256_claim_checked_against_two_receipts"]=="92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102"
+          assert r["original_provider_bytes_independently_verified_in_this_run"] is True
+          assert r["original_source_gust_triple_sample_verified"] is True
+          assert r["oasis_areaperil_id"]==21095
+          assert r["distinct_physical_hazard_cells"]==1 and r["fictional_site_markers"]==2
+          assert r["fictional_asset_count"]==24 and r["fictional_tiv_eur"]==240000000
+          assert r["annual_oep_aep_authorized"] is False
+          assert r["native_full_oasis_gul_il_ri_verified"] is False
+          rows=list(csv.DictReader((root/"fictional_asset_peril_crosswalk.csv").open()))
+          assert len(rows)==24 and {x["areaperil_id"] for x in rows}=={"21095"}
+          assert {x["source_gust_m_s"] for x in rows}=={str(r["source_gust_m_s"])}
+          assert hashlib.sha256((root/"fictional_asset_peril_crosswalk.csv").read_bytes()).hexdigest()==r["crosswalk_csv_sha256"]
+          lines=[
+            "## Source verified: original Kyrill wind at same native cell as 24 fictional assets",
+            "",
+            "- Publisher: Zenodo CLIMK-WINDS ERA5 v2, SHA256 verified in original bytes.",
+            "- Original historical storm: KYRILL (20070118), index 0.",
+            "- Native source cell y=78 x=112; Oasis area-peril ID 21095.",
+            f"- Direct original wind gust independently checked 3 ways: {r['source_gust_m_s']} m/s.",
+            "- 24 invented EUR10m buildings, two fictional markers, **one** source grid cell, EUR240m made-up TIV.",
+            "- Source-located hazard footprint successfully compiled to native Oasis 2.5.8 footprint.bin/footprint.idx.",
+            "- No matched insurer policy, calibrated vulnerability, full GUL/IL/RI or annual EP.",
+          ]
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf8") as f:
+            f.write("\n".join(lines)+"\n")
+          PY

@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** stac
 
-**Status:** documented_only
+**Status:** probe_ready
 
 **Documentation url:** <https://opendatadocs.meteoswiss.ch/c-climate-data/c5-radar-based-climate-data>
 
@@ -35,7 +35,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 ## Access scope
 
 - metadata
-- catalogue
 
 ## Authentication
 
@@ -57,7 +56,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /api/stac/v1/collections/ch.meteoschweiz.ogd-radar-derived-grid
 
-**Parameter rules:** This initial contract documents only one repository-constructed HTTPS GET of the exact MeteoSwiss hail-climatology STAC collection metadata path, with no query string and no caller-supplied host, path, headers, bbox, search expression, item ID, asset href, product selector, month, year or return period. Selecting or downloading a NetCDF asset requires a later scientific and asset-specific review that freezes one product family and exact STAC item/asset identity before values are inspected.
+**Parameter rules:** Exactly one manually dispatched anonymous HTTPS GET to https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-radar-derived-grid, no query string, retries, redirects or caller-supplied URL, headers, collection/item IDs, bbox, search filters, asset href, NetCDF path, date, product or return period. The probe checks only the STAC Collection metadata body and does not traverse its linked items/assets or schedule polling.
 
 ## Response contract
 
@@ -65,7 +64,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - application/json
 
-**Format:** FSDI STAC Collection metadata for ch.meteoschweiz.ogd-radar-derived-grid; hail data assets referenced by the collection are NetCDF.
+**Format:** One official STAC 1.0.0 Collection JSON response with frozen collection id/title/type, MeteoSwiss producer/licensor, CC-BY, canonical self-link and national Swiss hail-climate scope; release dates/items are mutable. Asset files are never requested.
 
 **Scientific semantics:** The collection contains several non-interchangeable radar-derived hail climate product families: monthly/yearly MESHS and anomalies, monthly/yearly hail-day counts and anomalies, long-term hail-day climatologies and standard deviations, and separate HailStoRe-derived return-value hazard maps. Hail fields are radar/algorithm-derived pseudo-observations rather than comprehensive ground measurements; return-value maps additionally depend on stochastic resampling and represent annual exceedance hazard under today's climate, not observed event catalogues. A hail day uses the provider-defined 06 UTC to 06 UTC window. The hail-climatology datasets are calculated only for the April-through-September hail season; absence or non-publication for October through March must not be interpreted as an observed zero, a verified no-hail day or month, or complete year-round observational coverage. Monthly and yearly products update over time, while return-value maps are static. Data are provided on the Swiss LV95 / EPSG:2056 grid at approximately 1 km scale. Any later asset consumer must preserve exact product class, temporal/release identity, observed-versus-model-derived status and CRS rather than treating the collection as one homogeneous hail variable.
 
@@ -79,7 +78,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** FSDI geoservices are available without registration but are subject to fair-use and operating conditions. Excessive request frequency or volume may be restricted, and high-intensity automated scraping is discouraged. This documented-only contract therefore authorizes no polling cadence and no asset download; any later probe should be one bounded collection-metadata request through the trusted execution plane.
+**Rate limit notes:** Provider official fair-use and MeteoSwiss Open Data terms allow registration-free anonymous STAC metadata GETs, but prohibit excessive/repeated traffic and recommend identifiable clients. Limit this contract to exactly one manually triggered HTTPS metadata GET (30s, 256 KiB, no retry). No scheduled live polling, automatic item traversal, NetCDF acquisition or bulk requests.
 
 **Mutability notes:** The STAC collection metadata and current monthly/yearly item inventory are mutable as MeteoSwiss publishes updates. Provider documentation states monthly updates are available after the following month and yearly updates at the end of October, while hail-hazard return values are static. Any future asset receipt must bind retrieval UTC, exact collection/item/asset identity, final provider URL, byte count and SHA-256.
 
@@ -95,23 +94,27 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** allowed
 
-**Notes:** MeteoSwiss states that its Open Data may be reused without restriction, including commercially, and publishes it under CC BY 4.0; reproduction or redistribution requires source acknowledgement as 'Source: MeteoSwiss'. Automatic access is delivered through FSDI, whose separately reviewed service terms allow registration-free use subject to fair-use, operating and dataset-specific conditions. These are source/service ceilings only: this contract does not authorize repository persistence or publication of a future NetCDF asset before exact asset identity, attribution, provenance and admission scope are reviewed.
+**Notes:** MeteoSwiss original Open Data terms grant CC BY 4.0 commercial reuse with mandatory attribution (Source: MeteoSwiss), excluding endorsement. FSDI/STAC service docs permit public GET and apply fair-use limits; automated excessive download traffic is forbidden. This review authorizes only a single manual Collection metadata GET. STAC response license identifier is CC-BY, not a licence granted for unreviewed third-party linked assets, all attribute families, NetCDF publication or model admission.
 
 ## Probe contract
 
-**Mode:** none
+**Mode:** metadata_get
 
-**Operation:** `null`
+**Operation:** collection_metadata_get
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-_Empty array._
+- Exactly one original official STAC v1 Collection HTTPS GET HTTP 200 without redirect, max 262144 response bytes and application/json
+- Exact collection id ch.meteoschweiz.ogd-radar-derived-grid, STAC version 1.0.0, Collection type and Spatial climate analyses - Hail identity
+- Producer/licensor Federal Office of Meteorology and Climatology MeteoSwiss, CC-BY licence, canonical self-link and Swiss hail season semantics
+- Retrieval UTC, fixed request SHA-256, original body SHA-256, response bytes and reviewed code/contract hashes
+- No linked items, NetCDF assets, original values, provider payloads or CAT model inputs acquired or persisted
 
-**Implementation decision:** document_only
+**Implementation decision:** build_later
 
-**Reviewed at:** 2026-08-12
+**Reviewed at:** 2026-11-12
 
 ## Evidence urls
 
@@ -122,4 +125,4 @@ _Empty array._
 - <https://www.geo.admin.ch/en/general-terms-of-use-fsdi>
 - <https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-radar-derived-grid>
 
-**Notes:** Static source-access documentation only. The durable collection identifier is ch.meteoschweiz.ogd-radar-derived-grid and the provider dataset DOI is 10.18751/Climate/Griddata/CHHC/1.0. No STAC probe, item search, asset selection, NetCDF download, provider byte persistence, source admission, publication promotion, event-set construction, damage/loss inference or insured-loss semantics are performed or authorized by this contract.
+**Notes:** A single metadata-only, original-provider STAC Collection probe is now reviewed. The canonical collection ID is ch.meteoschweiz.ogd-radar-derived-grid and DOI 10.18751/Climate/Griddata/CHHC/1.0. A successful metadata probe does not authorize STAC item traversal, hail return-level asset downloads, annual exceedance interpretation, event catalog generation, scientific admission, CAT loss, insured exposure or data write. Separate asset identity/licence/quality/science reviews required.

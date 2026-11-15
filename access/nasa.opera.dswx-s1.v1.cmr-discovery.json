@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "nasa.opera.dswx-s1.v1.cmr-discovery",
+  "source_ids": [
+    "nasa.opera.dswx-s1.v1"
+  ],
+  "provider": "NASA JPL OPERA / Physical Oceanography Distributed Active Archive Center (PO.DAAC) / NASA Common Metadata Repository (CMR)",
+  "interface_type": "rest",
+  "status": "documented_only",
+  "documentation_url": "https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html",
+  "service_root": "https://cmr.earthdata.nasa.gov",
+  "api_version": "NASA CMR search API; OPERA_L3_DSWX-S1_V1 collection C2949811996-POCLOUD, version 1.0",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": "https://urs.earthdata.nasa.gov",
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "document_fixed_collection_and_granules"
+    ],
+    "path_templates": [
+      "/search/collections.umm_json",
+      "/search/granules.umm_json"
+    ],
+    "parameter_rules": "DOCUMENTATION-ONLY, NO LIVE AUTOMATION AUTHORIZED: CMR collections search must select exact concept_id=C2949811996-POCLOUD. A future independently reviewed granule search may select that exact collection_concept_id with a fixed UTC time window, bounded AOI and page_size=1. Reject arbitrary collection IDs, product versions, hosts, URLs, credentials, custom headers, arbitrary download links, redirects, pagination and all caller-supplied filters until new review. Never treat public CMR catalogue links as permission to download protected NASA Earthdata files."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "NASA CMR UMM-JSON public collection and granule discovery metadata only; no satellite GeoTIFF or calibrated classified pixels.",
+    "scientific_semantics": "Metadata returns OPERA DSWx-S1 product and granule discovery identity, not independent flood occurrence, water depth, return period or site-specific hazard. Product is Sentinel-1 SAR-derived 30 m surface-water classification plus confidence layers; 6-12 day nominal revisit does not ensure event-time coverage. Retain observed acquisition UTC, tile ID, product processing version, classification/QA flags and possible overlap in Sentinel-1 evidence with CEMS Global Flood Monitoring."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 131072,
+    "max_sample_bytes": 131072,
+    "retry_policy": "none",
+    "rate_limit_notes": "No API fetch or catalogue probing is authorized by this documentation-only contract. On a separate reviewed T1 scope, use at most one trusted anonymous CMR metadata request and no redirects, bulk enumeration, unbounded pagination, or recurring polling. Keep any future granule download on a separately authorized credentialed pathway.",
+    "mutability_notes": "CMR metadata and per-granule links may change. Any future execution receipt must bind request identity, CMR concept ID and revision, granule collection and observation UTC, retrieval UTC, response byte count, SHA-256, parser version and final redirect chain; it cannot establish an immutable data-byte identity without a separate original-file receipt."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "The AWS Open Data Registry names CC BY 4.0 for the NASA SNWG/OPERA project and identifies OPERA_L3_DSWX-S1_V1 assets as a protected S3 collection requiring Earthdata Login/AWS temporary credentials in us-west-2. This is useful rights evidence but does not constitute source-specific reviewed attribution/republication/commercial entitlement for individual modified Copernicus Sentinel input and granule products. Both data redistribution and automated catalogue/service terms remain unapproved; no probe until independently reviewed."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-02",
+  "evidence_urls": [
+    "https://podaac.jpl.nasa.gov/dataset/OPERA_L3_DSWX-S1_V1",
+    "https://registry.opendata.aws/nasa-snwg-opera/",
+    "https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html",
+    "https://www.jpl.nasa.gov/go/opera/products/dswx-product-suite/"
+  ],
+  "notes": "This file documents only a public CMR metadata interface and provider-controlled asset-access boundary. Actual DSWx-S1 GeoTIFFs live under protected podaac-ops-cumulus-protected/OPERA_L3_DSWX-S1_V1 and require Earthdata Login and AWS short-term credentials. No retrieval, tiles, samples, Earthdata tokens, real building overlays, original provider bytes, model inputs, or Neon database writes are authorized. See source intake #1130 and candidate PR #1133."
+}

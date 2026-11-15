@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg LiDAR2024 national MNT/MNS COG four-kibibyte range gate
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_cog_range_capability_v0.py'
+      - 'tests/test_luxembourg_lidar2024_cog_range_capability_v0.py'
+      - '.github/workflows/luxembourg-lidar2024-cog-range-capability.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-official-cog-range:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Reject unbounded origin responses on synthetic network fixture
+        run: python -m unittest tests.test_luxembourg_lidar2024_cog_range_capability_v0 -v
+      - name: Fetch exactly 4KiB MNT original header, fail on HTTP 200
+        run: python -m research_runners.luxembourg_lidar2024_cog_range_capability_v0 --asset MNT
+      - name: Fetch exactly 4KiB MNS original header, fail on HTTP 200
+        run: python -m research_runners.luxembourg_lidar2024_cog_range_capability_v0 --asset MNS
+      # No full COG, GDAL window, LAS/LAZ, original raster, height or building data retained.

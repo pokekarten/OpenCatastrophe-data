@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Source-authenticated TIFF HEADER-ONLY research receipt; never CAT model data.
+receipt_format_version = "0.1.0"
+provenance_status = "verified_original_header_only"
+research_only = true
+source_family = "Berlin official Starkregenhinweiskarte 2022-named ZIP original water-depth GeoTIFF"
+source_provider = "Berlin Geodateninfrastruktur (GDI Berlin)"
+crs = "EPSG:25833"
+pilot_bbox_epsg25833_m = [391700, 5819950, 391900, 5820150]
+interpretation = "Pinned original TIFF header evidence only. EPSG:25833 and 1m projected header coverage DO NOT establish valid water depth at any location. GDAL NoData=-9999 is a header declaration, not a sampled mask. The original TIFFs contain no reviewed GDAL band unit, scale, or offset; physical flood depth units remain unverified. Never convert nodata to zero, interpret raw cells as meters, populate an insurance Exposure Model, or use these sources as CAT loss without separate rights, pixel and hazard review."
+
+[original_source_access]
+source_url_pinned = true
+source_bytes_per_scenario_and_run = 65536
+source_range = "bytes 0-65535"
+decompressed_tiff_prefix_max_bytes = 1048576
+full_source_zip_sha256_verified = false
+full_tiff_crc_verified = false
+original_provider_bytes_saved = false
+pixel_blocks_read = false
+
+[[independent_github_actions_evidence]]
+evidence_kind = "original_affine_header"
+run_id = 41334867841
+run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41334867841"
+main_commit = "e6b0831bf7f64b72e109fa111bf8af9664d88fd6"
+completed_successfully = true
+measured = "EPSG code, width, height, pixel scale, header extent, pilot bbox inclusion"
+
+[[independent_github_actions_evidence]]
+evidence_kind = "original_band_nodata_header"
+run_id = 41335440273
+run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41335440273"
+main_commit = "383ab39fb6f7612660476b7b5992b9df76c012c3"
+completed_successfully = true
+measured = "TIFF band storage declarations, GDAL NoData and presence or absence of GDAL unit/scale metadata"
+
+[[observations]]
+scenario = "extreme"
+source_url = "https://gdi.berlin.de/data/ua_srhk/atom/wasserstand_extrem2022.zip"
+original_prefix_65536_sha256 = "9b86b039e4c0915b76f4ea64bc13c201f43483a2585dcdd8f6650d6e1a70579f"
+affine_read_utc = "2026-11-01T18:06:40.171061+00:00"
+nodata_read_utc = "2026-11-01T18:13:03.329317+00:00"
+nodata_reader_code_sha256 = "4f162912e975ca16818dc7389ea39bf010b858c742ccb482e0624946897dc5cb"
+header_declared_projected_epsg = 25833
+header_dimensions_pixels = [63882, 54756]
+header_pixel_scale_metres = [1, 1]
+header_projected_bounds_epsg25833_m = [360768.970463454, 5789616.562878486, 424650.970463454, 5844372.562878486]
+pilot_bbox_intersects_header_extent = true
+pilot_bbox_fully_within_header_extent = true
+declared_gdal_nodata = { tag_present = true, type = "finite_number", value = -9999 }
+tiff_band_metadata = { bits_per_sample = 32, sample_format_code = 3, samples_per_pixel = 1, compression_code = 5, gdal_metadata_tag_present = false }
+original_pixel_values_read = false
+nodata_mask_validated = false
+scientific_water_depth_units_validated = false
+actual_building_hazard_join_verified = false
+admitted_as_cat_model_input = false
+
+[[observations]]
+scenario = "extraordinary"
+source_url = "https://gdi.berlin.de/data/ua_srhk/atom/wasserstand_aussergewoehnliches_ereignis2022.zip"
+original_prefix_65536_sha256 = "ba22dae2169f3ffab268f9411099e98c5fc3a15cfd8094d6b486b6e9a0c32149"
+affine_read_utc = "2026-11-01T18:06:39.170903+00:00"
+nodata_read_utc = "2026-11-01T18:13:03.264257+00:00"
+nodata_reader_code_sha256 = "4f162912e975ca16818dc7389ea39bf010b858c742ccb482e0624946897dc5cb"
+header_declared_projected_epsg = 25833
+header_dimensions_pixels = [63882, 54756]
+header_pixel_scale_metres = [1, 1]
+header_projected_bounds_epsg25833_m = [360768.970463454, 5789616.562878486, 424650.970463454, 5844372.562878486]
+pilot_bbox_intersects_header_extent = true
+pilot_bbox_fully_within_header_extent = true
+declared_gdal_nodata = { tag_present = true, type = "finite_number", value = -9999 }
+tiff_band_metadata = { bits_per_sample = 32, sample_format_code = 3, samples_per_pixel = 1, compression_code = 5, gdal_metadata_tag_present = false }
+original_pixel_values_read = false
+nodata_mask_validated = false
+scientific_water_depth_units_validated = false
+actual_building_hazard_join_verified = false
+admitted_as_cat_model_input = false

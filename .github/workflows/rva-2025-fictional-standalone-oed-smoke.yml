@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: R+V source-bound fictional 10k OED staging without insurance geocodes
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-2025-fictional-standalone-oed-smoke.yml"
+      - "research_runners/rva_2025_oed_staging_v0.py"
+      - "tests/test_rva_2025_oed_staging_v0.py"
+      - "docs/research/rva-2025-oed-staging-v0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fictional-oed-source-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Read-only checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Pinned Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Original 400 Kreis source-gated fictional 10k OED and fail-closed checks
+        run: |
+          python -m unittest discover -s tests -p 'test_rva_2025_oed_staging_v0.py' -v
+          python -m compileall -q research_runners/rva_2025_oed_staging_v0.py
+          python research_runners/rva_2025_oed_staging_v0.py "$RUNNER_TEMP/rva-fictional-oed-10k" > "$RUNNER_TEMP/rva-fictional-audit.json"
+          python - <<'PY'
+          import csv
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "rva-fictional-oed-10k"
+          manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+          assert manifest["status"] == "NOT_GEOLOCATED_NOT_MODEL_READY"
+          assert manifest["exported_fictional_locations_and_policies"] == 10000
+          assert manifest["company_2025_national_year_end_building_contracts_observed"] == 1060546
+          assert manifest["sample_not_a_financially_scaled_full_portfolio"] is True
+          assert manifest["gross_net_oep_aep_calibrated"] is False
+          assert manifest["germany_peril_model_lookup_allowed"] is False
+          with (root / "location.csv").open(encoding="utf-8", newline="") as stream:
+              locations = list(csv.DictReader(stream))
+          with (root / "account.csv").open(encoding="utf-8", newline="") as stream:
+              accounts = list(csv.DictReader(stream))
+          with (root / "cohort_receipt.csv").open(encoding="utf-8", newline="") as stream:
+              cohorts = list(csv.DictReader(stream))
+          assert len(locations) == len(accounts) == 10000
+          assert len(cohorts) == 4000
+          assert len({row["LocNumber"] for row in locations}) == 10000
+          assert {row["LocNumber"] for row in locations} == {row["AccNumber"] for row in accounts}
+          assert all(row["Latitude"] == row["Longitude"] == "" for row in locations)
+          assert sum(int(row["Fictional2025FullContractCount"]) for row in cohorts) == 1060546
+          assert sum(int(row["Fictional2025ExportedContractCount"]) for row in cohorts) == 10000
+          for filename, digest in manifest["output_sha256"].items():
+              assert hashlib.sha256((root / filename).read_bytes()).hexdigest() == digest
+          print("FICTIONAL_RVA_OED_10K_SOURCE_READABLE_NOT_GEOLOCATED_NOT_MODEL_READY")
+          PY
+      - name: Delete fictional files; no third-party source archive or generated-site upload
+        if: always()
+        run: |
+          rm -rf -- "$RUNNER_TEMP/rva-fictional-oed-10k" "$RUNNER_TEMP/rva-fictional-audit.json"

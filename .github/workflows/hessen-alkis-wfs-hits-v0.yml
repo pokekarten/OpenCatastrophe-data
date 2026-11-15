@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hessen original ALKIS Building WFS count-only hits
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_hessen_alkis_wfs_hits_v0.py'
+      - 'tests/test_probe_hessen_alkis_wfs_hits_v0.py'
+      - '.github/workflows/hessen-alkis-wfs-hits-v0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hessen-original-wfs-hits-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-wfs-hits-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout tested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Synthetic no-feature hits and HTTP security validation
+        run: python -m unittest tests.test_probe_hessen_alkis_wfs_hits_v0 -v
+      - name: Exactly one original WFS resultType hits metadata-only request
+        run: python -m scripts.probe_hessen_alkis_wfs_hits_v0 --live

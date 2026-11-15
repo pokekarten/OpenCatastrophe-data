@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Zensus 2022 official regional workbook receipt
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/zensus2022-original-workbook-receipt.yml"
+      - "research_runners/zensus_regional_original_receipt_v0.py"
+      - "tests/test_zensus_regional_original_receipt_v0.py"
+      - "research_runners/zensus_regional_worksheet_schema_v0.py"
+      - "research_runners/zensus_kreis_original_numeric_receipt_v0.py"
+      - "research_runners/zensus_kreis_original_age_cohorts_v0.py"
+      - "research_runners/zensus_kreis_original_ownership_v0.py"
+      - "tests/test_zensus_kreis_original_ownership_v0.py"
+      - "research/observations/zensus2022_400_kreis_original_owner_code_aggregates_v0.toml"
+      - "research_runners/rva_2025_kreis_original_owner_code_sensitivity_v0.py"
+      - "tests/test_rva_2025_kreis_original_owner_code_sensitivity_v0.py"
+      - "tests/test_zensus_kreis_original_age_cohorts_v0.py"
+      - "tests/test_zensus_kreis_original_numeric_receipt_v0.py"
+      - "research/observations/zensus2022_400_kreis_original_building_aggregates_v0.toml"
+      - "research_runners/rva_2025_kreis_zensus_real_prior_fictional_book_v0.py"
+      - "tests/test_rva_2025_kreis_zensus_real_prior_fictional_book_v0.py"
+      - "docs/research/zensus2022-original-kreis-building-numeric-admission-v0.md"
+      - "tests/test_zensus_regional_worksheet_schema_v0.py"
+      - "docs/research/zensus-gdv-2022-2025-insurer-district-bridge-20261103.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zensus-original-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-original-metadata:
+    name: Exact Destatis XLSX original SHA-256 and OOXML worksheet list
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact workflow head without credentials persistence
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Run hermetic original-package negative tests
+        run: python -m unittest tests.test_zensus_regional_original_receipt_v0 tests.test_zensus_regional_worksheet_schema_v0 tests.test_zensus_kreis_original_numeric_receipt_v0 tests.test_zensus_kreis_original_age_cohorts_v0 tests.test_zensus_kreis_original_ownership_v0 tests.test_rva_2025_kreis_original_owner_code_sensitivity_v0 tests.test_rva_2025_kreis_zensus_real_prior_fictional_book_v0 -v
+      - name: Acquire and audit one exact publisher original in memory
+        run: python research_runners/zensus_regional_original_receipt_v0.py --official-live --schema-preview
+      - name: Verify exact-source 2022 Kreis building totals and emit attributed aggregate rows
+        run: python research_runners/zensus_kreis_original_numeric_receipt_v0.py --official-live --emit-kreis-tsv
+      - name: Prove 400 original county population priors conserve separate 2025 insurer national controls
+        run: python research_runners/rva_2025_kreis_zensus_real_prior_fictional_book_v0.py
+      - name: Verify actual original Zensus 2022 Kreis building Baujahr decade counts
+        run: python research_runners/zensus_kreis_original_age_cohorts_v0.py --official-live --emit-age-tsv
+      - name: Verify actual 2022 original Kreis age cohorts J to S
+        run: python research_runners/zensus_kreis_original_age_cohorts_v0.py --official-live --emit-age-tsv
+      - name: Validate 2022 age source and exact-conserved 2025 solo insurance research scenarios
+        run: python research_runners/rva_2025_kreis_age_source_sensitivity_v0.py
+      - name: Verify original published 2022 Kreis owner types T through AA
+        run: python research_runners/zensus_kreis_original_ownership_v0.py --official-live --emit-ownership-tsv
+      - name: Validate source owner code values against 2025 solo national control and distinguish source labels
+        run: python research_runners/rva_2025_kreis_original_owner_code_sensitivity_v0.py

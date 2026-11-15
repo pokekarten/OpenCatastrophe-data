@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "nl.knmi.kdp.hourly-validated-edr.v1",
+  "source_ids": [
+    "nl.knmi.kdp.hourly-validated-edr.v1"
+  ],
+  "provider": "Royal Netherlands Meteorological Institute KNMI",
+  "interface_type": "ogc_api",
+  "status": "blocked_credentials",
+  "documentation_url": "https://developer.dataplatform.knmi.nl/edr-api",
+  "service_root": "https://api.dataplatform.knmi.nl",
+  "api_version": "KNMI EDR v1, collection hourly-in-situ-meteorological-observations-validated; station/time coverage and wind parameters to be pinned",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "api_key",
+    "credential_reference": "KNMI_EDR_API_KEY",
+    "registration_url": "https://developer.dataplatform.knmi.nl/apis",
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_edr_validated_hourly_collection"
+    ],
+    "path_templates": [
+      "/edr/v1/collections/hourly-in-situ-meteorological-observations-validated"
+    ],
+    "parameter_rules": "Documentation-only, no automatic source request or caller-selected path, unbounded domain, secrets, crawler, bulk extraction or retries. Metadata path(s) are only candidate exact origins; actual provider GET requires independently reviewed provider machine-use terms, exact URL, byte cap, body hash and source-specific approved workflow."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json",
+      "application/prs.coverage+json"
+    ],
+    "format": "OGC EDR versioned collection metadata and eventual bounded station/time CoverageJSON only after registered credential and exact product rights review; no original readings requested.",
+    "scientific_semantics": "Validated hourly in-situ observations are distinct from 10-minute near-real-time data and modeled WINS50. Need original parameter-name, height, gust definition, UTC intervals, station relocation/QC and collection vintage before independent ERA5 challenge."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "KNMI describes 200 requests/second and 1,000 requests/hour for registered EDR keys; use lower scoped budgets after commercial use and permission review, never assume a key exists.",
+    "mutability_notes": "Collection coverage and station parameters vary; v1 path must remain versioned and original timestamps/metadata pinned."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "unknown",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "KNMI provides documented data-platform API and validates-hourly collection; exact collection's licence, attribution, restrictions on commercial automated insurance use and raw redistribution remain unreviewed. A separate EDR API key is required; Open Data API keys are NOT interchangeable."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": true,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-14",
+  "evidence_urls": [
+    "https://developer.dataplatform.knmi.nl/edr-api",
+    "https://developer.dataplatform.knmi.nl/faq",
+    "https://developer.dataplatform.knmi.nl/apis"
+  ],
+  "notes": "Blocked: no connected KNMI EDR account or original authenticated request receipt, response body or source-native sample. Never put tokens into repository, logs or prompts. Registered rate limits documented but are not a commercial-use right."
+}

@@ -89,7 +89,7 @@ def join(payload: dict) -> dict:
         _date(e['as_of_date'])
         if e['peril'] != 'windstorm':
             raise InputError('only explicit windstorm coverage is supported')
-        if e['occupancy'] not in OCCUPANCIES:
+        if type(e['occupancy']) is not str or e['occupancy'] not in OCCUPANCIES:
             raise InputError('unrecognised building occupancy')
         if e['market_scope'] != 'insurance_sample_not_full_market':
             raise InputError('no market inference from sampled exposure')
@@ -102,21 +102,34 @@ def join(payload: dict) -> dict:
     matched = []
     unmatched = []
     event_keys = set()
+    event_identity = {}
+    seen_hazard_records = set()
     used_exposures = set()
     for h in payload['hazards']:
         if type(h) is not dict or set(h) != HAZARD_FIELDS:
             raise InputError('hazard fields do not match v0 contract')
         _validate_region(h)
-        _text(h['record_id'], 'record_id')
-        _text(h['dataset_id'], 'dataset_id')
-        _text(h['event_id'], 'event_id')
+        hazard_record = _text(h['record_id'], 'record_id')
+        source_dataset = _text(h['dataset_id'], 'dataset_id')
+        physical_event = _text(h['event_id'], 'event_id')
+        if hazard_record in seen_hazard_records:
+            raise InputError('duplicate hazard record_id')
+        seen_hazard_records.add(hazard_record)
         event_date = _date(h['event_date'])
         if h['peril'] != 'extratropical_windstorm':
             raise InputError('only physically defined extratropical-windstorm hazard is supported')
         if h['aggregation'] != 'max_of_footprint_grid_cells':
             raise InputError('hazard must be preaggregated explicitly from one event footprint')
         _number(h['gust_mps'], 'gust_mps')
-        event_key = (h['dataset_id'], h['event_id'], h['nuts_version'], h['nuts2'])
+        # One original physical event must keep the same occurrence date and
+        # administrative vintage across all geographic cells. The same local
+        # financial totals can mask a cross-region identity split.
+        identity = (source_dataset, physical_event)
+        semantics = (event_date, h['nuts_version'])
+        if identity in event_identity and event_identity[identity] != semantics:
+            raise InputError('physical event date or NUTS vintage differs across regions')
+        event_identity[identity] = semantics
+        event_key = (source_dataset, physical_event, h['nuts_version'], h['nuts2'])
         if event_key in event_keys:
             raise InputError('duplicate event-region hazard key')
         event_keys.add(event_key)
@@ -144,7 +157,8 @@ def join(payload: dict) -> dict:
                 'output_role': 'regional_exposure_hazard_comparison_only',
             })
     unused = sorted(exposures[k]['record_id'] for k in exposures.keys() - used_exposures)
-    matched.sort(key=lambda r: (r['event_id'], r['nuts2'], r['occupancy']))
+    matched.sort(key=lambda r: (r['event_id'], r['nuts2'], r['occupancy'],
+                                r['hazard_record_id'], r['exposure_record_id']))
     unmatched.sort(key=lambda r: (r['hazard_record_id'], r.get('exposure_record_id', '')))
     canonical = json.dumps(payload, sort_keys=True, separators=(',', ':'), allow_nan=False)
     return {

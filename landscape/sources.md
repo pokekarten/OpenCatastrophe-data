@@ -256,7 +256,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://www.ncei.noaa.gov/stormevents/>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Collection methods and event coverage changed materially over time; loss fields require careful interpretation.
+**Note:** Collection methods and event coverage changed materially over time; loss fields require careful interpretation. Executed 2024 c20260728 gzip-table audit: 69,801 detail rows, 41,574 location rows and 1,141 fatality rows; three per-event fatality-count contradictions remain. A naive join repeats parent rows up to 72 times. Reproduce with research_runners/noaa_storm_events_relational_audit_v0.py; see docs/research/executed-source-findings-20261103.md. This does not grant admission or establish insured-loss semantics.
 
 ## Global Historical Climatology Network Daily (GHCN-Daily)
 
@@ -286,7 +286,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://www.ncei.noaa.gov/products/international-best-track-archive>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Current v04r01 is updated weekly and mixes provisional/best-track availability; known pre-1950 matching issues and provider harmonisation must be handled explicitly.
+**Note:** Current v04r01 is updated weekly and mixes provisional/best-track availability; known pre-1950 matching issues and provider harmonisation must be handled explicitly. Executed global CSV snapshot on 2026-11-02 has 730,416 rows; it is a separate distribution from the documented global NetCDF access contract. Raw longitude can exceed 180 degrees east, requiring a declared derived coordinate convention. WMO winds retain agency averaging-period differences; main/spur/provisional and TS/subtropical selection change the research population. Observed IBTrACS is not the admitted STORM synthetic catalogue. See docs/research/executed-source-findings-20261103.md.
 
 ## Volcanoes of the World v5.3.6
 

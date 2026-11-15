@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg ACT LiDAR2024 official 3D tile-index source receipt
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_tile_index_receipt_v0.py'
+      - 'tests/test_luxembourg_lidar2024_tile_index_receipt_v0.py'
+      - '.github/workflows/luxembourg-lidar2024-index-original.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  act-lidar2024-original-index:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout reviewed exact commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run synthetic original GeoPackage safety and privacy regressions
+        run: python -m unittest tests.test_luxembourg_lidar2024_tile_index_receipt_v0 -v
+      - name: Download only exact official LiDAR2024 tiny tile assembly GPKG
+        shell: bash
+        run: |
+          set -euo pipefail
+          original="$RUNNER_TEMP/lidar2024-ta.gpkg"
+          umask 077
+          trap 'rm -f "$original"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 100 --retry 0 \
+            --max-filesize 10485760 --output "$original" \
+            'https://download.data.public.lu/resources/lidar-2024-releve-3d-du-territoire-luxembourgeois/20250117-095958/lidar2024-ta.gpkg'
+          python -m research_runners.luxembourg_lidar2024_tile_index_receipt_v0 \
+            --original-gpkg "$original"
+          # No country-scale LiDAR bytes, individual tile URLs/IDs or source rows uploaded.

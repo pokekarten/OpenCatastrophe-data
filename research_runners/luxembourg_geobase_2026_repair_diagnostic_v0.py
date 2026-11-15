@@ -1,0 +1,266 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+"""Aggregate-only make_valid(linework) diagnosis of invalid original ACT polygons.
+
+No original geometry, ID, coordinates, or per-object repair is emitted.
+GEOS area on an INVALID source polygon is a nominal calculation, not
+independently observed floor area or ground truth. No automatic admission.
+"""
+from __future__ import annotations
+
+from collections import Counter
+import math
+
+from shapely import make_valid, hausdorff_distance
+from shapely.errors import GEOSException
+from shapely.ops import unary_union
+from research_runners.luxembourg_geobase_2026_synthetic_support_challenge_v0 import (
+    compare_repair_supports, SupportChallengeError,
+)
+
+
+def _components(geometry) -> tuple[list, bool]:
+    """Find nonempty polygon components and lower-dimensional repair debris."""
+    if geometry.is_empty:
+        return [], False
+    if geometry.geom_type == "Polygon":
+        return [geometry], False
+    if geometry.geom_type in ("MultiPolygon", "GeometryCollection"):
+        polygons = []
+        debris = False
+        for child in geometry.geoms:
+            children, nonpoly = _components(child)
+            polygons.extend(children)
+            debris |= nonpoly
+        return polygons, debris
+    return [], True
+
+
+class RepairDiagnostics:
+    def __init__(self) -> None:
+        self.cases = 0
+        self.outcomes: Counter[str] = Counter()
+        self.with_nonpolygon_debris = 0
+        self.nonfinite_nominal_area = 0
+        self.nonpositive_nominal_area = 0
+        self.relative_comparable = 0
+        self.relative_delta_gt_1pct = 0
+        self.relative_delta_gt_5pct = 0
+        self.relative_delta_gt_20pct = 0
+        self.absolute_deltas = []
+        self.repaired_projected_areas = []
+        self.structure_usable = 0
+        self.structure_unusable = 0
+        self.structure_polygon_count_disagreements = 0
+        self.structure_area_disagreements = 0
+        self.structure_topological_set_disagreements = 0
+        self.structure_symdiff_area_disagreements = 0
+        self.synthetic_support_checked_repairs = 0
+        self.synthetic_support_probes = 0
+        self.synthetic_support_area_disagreements = 0
+        self.synthetic_support_presence_disagreements = 0
+        self.synthetic_support_area_delta_m2 = 0.0
+        self.synthetic_support_failed = 0
+        # Original-invalid-ring to valid-output boundary diagnostics.
+        # Source EPSG:2169 metre units are NOT field positional accuracy.
+        self.boundary_hausdorff_m = []
+        self.boundary_length_abs_delta_m = []
+        self.boundary_hausdorff_over_001m = 0
+        self.boundary_hausdorff_over_01m = 0
+        self.boundary_hausdorff_over_1m = 0
+        self.boundary_hausdorff_nonfinite = 0
+        self.boundary_metrics_comparable = 0
+        self.source_vs_linework_boundary_topological_equal = 0
+        self.source_vs_linework_boundary_topological_unequal = 0
+
+    def observe(self, original) -> None:
+        """Evaluate a single invalid in-memory source polygon; aggregate only."""
+        if original.is_valid or original.is_empty:
+            raise ValueError("Only nonempty invalid source polygons can be assessed")
+        self.cases += 1
+        try:
+            candidate = make_valid(original, method="linework")
+            polygons, debris = _components(candidate)
+            if (not candidate.is_valid or not polygons
+                    or any(not p.is_valid or p.is_empty or not math.isfinite(p.area)
+                           or p.area <= 0 for p in polygons)):
+                self.outcomes["unusable_or_not_polygonal"] += 1
+                return
+            after = math.fsum(p.area for p in polygons)
+            if not math.isfinite(after) or after <= 0:
+                self.outcomes["unusable_or_not_polygonal"] += 1
+                return
+            before = original.area
+            if not math.isfinite(before):
+                self.nonfinite_nominal_area += 1
+                self.outcomes["unusable_or_not_polygonal"] += 1
+                return
+            self.outcomes["single_polygon" if len(polygons) == 1 else "multiple_polygons"] += 1
+            if debris:
+                self.with_nonpolygon_debris += 1
+            # Compare original INVALID ring linework against repaired area
+            # boundaries. The discrete Hausdorff distance with densification
+            # is an approximation, not an external GNSS/field control.
+            try:
+                source_boundary = original.boundary
+                repaired_boundary = unary_union(polygons).boundary
+                distance = float(hausdorff_distance(
+                    source_boundary, repaired_boundary, densify=0.25))
+                length_difference = abs(source_boundary.length - repaired_boundary.length)
+                if (math.isfinite(distance) and distance >= 0
+                        and math.isfinite(length_difference)):
+                    # GEOS topological equality checks the complete lineal
+                    # point set, not just discrete sampled vertices.
+                    same_boundary = bool(source_boundary.equals(repaired_boundary))
+                    self.source_vs_linework_boundary_topological_equal += same_boundary
+                    self.source_vs_linework_boundary_topological_unequal += not same_boundary
+                    self.boundary_metrics_comparable += 1
+                    self.boundary_hausdorff_m.append(distance)
+                    self.boundary_length_abs_delta_m.append(length_difference)
+                    self.boundary_hausdorff_over_001m += distance > 0.01
+                    self.boundary_hausdorff_over_01m += distance > 0.1
+                    self.boundary_hausdorff_over_1m += distance > 1.0
+                else:
+                    self.boundary_hausdorff_nonfinite += 1
+            except (GEOSException, ValueError, TypeError, OverflowError):
+                self.boundary_hausdorff_nonfinite += 1
+            # Independent GEOS repair strategy challenge, also ephemeral only.
+            # Same numerical area is not evidence of an accurate building boundary.
+            try:
+                challenger = make_valid(original, method="structure", keep_collapsed=True)
+                alt_polygons, _ = _components(challenger)
+                if (not challenger.is_valid or not alt_polygons
+                        or any(not p.is_valid or p.is_empty or not math.isfinite(p.area)
+                               or p.area <= 0 for p in alt_polygons)):
+                    self.structure_unusable += 1
+                else:
+                    alt_area = math.fsum(p.area for p in alt_polygons)
+                    if not math.isfinite(alt_area) or alt_area <= 0:
+                        self.structure_unusable += 1
+                    else:
+                        # Compare the *valid repaired polygon sets* rather than
+                        # just their total area. Polygon lines/points are ignored
+                        # for this set comparison but tracked separately above.
+                        a = unary_union(polygons)
+                        b = unary_union(alt_polygons)
+                        diff_area = a.symmetric_difference(b).area
+                        if not math.isfinite(diff_area):
+                            raise ValueError("Nonfinite geometric challenge")
+                        tolerance = max(1e-6, 1e-8 * max(alt_area, after))
+                        self.structure_usable += 1
+                        self.structure_polygon_count_disagreements += len(alt_polygons) != len(polygons)
+                        self.structure_area_disagreements += abs(alt_area - after) > tolerance
+                        self.structure_topological_set_disagreements += not a.equals(b)
+                        self.structure_symdiff_area_disagreements += diff_area > tolerance
+                        # Three ephemeral support windows are synthetic
+                        # sensitivity probes only, not real flood extent/depth.
+                        try:
+                            probe = compare_repair_supports(
+                                a, b, tuple(original.bounds))
+                            self.synthetic_support_checked_repairs += 1
+                            self.synthetic_support_probes += probe["synthetic_probe_count"]
+                            self.synthetic_support_area_disagreements += probe[
+                                "synthetic_intersection_area_disagreements"]
+                            self.synthetic_support_presence_disagreements += probe[
+                                "synthetic_positive_area_overlap_presence_disagreements"]
+                            self.synthetic_support_area_delta_m2 += probe[
+                                "synthetic_absolute_intersection_area_delta_projected_m2"]
+                        except SupportChallengeError:
+                            self.synthetic_support_failed += 1
+            except (GEOSException, ValueError, TypeError, OverflowError):
+                self.structure_unusable += 1
+            delta = abs(after - before)
+            self.absolute_deltas.append(delta)
+            self.repaired_projected_areas.append(after)
+            if before <= 0:
+                self.nonpositive_nominal_area += 1
+            else:
+                self.relative_comparable += 1
+                ratio = delta / before
+                self.relative_delta_gt_1pct += ratio > 0.01
+                self.relative_delta_gt_5pct += ratio > 0.05
+                self.relative_delta_gt_20pct += ratio > 0.20
+        except (GEOSException, ValueError, TypeError, OverflowError):
+            self.outcomes["unusable_or_not_polygonal"] += 1
+
+    def summary(self, expected: int) -> dict:
+        if self.cases != expected or sum(self.outcomes.values()) != expected:
+            raise ValueError("Repair diagnosis does not conserve invalid source population")
+        if (self.structure_usable + self.structure_unusable !=
+                self.outcomes["single_polygon"] + self.outcomes["multiple_polygons"]):
+            raise ValueError("Independent repair challenger does not conserve usable linework cases")
+        if (self.boundary_metrics_comparable + self.boundary_hausdorff_nonfinite !=
+                self.outcomes["single_polygon"] + self.outcomes["multiple_polygons"]):
+            raise ValueError("Boundary comparison did not conserve usable linework cases")
+        if (self.source_vs_linework_boundary_topological_equal +
+                self.source_vs_linework_boundary_topological_unequal !=
+                self.boundary_metrics_comparable):
+            raise ValueError("Boundary lineal-set equality does not conserve comparisons")
+        if (self.synthetic_support_checked_repairs + self.synthetic_support_failed !=
+                self.structure_usable):
+            raise ValueError("Synthetic support challenge does not conserve valid comparison cases")
+        changes = sorted(self.absolute_deltas)
+        mid = (len(changes) - 1) // 2
+        p95 = math.ceil(len(changes) * 0.95) - 1
+        return {
+            "invalid_original_polygons_assessed": self.cases,
+            "repair_algorithm": "Shapely 2.1.2 / GEOS make_valid(method=linework)",
+            "repair_single_polygon": self.outcomes["single_polygon"],
+            "repair_multiple_polygons": self.outcomes["multiple_polygons"],
+            "repair_unusable_or_not_polygonal": self.outcomes["unusable_or_not_polygonal"],
+            "repair_with_nonpolygon_debris": self.with_nonpolygon_debris,
+            "repair_candidate_area_sum_projected_m2": round(math.fsum(self.repaired_projected_areas), 2),
+            "repair_candidate_area_max_projected_m2": (
+                round(max(self.repaired_projected_areas), 2)
+                if self.repaired_projected_areas else None),
+            "repair_candidate_area_median_projected_m2": (
+                round(sorted(self.repaired_projected_areas)[(len(self.repaired_projected_areas)-1)//2], 2)
+                if self.repaired_projected_areas else None),
+            "structure_challenge_usable": self.structure_usable,
+            "structure_challenge_unusable": self.structure_unusable,
+            "structure_vs_linework_polygon_count_disagreements": self.structure_polygon_count_disagreements,
+            "structure_vs_linework_area_disagreements_over_tolerance": self.structure_area_disagreements,
+            "synthetic_spatial_support_checked_repairs": self.synthetic_support_checked_repairs,
+            "synthetic_spatial_support_probes": self.synthetic_support_probes,
+            "synthetic_spatial_support_failed": self.synthetic_support_failed,
+            "synthetic_spatial_support_area_disagreements": self.synthetic_support_area_disagreements,
+            "synthetic_spatial_support_positive_overlap_presence_disagreements": (
+                self.synthetic_support_presence_disagreements),
+            "synthetic_spatial_support_absolute_area_delta_sum_projected_m2": (
+                round(self.synthetic_support_area_delta_m2, 4)),
+            "synthetic_spatial_support_is_original_hazard_or_depth": False,
+            "structure_vs_linework_topological_set_disagreements": self.structure_topological_set_disagreements,
+            "boundary_discrete_hausdorff_densify_fraction": 0.25,
+            "source_boundary_to_linework_boundary_comparable": self.boundary_metrics_comparable,
+            "source_boundary_vs_linework_boundary_topological_equal": (
+                self.source_vs_linework_boundary_topological_equal),
+            "source_boundary_vs_linework_boundary_topological_unequal": (
+                self.source_vs_linework_boundary_topological_unequal),
+            "source_boundary_to_linework_boundary_nonfinite_or_failed": self.boundary_hausdorff_nonfinite,
+            "source_boundary_to_linework_hausdorff_max_projected_m": (
+                round(max(self.boundary_hausdorff_m), 4)
+                if self.boundary_hausdorff_m else None),
+            "source_boundary_to_linework_hausdorff_median_projected_m": (
+                round(sorted(self.boundary_hausdorff_m)[(len(self.boundary_hausdorff_m)-1)//2], 4)
+                if self.boundary_hausdorff_m else None),
+            "source_boundary_to_linework_boundary_length_change_sum_projected_m": (
+                round(math.fsum(self.boundary_length_abs_delta_m), 4)),
+            "source_boundary_to_linework_hausdorff_over_1cm": self.boundary_hausdorff_over_001m,
+            "source_boundary_to_linework_hausdorff_over_10cm": self.boundary_hausdorff_over_01m,
+            "source_boundary_to_linework_hausdorff_over_1m": self.boundary_hausdorff_over_1m,
+            "source_boundary_position_accuracy_ground_control_verified": False,
+            "structure_vs_linework_symmetric_difference_area_disagreements_over_tolerance": self.structure_symdiff_area_disagreements,
+            "area_change_comparable_nonzero_nominal": self.relative_comparable,
+            "nonpositive_nominal_invalid_polygon_area": self.nonpositive_nominal_area,
+            "nonfinite_nominal_invalid_polygon_area": self.nonfinite_nominal_area,
+            "absolute_nominal_vs_repaired_area_change_sum_m2": round(math.fsum(changes), 2),
+            "absolute_nominal_vs_repaired_area_change_median_m2": round(changes[mid], 2) if changes else None,
+            "absolute_nominal_vs_repaired_area_change_p95_m2": round(changes[p95], 2) if changes else None,
+            "relative_delta_over_1pct_of_nonzero_nominal": self.relative_delta_gt_1pct,
+            "relative_delta_over_5pct_of_nonzero_nominal": self.relative_delta_gt_5pct,
+            "relative_delta_over_20pct_of_nonzero_nominal": self.relative_delta_gt_20pct,
+            "nominal_invalid_polygon_area_is_ground_truth": False,
+            "all_repaired_polygons_quarantined_for_manual_scientific_review": True,
+            "automatically_repaired_source_geometries_persisted": False,
+            "building_geometry_model_input_approved": False,
+        }

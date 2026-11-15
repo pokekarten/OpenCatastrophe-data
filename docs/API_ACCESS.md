@@ -115,3 +115,36 @@ Use `build_adapter_now` only when API access materially improves reproducibility
 ## GitHub Actions boundary
 
 Issue #165 owns the trusted Actions execution plane. Source-access work must reuse that reviewed plane for any future hosted `api_probe`/acquisition action rather than creating a second privileged network trigger. Anonymous and credentialed probing must remain least-privilege, bounded, secret-redacted and ephemeral-by-default.
+
+## Operational readiness: all sources, no false availability claim
+
+The inventory now distinguishes the status of the exact reviewed access contract from
+provider-data availability, source rights and CAT model acceptance. This is useful
+when a newly discovered source is recorded long before a download or permitted
+model-specific transform exists.
+
+Run the deterministic, offline status summary from the repository root:
+
+```bash
+python scripts/build_source_access_inventory.py --summary
+```
+
+For a machine-readable, **per-source** queue, run the command without flags.
+Each record preserves its `source_id`, `source_registry_path`, reviewed
+`contract_ids`, `contract_statuses`, `contract_probe_modes`, a conservative
+`operational_readiness` classification, and a next action. A missing contract is
+explicitly `no_concrete_access_contract`; `probe_ready` becomes
+`bounded_probe_defined_not_executed`, **not** an assertion that an upstream
+request was performed. Authentication and terms blocks are separately reported.
+Multiple concrete interfaces require selection of one exact contract, and may
+never be auto-promoted to an executable source-level decision.
+
+The inventory's `live_data_availability_proven=false` is a deliberate evidence
+boundary: these metadata-only files do not contain a current live provider
+receipt. It does **not** mean that the provider is offline or that another
+source-specific workflow has not acquired data. To establish operational data
+usability, run only the reviewed source-specific bounded workflow, retain its
+SHA-256/UTC/request-identity receipt **outside Git** where required, and then
+independently review dataset rights, scientific quality and model-input scope.
+A green registry test or a verified anonymous service route is not a CAT model
+admission. No source bytes or credentials are fetched by this report.

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "purpose": "Non-admission discovery registry of additional exposure, built-environment and impact-validation sources relevant to catastrophe risk.",
-  "review_date": "2026-10-31",
+  "review_date": "2026-11-02",
   "entries": [
     {
       "candidate_id": "google.open-buildings.temporal.v1",
@@ -294,8 +294,8 @@
         "exposure_context"
       ],
       "spatial_scope": "global",
-      "temporal_scope": "monthly releases; official current release at review time 2026-06-17.0 with schema v1.17.0; later scheduled releases require re-check",
-      "resolution_or_granularity": "building and building_part vector features with polygon/multipolygon geometry, conflated upstream sources and GERS identifiers; no single raster resolution",
+      "temporal_scope": "monthly provider releases; reviewed published snapshot 2026-10-21.0 (current official building schema v2.0.0); future releases and exact original file identities require new review",
+      "resolution_or_granularity": "building polygon/multipolygon features with GERS candidate UUIDs, optional building attributes and upstream source lineage; building_part identifiers are not GERS registry identities",
       "potential_roles": [
         "exposure_entity_resolution",
         "cross_source_building_linkage",
@@ -308,7 +308,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Overture documents the Buildings theme under ODbL 1.0 and conflates multiple community, national/municipal and ML-derived building sources. GERS can provide stable entity linkage across datasets/releases, including insurance-to-building joins, but conflated footprints are not cadastral, occupancy, value or portfolio truth. Public data releases are retained for at most 60 days, so any future use must pin an exact release/schema and byte identities; rights remain unreviewed in this discovery registry."
+      "note": "Provider documents 2026-10-21.0 global GeoParquet building release on public S3/Azure, building-theme ODbL and archived monthly releases. GERS membership requires explicit registry evidence, not a UUID alone; conflated OSM/Esri/Microsoft/Google footprints are not independent ground truth or a clean building count. Source rights, provenance, geometry fidelity, national vintage and exact object digests remain unreviewed. Buildings alone are not occupancy, policy attachment or insurer TIV; no model admission."
     },
     {
       "candidate_id": "gem.global-exposure-model.v2026.0.0",

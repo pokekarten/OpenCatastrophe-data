@@ -1,0 +1,332 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of named global insurer and reinsurer FY2025 source filing product families that can constrain company-level synthetic portfolio calibration without assuming any confidential treaty, TIV or customer-level insured exposure.",
+  "review_date": "2026-11-03",
+  "entries": [
+    {
+      "candidate_id": "aig.annual-10k.2025",
+      "name": "American International Group 2025 Form 10-K",
+      "provider": "American International Group / U.S. Securities and Exchange Commission",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "AIG North American, international commercial and personal segments",
+      "temporal_scope": "Year ended 2025-12-31; filed 2026",
+      "resolution_or_granularity": "Public U.S. annual report with commercial property, casualty, financial lines and specialty underwriting segment disclosures",
+      "potential_roles": [
+        "north_america_and_international_company_prior",
+        "financial_line_not_cat_property_guard",
+        "company_segment_geography_constraints"
+      ],
+      "authoritative_url": "https://www.sec.gov/Archives/edgar/data/5272/000000527226000023/aig-20251231.htm",
+      "access_class_hint": "public_sec_html_fair_access_terms_and_filing_exhibit_rights_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Separate held/sold business, property and business interruption, casualty, cyber and gross vs net. Operating across 200+ countries through network partners cannot be equated to 200+ separately insured risk location portfolios."
+    },
+    {
+      "candidate_id": "axa.annual-universal-registration.2025",
+      "name": "AXA 2025 Universal Registration Document and annual report",
+      "provider": "AXA Group",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "Global group segments and legal entities; risk location only where disclosed",
+      "temporal_scope": "Financial year 2025; published 2026-03-20",
+      "resolution_or_granularity": "Public group annual financial statements, segment/geographic reporting, reinsurance and CAT risk narratives; source figures by applicable reporting basis",
+      "potential_roles": [
+        "global_company_segment_prior",
+        "property_casualty_financial_reconciliation",
+        "insurer_group_portfolio_constraint"
+      ],
+      "authoritative_url": "https://www.axa.com/en/press/publications/2025-annual-report",
+      "access_class_hint": "public_official_issuer_report_pdf_source_bytes_and_reuse_terms_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "AXA consolidated IFRS disclosures are not each licensed carrier book and not property TIV. Distinguish Life/Health from P&C, entity and management segment, rate effects, and reinsurance assumptions."
+    },
+    {
+      "candidate_id": "chubb.annual-10k.2025",
+      "name": "Chubb Limited 2025 Form 10-K",
+      "provider": "Chubb Limited / U.S. Securities and Exchange Commission",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "North America, Overseas General and Global Reinsurance and other reportable segments",
+      "temporal_scope": "Year ended 2025-12-31; SEC filing 2026-02-27",
+      "resolution_or_granularity": "Official SEC annual filing with P&C, agricultural, overseas, and global reinsurance segment disclosures and risk factors",
+      "potential_roles": [
+        "underwriting_segment_gwp",
+        "reinsurance_inward_vs_direct_role",
+        "regional_specialty_company_prior"
+      ],
+      "authoritative_url": "https://www.sec.gov/Archives/edgar/data/896159/000089615926000005/cb-20251231.htm",
+      "access_class_hint": "public_sec_html_fair_access_terms_and_filing_exhibit_rights_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "P&C written or earned premiums by business segment are not subnational physical risk locations. Reinsurance catastrophe XL only attaches after cedant deductible/attachment; a property-cat treaty notional is not assumed property TIV."
+    },
+    {
+      "candidate_id": "generali.germany.solo-reports.2025",
+      "name": "Generali Germany 2025 solo company annual and SFCR reports",
+      "provider": "Generali Deutschland AG / subsidiaries",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "Germany domestic licensed insurance entities and their disclosed operations",
+      "temporal_scope": "Year ended 2025; reports available in 2026",
+      "resolution_or_granularity": "Company-level P&C and life annual accounts plus Solvency II solo risk/financial condition reports by German regulated entity",
+      "potential_roles": [
+        "germany_single_carrier_lob_calibration",
+        "solo_vs_parent_group_reconciliation",
+        "solvency_legal_entity_constraint"
+      ],
+      "authoritative_url": "https://www.generali.de/ueber-uns/zahlen-daten-fakten",
+      "access_class_hint": "public_legal_company_reports_pdf_rights_template_and_original_bytes_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Do not aggregate different legally licensed carriers' premium, administrative entities and investment income as one property book. The 2025 Germany reports are separate from Generali Group global consolidated business."
+    },
+    {
+      "candidate_id": "hannoverre.annual-report-financial-supplement.2025",
+      "name": "Hannover Re 2025 annual report and supplementary financial XLSX",
+      "provider": "Hannover Rück SE",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "Global assumed property/casualty and life/health reinsurance; operational territory where disclosed",
+      "temporal_scope": "Financial year ended 2025-12-31; published in 2026",
+      "resolution_or_granularity": "Official annual report and financial supplement with global P&C/L&H reinsurance revenue and line/region financial breakdowns",
+      "potential_roles": [
+        "reinsurer_worldwide_assumed_premium_prior",
+        "treaty_category_prior",
+        "retro_and_inward_risk_reconciliation"
+      ],
+      "authoritative_url": "https://www.hannover-re.com/en/investors/results-and-reports/annual-report/",
+      "access_class_hint": "public_company_annual_report_financial_supplement_exact_asset_version_and_terms_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "IFRS 17 reinsurance revenue is not automatically gross written premium or sum insured. Distinguish direct specialty insurer business, assumed treaty business, related E+S legal entity accounting links and outward retrocession."
+    },
+    {
+      "candidate_id": "munichre.group-sfcr.2025",
+      "name": "Munich Re Group 2025 SFCR and published catastrophe accumulation model disclosure",
+      "provider": "Münchener Rückversicherungs-Gesellschaft AG",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "Global reinsurance, Global Specialty Insurance and ERGO direct insurance; peril-region and legal-entity scopes differ",
+      "temporal_scope": "2025 year-end; SFCR published 2026",
+      "resolution_or_granularity": "Public group SFCR QRT, risk profile, country/nonlife group insurance and retained peril-region return-period information",
+      "potential_roles": [
+        "reinsurer_inward_gross_net_constraint",
+        "cat_event_pml_holdout",
+        "ergo_primary_vs_reinsurance_split",
+        "group_counterparty_retro_context"
+      ],
+      "authoritative_url": "https://www.munichre.com/content/dam/munichre/contentlounge/website-pieces/documents/SFCR-Munich-Re-Group-2025.pdf/_jcr_content/renditions/original./SFCR-Munich-Re-Group-2025.pdf",
+      "access_class_hint": "public_original_group_sfcr_pdf_exact_release_license_and_table_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "A 200-year Atlantic hurricane retained catastrophe risk metric is not underlying physical insured TIV, gross ground-up loss, or a revealed contract graph. ERGO is a primary insurance business whereas reinsurance assumes cedants' portfolios; prevent duplicate contributions in group aggregation."
+    },
+    {
+      "candidate_id": "qbe.group-annual-report.2025",
+      "name": "QBE Insurance Group Annual Report 2025",
+      "provider": "QBE Insurance Group Limited",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "Australia Pacific, North America and International incl QBE Re and Lloyd's",
+      "temporal_scope": "Calendar year ended 2025-12-31; published 2026",
+      "resolution_or_granularity": "Official signed report including segment GWP, net insurance revenue, product and disaster loss disclosures, and statutory vs management basis reconciliation",
+      "potential_roles": [
+        "australia_us_international_company_prior",
+        "crop_specialty_reinsurance_scope",
+        "group_segment_bridge"
+      ],
+      "authoritative_url": "https://www.qbe.com/media/qbe/group/document-listing/2026/02/19/21/01/2025-qbe-annual-report---with-signatures(11277941).pdf",
+      "access_class_hint": "public_signed_pdf_original_sha_and_issuer_data_use_rights_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "QBE reporting warns management financial measures need reconciliation to statutory figures. North American crop, International reinsurance, direct P&C, financial lines and non-CAT business must not be counted as a single CAT insured asset class."
+    },
+    {
+      "candidate_id": "renaissancere.form10k.2025",
+      "name": "RenaissanceRe Holdings Limited 2025 Form 10-K",
+      "provider": "RenaissanceRe Holdings Limited / SEC",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "Global property catastrophe and other property reinsurance, casualty and specialty",
+      "temporal_scope": "Year ended 2025-12-31; filed 2026-02-11",
+      "resolution_or_granularity": "Public 10-K segment gross premiums and reinsurance business structure; separate property vs casualty/specialty disclosures",
+      "potential_roles": [
+        "global_reinsurer_property_cat_premium_prior",
+        "treaty_excess_of_loss_model_prior",
+        "risk_transfer_layering_context"
+      ],
+      "authoritative_url": "https://investor.renre.com/reports-filings/sec-filings/content/0000913144-26-000012/rnr-20251231.htm",
+      "access_class_hint": "public_issuer_10k_html_access_rights_original_version_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "2025 property business includes cat and other property reinsurance; property segment gross premium is NOT pure CAT premium. The disclosed company business is assumed risk from cedants, not a direct asset inventory."
+    },
+    {
+      "candidate_id": "scor.2025-universal-registration-document",
+      "name": "SCOR SE 2025 Universal Registration Document",
+      "provider": "SCOR SE",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "Global group reinsurance business including P&C and life/health",
+      "temporal_scope": "Financial year 2025; ESEF universal registration document filed 2026-03-13",
+      "resolution_or_granularity": "ESEF consolidated financial annual statements and segment/risk/reinsurance disclosures",
+      "potential_roles": [
+        "scor_property_casualty_reinsurance_prior",
+        "group_annual_financial_constraints",
+        "cat_risk_development_research"
+      ],
+      "authoritative_url": "https://www.scor.com/en/press-release/scor-se-announces-availability-its-2025-universal-registration-document",
+      "access_class_hint": "public_issuer_esef_filing_announcement_original_assets_and_licensing_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Filing announcement is an original pointer; requires fetching actual ESEF report and identifying exact tables and taxonomy. Group annual report does not reveal individual treaties, cedant assets, or insured CAT exposure."
+    },
+    {
+      "candidate_id": "suncorp.group-fy2025-annual-report",
+      "name": "Suncorp Group FY2025 annual report",
+      "provider": "Suncorp Group Limited",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "Australian general insurance group with AAMI/GIO/Shannons and other brands; entity carrier mapping requires official records",
+      "temporal_scope": "Fiscal year ended 2025-06-30, not 2025-12-31",
+      "resolution_or_granularity": "Official general insurer annual performance, personal and commercial portfolio GWP and gross/net weather-event cost reporting",
+      "potential_roles": [
+        "australia_home_motor_lob_market_prior",
+        "carrier_brand_group_reconciliation",
+        "weather_cat_loss_holdout_candidate"
+      ],
+      "authoritative_url": "https://www.suncorpgroup.com.au/assets/documents/suncorpgroup/fy25-suncorp-annual-report-final-public.pdf",
+      "access_class_hint": "public_original_issuer_pdf_fy_label_scope_and_rights_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "FY25 ends June 2025 and is not commensurate with calendar-year 2025 company reports without a period bridge. Brand vs legal carrier and prior sales of bank/life businesses must be reconciled."
+    },
+    {
+      "candidate_id": "swissre.annual-report.2025",
+      "name": "Swiss Re Annual Report 2025",
+      "provider": "Swiss Re Ltd",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "Worldwide P&C Re, Corporate Solutions and Life & Health Re with distinct legal and capital perimeters",
+      "temporal_scope": "Year ended 2025-12-31; report published 2026",
+      "resolution_or_granularity": "Official group annual financial and risk reporting by P&C Re, Corporate Solutions, L&H Re; contains NATCAT burden and solvency disclosures",
+      "potential_roles": [
+        "reinsurer_primary_vs_assumed_separation",
+        "global_cat_loss_holdout",
+        "company_segment_and_sst_context"
+      ],
+      "authoritative_url": "https://www.swissre.com/investors/annual-report-2025.html",
+      "access_class_hint": "public_issuer_annual_report_original_file_version_attribution_and_rights_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Swiss Re P&C Re and Corporate Solutions contain different risk-bearing contracts; 2025 net catastrophe claims are not loss catalogues or source-specific event footprints. Swiss Solvency Test and IFRS 17 bases are distinct."
+    },
+    {
+      "candidate_id": "tokiomarine.fy2025-ir-supplement",
+      "name": "Tokio Marine Holdings FY2025 group and major-subsidiary financial supplements",
+      "provider": "Tokio Marine Holdings, Inc.",
+      "categories": [
+        "insurance",
+        "company_report",
+        "underwriting",
+        "financial_reporting",
+        "risk_profile"
+      ],
+      "spatial_scope": "Japan, North America, International operating subsidiaries; fiscal-year and segment convention differ",
+      "temporal_scope": "Fiscal year 2025 ends March 2026; IR call 2026-05-20 with Jun/Aug 2026 restatements",
+      "resolution_or_granularity": "Official FY2025 results presentation and group IFRS/major subsidiary supplemental Excel/financial summaries",
+      "potential_roles": [
+        "japan_group_subsidiary_underwriting_prior",
+        "north_america_japan_business_mix",
+        "restated_financial_vintage_check"
+      ],
+      "authoritative_url": "https://www.tokiomarinehd.com/en/ir/event/presentation/2025/",
+      "access_class_hint": "public_investor_results_xlsx_pdf_restated_version_exact_asset_rights_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher explicitly identifies subsequent June and August 2026 restatements to some IFRS performance metrics. Preserve each vintage and distinguish asset allocation/AUM from insurance exposure or TIV; FY2025 is not calendar 2025."
+    }
+  ]
+}

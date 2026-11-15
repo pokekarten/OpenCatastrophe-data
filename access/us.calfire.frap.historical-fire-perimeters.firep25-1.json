@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "us.calfire.frap.historical-fire-perimeters.firep25-1",
+  "source_ids": [
+    "us.calfire.frap.historical-fire-perimeters.firep25-1"
+  ],
+  "provider": "CAL FIRE / Fire and Resource Assessment Program (FRAP)",
+  "interface_type": "arcgis_rest",
+  "status": "documented_only",
+  "documentation_url": "https://publish.data.ca.gov/dataset/california-fire-perimeters-all",
+  "service_root": "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/California_Fire_Perimeters/FeatureServer",
+  "api_version": "CAL FIRE FRAP firep25_1, April 2026 (public ArcGIS FeatureServer layer 0)",
+  "access_scope": [
+    "metadata"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_frap_perimeter_metadata"
+    ],
+    "path_templates": [
+      "/0"
+    ],
+    "parameter_rules": "Documentation-only exact official ArcGIS service item 14c312c213fb4be8b97a37238a871255, unfiltered 'California_Fire_Perimeters__all_' layer 0. A future metadata-only review may consider f=pjson on the fixed path; there is NO authorized feature query, geometry download, pagination, user-provided URL/headers, arbitrary where clause, export or external dataset acquisition under this contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "Official ArcGIS Feature Layer metadata description and field schema only; not a feature collection or fire polygon.",
+    "scientific_semantics": "FRAP firep25_1 historical wildfire perimeters are multiagency final-mapped wildfire polygons spanning decades to 2025. Their geometry is not fire intensity, building-level burn, independent survey of all fires or a full exposed-building denominator. The archive includes version-dependent collection thresholds, missing events, duplicate and generalized polygons and sometimes unburned areas inside final perimeters; they must not be equated with DINS observed building damage."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 524288,
+    "max_sample_bytes": 524288,
+    "retry_policy": "none",
+    "rate_limit_notes": "Do not automate, query or crawl the ArcGIS service until exact API terms, release-specific rights and a separately fixed metadata-only recipe have been reviewed.",
+    "mutability_notes": "Public service is mutable and historical shapes/attributes are corrected in later releases. Source edition firep25_1 must be frozen separately from the current API's present bytes, along with UTC, request identity, byte count and SHA-256. May 2026 source description says firep25_1 is the current edition."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "State public portal identifies 'Creative Commons Attribution' and no public-use restrictions. Specific data-file attribution, exact version and API service-automation terms have not passed source-specific rights review; the contract thus cannot authorize sample download or public redistribution of derived geometry."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-01",
+  "evidence_urls": [
+    "https://publish.data.ca.gov/dataset/california-fire-perimeters-all",
+    "https://www.fire.ca.gov/what-we-do/fire-resource-assessment-program/fire-perimeters",
+    "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/California_Fire_Perimeters/FeatureServer"
+  ],
+  "notes": "T0 documented service item and fixed layer 0 without consuming original metadata response bytes. Full versions and valid incident-identifier crosswalk with DINS remain unproven. This access record is a source-usage boundary, not an execution receipt or admission."
+}

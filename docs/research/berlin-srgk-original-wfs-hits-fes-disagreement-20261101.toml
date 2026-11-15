@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+receipt_schema = "berlin-detailed-srgk-original-fes-empty-vs-bbox-hits-v0"
+research_only = true
+official_provider = "Berlin GDI / Berlin Starkregengefahrenkarte (SRGK)"
+original_source = "https://gdi.berlin.de/services/wfs/ua_srgk"
+original_wfs_version = "2.0.0"
+original_model_area_type = "ua_srgk:a_modellgebiete"
+original_geometry_property = "geom"
+frozen_pilot_bbox_epsg25833_m = [391700, 5819950, 391900, 5820150]
+original_schema_full_sha256 = "8112bf8db14b7f3f1cb516717e128e0a450b643e645c29b1955e6c69bd57b87f"
+original_count_only_run_id = 41355919644
+original_count_only_run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41355919644"
+original_count_only_main_commit = "eb1e37d3276b20a5587aab91ba6b4b4cdf0ba82e"
+original_count_control_source_matches = 8
+original_count_pilot_bbox_source_matches = 1
+original_count_control_sha256 = "a594032630f7f519ebc482a397c884a31673017d6bcfc678b55e2eff1914f19d"
+original_count_control_bytes = 769
+original_count_pilot_sha256 = "5d0bc8d8146d1debee8523867fcee89b96924d571b7a858e5034fff70f525e6c"
+original_count_pilot_bytes = 829
+original_fes_source_run_id = 41356416551
+original_fes_source_run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41356416551"
+original_fes_main_commit = "6dfecf2b12da1891e02dbde2ec01515aff6d788b"
+original_fes_source_response_sha256 = "e2c6d7478391162bb8f89e2fb0c877013bac02fd12ff83b6084e14019d2b71a4"
+original_fes_source_response_bytes = 147
+original_fes_source_returned_features = 0
+original_fes_source_polygon_intersection_area_available = false
+original_fes_uses_geom_field_and_gml_envelope = true
+earlier_original_bbox_polygon_was_nonintersecting = true
+hits_and_fes_source_requests_not_atomic = true
+source_wfs_filter_semantics_or_geometry_reconciled = false
+pilot_model_area_coverage_proven = false
+pilot_no_model_area_coverage_proven = false
+pilot_has_no_flood_risk_proven = false
+actual_detailed_flood_depth_raster_found = false
+physical_water_depth_for_building_proven = false
+original_provider_xml_geojson_stored = false
+original_polygon_geometries_and_feature_ids_stored = false
+insurance_cat_model_input_admitted = false
+interpretation = "Original model-area source returned 8 overall / 1 pilot BBOX hits in count-only study, but separate exact official FES Intersects on geom with one fixed EPSG:25833 GML envelope returned zero geometries. Separate observations do not prove consistent WFS spatial filtering, local SRGK raster availability, non-coverage, dryness, water depth, insurer exposure, event frequency or loss. Do not silently bypass original geometry intersection."

@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hessen original one Building vs ESA WorldCover one classified block research
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/hessen_alkis_one_building_worldcover_pair_v0.py'
+      - 'tests/test_hessen_alkis_one_building_worldcover_pair_v0.py'
+      - '.github/workflows/hessen-one-original-building-worldcover-pair-v0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hessen-one-original-building-worldcover-pair-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  one-original-building-original-pixel-research:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up reviewed Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Install already pinned GIS dependencies, no source data downloads
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+      - name: Confirm pinned offline PyProj and GEOS dependencies
+        run: |
+          python -m pip check
+          python -c 'import pyproj, shapely; assert pyproj.__version__ == "3.7.2" and shapely.__version__ == "2.1.2"'
+      - name: Test fabricated single-source GML polygons and raster edges
+        run: python -m unittest tests.test_hessen_alkis_one_building_worldcover_pair_v0 -v
+      - name: Recheck original TIFF compression and ALKIS one-GML validators
+        run: python -m unittest tests.test_probe_esa_worldcover_classified_block185_v0 tests.test_probe_hessen_alkis_one_gml_ring_v0 -v
+      - name: One approved WFS source and exactly three original ESA ranges research-only
+        run: python -m research_runners.hessen_alkis_one_building_worldcover_pair_v0 --live

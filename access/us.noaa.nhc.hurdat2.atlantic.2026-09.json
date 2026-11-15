@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "us.noaa.nhc.hurdat2.atlantic.2026-09",
+  "source_ids": [
+    "us.noaa.nhc.hurdat2.atlantic.2026-09"
+  ],
+  "provider": "NOAA National Hurricane Center",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://www.nhc.noaa.gov/data/",
+  "service_root": "https://www.nhc.noaa.gov",
+  "api_version": "Atlantic HURDAT2 1851-2025, 2026-September historical 1971-1975 reanalysis revision; exact original filename and content hash to be pinned",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_nhc_hurdat2_archive_listing"
+    ],
+    "path_templates": [
+      "/data/",
+      "/data/hurdat/"
+    ],
+    "parameter_rules": "Documentation-only, no automatic source request or caller-selected path, unbounded domain, secrets, crawler, bulk extraction or retries. Metadata path(s) are only candidate exact origins; actual provider GET requires independently reviewed provider machine-use terms, exact URL, byte cap, body hash and source-specific approved workflow."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html"
+    ],
+    "format": "Official NHC public archive index, not the ~6.8-MB original comma-delimited tropical-cyclone best-track file. No windfield/return-level source bytes included.",
+    "scientific_semantics": "Best-track approximately six-hour storm centers, maximum sustained winds, central pressure, wind radii from 2004. Not an original European extratropical windfield or insurer loss. NHC/HURDAT2 and NOAA IBTrACS may share NHC original tracks; cross-database agreement not independent and events must not be doubled."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "No live archive sweep or file download under this documentation-only contract; review fixed original text path, caching, contact and one-shot request budget before parser.",
+    "mutability_notes": "NHC periodically issues HURDAT2 revisions; pin exact filename, modification date, SHA and reanalysis window before comparing with IBTrACS."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "unknown",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "NHC's official archival description is public but exact original file's redistribution/third-party lineage and service automation terms have not been independently reviewed; no blanket public-domain or insurer CAT model entitlement inferred."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-14",
+  "evidence_urls": [
+    "https://www.nhc.noaa.gov/data/",
+    "https://www.nhc.noaa.gov/data/hurdat/"
+  ],
+  "notes": "Original September 2026 archive revision is confirmed on publisher page, but 6.8-MB original text file URL, byte SHA, header parser, historical revisions and independent windfield challenge are not yet fixed. No provider asset download/Neon write/model admission."
+}

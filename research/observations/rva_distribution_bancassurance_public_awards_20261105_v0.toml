@@ -1,0 +1,468 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Newly researched public issuer partner-bank agency and procurement evidence candidates.
+# NO source assets, customer records, insurer address risk list or actual insurance exposures imported.
+schema_version = "RVA_DISTRIBUTION_AFFINITY_AND_NAMED_AWARD_SOURCE_REGISTER_V0"
+target_legal_entity = "R+V Allgemeine Versicherung AG"
+research_date = "2026-11-05"
+candidate_count = 28
+tier_a_source_original_asset_sha_verified = false
+actual_rva_insured_kreis_distribution_observed = false
+actual_rva_specific_building_sites_observed = false
+actual_rva_company_geo_tiv_observed = false
+bank_branch_to_rva_policy_conversion_observed = false
+agency_to_insured_building_conversion_observed = false
+public_award_full_object_schedule_and_coinsurance_share_verified = false
+rights_review_complete = false
+cat_model_input_approved = false
+provenance_warning = "Link index and bounded disclosed public facts only; do not mine private agency/policyholder addresses, copy copyrighted PDF bytes or treat secondary award indexing as verified full policy schedule."
+priority_definition = "P0 high marginal gain and feasible next original audit; P1 supplementary; P2 contextual only"
+
+[[candidates]]
+id = "rva_solo_2025_hgb"
+publisher = "R+V Allgemeine Versicherung AG"
+vintage = "2025"
+source_scope = "solo_company_national_control"
+geographic_grain = "annual_entity_lob"
+research_priority = "P0"
+url = "https://www.ruv.de/ueber-uns/unternehmen/geschaeftsberichte"
+public_evidence = "National solo HGB premiums and contract counts; already admitted separately"
+admission_blocker = "Does not report county risk locations or sums insured"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "ruv_group_network"
+publisher = "R+V Versicherung"
+vintage = "2026"
+source_scope = "group_publisher_channel"
+geographic_grain = "group_national_partner_count"
+research_priority = "P0"
+url = "https://www.ruv.de/ueber-uns/unternehmen/konzernstruktur"
+public_evidence = "About 260 general agencies and more than 640 partner banks cited on page"
+admission_blocker = "Group and vintage; cannot convert bank density to company policies"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "ruv_sales_training"
+publisher = "R+V Versicherung"
+vintage = "2026"
+source_scope = "group_publisher_channel"
+geographic_grain = "group_national_sales_people_partner_count"
+research_priority = "P1"
+url = "https://www.ruv.de/karriere/vertrieb/unser-ruv-vertrieb"
+public_evidence = "Published >5000 field staff, about 300 agencies, 700 bank partners"
+admission_blocker = "Different webpage counts/time definitions from group network; no insurer-specific site weights"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "ruv_group_agent_locator"
+publisher = "R+V Versicherung"
+vintage = "2026"
+source_scope = "group_publisher_locator"
+geographic_grain = "agency_and_specialist_offices"
+research_priority = "P0"
+url = "https://www.ruv.de/vor-ort/shared/consent"
+public_evidence = "Published agency addresses and links, possible location candidate only"
+admission_blocker = "No bulk licensed geodata, office presence is not actual insured buildings; avoid personal details"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "generalagenten_by"
+publisher = "generalagenten.de"
+vintage = "2026"
+source_scope = "third_party_sales_directory"
+geographic_grain = "bavaria_offices"
+research_priority = "P1"
+url = "https://www.generalagenten.de/Bayern"
+public_evidence = "70 Bavarian R+V agency listings on public county/city directory"
+admission_blocker = "May duplicate firms/locations; nonofficial source/vintage and rights not validated"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "generalagenten_he"
+publisher = "generalagenten.de"
+vintage = "2026"
+source_scope = "third_party_sales_directory"
+geographic_grain = "hesse_offices"
+research_priority = "P1"
+url = "https://www.generalagenten.de/Hessen"
+public_evidence = "47 Hessen R+V agency listings"
+admission_blocker = "Nonofficial; cannot infer customer conversion, local footprints or risks"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "generalagenten_nrw"
+publisher = "generalagenten.de"
+vintage = "2026"
+source_scope = "third_party_sales_directory"
+geographic_grain = "nrw_offices"
+research_priority = "P1"
+url = "https://www.generalagenten.de/Nordrhein-Westfalen"
+public_evidence = "28 NRW R+V agency listings"
+admission_blocker = "Nonofficial; bank and broker penetration may dominate"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "bvr_2025_region"
+publisher = "Bundesverband der Deutschen Volksbanken und Raiffeisenbanken"
+vintage = "2025-12-31"
+source_scope = "cooperative_banking_industry"
+geographic_grain = "regional_association"
+research_priority = "P0"
+url = "https://berichte.bvr.de/jahresbericht-2025/ergebnisse/regionale-statistik/"
+public_evidence = "646 institutions, 6167 branches, 17542193 members as of 2025; existing typed observations"
+admission_blocker = "Associations cross Länder and Sparda PSD cannot be assigned to counties without proper crosswalk; not all are R+V partners"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "bvr_2025_bank_list"
+publisher = "Bundesverband der Deutschen Volksbanken und Raiffeisenbanken"
+vintage = "2025-12-31"
+source_scope = "cooperative_banking_industry"
+geographic_grain = "bank_legal_headquarters"
+research_priority = "P0"
+url = "https://www.bvr.de/Presse/Zahlen_Daten_Fakten"
+public_evidence = "Published 2025 list of individual banks, headquarters, balance-sheet assets and claims on customers"
+admission_blocker = "Bank HQ not service footprint; loans are not mortgage book; PDF rights/bytes not admitted"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "bvr_2025_private_firm_loans"
+publisher = "Bundesverband der Deutschen Volksbanken und Raiffeisenbanken"
+vintage = "2026-01-07"
+source_scope = "cooperative_banking_industry"
+geographic_grain = "national_credit_loans"
+research_priority = "P1"
+url = "https://www.bvr.de/Presse/Pressemitteilung/Mehr_Kredite_fuer_den_Mittelstand_Genossenschaftsbanken_legen_2025_zu"
+public_evidence = "2025 privately and business customer loans by entire network, potentially scale proxy"
+admission_blocker = "Cannot treat lending stock as bank insurance conversions; national only"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "bundesbank_2025_branches"
+publisher = "Deutsche Bundesbank"
+vintage = "2025"
+source_scope = "official_cooperative_banking_industry"
+geographic_grain = "bank_type_time_series"
+research_priority = "P1"
+url = "https://www.bundesbank.de/de/statistiken/statistische-fachreihen/-/1-zahl-der-kreditinstitute-und-ihrer-zweigstellen-807844"
+public_evidence = "National type-of-bank branch and bank-office time series"
+admission_blocker = "Different counts/definitions from BVR and group 9000+ webpage; not county bank footprints"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "vr_bank_berg_partner_specialists"
+publisher = "Volksbank Berg eG"
+vintage = "2026"
+source_scope = "named_bank_partner"
+geographic_grain = "bank_partner_service_area"
+research_priority = "P1"
+url = "https://www.volksbank-berg.de/meine-bank/unsere-ansprechpartner/ansprechpartner-der-rv-versicherung.html"
+public_evidence = "Bank publishes attached R+V specialist service municipalities"
+admission_blocker = "Do not reproduce private personal contacts; office service region not location of insured home"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "ruv_residential_cover"
+publisher = "R+V Versicherung"
+vintage = "2026"
+source_scope = "issuer_product"
+geographic_grain = "residential_property_underwriting"
+research_priority = "P0"
+url = "https://www.ruv.de/wohngebaeudeversicherung"
+public_evidence = "Classic and comfort residential building, wind/hail, conditional natural-peril add-on and cover limits"
+admission_blocker = "Tariff available does not establish any sold product/flood coverage share"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "ruv_corporate_property"
+publisher = "R+V Versicherung"
+vintage = "2026"
+source_scope = "issuer_product"
+geographic_grain = "commercial_property"
+research_priority = "P0"
+url = "https://www.ruv.de/static-files/ruvde/downloads/firmenkunden/kundeninfoblatt-gebaeudeversicherung.pdf"
+public_evidence = "Commercial office/warehouse/industrial buildings with covers"
+admission_blocker = "No company policy counts; PDF original source rights/byte/hash not checked in this research"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "ruv_agricultural_property"
+publisher = "R+V Versicherung"
+vintage = "2026"
+source_scope = "issuer_product"
+geographic_grain = "farm_buildings"
+research_priority = "P0"
+url = "https://www.ruv.de/firmenkunden/landwirtschaftliche-versicherungen/agrarpolice/gebaeudeversicherung"
+public_evidence = "Housing, stables and barns, building reinstatement policy archetypes"
+admission_blocker = "Separate agricultural from connected residential building national count"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "brandenburg_lbv_vvb"
+publisher = "Landesbauernverband Brandenburg"
+vintage = "2026"
+source_scope = "named_partner_agrarian"
+geographic_grain = "brandenburg_agrarian_affinity"
+research_priority = "P0"
+url = "https://www.lbv-brandenburg.de/2-projekte/vvb/uncategorised/87-versicherungs-vermittlungsgesellschaft-mbh"
+public_evidence = "Publicly states joint agricultural insurance distributor involving the farmers association and R+V"
+admission_blocker = "Actual 2025 R+V Allgemeine solo sales, insured barns, geography and shares not disclosed"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "brs_agrar_cooperation"
+publisher = "Bundesverband Rind und Schwein e.V."
+vintage = "2026"
+source_scope = "named_partner_agrarian"
+geographic_grain = "sector_affinity"
+research_priority = "P1"
+url = "https://www.rind-schwein.de/brs-de/kooperations-rahmenvertragspartner.html"
+public_evidence = "Names R+V Allgemeine AgrarKompetenzCenter as insurance service cooperation partner"
+admission_blocker = "Member firm properties not necessarily insured by R+V; entity-specific sales volume unavailable"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "wbm_residential_award2023"
+publisher = "EU TED / WBM / secondary public award index"
+vintage = "2023-12"
+source_scope = "named_procurement_award_secondary_confirm"
+geographic_grain = "berlin_named_client_residential_contract"
+research_priority = "P0"
+url = "https://de.openprocurements.com/tender/verbundene-wohngebaude-versicherung/"
+public_evidence = "2023 public housing property policy WBM Berlin names R+V Allgemeine award; primary notice 783307-2023 URL confirmed"
+admission_blocker = "Individual insured site schedule, shares, renewals after 2023 and group subsidiaries unknown; primary notice full award text not rechecked"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "wbm_commercial_award2026"
+publisher = "EU TED / WBM / secondary award index"
+vintage = "2026-09"
+source_scope = "named_procurement_award_secondary_confirm"
+geographic_grain = "berlin_nine_commercial_properties"
+research_priority = "P0"
+url = "https://auftragsatlas.de/ausschreibung/industrielle-sachversicherung-fuer-reine-gewerbeobjekte-1172391"
+public_evidence = "2026 WBM nine commercial objects, award names R+V Allgemeine together with HDI and Helvetia; TED notice 668506-2026 URL confirmed"
+admission_blocker = "Coinsurer shares/attachment and nine asset coordinates/TIV unknown; contract begins only in 2027 per secondary indexing"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "wbm_2025_company_reports"
+publisher = "WBM Wohnungsbaugesellschaft Berlin-Mitte mbH"
+vintage = "2025"
+source_scope = "named_account_asset_opportunity"
+geographic_grain = "berlin_company_dwellings_not_buildings"
+research_priority = "P0"
+url = "https://www.wbm.de/presse/downloads/"
+public_evidence = "WBM audited reports provide housing dwellings, commercial spaces and regional inventory"
+admission_blocker = "Dwellings are NOT buildings, and company inventory is NOT identical with 2023 insured schedule; 2025 vs 2023 vintage"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "wbm_2025_building_map"
+publisher = "WBM Wohnungsbaugesellschaft Berlin-Mitte mbH"
+vintage = "2026"
+source_scope = "named_account_asset_map"
+geographic_grain = "published_berlin_building_addresses"
+research_priority = "P0"
+url = "https://www.wbm.de/neubau-berlin/bestandskarte/"
+public_evidence = "Public corporate inventory interactive property map usable for case-specific exposure scenario"
+admission_blocker = "Map reuse, completeness, dates and whether any listed object insured by R+V must be checked; do not scrape private locations"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "kassen_bawue_industrial_award2025"
+publisher = "EU TED / KVBW / indexed secondary"
+vintage = "2025-12"
+source_scope = "named_procurement_award_secondary_confirm"
+geographic_grain = "baden_wuerttemberg_industrial_property"
+research_priority = "P1"
+url = "https://auftragsatlas.de/auftragnehmer/r-v-allgemeine-versicherung-ag-23682"
+public_evidence = "R+V Allgemeine appears as awarded in Kassenärztliche Vereinigung Baden-Württemberg industrial property and electronics insurance"
+admission_blocker = "Contract number, property footprint, co-insurer allocation, actual property cover and legal entity direct risk share unknown"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "rosenheim_fleet_negative"
+publisher = "Landkreis Rosenheim / procurement index"
+vintage = "2025-12"
+source_scope = "named_procurement_negative_control"
+geographic_grain = "bavaria_motor_fleet_not_property"
+research_priority = "P1"
+url = "https://vergabehero.eu/ausschreibungen/kraftfahrzeug-und-flottenversicherung-fuer-den-landkreis-rosenheim--cmthw85c70o133msreyqqnume"
+public_evidence = "Public R+V Allgemeine motor fleet win is evidence of regional legal entity business"
+admission_blocker = "Cannot infer any insured buildings in Rosenheim; exclude from property source allocation"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "gdv_2025_residential_market"
+publisher = "GDV"
+vintage = "2025"
+source_scope = "insurance_market_benchmark"
+geographic_grain = "germany_residential_policy_count"
+research_priority = "P0"
+url = "https://www.gdv.de/gdv/statistik/statistiken-zur-deutschen-versicherungswirtschaft-uebersicht/schaden-und-unfallversicherung/geschaeftsentwicklung-in-der-verbundenen-wohngebaeudeversicherung-137968"
+public_evidence = "Official residential market premium, claims, number of insurers and building policies; comparable category"
+admission_blocker = "Industry not R+V, denominators differ from 2025 HGB legal entity and cancellations"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "vers_leipzig_rank2026"
+publisher = "V.E.R.S. Leipzig / Versicherungsjournal"
+vintage = "2026-10"
+source_scope = "industry_secondary_company_rank"
+geographic_grain = "germany_residential_company_premium_rank"
+research_priority = "P1"
+url = "https://www.versicherungsjournal.de/markt-und-politik/die-groessten-wohngebaeudeversicherer-157000"
+public_evidence = "2025 19.2m industry contracts and EUR14.35bn premium; R+V among leading carrier premium rankings"
+admission_blocker = "Secondary site and insurer label may be group or legal entity; ranking not regional and not asset value"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "gdv_county_flood_market"
+publisher = "GDV"
+vintage = "2026"
+source_scope = "industry_peril_benchmark"
+geographic_grain = "approximately_400_counties"
+research_priority = "P0"
+url = "https://www.gdv.de/gdv/statistik/datenservice-zum-naturgefahrenreport/sachversicherung-elementar/versicherungsdichte-bei-elementarschadenversicherung-regional-sehr-unterschiedlich-183592"
+public_evidence = "District market flood cover penetration of full natural perils; natural-peril mix benchmark"
+admission_blocker = "Not carrier-specific penetration, GDV statistical-use terms limit automated mining"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "ruv_group_hail_report2024"
+publisher = "R+V Versicherung"
+vintage = "2025-05-21"
+source_scope = "group_loss_context"
+geographic_grain = "group_annual_peril_mixed_lines"
+research_priority = "P2"
+url = "https://www.ruv.de/newsroom/pressemitteilungen/2025-05-21-hagelschaeden"
+public_evidence = "2024 EUR97m group hail insured loss includes majority motor"
+admission_blocker = "Do not treat as R+V Allgemeine solo building claim or infer county customer base"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+
+[[candidates]]
+id = "osm_bank_poi_method"
+publisher = "OpenStreetMap contributors"
+vintage = "2026"
+source_scope = "independent_geocoding_candidate"
+geographic_grain = "geocoded_bank_outlets"
+research_priority = "P1"
+url = "https://wiki.openstreetmap.org/wiki/Tag:amenity%3Dbank"
+public_evidence = "Public amenity bank point/outline tag semantics for possible VR branch spatial counterfactual"
+admission_blocker = "OSM ODbL share-alike attribution; venue tags are incomplete, duplicate and not proof of R+V partnership; no data ingested"
+original_document_bytes_sha256_verified_this_turn = false
+actual_rva_solo_insured_policy_risk_locations_known = false
+actual_rva_solo_regional_market_share_known = false
+issuer_specific_claims_at_natural_peril_risk_site_known = false
+model_source_admitted_as_real_rva_company_location = false
+

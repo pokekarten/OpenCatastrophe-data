@@ -2,4 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # CI/local validation only. This is not a runtime or acquisition dependency.
+# The repository-wide unittest discovery includes mandatory PPRI polygon
+# topology tests; pin the exact version required by the Luxembourg source
+# diagnostic (independent of the newer EU flood spatial profile).
+openpyxl==3.1.5
 PyYAML==6.0.3
+shapely==2.1.2

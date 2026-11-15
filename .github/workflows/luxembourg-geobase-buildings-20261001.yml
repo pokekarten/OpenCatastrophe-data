@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg GeoBase 2026 Buildings original-source receipt
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_geobase_buildings_20261001_v0.py'
+      - 'tests/test_luxembourg_geobase_buildings_20261001_v0.py'
+      - '.github/workflows/luxembourg-geobase-buildings-20261001.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-geobase-buildings:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout immutable reviewed action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Synthetic security and GeoPackage research checks
+        run: python -m unittest tests.test_luxembourg_geobase_buildings_20261001_v0 -v
+      - name: One publisher-pinned October 2026 Buildings ZIP, metadata-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_file="$RUNNER_TEMP/lu-geobase-buildings-20261001.zip"
+          umask 077
+          trap 'rm -f "$source_file"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 83886080 --output "$source_file" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
+          python -m research_runners.luxembourg_geobase_buildings_20261001_v0 \
+            --source-zip "$source_file"
+          # No original building rows, source archives, individual geometry or insurer data persisted.

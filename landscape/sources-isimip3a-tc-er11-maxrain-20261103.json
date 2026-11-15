@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of exact ISIMIP3a historical tropical cyclone ER11/TCR maximum-rainfall source identity and rights/provenance gate; metadata-only investigation, no data ingestion.",
+  "review_date": "2026-11-03",
+  "entries": [
+    {
+      "candidate_id": "isimip3a.tc.er11-wind.historical.maxrain.1950-2021",
+      "name": "ISIMIP3a historical tropical cyclone ER11/TCR maximum 24-hour precipitation fields (1950–2021)",
+      "provider": "ISIMIP / Potsdam Institute for Climate Impact Research (PIK); derived from IBTrACS, ERA5 and TC intensity model output",
+      "categories": [
+        "tropical_cyclone",
+        "extreme_precipitation",
+        "event_hazard_footprint",
+        "derived_model_output",
+        "global"
+      ],
+      "spatial_scope": "Global tropical cyclones covered by historical IBTrACS 1950–2021; gridded footprint product on global 300 arc-second (~10 km) grid",
+      "temporal_scope": "1950–2021 historical; one file per calendar year (72 files), containing event-derived maximum 24-hour rain; NOT 72 independent model years",
+      "resolution_or_granularity": "ISIMIP3a historical obsclim ER11-wind directory, maxrain NetCDF annual files. 300 arc-second grid; maximum 24-hour rainfall over each cyclone event; exact NetCDF dimension names, units and event mapping not yet checked from original bytes",
+      "potential_roles": [
+        "tropical_cyclone_rain_hazard_footprint_challenge",
+        "storm_rain_wind_surge_shared_event_identity_crosswalk",
+        "historical_modelled_rainfall_calibration_research"
+      ],
+      "authoritative_url": "https://www.isimip.org/gettingstarted/input-data-bias-adjustment/details/182/",
+      "access_class_hint": "public_dataset_filelist_metadata_only_no_netcdf_sample_no_rights_clearance",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Fixed official ISIMIP dataset UUID f08ab32e-b3ad-4984-81d1-495235765b6c; public filelist https://data.isimip.org/api/v1/datasets/f08ab32e-b3ad-4984-81d1-495235765b6c/filelist/ listed 72 URLs under obsclim/global/storm/historical/ER11-wind with filename er11-wind_obsclim_historical_maxrain_YYYY.nc (1950–2021). Despite directory ER11-wind, file is maxrain, not wind speed. Storm rain footprint is reconstructed/modelled from IBTrACS storm tracks and ERA5/physical algorithms and must not count as independent track measurement, observed loss or empirical vulnerability. The exact original ISIMIP dataset API for version 20240402 declares CC0 1.0 at dataset level and in all 72 file entries, and publishes 72 SHA-512 digests and total 1,911,545,255 bytes; these are publisher metadata claims, not independently checked original NetCDF bytes or complete insurer-reuse clearance. ISIMIP terms forbid sale of the data, while each assigned licence and upstream input provenance (IBTrACS and ERA5) still require review. No NetCDF original bytes, variable headers, source SHA or live availability validated. No source admission, automated data retrieval or Neon storage authorized."
+    }
+  ]
+}

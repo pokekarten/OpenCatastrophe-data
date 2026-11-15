@@ -146,11 +146,13 @@ def _f32_bits(value: str) -> int:
     if value != f"{bits:08x}":
         raise OQ313RiskByEventProfileError("binary32 value is not canonical lowercase hex")
     exponent = (bits >> 23) & 0xFF
-    if bits >> 31 or exponent == 0xFF:
+    # Canonical v2 receipts permit negative zero. Count/rank its numeric value
+    # as zero; _row_view continues to preserve its original IEEE-754 hex bits.
+    if (bits >> 31 and bits != 0x80000000) or exponent == 0xFF:
         raise OQ313RiskByEventProfileError(
             "profile requires finite non-negative binary32 values"
         )
-    return bits
+    return 0 if bits == 0x80000000 else bits
 
 
 def _f32_units_2_neg_149(value: str) -> int:

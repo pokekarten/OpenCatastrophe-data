@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery for the current Smithsonian GVP Volcanoes of the World 5.4.0 WFS product with explicit source-specific commercial-use restrictions.",
+  "review_date": "2026-11-02",
+  "entries": [
+    {
+      "candidate_id": "smithsonian.gvp.volcanoes-of-the-world.v5.4.0",
+      "name": "Smithsonian Global Volcanism Program Volcanoes of the World 5.4.0 WFS",
+      "provider": "Smithsonian Institution / Global Volcanism Program",
+      "categories": [
+        "volcano",
+        "eruption_catalogue",
+        "volcano_geography",
+        "event_context"
+      ],
+      "spatial_scope": "Global; curated Holocene volcanoes and eruptions, plus Pleistocene volcano information in the separately named WFS layer",
+      "temporal_scope": "VOTW database release v5.4.0 dated 2026-08-07; review covers eruptions through 2025 and subsequent updates require separate snapshot identity",
+      "resolution_or_granularity": "OGC WFS feature service exposes Holocene volcano locations, Pleistocene volcano locations and Holocene eruption features; spatial records and descriptive attributes rather than ashfall or eruption-intensity rasters",
+      "potential_roles": [
+        "volcano_event_identity_and_location",
+        "volcanic_exposure_proximity_screening",
+        "eruption_catalogue_crosswalk",
+        "historical_event_context_validation"
+      ],
+      "authoritative_url": "https://volcano.si.edu/database/webservices.cfm",
+      "access_class_hint": "public_wfs_documentation_commercial_reuse_prohibited_without_smithsonian_written_permission",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Separate the official VOTW v5.4.0 citation (7 August 2026, DOI 10.5479/si.GVP.VOTW5-2026.5.4) from the previously registered historical v5.3.6 product. The Smithsonian GVP terms page explicitly prohibits commercial use without prior written permission, notwithstanding that the database compilation is described as a US government employee product. Do not infer that public WFS access or US government authorship permits insurer CAT product use, unrestricted reproduction, event reinsurance analysis or redistribution. No data/API request or download was made. Three WFS layer families are documented by GVP; freeze exact layer name, CRS, feature identifier, event epoch, retrieval UTC, layer version, dataset edition and source references only after provider permission. Volcano and eruption point records are not volcanic ash thickness, VEI-based intensity grids, property damage curves, frequency calibration or insured losses. Preserve observation/reporting gaps and original source-lineage."
+    }
+  ]
+}

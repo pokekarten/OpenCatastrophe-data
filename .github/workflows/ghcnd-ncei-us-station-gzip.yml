@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: NOAA NCEI GHCN original gzip U.S. station comparison
+
+on:
+  pull_request:
+    paths:
+      - 'access/noaa.ncei.ghcnd-central-park-gzip.*'
+      - 'scripts/probe_ghcnd_ncei_us_station_gzip_v0.py'
+      - 'tests/test_probe_ghcnd_ncei_us_station_gzip_v0.py'
+      - '.github/workflows/ghcnd-ncei-us-station-gzip.yml'
+  workflow_dispatch:
+  # After reviewed first workflow merge, verify exactly one provider original.
+  # One exact-source replay after observed NCEI multi-member gzip repair.
+  # One reviewed replay after NCEI headerless original CSV shape was observed.
+  # PR verification uses only synthetic offline fixtures.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ghcnd-ncei-us-station-gzip.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghcnd-ncei-us-original-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compare-original-us-station:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact revision without saved credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Verify bounded, U.S.-only NCEI source rights and request contract
+        run: python scripts/validate_source_access.py access/noaa.ncei.ghcnd-central-park-gzip.json
+      - name: Check generated access views
+        run: python scripts/render_public_views.py --check --scope access
+      - name: Test synthetic gzip parsing, CRC and malformed provider scenarios
+        run: python -m unittest tests.test_probe_ghcnd_ncei_us_station_gzip_v0 -v
+      - name: Pin executable source identity
+        run: |
+          git rev-parse HEAD
+          sha256sum scripts/probe_ghcnd_ncei_us_station_gzip_v0.py
+      - name: Compare one official original NCEI station gzip with pinned NODD hash
+        if: github.event_name != 'pull_request'
+        run: python scripts/probe_ghcnd_ncei_us_station_gzip_v0.py --live

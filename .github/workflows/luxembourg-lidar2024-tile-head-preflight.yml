@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg LiDAR2024 original grouped tile link HEAD preflight
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_tile_group_link_preflight_v0.py'
+      - 'tests/test_luxembourg_lidar2024_tile_group_link_preflight_v0.py'
+      - '.github/workflows/luxembourg-lidar2024-tile-head-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lidar2024-grouped-link-head:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout SHA pinned reviewed action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install fixed coordinate projection runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input pyproj==3.7.2
+          python -m pip check
+      - name: Run synthetic offline link and network safety tests
+        run: python -m unittest tests.test_luxembourg_lidar2024_tile_group_link_preflight_v0 -v
+      - name: Original publisher index exact-byte and bounded HEAD-only transfer research
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          original="$RUNNER_TEMP/lidar2024-ta.gpkg"
+          trap 'rm -f "$original"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 90 --retry 0 \
+            --max-filesize 10485760 --output "$original" \
+            'https://download.data.public.lu/resources/lidar-2024-releve-3d-du-territoire-luxembourgeois/20250117-095958/lidar2024-ta.gpkg'
+          python -m research_runners.luxembourg_lidar2024_tile_group_link_preflight_v0 \
+            --original-gpkg "$original" --probe-head
+          # HEAD only, no redirected request, LAZ, original tile URLs or file uploads.

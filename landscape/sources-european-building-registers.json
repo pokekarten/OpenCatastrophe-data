@@ -1,0 +1,521 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission source discovery of European national building identifiers, footprints, 3D height, EPC/enrichment and cost context for bounded EUBUCCO crosswalk pilots; documentation does not permit source-data acquisition or model-input use.",
+  "review_date": "2026-11-01",
+  "entries": [
+    {
+      "candidate_id": "de.adv.lod2-de",
+      "name": "Germany nationwide LoD2-DE 3D buildings",
+      "provider": "AdV / ZSHH / BKG",
+      "categories": [
+        "buildings",
+        "3d_geometry",
+        "exposure",
+        "germany"
+      ],
+      "spatial_scope": "Germany, nationwide",
+      "temporal_scope": "Annual snapshots; April 2026 product documented",
+      "resolution_or_granularity": "About 59 million official building models; unique object ID, footprint reference, height, function, roof, optional storeys/address",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://www.ldbv.bayern.de/vermessung/zshh/lod2-de_en.html",
+      "access_class_hint": "paid_national_dataset_citygml_sample_public",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Nationwide full product is offered commercially, not a general free bulk feed. Join EUBUCCO by reviewed footprint spatial matching; do not infer construction year from production date. Official object IDs may link LoD2 to 2D footprints. Separate per-state open data may offer a cheaper pilot."
+    },
+    {
+      "candidate_id": "de.bayern.lod2.open",
+      "name": "Bavaria open LoD2 3D buildings",
+      "provider": "Bayerisches Landesamt für Digitalisierung, Breitband und Vermessung",
+      "categories": [
+        "buildings",
+        "3d_geometry",
+        "height",
+        "germany"
+      ],
+      "spatial_scope": "Bavaria, Germany",
+      "temporal_scope": "Regularly updated state open-data publication; pin selected download revision",
+      "resolution_or_granularity": "Official CityGML LoD2 building geometry with modelled roof shape; details and attributes require tile-specific checks",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://geodaten.bayern.de/opengeodata/OpenDataDetail.html?pn=lod2",
+      "access_class_hint": "public_state_download_review_exact_tiles_and_licence",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Prioritise one Bavarian pilot tile. Record licence/attribution, tile identity, CRS, building model identifiers, year and source; compare polygon geometry and height against EUBUCCO. State data does not establish insured value or verified occupancy."
+    },
+    {
+      "candidate_id": "nl.kadaster.bag",
+      "name": "Netherlands Basic Register of Addresses and Buildings (BAG)",
+      "provider": "Kadaster / PDOK",
+      "categories": [
+        "buildings",
+        "building_ids",
+        "addresses",
+        "building_age",
+        "netherlands"
+      ],
+      "spatial_scope": "Netherlands, nationwide",
+      "temporal_scope": "Continuously maintained administrative register; service refreshed regularly",
+      "resolution_or_granularity": "BAG building objects (panden), addresses and associated administrative attributes; stable register IDs with lifecycle/status",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://api.pdok.nl/kadaster/bag/ogc/v2",
+      "access_class_hint": "public_ogc_api_exact_collections_limits_and_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Use BAG pand identifiers for internal linkage to 3DBAG, and match EUBUCCO geometries spatially with version/time checks. Demolished/historical status must not be treated as current active buildings. Avoid publishing address-level personal linkage."
+    },
+    {
+      "candidate_id": "nl.tudelft.3dbag",
+      "name": "Netherlands 3DBAG building models",
+      "provider": "3D Geoinformation Research Group / TU Delft",
+      "categories": [
+        "buildings",
+        "3d_geometry",
+        "height",
+        "netherlands"
+      ],
+      "spatial_scope": "Netherlands, nationwide",
+      "temporal_scope": "Versioned derived 3D releases; source snapshots must be pinned",
+      "resolution_or_granularity": "Building-level LoD 3D geometry, elevations/heights and connections to BAG identifiers",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://docs.3dbag.nl/en/delivery/webservices/",
+      "access_class_hint": "public_documented_tile_download_and_webservices_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Strong BAG-ID connection to ground building geometry. 3DBAG is a derived geometry/model product; preserve point-cloud/source, release and modelling uncertainty before adopting derived heights. Suitable holdout for EUBUCCO."
+    },
+    {
+      "candidate_id": "fr.rnb.buildings",
+      "name": "France Référentiel National des Bâtiments (RNB)",
+      "provider": "RNB / French public administration",
+      "categories": [
+        "buildings",
+        "building_ids",
+        "geocoding",
+        "france"
+      ],
+      "spatial_scope": "France, nationwide",
+      "temporal_scope": "Maintained registry; published national and departmental extracts plus API",
+      "resolution_or_granularity": "Building identities with public RNB identifiers, footprints/location and administrative change history",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://www.data.gouv.fr/datasets/referentiel-national-des-batiments",
+      "access_class_hint": "public_api_and_department_national_exports_terms_rate_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "RNB-ID is the canonical join candidate with IGN BD TOPO and some ADEME DPE observations; record match multiplicity, building status, source timestamp and any split/merge. A public identity is not a verified insurance location."
+    },
+    {
+      "candidate_id": "fr.ign.bdtopo.buildings",
+      "name": "France IGN BD TOPO buildings and RNB crosswalk",
+      "provider": "Institut national de l'information géographique et forestière (IGN)",
+      "categories": [
+        "buildings",
+        "building_ids",
+        "geometry",
+        "france"
+      ],
+      "spatial_scope": "France, nationwide",
+      "temporal_scope": "Maintained BD TOPO releases, including 2026 documented mapping",
+      "resolution_or_granularity": "Building polygons and a documented association between RNB identifiers and BD TOPO building identifiers",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://bdtopoexplorer.ign.fr/batiment_rnb_lien_bdtopo",
+      "access_class_hint": "public_ign_documentation_dataset_release_and_reuse_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Prefer the publisher RNB-to-BD-TOPO relation rather than an assumed universal one-to-one join. Preserve release, topology, exceptions and overlapping/multiple objects when matching EUBUCCO. Do not use mapping as identity proof without geometry checks."
+    },
+    {
+      "candidate_id": "fr.cstb.bdnb",
+      "name": "France Base de Données Nationale des Bâtiments (BDNB)",
+      "provider": "CSTB / BDNB",
+      "categories": [
+        "buildings",
+        "building_attributes",
+        "energy",
+        "france"
+      ],
+      "spatial_scope": "France, national and department products",
+      "temporal_scope": "Versioned public BDNB files including 2026-02.b published dataset",
+      "resolution_or_granularity": "Building-level data and derived attributes from public sources, including energy and construction context; varying source confidence",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://bdnb.io/download/",
+      "access_class_hint": "public_bulk_and_api_source_rights_by_field_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Potential enrichment through BDNB building IDs and mapped RNB records after verifying field-level lineage. Many columns are inferred; a same-coordinate match is not enough to assert exact year/material. Check privacy and reuse conditions per release."
+    },
+    {
+      "candidate_id": "fr.ademe.dpe",
+      "name": "France ADEME building energy performance diagnostics (DPE)",
+      "provider": "ADEME / French energy performance observatory",
+      "categories": [
+        "buildings",
+        "energy_certificates",
+        "building_attributes",
+        "france"
+      ],
+      "spatial_scope": "France, with coverage limited to properties having certificates",
+      "temporal_scope": "Ongoing certificate issuance and public-data revisions",
+      "resolution_or_granularity": "Energy performance certificate records, some tied to RNB building IDs and address context",
+      "potential_roles": [
+        "building_attribute_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://www.data.gouv.fr/dataservices/api-dpe-logements",
+      "access_class_hint": "public_api_open_data_exact_field_and_licence_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "RNB-linked certificates allow controlled enrichment, but a dwelling/EPC is not always one full building. Distinguish unit from building, multiple certificates per property, source date, uncertain geocodes and private-address handling; not a universal complete stock inventory."
+    },
+    {
+      "candidate_id": "pl.gugik.bdot10k",
+      "name": "Poland BDOT10k national topographic object database",
+      "provider": "GUGiK / Geoportal.gov.pl",
+      "categories": [
+        "buildings",
+        "topography",
+        "footprints",
+        "poland"
+      ],
+      "spatial_scope": "Poland, nationwide",
+      "temporal_scope": "Maintained official topographic object coverage; freeze selected release",
+      "resolution_or_granularity": "Vector topographic objects including 2D buildings and selected descriptive building information at 1:10,000 class",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://www.geoportal.gov.pl/pl/dane/baza-danych-obiektow-topograficznych-bdot10k/",
+      "access_class_hint": "public_geoportal_files_by_region_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Reference candidate for Polish EUBUCCO geometry coverage. BDOT10k footprint keys and object revisions must be retained, and scale/completeness assessed; building counts alone do not show insured exposure."
+    },
+    {
+      "candidate_id": "pl.gugik.buildings3d",
+      "name": "Poland official 3D building models based on BDOT10k",
+      "provider": "GUGiK / Geoportal.gov.pl",
+      "categories": [
+        "buildings",
+        "3d_geometry",
+        "height",
+        "poland"
+      ],
+      "spatial_scope": "Poland, substantial but not necessarily complete national coverage",
+      "temporal_scope": "Official model releases; regional availability varies",
+      "resolution_or_granularity": "3D building geometry compiled from BDOT10k footprints and elevation inputs",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://www.geoportal.gov.pl/en/data/other-data/3d-models-of-building/",
+      "access_class_hint": "public_portal_bulk_or_tile_download_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Link to the underlying BDOT10k footprint after validating object IDs, snapshot and geometry relationships. Derivative height/roof information is not independent cadastral evidence or replacement value."
+    },
+    {
+      "candidate_id": "cz.cuzk.ruian.buildings",
+      "name": "Czechia RÚIAN building and address register",
+      "provider": "ČÚZK (Czech Office for Surveying, Mapping and Cadastre)",
+      "categories": [
+        "buildings",
+        "building_ids",
+        "geometry",
+        "czechia"
+      ],
+      "spatial_scope": "Czech Republic, nationwide",
+      "temporal_scope": "Continuously maintained reference register with periodic VFR public extracts",
+      "resolution_or_granularity": "Official building objects, registered identifiers, addresses and selected spatial relationships",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://vdp.cuzk.gov.cz/vdp/ruian",
+      "access_class_hint": "public_free_vfr_download_and_inspire_services_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "High-priority primary-source Czech building benchmark. Preserve RÚIAN building IDs and update timestamp and validate whether extracted geometry is building polygon or representative point. Do not conflate parcel, address and building identities."
+    },
+    {
+      "candidate_id": "es.catastro.inspire.buildings",
+      "name": "Spain Dirección General del Catastro INSPIRE Buildings",
+      "provider": "Dirección General del Catastro / Ministerio de Hacienda",
+      "categories": [
+        "buildings",
+        "cadastral",
+        "geometry",
+        "spain"
+      ],
+      "spatial_scope": "Spain excluding Basque Country and Navarra in this service",
+      "temporal_scope": "Municipality-level published ATOM files and WFS service; update frequency by service",
+      "resolution_or_granularity": "INSPIRE building geometries and cadastre-linked identifiers, with service-specific attribute scope",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://www.catastro.hacienda.gob.es/webinspire/index_eng.html",
+      "access_class_hint": "public_wfs_atom_service_rights_and_geographic_exclusions_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Building footprint validation and possible cadastral-attribute joins require exact atom snapshot, municipality, identifiers and geometry structure. Catalan and other regional cases require source-specific checks; do not claim full Spain coverage from the central service."
+    },
+    {
+      "candidate_id": "ch.swisstopo.swissbuildings3d3",
+      "name": "Switzerland swissBUILDINGS3D 3.0 Beta",
+      "provider": "Federal Office of Topography swisstopo",
+      "categories": [
+        "buildings",
+        "3d_geometry",
+        "building_ids",
+        "switzerland"
+      ],
+      "spatial_scope": "Switzerland; official EGID integration available in a growing subset of cantons",
+      "temporal_scope": "Rolling beta releases; June 2026 release documented",
+      "resolution_or_granularity": "3D building roofs, facades and footprints, with federal building identifiers (EGID) in supported regions",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://www.swisstopo.admin.ch/en/landscape-model-swissbuildings3d-3-0-beta",
+      "access_class_hint": "public_official_download_version_and_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Where EGID is present, connect to Swiss official building/address registers; where absent, use spatial geometry with explicit uncertainty. Distinguish beta geographic coverage from all-Switzerland visualization and do not project EGID completeness to all cantons."
+    },
+    {
+      "candidate_id": "dk.datafordeler.bbr",
+      "name": "Denmark Building and Dwelling Register (BBR)",
+      "provider": "Klimadatastyrelsen / Datafordeler",
+      "categories": [
+        "buildings",
+        "construction_year",
+        "occupancy",
+        "denmark"
+      ],
+      "spatial_scope": "Denmark, nationwide administrative register",
+      "temporal_scope": "Maintained administrative building and dwelling records; modern GraphQL service",
+      "resolution_or_granularity": "BBR building, unit, floors, usage and construction attributes associated with Danish register identifiers",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://datafordeler.dk/dataoversigt/bygnings-og-boligregistret-bbr/bbr-graphql/",
+      "access_class_hint": "api_key_oauth_graphql_file_download_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Exact BBR identifier and address/building linkage requires the source schema. Prefer GraphQL/file download; historical REST is being retired. Verify authentication, field visibility, location precision, status and redistribution before any use."
+    },
+    {
+      "candidate_id": "fi.nls.inspire.buildings",
+      "name": "Finland National Land Survey INSPIRE Buildings polygons",
+      "provider": "National Land Survey of Finland",
+      "categories": [
+        "buildings",
+        "geometry",
+        "finland"
+      ],
+      "spatial_scope": "Finland, coverage according to NLS official INSPIRE building dataset",
+      "temporal_scope": "National topographic/inspire revisions; separate 3D sample areas",
+      "resolution_or_granularity": "INSPIRE-compatible building polygon features via official download services",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://www.maanmittauslaitos.fi/en/maps-and-spatial-data/datasets-and-interfaces/map-interface-services/inspire-directive-compliant",
+      "access_class_hint": "official_wfs_download_rights_version_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Compare exact polygon definitions and region coverage with EUBUCCO. Finnish 3D buildings are not currently all-country complete; preserve model versus surveyed sources and validate CRS/IDs before automated joining."
+    },
+    {
+      "candidate_id": "no.geonorge.fkb-bygning",
+      "name": "Norway FKB-Bygning building geometries",
+      "provider": "Kartverket / Geovekst / Geonorge",
+      "categories": [
+        "buildings",
+        "geometry",
+        "norway"
+      ],
+      "spatial_scope": "Norway, high-resolution mapped regions",
+      "temporal_scope": "Continuously updated FKB source; delivery/access depend on user class",
+      "resolution_or_granularity": "Official FKB building geometry with source/topographic characteristics distributed through Geonorge formats and APIs",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://kartkatalog.geonorge.no/metadata/fkb-bygning/8b4304ea-4fb0-479c-a24d-fa225e2c6e97",
+      "access_class_hint": "conditional_access_licence_and_possible_fees_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Access can be conditional or paid depending on user; catalogue visibility is not permission to bulk download. Evaluate building object IDs and survey vintages only after obtaining an authorised asset and rights decision."
+    },
+    {
+      "candidate_id": "se.lantmateriet.buildings",
+      "name": "Sweden Lantmäteriet Building Download / INSPIRE",
+      "provider": "Lantmäteriet",
+      "categories": [
+        "buildings",
+        "building_register",
+        "sweden"
+      ],
+      "spatial_scope": "Sweden, municipalities/INSPIRE distribution",
+      "temporal_scope": "Maintained Swedish building/register data; access via national provider distribution",
+      "resolution_or_granularity": "Official building products include Building Direct and municipal INSPIRE downloads with some purposes/use classes",
+      "potential_roles": [
+        "eubucco_footprint_crosswalk",
+        "building_feature_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://www.lantmateriet.se/en/geodata/our-products/product-list/building-download-inspire",
+      "access_class_hint": "provider_authorization_and_fees_possible_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Do not equate Lantmäteriet discoverability with a no-cost full commercial data grant. Confirm which geometry fields and persistent ids are available at exact municipal release; compare to EUBUCCO with source and temporal alignment."
+    },
+    {
+      "candidate_id": "uk.gov.epc.england-wales",
+      "name": "England and Wales official Energy Performance Certificates bulk data",
+      "provider": "UK Department for Levelling Up / GOV.UK",
+      "categories": [
+        "buildings",
+        "energy_certificates",
+        "building_attributes",
+        "uk"
+      ],
+      "spatial_scope": "England and Wales, certified buildings only",
+      "temporal_scope": "Rolling EPC data releases, multiple certificate vintages",
+      "resolution_or_granularity": "Domestic/non-domestic energy certificates with construction and energy attributes for covered properties",
+      "potential_roles": [
+        "building_attribute_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://get-energy-performance-data.communities.gov.uk/",
+      "access_class_hint": "account_registration_bulk_access_licence_privacy_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Not a comprehensive building inventory or authoritative footprint layer. Linking to building geometry requires carefully validated UPRN/address mapping, one-to-many EPC relationships and permitted data use; no identity-based release without privacy review."
+    },
+    {
+      "candidate_id": "eu.eurostat.construction-cost-index",
+      "name": "Eurostat construction costs of new residential buildings",
+      "provider": "Eurostat / European Commission",
+      "categories": [
+        "economic_statistics",
+        "construction_cost",
+        "value_context",
+        "europe"
+      ],
+      "spatial_scope": "European statistical reporting countries",
+      "temporal_scope": "Time-series construction cost/producer price indicators; revisions possible",
+      "resolution_or_granularity": "Country- and period-specific index values for residential construction cost developments",
+      "potential_roles": [
+        "replacement_cost_index_context",
+        "regional_exposure_validation"
+      ],
+      "authoritative_url": "https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Construction_producer_price_and_construction_cost_indices_overview",
+      "access_class_hint": "public_eurostat_api_bulk_statistics_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Use only to index externally validated replacement cost benchmarks to a specific price year. An index is NOT an absolute cost per square metre, building-level replacement value or insurance sum. Distinguish materials, labor and producer price definitions and country coverage."
+    },
+    {
+      "candidate_id": "eu.crosscert.epc.reference",
+      "name": "crossCERT open database for energy performance certificate testing",
+      "provider": "crossCERT EU project consortium",
+      "categories": [
+        "energy_certificates",
+        "building_attributes",
+        "validation",
+        "europe"
+      ],
+      "spatial_scope": "Selected European and UK study countries; project sample not comprehensive",
+      "temporal_scope": "Research project dataset, version and covered sample dates to be reviewed",
+      "resolution_or_granularity": "Selected buildings with comparable EPC-related variables used for cross-country methodology tests",
+      "potential_roles": [
+        "building_attribute_enrichment",
+        "building_stock_validation"
+      ],
+      "authoritative_url": "https://www.crosscert.eu/our-solutions/open-database-for-epc-testing",
+      "access_class_hint": "public_research_dataset_rights_and_sample_access_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Potential independent benchmarking of attribute semantics and imputation, not a complete building inventory. Preserve participating countries, observational selection bias, privacy/licence constraints and no invented building-level matches when no stable identifier exists."
+    }
+  ]
+}

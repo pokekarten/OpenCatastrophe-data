@@ -1,0 +1,86 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Distinct public procurement/IFRS facts; research only. DO NOT add to insured building or carrier TIV.
+schema_version = "BERLIN_LWU_PROCUREMENT_NAMED_PROPERTY_SEGMENTS_V0"
+review_date = "2026-11-05"
+company_source_population = "Gewobag historical acquisition and 2024 insurance tender; WBM 2026 pure commercial property insurance award, separate 2025 public housing stock population"
+source_original_ted_http_bytes_checked_this_run = false
+source_original_ifrs_pdf_sha256_checked_this_run = false
+source_broker_or_award_mirror_is_primary_contract = false
+public_stock_cohorts_independent_of_2025_lwu_stock_verified = false
+individual_insured_buildings_observed = false
+insured_site_geocodes_observed = false
+carrier_specific_building_allocation_observed = false
+market_fair_value_equals_cat_reinstatement_tiv = false
+awarded_named_insurers_equal_coverage_per_object = false
+model_cat_exposure_admitted = false
+
+[gewobag_2024_tender]
+buyer = "Gewobag Wohnungsbau-Aktiengesellschaft Berlin"
+procurement_reference = "Gewobag 221-24"
+ted_notice_id = "558592-2024"
+ted_notice_url = "https://ted.europa.eu/en/notice/-/detail/558592-2024"
+public_notice_mirror_url = "https://de.openprocurements.com/tender/2024-gebaudeversicherung-mkn/"
+notice_published = "2024-09-13"
+bid_deadline = "2024-10-16"
+contract_type = "residential_and_commercial_building_insurance_procurement"
+original_ted_notice_download_sha256_verified = false
+actual_awarded_carrier_legal_names_verified_from_this_notice = false
+contract_ended_and_2026_carrier_coverage_verified = false
+main_contract_and_separate_acquired_stock_contract_described = true
+historical_ado_purchase_date = "2019-12-01"
+historical_ado_dwellings_rounded_in_notice = 6000
+historical_ado_named_boroughs = ["Spandau", "Reinickendorf"]
+historical_ado_rounded_count_is_exact_2024_dwellings = false
+insured_value_basis = "listed residential and commercial usable floor areas; original asset schedule and actual insured sum not available"
+historical_2024_01_01_main_contract_conditions_changed = true
+tender_option_increase_usable_floor_area_pct_max = 10
+tender_option_is_realised_growth_or_2025_insured_risk = false
+sourcetype = "public_original_TED_notice_transcribed_through_unverified_secondary_mirror"
+note = "2024 tender sought harmonisation of a historically separate ADO purchased portfolio with Gewobag principal insured buildings; cannot establish awardee, realised changes, any named insurer's exact participation, building coordinates or claims. Tender option 10 percent is possible inclusion-condition threshold and not observed growth."
+
+[gewobag_2024_ado_issuer_ifrs]
+issuer = "Gewobag Wohnungsbau-Aktiengesellschaft Berlin"
+publisher_report = "Gewobag 2024 IFRS Geschäfts- und Nachhaltigkeitsbericht"
+report_url = "https://berichte.gewobag.de/fileadmin/assets_2024/PDFs/Gewobag-Geschaefts-und-Nachhaltigkeitsbericht-2024-IFRS.pdf"
+report_printed_page = 54
+source_type = "issuer_ifrs_2024_report_public_numerical_excerpt_original_pdf_body_hash_pending"
+valuation_date = "2024-12-31"
+acquisition_year = 2019
+acquisition_origin = "ADO Properties S.A."
+reported_property_objects = 21
+reported_residential_dwellings = 5894
+reported_commercial_units = 65
+reported_parking_spaces = 1433
+reported_other_units = 139
+reported_market_fair_value_eur_thousand = 821190
+reported_prior_year_market_fair_value_eur_thousand = 819481
+reported_potential_densification_component_eur_thousand = 15010
+valuation_company = "CBRE GmbH"
+reported_market_value_is_insured_tiv = false
+reported_property_objects_are_verified_individual_building_footprints = false
+2019_acquisition_rounded_tender_6000_must_not_be_added_to_5894 = true
+source_report_is_2024_ifrs_not_2025_insurer_policy_schedule = true
+source_original_pdf_sha256_verified = false
+note = "Issuer report specifies 21 Objekte, NOT proven 21 unique building footprints; market fair value includes potential densification component and cannot be treated as physical replacement cost or insurer sums insured. The tender's ~6000 2019 dwellings and issuer's 5894 are alternative date/grain descriptions of a historically acquired portfolio, never additive. Its correspondence to 2025 Senate stock row is plausible but no independent asset crosswalk proves exact subset or 2025 coverage."
+
+[wbm_2026_commercial_award]
+buyer = "WBM Wohnungsbaugesellschaft Berlin-Mitte mbH"
+ted_notice_id = "668506-2026"
+ted_notice_url = "https://ted.europa.eu/en/notice/-/detail/668506-2026"
+public_notice_mirror_url = "https://auftragsatlas.de/ausschreibung/industrielle-sachversicherung-fuer-reine-gewerbeobjekte-1172391"
+award_date = "2026-09-21"
+publication_date = "2026-09-29"
+award_scope = "industrial_property_cover_of_nine_pure_commercial_objects"
+reported_pure_commercial_objects = 9
+reported_winners = ["HDI Global SE", "Helvetia Schweizerische Versicherungsgesellschaft AG", "R+V Allgemeine Versicherung AG"]
+source_type = "published_TED_award_reported_by_public_mirror_original_eforms_hash_pending"
+official_ted_eforms_original_http_bytes_verified = false
+reported_award_value_eur = 0
+reported_zero_is_placeholder_not_contract_premium_or_insured_tiv = true
+each_winner_covers_all_nine_objects_proven = false
+carrier_share_and_policy_limits_disclosed = false
+actual_location_coordinates_known = false
+commercial_objects_are_2025_wbm_residential_dwellings = false
+award_date_proves_2025_residential_carrier_contract = false
+note = "Tender award notice describes nine pure commercial property objects and names three awardees. There is no reliably verified original eForms provider payload/JSON SHA in this research. A zero-valued tender mirror display is not insurer premium, real contract economics or TIV. Three awardees x nine objects cannot become 27 insured assets. The 2025 Senate WBM residential dwelling stock is a separate measure/vintage and should not absorb these objects."

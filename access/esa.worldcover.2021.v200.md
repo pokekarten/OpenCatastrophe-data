@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** object_store
 
-**Status:** documented_only
+**Status:** probe_ready
 
 **Documentation url:** <https://esa-worldcover.org/en/data-access>
 
@@ -53,12 +53,17 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - list_v200_map_prefix
 - fetch_exact_v200_tile
+- probe_exact_v200_tile_head
+- sample_exact_v200_tile_header_4096
+- sample_exact_v200_tile_tables_10368
+- sample_exact_v200_block185_56442
 
 ### Path templates
 
 - /v200/2021/map/
+- /v200/2021/map/ESA_WorldCover_10m_2021_v200_N48E009_Map.tif
 
-**Parameter rules:** This contract documents the official WorldCover 2021 v200 delivery identity but authorizes no network operation yet. The provider documents anonymous no-sign access to bucket esa-worldcover and the versioned map prefix v200/2021/map. A future source-specific worker must first freeze one exact v200/2021 map tile object key from authoritative provider evidence and then keep bucket, region, version, year, prefix, object key, query, headers and redirect targets repository-controlled. Caller-selected object paths, prefix-wide sync, bucket enumeration and arbitrary raster downloads are forbidden. The Zenodo DOI 10.5281/zenodo.7254221 is an immutable release/provenance identity, not caller-controlled alternate download authority.
+**Parameter rules:** Only these source-owned fixed operations are reviewed for the single N48E009 WorldCover 2021 v200 Map TIFF: HEAD, GET Range bytes=0-4095 (header), GET Range bytes=13644-24011 (both contiguous offset/bytecount arrays), and a separately scoped single compressed block GET Range bytes=43278196-43334637 (56,442 bytes), TIFF block index 185 (internal grid row 5 column 5), strictly preceded by rechecking the two exact header/table sample SHA-256 values from independent successful source runs. The pinned 4,096-byte header SHA256 is a74fc1ff4733c3afff09328e014c0731eba2f1912f3f5cbc330ed0700f3f3529 and 10,368-byte table sample SHA256 is 7de08710b64cad350b81da83a81fcfc0c74f5285e20e28b0a3e42d19151885ba. Require HTTP 206, exact Content-Range and size per request, no redirects/retries, bounded strict TIFF compression/predictor type and at most 1,048,576 decoded uint8 values. Only the predeclared source block and reviewed class codes 0,10,20,30,40,50,60,70,80,90,95,100 may be counted. Provider raw bytes/pixels not committed or imported into a database, only digest, source identity and aggregate class counts logged. No caller-supplied URL, range, another tile, object, host, credentials, different date, S3 listing, full raster download, arbitrary block or synthetic insurer data. Existing list_v200_map_prefix and fetch_exact_v200_tile remain documentation only.
 
 ## Response contract
 
@@ -66,8 +71,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - image/tiff
 - application/octet-stream
+- binary/octet-stream
 
-**Format:** WorldCover 2021 v200 map data are distributed as 3 by 3 degree Cloud-Optimized GeoTIFF tiles in EPSG:4326. The analytical map layer and InputQuality layer are distinct products; WMS/WMTS RGB visualizations are cartographic views and must not be treated as analysis rasters.
+**Format:** WorldCover 2021 v200 map data are distributed as 3 by 3 degree Cloud-Optimized GeoTIFF tiles in EPSG:4326. The analytical map layer and InputQuality layer are distinct products; WMS/WMTS RGB visualizations are cartographic views and must not be treated as analysis rasters. The exact public S3 object may be served with generic binary/octet-stream transport metadata; that MIME alone does not verify the GeoTIFF payload, COG layout, EPSG:4326 or land-cover classes.
 
 **Scientific semantics:** WorldCover 2021 v200 is a 10 m global land-cover map with 11 classes and a 2021 reference year. The official product-level independent validation reports 76.7% overall accuracy for v200; this is not a per-pixel correctness guarantee. WorldCover 2020 uses algorithm v100 while 2021 uses v200, so differences between the two maps contain both real land-cover change and algorithm effects and must not be interpreted as a pure change layer. Land-cover class is contextual exposure/vulnerability information, not asset count, insured value, hazard intensity, damage or loss.
 
@@ -81,9 +87,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** The official WorldCover data-access page explicitly documents programmatic AWS CLI sync and Python subset download using the public no-sign bucket. No repository-specific request-rate entitlement or rate budget is stated in the reviewed evidence. This documented-only contract still authorizes no S3 ListObjects, HEAD, GET, Range request, prefix sync, crawling or repeated probe because no exact tile object/canary has been frozen.
+**Rate limit notes:** A single explicitly reviewed one-block scientific canary may make at most three sequential fixed public HTTPS GET requests: the known 4 KiB TIFF header, the known 10,368-byte tile-array tables, then the known 56,442-byte compressed source TIFF block. All are constant URLs and ranges; no retries, pagination, scheduling, bulk acquisition or source object sync. Data handled transiently by unprivileged CI.
 
-**Mutability notes:** The product identity is versioned as 2021 v200 and is also anchored by immutable release DOI 10.5281/zenodo.7254221. The official AWS prefix is v200/2021/map, but no exact tile object is frozen by this contract. Any later acquisition must bind the exact object key and requested/final storage identity, retrieval UTC, byte count and SHA-256, validate the COG structure, EPSG:4326 grid/extent and class coding, and preserve the v200 product identity before scientific use.
+**Mutability notes:** The 4KiB header and 10368-byte tile-array byte digests and source total 94851935 are frozen from real 2026-11-01 receipts. The exact block185 original compressed byte range is 43278196–43334637 (56442 bytes). The three one-shot response digests are checked per live run; original source wider than these samples is not hashed or vouched. A changed upstream file/header/table fails closed. TIFF compression/predictor and 11 WorldCover classes are independently validated; this does NOT certify original full-file, spatial pixel truth, insured assets, COG validity or application readiness.
 
 ## Rights and policy
 
@@ -97,23 +103,27 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** allowed
 
-**Notes:** The official WorldCover data-access page states that the WorldCover product is provided free of charge without restriction under Creative Commons Attribution 4.0, requires acknowledgement to the ESA WorldCover project, and explicitly documents programmatic AWS CLI no-sign sync plus a Python subset-download route. Dataset commercial reuse/redistribution and documented programmatic service use are therefore supported by reviewed provider evidence. This contract nevertheless authorizes no network probe or fetch until one exact v200/2021 tile object and its bounded evidence contract are separately frozen; no raster bytes are admitted.
+**Notes:** ESA WorldCover 2021 v200 public CC BY 4.0 Map TIFF; official ESA data access permits anonymous programmatic S3 use with attribution. The new reviewed read-only, exact single-block sample is research-only and must be traceable to previously verified TIFF header/table identities. At most 56442 compressed source bytes of one fixed block plus its two original metadata ranges are inspected transiently and discarded. Output is permitted only as hash, aggregate class counts and one predeclared synthetic-grid-point class. No original raster redistribution, bulk collection, private buildings or insurance model ingestion authorized.
 
 ## Probe contract
 
-**Mode:** none
+**Mode:** head
 
-**Operation:** `null`
+**Operation:** probe_exact_v200_tile_head
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-_Empty array._
+- fixed region-specific HTTPS HEAD returned HTTP 200, or explicit blocked status
+- nonzero Content-Length and Content-Type recorded without obtaining raster bytes
+- source object identity, contract SHA-256, execution-code SHA-256 and UTC receipt
+- ETag hash recorded as transport metadata, never treated as source SHA-256
+- source_bytes_downloaded=false and model_input_approved=false
 
-**Implementation decision:** document_only
+**Implementation decision:** build_later
 
-**Reviewed at:** 2026-08-12
+**Reviewed at:** 2026-11-01
 
 ## Evidence urls
 
@@ -121,5 +131,7 @@ _Empty array._
 - <https://registry.opendata.aws/esa-worldcover-vito/index.html>
 - <https://zenodo.org/records/7254221>
 - <https://creativecommons.org/licenses/by/4.0/>
+- <https://github.com/ESA-WorldCover/esa-worldcover-datasets>
+- <https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/docs/WorldCover_PUM_V2.0.pdf>
 
-**Notes:** This is a narrow pre-execution source-access contract for \#173/\#242. It freezes WorldCover 2021 v200 machine-delivery, release, scientific and dataset-rights identities without selecting or downloading a raster tile. A later exact-tile task must separately review the provider object key, service execution boundary, byte identity, attribution and intended scientific role before any sample, admission or publication step.
+**Notes:** This bounded original-block test uses one fixed TIFF block index185 (internal block row5, col5), with exact verified byte range and source-range checksum evidence; strict 1MiB decompressed limit and WorldCover official 2021 class whitelist. Synthetic position 9.5E 50.5N is not an actual insured location or validated roof. No complete COG/CRS scientific admission.

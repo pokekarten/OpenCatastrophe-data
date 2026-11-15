@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+schema_version = "1.0.0"
+receipt_kind = "CEMS_EMSN028_CURRENT_RNB_POINT_SOURCE_COMPARISON_V0"
+review_date = "2026-11-01"
+source_url = "https://mapping.emergency.copernicus.eu/download/EMSN028/EMNS028_AOI_FRANCE_utm31n.gdb.zip"
+source_archive_sha256 = "7ef43d0637447abae705728723c06d2f05415a21667fdee1f10e8fc25b5bf3c2"
+live_evidence_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41353881837"
+source_archive_sha256_reverified_in_live_run = true
+source_crs_epsg = 32631
+
+current_rnb_ids = ["5TR6PNH2YQPT", "TCHNNF59Y27V"]
+current_point_coordinates_published_in_receipt = false
+current_rnb_footprints_historically_proven_in_2016 = false
+point_only_not_building_polygon_overlap = true
+
+observed_flooded_area_source_rows = 1
+observed_flooded_area_original_geometry_valid = false
+observed_flooded_area_repair_method = "linework"
+current_point_inside_observed_repair = [false, false]
+current_point_distance_to_observed_repair_m = [338.24, 373.35]
+
+estimated_maximum_source_rows = 1237
+estimated_maximum_valid_source_polygons = 1206
+estimated_maximum_invalid_source_polygons = 31
+estimated_maximum_null_or_empty = 0
+current_points_covered_by_any_valid_source_estimated_polygon = [false, false]
+current_points_nearest_valid_source_estimated_polygon_m = [523.09, 589.26]
+invalid_source_bbox_possible_hits_per_point = [1, 1]
+invalid_bbox_search_is_not_inundation_evidence = true
+
+target_invalid_source_feature_ordinal_zero_based = 1235
+target_original_invalid_coordinate_count = 33229
+target_original_topology_reason = "Ring Self-intersection[496686.5675 5359323.6527]"
+target_invalid_source_bbox_area_m2_not_hazard_area = 3805139992.37
+target_method_names = ["make_valid_linework", "make_valid_structure"]
+target_method_output_valid_polygonal = [true, true]
+target_method_component_counts = [5, 5]
+target_method_areas_m2 = [144858199.84, 144858199.84]
+target_method_point_covers = [[true, true], [true, true]]
+target_method_point_distances_m = [[0.0, 0.0], [0.0, 0.0]]
+target_method_symmetric_difference_m2_rounded_2dp = 0.0
+invalid_original_algebraic_area_used_as_ground_truth = false
+other_invalid_source_polygons_not_repaired_in_targeted_test = 30
+
+aoi04_specific_observed_flood_geometry_verified = false
+underlying_cems_product_rights_verified = false
+2016_original_building_footprints_verified = false
+insured_values_claims_or_depth_observed = false
+physical_flood_validation_completed = false
+loss_modelling_or_cat_model_admission_authorized = false
+original_or_repaired_source_polygons_stored_in_repository = false
+original_or_repaired_source_polygons_stored_in_neon = false
+note = "All outputs are point-only research diagnostics, never site inundation or insurance loss claims. Both point locations are present-day RNB centroids, not verified historic 2016 buildings. Estimated maximum flood != observed flood. AOI04 boundary, licence and scientific event context remain unresolved."
