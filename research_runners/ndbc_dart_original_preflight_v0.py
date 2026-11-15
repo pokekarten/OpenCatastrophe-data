@@ -44,7 +44,9 @@ def preflight(path: Path, *, station: str, start: str, end: str) -> dict:
     if not _STATION.fullmatch(station):
         raise DARTPreflightError("invalid station identity")
     start_day, end_day = _date(start), _date(end)
-    if not start_day <= end_day or (end_day - start_day).days > MAX_DAYS:
+    # Both request endpoints are inclusive calendar dates. A 7-day cap must
+    # reject an 8th date (a difference of seven days between endpoints).
+    if not start_day <= end_day or (end_day - start_day).days >= MAX_DAYS:
         raise DARTPreflightError("request window invalid or exceeds seven days")
     path = Path(path)
     if path.is_symlink() or not path.is_file():
