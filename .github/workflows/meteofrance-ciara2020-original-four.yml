@@ -3,11 +3,6 @@
 name: France Ciara 2020 original hourly four-department envelope
 
 on:
-  pull_request:
-    paths:
-      - 'research_runners/meteofrance_ciara2020_four_original_window_v0.py'
-      - 'tests/test_meteofrance_ciara2020_four_original_window_v0.py'
-      - '.github/workflows/meteofrance-ciara2020-original-four.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +10,6 @@ permissions:
 
 jobs:
   original-window:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'research/20261115-ciara-french-four-source-hourly-envelope'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     strategy:

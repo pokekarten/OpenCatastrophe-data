@@ -45,6 +45,10 @@ class TestCiaraOriginalEnvelope(unittest.TestCase):
         self.assertEqual(a["not_transfer_derived_valid_gusts"], 2)
         self.assertEqual(a["quality_checked_gust_peak_mps"], 31.2)
         self.assertEqual(a["station_quality_checked_peak_bins"], {"30_to_below_40_mps":1})
+        self.assertEqual(sum(a["station_quality_checked_peak_bins"].values()),
+                         a["quality_checked_hourly_station_count"])
+        self.assertEqual(sum(a["quality_counts_all_window_rows"].values()),
+                         a["station_hour_rows_in_window"])
         self.assertEqual(a["stations_with_full_72_hour_labels"], 0)
         self.assertFalse(a["hazard_calibration_authorized"])
         self.assertFalse(a["annual_ep_authorized"])
