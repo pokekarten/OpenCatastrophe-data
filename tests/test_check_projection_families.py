@@ -45,16 +45,40 @@ class ProjectionFamilyGuardTests(unittest.TestCase):
             self.assertEqual(errors, [])
             self.assertEqual(count, 5)
 
-    def test_three_named_research_snapshots_are_not_fake_projection_pairs(self) -> None:
+    def test_six_named_research_snapshots_are_not_fake_projection_pairs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = self._root(temporary)
             for relative, schema in guard.RESEARCH_ONLY_STANDALONE_JSON_SCHEMAS.items():
                 p = root / relative
                 p.parent.mkdir(parents=True, exist_ok=True)
-                p.write_text(json.dumps({"schema": schema}) + "\n", encoding="utf-8")
+                if schema == "__SOURCE_DOWNLOAD_RECEIPT_ROWS__":
+                    data = [{"file": "synthetic.nc", "url": "https://example.invalid/synthetic.nc",
+                             "bytes": 10, "sha256": "a" * 64, "status": "downloaded"}]
+                else:
+                    data = {"schema": schema}
+                p.write_text(json.dumps(data) + "\n", encoding="utf-8")
             errors, count = guard.check_inventory(root)
             self.assertEqual(errors, [])
-            self.assertEqual(count, 3)
+            self.assertEqual(count, 6)
+
+    def test_named_download_receipt_rejects_fake_sha_or_disallowed_url(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._root(temporary)
+            p = root / "research/observations/xws_downloads_20261115.json"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            for row in (
+                {"file": "x.nc", "url": "http://example.invalid/x.nc",
+                 "bytes": 10, "sha256": "a" * 64, "status": "downloaded"},
+                {"file": "x.nc", "url": "https://example.invalid/x.nc",
+                 "bytes": 10, "sha256": "not-a-digest", "status": "downloaded"},
+                {"file": "x.nc", "url": "https://example.invalid/x.nc",
+                 "bytes": True, "sha256": "a" * 64, "status": "downloaded"},
+            ):
+                with self.subTest(row=row):
+                    p.write_text(json.dumps([row]) + "\n", encoding="utf-8")
+                    errors, count = guard.check_inventory(root)
+                    self.assertEqual(count, 1)
+                    self.assertTrue(any("receipt mismatch" in error for error in errors))
 
     def test_named_research_snapshot_schema_mismatch_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
