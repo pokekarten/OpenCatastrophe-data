@@ -30,3 +30,25 @@ Météo-France also publishes the separate [complementary station information sh
 The exact-ID fallback still found **multiple source PDF metadata records** for at least one eligible Seine-Maritime (76) station in the complementary/primary lookup. An ambiguous station is now reported as an **unresolved multiple-source identity**, counted separately from an absent exact-title match. It is explicitly excluded from original-PDF byte proofs; **no newest-file or first-file guess is permitted**, and the cohort's `eligible_station_pdf_exact_match_complete` remains false until a reviewed unique identity is shown. Verified unambiguous PDF sources can still be hashed and counted.
 
 Météo-France [announced a 16 April 2026 station identifier harmonization](https://confluence-meteofrance.atlassian.net/wiki/spaces/OpenDataMeteoFrance/pages/1603796993): some `num_poste` identifiers and department association changed, with no period of parallel old/new identifiers. Therefore a 2026 PDF catalogue ID matching a 2020 original-hour record is only a **current-catalogue identity match**, not automatically proof that the same site/instrument existed or had that canonical ID during the February 2020 storm. Original event use requires independently time-scoped station-site/instrument records and any affected original/renamed station lineage before physical model comparison.
+
+## Executed official PDF original-byte evidence (15 November 2026)
+
+The [successful original-provider GitHub Actions run 43743317214](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43743317214) rechecked all four SHA-pinned Ciara hourly original sources, then matched each full-72h quality-approved station identifier to the primary official Météo-France station PDF catalogue. A public Météo-France **complementary station** catalogue was configured as a distinct exact-ID fallback; the observed station cohort did **not** require a fallback PDF because the remaining unresolved source was an *ambiguity*, not a missing title. Future replays fetch the complementary catalogue only when a primary source has an exact-title **miss**, not an ambiguous duplicate.
+
+| Department | 72h quality-approved station IDs | Verified original PDF files | Primary PDFs | Complementary PDFs | No exact title | Multiple candidate resources | Verified PDF bytes |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Aisne (02) | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Pas-de-Calais (62) | 3 | 3 | 3 | 0 | 0 | 0 | 3,494,855 |
+| Seine-Maritime (76) | 4 | 3 | 3 | 0 | 0 | **1** | 2,729,497 |
+| Somme (80) | 2 | 2 | 2 | 0 | 0 | 0 | 2,111,877 |
+| **Total** | **9** | **8** | **8** | **0** | **0** | **1** | **8,336,229** |
+
+The official Météo-France station-PDF catalogue original SHA-256 was `d0b465ae592e1d1a586f87aed4f29292bc063c3ca3d73d489f42af1d3b913a6b` at source acquisition. Only **cohort SHA-256** values combining privately held station IDs, official PDF resource UUIDs and the full original PDF byte digests are published. These receipts are reproducible by authorized original-source reinspection without storing source PDFs or individually identifying stations in Git.
+
+- 62 cohort digest: `16e0ee52a7a0b40bc88a7663ea488c311eb43bb9695e4c4f010c4643a9450ad0`.
+- 76 cohort digest (three unique original PDFs only): `ab0cc23e582d237ea41472fcc5e3897740ff5414637f46e73efcf3b5b31feb65`.
+- 80 cohort digest: `9881f7fb57cd4c86c58f79d881f12ffd8c2b955db01311f85cc6f7f1ef3a2a2b`.
+
+**Precisely unresolved:** one of four eligible Seine-Maritime station identities had multiple original PDF metadata records. We did **not** choose a record, claim those copies are identical, certify 2020 instrument exposure or deem the cohort 9/9 complete. A separate review needs to compare exact original PDF copies, station identifier harmonization and the 2020 historical anemometer/site record. Eight original PDF files were byte-verified; **zero individual historical wind-sensor histories have yet been formally validated**. Production ERA5-vs-observation skill and insured loss calibration are therefore still blocked.
+
+The source network job is now **manual-only** after its successful bounded one-off evidence run, with all test fixtures remaining deterministic and synthetic.

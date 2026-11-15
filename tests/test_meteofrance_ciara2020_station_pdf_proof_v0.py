@@ -85,6 +85,20 @@ class TestStationPdfProvenance(unittest.TestCase):
         self.assertTrue(receipt["eligible_station_pdf_exact_match_complete"])
         self.assertFalse(receipt["station_site_and_instrument_history_verified_for_2020"])
 
+    def test_supplemental_provider_is_not_called_without_exact_title_miss(self):
+        source = archive()
+        assets = {"62": (fr.ASSETS["62"][0], len(source), None)}
+        def should_not_fetch():
+            raise AssertionError("second catalogue fetched without missing primary source")
+        with patch.object(fr, "ASSETS", assets):
+            result = station_pdf_proof(
+                "62", source, station_catalogue(),
+                fetch_supplemental=should_not_fetch,
+                download_pdf=lambda *_: synthetic_pdf(), min_resources=1
+            )
+        self.assertTrue(result["eligible_station_pdf_exact_match_complete"])
+        self.assertEqual(result["official_station_pdf_complementary_count"],0)
+
     def test_duplicate_titles_remain_unusable_with_partial_ambiguity_report(self):
         matched, digest, unmatched, ambiguity = resolve_station_sheets(
             station_catalogue(duplicate=True), {"62001001"}, "62",

@@ -160,6 +160,7 @@ def verify_pdf_bytes(body: bytes, record: dict) -> str:
 
 def station_pdf_proof(dep: str, original: bytes, catalogue: bytes,
                       *, supplemental_catalogue: bytes | None = None,
+                      fetch_supplemental=None,
                       download_pdf=_read_url, min_resources: int = 10_000,
                       min_supplemental_resources: int = 500) -> dict:
     if dep not in ALLOWED_DEPARTMENTS:
@@ -175,6 +176,10 @@ def station_pdf_proof(dep: str, original: bytes, catalogue: bytes,
     regular_count = len(matched)
     supplemental_sha = None
     supplemental_count = 0
+    if unmatched and supplemental_catalogue is None and fetch_supplemental is not None:
+        # Do not download a second catalogue unless an exact-title miss
+        # actually needs the explicitly different official partner source.
+        supplemental_catalogue = fetch_supplemental()
     if unmatched and supplemental_catalogue is not None:
         # Distinct authoritative partner-station dataset. Use only exact
         # station identities absent from the primary publisher catalogue.
@@ -239,10 +244,9 @@ def main(argv: list[str] | None = None) -> int:
         fr.check_identity(official, args.department)
         original = _read_url(fr.asset_url(args.department), fr.MAX_COMPRESSED)
         station_catalogue = _read_url(CATALOGUE_URL_STATIONS, CATALOGUE_LIMIT)
-        supplemental_catalogue = _read_url(CATALOGUE_URL_COMPLEMENTARY, CATALOGUE_LIMIT)
         proof = station_pdf_proof(
             args.department, original, station_catalogue,
-            supplemental_catalogue=supplemental_catalogue,
+            fetch_supplemental=lambda: _read_url(CATALOGUE_URL_COMPLEMENTARY, CATALOGUE_LIMIT),
         )
         print(json.dumps(proof, sort_keys=True, indent=2))
         return 0

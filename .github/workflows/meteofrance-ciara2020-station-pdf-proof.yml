@@ -3,11 +3,6 @@
 name: Ciara France original station-sheet PDF byte provenance
 
 on:
-  pull_request:
-    paths:
-      - 'research_runners/meteofrance_ciara2020_station_pdf_proof_v0.py'
-      - 'tests/test_meteofrance_ciara2020_station_pdf_proof_v0.py'
-      - '.github/workflows/meteofrance-ciara2020-station-pdf-proof.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +10,6 @@ permissions:
 
 jobs:
   original-pdf:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'research/20261115-ciara-station-pdf-provenance'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     strategy:
