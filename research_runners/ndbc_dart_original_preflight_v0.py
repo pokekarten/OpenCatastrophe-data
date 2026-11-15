@@ -78,7 +78,9 @@ def preflight(path: Path, *, station: str, start: str, end: str) -> dict:
     gaps: list[float] = []
     for line in lines[4:]:
         fields = line.split()
-        if len(fields) != 8 or not all(re.fullmatch(r"\d{2,4}", f) for f in fields[:6]):
+        if (len(fields) != 8
+                or re.fullmatch(r"[0-9]{4}", fields[0]) is None
+                or not all(re.fullmatch(r"[0-9]{2}", f) for f in fields[1:6])):
             raise DARTPreflightError("invalid observation row layout")
         if fields[6] not in ("1", "2", "3") or not _HEIGHT.fullmatch(fields[7]):
             raise DARTPreflightError("invalid measurement type or height")
