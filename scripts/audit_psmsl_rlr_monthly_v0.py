@@ -20,6 +20,8 @@ import re
 SOURCE_ID = "psmsl.global-tide-gauge-sea-level"
 MAX_BYTES = 2 * 1024 * 1024
 MAX_MONTHS = 6000
+# Prevent interpreter-dependent 4,300+ digit int() failures on source text.
+MAX_INTEGER_DIGITS = 64
 DATE_RE = re.compile(r"\d{4}\.\d{4}\Z")
 FLAG_RE = re.compile(r"[0-7]{3}\Z")
 INT_RE = re.compile(r"-?\d+\Z")
@@ -78,8 +80,17 @@ def audit_bytes(raw: bytes, *, station_id: int) -> dict[str, object]:
         msl, missing_days, flag_text = fields[1:]
         if not INT_RE.fullmatch(msl) or not INT_RE.fullmatch(missing_days):
             raise PSMSLPreflightError(f'line {line}: non-integer mm or missing-day count')
-        msl_int = int(msl)
-        days = int(missing_days)
+        # Python 3.11+ can raise an unhandled native ValueError on very long
+        # integer tokens despite valid syntax and the outer byte-size cap.
+        # Check both source fields before conversion, independently of runtime.
+        if any(len(token.lstrip('-')) > MAX_INTEGER_DIGITS
+               for token in (msl, missing_days)):
+            raise PSMSLPreflightError(f'line {line}: oversized monthly integer token')
+        try:
+            msl_int = int(msl)
+            days = int(missing_days)
+        except (ValueError, OverflowError) as exc:
+            raise PSMSLPreflightError(f'line {line}: invalid monthly integer token') from exc
         if days != 99 and not (0 <= days <= calendar.monthrange(year, month)[1]):
             raise PSMSLPreflightError(f'line {line}: invalid missing days')
         if not FLAG_RE.fullmatch(flag_text):

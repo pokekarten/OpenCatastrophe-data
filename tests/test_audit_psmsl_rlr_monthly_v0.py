@@ -3,9 +3,16 @@
 """PSMSL source-format negative controls: independently synthetic only."""
 from __future__ import annotations
 
+import subprocess
+import sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
 
-from scripts.audit_psmsl_rlr_monthly_v0 import audit_bytes, PSMSLPreflightError
+from scripts.audit_psmsl_rlr_monthly_v0 import (
+    MAX_INTEGER_DIGITS, audit_bytes, PSMSLPreflightError,
+)
+from scripts.psmsl_rlr_monthly_qc_v0 import screen_original_bytes
 
 
 def series(lines=None):
@@ -58,6 +65,44 @@ class PSMSLRLRMonthlyTests(unittest.TestCase):
         for idx, item in enumerate(bad):
             with self.subTest(idx=idx), self.assertRaises(PSMSLPreflightError):
                 audit_bytes(item, station_id=202)
+
+    def test_large_integer_tokens_are_blocked_before_native_int_conversion(self):
+        huge = '9' * 5000  # independently fabricated, never provider data
+        cases = (
+            f'2025.0417;{huge};0;000',
+            f'2025.0417;-{huge};0;000',
+            f'2025.0417;7000;{huge};000',
+        )
+        for row in cases:
+            with self.subTest(field=row[-18:]):
+                original = series([row])
+                with self.assertRaisesRegex(PSMSLPreflightError, 'oversized'):
+                    audit_bytes(original, station_id=202)
+                # Both the general source audit and the Cuxhaven station-7
+                # view must fail identically, with no source-model admission.
+                with self.assertRaisesRegex(PSMSLPreflightError, 'oversized'):
+                    screen_original_bytes(original)
+
+        self.assertEqual(MAX_INTEGER_DIGITS, 64)
+        ordinary = screen_original_bytes(series(['2025.0417; -99999; 0; 010']))
+        self.assertEqual(ordinary['missing_months'], 1)
+        self.assertFalse(ordinary['provider_origin_verified'])
+        self.assertEqual(ordinary['cat_model_admission'], 'not_admitted')
+
+    def test_oversized_monthly_integer_cli_is_blocked_without_traceback(self):
+        with TemporaryDirectory() as tmp:
+            file = Path(tmp) / 'sensitive-local-input-only.txt'
+            file.write_bytes(series(['2025.0417;' + '9' * 5000 + ';0;000']))
+            cmd = [
+                sys.executable, '-m', 'scripts.audit_psmsl_rlr_monthly_v0',
+                str(file), '--station-id', '7',
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, '')
+            self.assertIn('BLOCKED: line 1: oversized monthly integer token', result.stderr)
+            self.assertNotIn('Traceback', result.stderr)
+            self.assertNotIn(str(file), result.stderr)
 
     def test_reject_station_id_not_claimed_unchanged(self):
         for n in (0, -1, 1000000, True):
