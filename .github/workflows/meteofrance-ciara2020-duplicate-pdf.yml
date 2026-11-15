@@ -3,11 +3,6 @@
 name: Ciara original French duplicate station PDF byte comparison
 
 on:
-  pull_request:
-    paths:
-      - 'research_runners/meteofrance_ciara2020_duplicate_pdf_v0.py'
-      - 'tests/test_meteofrance_ciara2020_duplicate_pdf_v0.py'
-      - '.github/workflows/meteofrance-ciara2020-duplicate-pdf.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +10,6 @@ permissions:
 
 jobs:
   source-comparison:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'research/20261115-ciara-pdf-duplicate-comparison'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:

@@ -66,6 +66,18 @@ class TestCiaraDuplicatePdf(unittest.TestCase):
         self.assertFalse(value["all_original_pdfs_byte_identical"])
         self.assertEqual(value["total_original_pdf_bytes_checked"],4096)
 
+    def test_same_url_with_distinct_resource_UUIDs_stays_ambiguous(self):
+        first=resource(1,"ONE")
+        second=resource(2,"TWO",first["url"])
+        value=run([first,second])
+        self.assertEqual(value["unique_pdf_url_count"],1)
+        self.assertEqual(value["candidate_pdf_resource_count"],2)
+        self.assertFalse(value["unique_historical_pdf_version_admitted"])
+
+    def test_more_than_six_candidates_blocks(self):
+        with self.assertRaises(Blocked):
+            run([resource(i,"SITE"+str(i)) for i in range(1,8)])
+
     def test_duplicate_source_UUID_blocked(self):
         with self.assertRaises(Blocked):
             run([resource(1,"ONE"),resource(1,"TWO")])
