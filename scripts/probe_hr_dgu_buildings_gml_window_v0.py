@@ -30,6 +30,9 @@ TIMEOUT_SECONDS = 15
 WFS = "{http://www.opengis.net/wfs/2.0}"
 GML = "{http://www.opengis.net/gml/3.2}"
 BU = "{http://inspire.ec.europa.eu/schemas/bu-core2d/4.0}"
+BU_BASE = "{http://inspire.ec.europa.eu/schemas/bu-base/4.0}"
+XLINK = "{http://www.w3.org/1999/xlink}"
+FOOTPRINT_URI = "http://inspire.ec.europa.eu/codelist/HorizontalGeometryReferenceValue/footPrint"
 CRS_ALIASES = {"EPSG:3765", "urn:ogc:def:crs:EPSG::3765", "http://www.opengis.net/def/crs/EPSG/0/3765"}
 
 
@@ -113,16 +116,36 @@ def inspect_gml(raw: bytes) -> dict:
     building = members[0][0]
     if building.tag != BU + "Building":
         raise BuildingGmlError("WFS member is not the original cadastral BU Building")
-    geometries = building.findall(".//" + BU + "geometry2D")
+    # Core 2D uses bu-core2d:geometry2D enclosing the base-model
+    # bu-base:BuildingGeometry2D; geometry attributes use bu-base, not
+    # the bu-core2d namespace of the feature itself.
+    geometries = building.findall(BU + "geometry2D")
     if len(geometries) != 1:
-        raise BuildingGmlError("building has missing or ambiguous geometry2D")
+        raise BuildingGmlError("expected one direct core2d geometry2D profile")
     geom = geometries[0]
-    polygons = geom.findall(".//" + GML + "Polygon")
-    # Explicitly do not certify multi-polygon, gml:Surface patch or geometry href.
-    if len(polygons) != 1 or len(geom.findall(".//" + GML + "Surface")):
-        raise BuildingGmlError("unsupported or absent single GML Polygon")
+    if len(geom) != 1 or geom[0].tag != BU_BASE + "BuildingGeometry2D":
+        raise BuildingGmlError("missing or ambiguous bu-base BuildingGeometry2D")
+    profile = geom[0]
+    reference_flags = profile.findall(BU_BASE + "referenceGeometry")
+    if (len(reference_flags) != 1
+            or reference_flags[0].text is None
+            or reference_flags[0].text.strip() != "true"):
+        raise BuildingGmlError("INSPIRE referenceGeometry must be uniquely true")
+    horizontal_refs = profile.findall(BU_BASE + "horizontalGeometryReference")
+    if len(horizontal_refs) != 1 or horizontal_refs[0].get(XLINK + "href") != FOOTPRINT_URI:
+        raise BuildingGmlError("only explicitly tagged INSPIRE footPrint geometry is reviewed")
+    geometry_props = profile.findall(BU_BASE + "geometry")
+    if len(geometry_props) != 1 or len(geometry_props[0]) != 1:
+        raise BuildingGmlError("missing or ambiguous inline bu-base geometry")
+    polygon = geometry_props[0][0]
+    # GML point, surface, MultiSurface, hrefs and nested decoy polygons are
+    # deliberately outside this single-footprint Polygon preflight.
+    if polygon.tag != GML + "Polygon":
+        raise BuildingGmlError("unsupported reference footprint GML geometry type")
+    if len(profile.findall(".//" + GML + "Polygon")) != 1:
+        raise BuildingGmlError("multiple or nested footprint polygons are unreviewed")
     crs_values = {
-        value for element in geom.iter()
+        value for element in polygon.iter()
         for key, value in element.attrib.items() if key == "srsName"
     }
     if not crs_values or not crs_values.issubset(CRS_ALIASES):
@@ -133,12 +156,14 @@ def inspect_gml(raw: bytes) -> dict:
     }
     if dims and dims != {"2"}:
         raise BuildingGmlError("GML geometry must have two coordinate dimensions")
-    if polygons[0].findall(GML + "interior"):
+    if polygon.findall(GML + "interior"):
         raise BuildingGmlError("interior rings require a separately reviewed GML profile")
-    exteriors = polygons[0].findall(GML + "exterior")
+    exteriors = polygon.findall(GML + "exterior")
     if len(exteriors) != 1:
         raise BuildingGmlError("one polygon exterior is required")
-    lists = exteriors[0].findall(".//" + GML + "posList")
+    if len(exteriors[0]) != 1 or exteriors[0][0].tag != GML + "LinearRing":
+        raise BuildingGmlError("expected exactly one GML LinearRing exterior")
+    lists = exteriors[0][0].findall(GML + "posList")
     if len(lists) != 1 or not lists[0].text:
         raise BuildingGmlError("missing or ambiguous GML exterior posList")
     try:
@@ -176,6 +201,8 @@ def inspect_gml(raw: bytes) -> dict:
         "original_xml_bytes": len(raw),
         "original_xml_sha256": hashlib.sha256(raw).hexdigest(),
         "feature_records_checked": 1,
+        "inspire_reference_geometry_verified": True,
+        "inspire_horizontal_geometry_reference": "footPrint",
         "exterior_ring_closed": True,
         "projected_xy_plausible": True,
         "polygon_envelope_overlaps_fixed_window": True,
