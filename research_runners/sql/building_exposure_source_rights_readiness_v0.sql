@@ -139,6 +139,10 @@ gates AS (
    (exact_product_scope_reviewed
     AND ledger_entries=7 AND unique_use_cases=7
     AND provider_host_evidence_entries=7
+    AND commercial_cat_modelling='allowed'
+    AND automated_api_access='allowed'
+    AND internal_neon_metadata='allowed'
+    AND internal_neon_source_sample='allowed'
     AND commercial_allowed_entries=1
     AND automation_allowed_entries=1
     AND internal_research_allowed_entries=1
@@ -148,10 +152,12 @@ gates AS (
    (exact_product_scope_reviewed
     AND ledger_entries=7 AND unique_use_cases=7
     AND provider_host_evidence_entries=7
+    AND published_derived_results='allowed'
     AND derived_publish_allowed_entries=1) AS derived_publication_rights_complete,
    (exact_product_scope_reviewed
     AND ledger_entries=7 AND unique_use_cases=7
     AND provider_host_evidence_entries=7
+    AND external_raw_redistribution='allowed'
     AND raw_redistribution_allowed_entries=1) AS raw_redistribution_rights_complete
  FROM reviewed
 )
@@ -172,10 +178,14 @@ SELECT source_id,product_scope,published_product_license,
          WHEN ledger_entries<>7 OR unique_use_cases<>7
            OR provider_host_evidence_entries<>7
            THEN 'REVIEW_SEVEN_USE_CASES_AND_AUTHORITY_EVIDENCE'
-         WHEN commercial_allowed_entries<>1 THEN 'REVIEW_COMMERCIAL_CAT_USE'
-         WHEN automation_allowed_entries<>1 THEN 'REVIEW_EXACT_API_OR_FILE_SERVICE_AUTOMATION'
+         WHEN commercial_allowed_entries<>1 OR commercial_cat_modelling<>'allowed'
+           THEN 'REVIEW_COMMERCIAL_CAT_USE'
+         WHEN automation_allowed_entries<>1 OR automated_api_access<>'allowed'
+           THEN 'REVIEW_EXACT_API_OR_FILE_SERVICE_AUTOMATION'
          WHEN internal_research_allowed_entries<>1 OR metadata_allowed_entries<>1
             OR source_sample_allowed_entries<>1
+            OR internal_neon_metadata<>'allowed'
+            OR internal_neon_source_sample<>'allowed'
            THEN 'REVIEW_INTERNAL_RESEARCH_AND_NEON_USE'
          WHEN canonical_json_shas_ok<>source_wide_samples THEN 'BLOCK_INVALID_SAMPLE_SHA'
          ELSE 'RIGHTS_ONLY_COMPLETE_SCIENCE_AND_ASSET_REVIEW_STILL_REQUIRED'
