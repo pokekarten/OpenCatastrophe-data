@@ -5,7 +5,7 @@ import unittest
 from urllib.parse import parse_qs, urlsplit
 
 from scripts.probe_hr_dgu_buildings_gml_window_v0 import (
-    BBOX, BuildingGmlError, NoRedirect, fixed_url, inspect_gml,
+    BBOX, BuildingGmlError, NoRedirect, fixed_url, inspect_gml, validate_content_length,
 )
 
 
@@ -95,6 +95,14 @@ class CroatianGmlWindowTest(unittest.TestCase):
             inspect_gml(b'<!DOCTYPE a [<!ENTITY b "unsafe">]>' + sample())
         with self.assertRaises(BuildingGmlError):
             inspect_gml(b'<ows:ExceptionReport xmlns:ows="http://www.opengis.net/ows/1.1"/>')
+
+    def test_content_length_declared_bounded_before_integer_conversion(self):
+        validate_content_length(None, 12)
+        validate_content_length("12", 12)
+        for declared in ("9" * 5000, True, 12, "-1", "+12", "12x", "１２",
+                         "0", str(512 * 1024 + 1), "11", ""):
+            with self.subTest(declared=str(declared)[:24]), self.assertRaises(BuildingGmlError):
+                validate_content_length(declared, 12)
 
     def test_redirect_never_followed(self):
         with self.assertRaises(BuildingGmlError):
