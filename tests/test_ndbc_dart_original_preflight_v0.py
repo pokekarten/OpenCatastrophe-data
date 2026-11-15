@@ -49,6 +49,23 @@ class DARTScreenTests(unittest.TestCase):
         self.assertFalse(report["model_input_admitted"])
         self.assertNotIn("2004 01 22", str(report))
 
+    def test_official_spaced_header_and_reject_wrong_header_units(self):
+        # NDBC officially prints "T   HEIGHT (meters)" with multiple spaces.
+        spaced = GOOD.replace("ss T HEIGHT (meters)", "ss T   HEIGHT (meters)")
+        self.assertEqual(self.run_screen(spaced)["observations"], 3)
+        self.assertEqual(
+            self.run_screen(spaced.replace("ss T   HEIGHT", "ss   T     HEIGHT"))["observations"], 3
+        )
+        for bad in (
+            GOOD.replace("HEIGHT (meters)", "HEIGHT (feet)"),
+            GOOD.replace("ss T HEIGHT", "ss HEIGHT"),
+            GOOD.replace("YYYY MM DD hh mm ss T", "YYYY MM DD hh mm T"),
+        ):
+            with self.subTest(bad=bad.splitlines()[4]), self.assertRaisesRegex(
+                DARTPreflightError, "header/request identity"
+            ):
+                self.run_screen(bad)
+
     def test_request_identity_must_match_body(self):
         for args in ({"station": "43412"}, {"start": "2004-01-19"},
                      {"end": "2004-01-21"}):
