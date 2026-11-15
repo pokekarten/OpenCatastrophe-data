@@ -65,7 +65,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - application/json
 
-**Format:** CKAN package_show JSON object success=true with one fixed CAL FIRE DINS package id/name, public accessLevel, cc-by metadata label, metadata_modified=2026-10-21T20:55:50.264159, and precisely 11 format/id-tagged resources. Resource URLs are metadata pointers, not permission to download assets.
+**Format:** CKAN package_show JSON object success=true with one fixed CAL FIRE DINS package id/name, public accessLevel, cc-by metadata label, metadata_modified=2026-11-11T01:27:13.459792, and precisely 11 format/id-tagged resources. Resource URLs are metadata pointers, not permission to download assets.
 
 **Scientific semantics:** This public catalogue metadata establishes a dataset listing, version marker and references to 11 published formats; it does NOT establish actual resource byte availability, inspection count, event identity, scientific coverage, commercial CAT reuse, building exposure denominator, claim loss, or provider feature service usage rights.
 
@@ -81,7 +81,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Rate limit notes:** Provider documentation on 2026-11-12 lists 60 anonymous requests/minute/IP and asks automated clients to identify with descriptive User-Agent. This workflow deliberately allows ONE manual fixed metadata request only (not weekly polling), no retries, no bulk and no additional data resources. Separate review required before any higher cadence, feature access, raw sample retention or commercial bulk use.
 
-**Mutability notes:** The package is mutable and includes resource IDs and metadata_modified; as captured at 2026-11-01T18:01:22Z the original UTF-8 JSON body length is 16916 bytes and SHA-256 is 1998a87aff518a059162d9c4faff3ce3c2e145f007323c6a91cf3fb3617927f8. Exact-byte replays may change and must fail closed against this snapshot rather than silently replace it.
+**Mutability notes:** This public CKAN package is mutable; keep the two original metadata receipts separate. Historical 2026-11-01T18:01:22Z original response: 16,916 bytes, SHA-256 1998a87aff518a059162d9c4faff3ce3c2e145f007323c6a91cf3fb3617927f8, metadata_modified=2026-10-21T20:55:50.264159. Newer independently recorded 2026-11-12T22:50:28.428Z original metadata response: 16,335 bytes, SHA-256 83b75ccd9fe2ce7b2f2ee95ba3170b6e87554aa943d2e55748fdc01005fbf2ce, metadata_modified=2026-11-11T01:27:13.459792. These hashes bind two different catalogue responses, not any DINS damage-feature or asset bytes. Any later product or resource drift fails closed pending review.
 
 ## Rights and policy
 
@@ -109,7 +109,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - exact fixed CKAN package_show URL, one anonymous GET and descriptive User-Agent
 - 200 application/json original response, &lt;=65536 bytes, no redirect/retry
-- strict 11-resource public package metadata and 2026-10-21 reviewed snapshot identity
+- strict 11-resource public package metadata, exact 2026-11-11 product revision and separately recorded historical October receipt
 - retrieval UTC, request and original response SHA-256, contract/code identity
 - no provider response text, URLs, addresses, contacts or original raw bytes retained
 - research-only, model_input_approved=false, external_bytes_persisted=false
@@ -126,4 +126,4 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://data.ca.gov/docs/open-data-policy>
 - <https://handbook.data.ca.gov/conditions-of-use/>
 
-**Notes:** Authoritative state CKAN metadata route and individual provider DINS package were reviewed 2026-11-12. Exactly one manually dispatched bounded public metadata canary is enabled; original historical 16,916-byte SHA receipt and strict eleven-resource preflight are retained. A changed public package version must fail closed rather than silently update. Asset downloading, independent scientific damage modelling, commercial bulk and address/parcel access remain separate blocked gates; no data admission or Neon write.
+**Notes:** Authoritative state CKAN metadata route and individual provider DINS package were reviewed 2026-11-12. Exactly one manually dispatched bounded public metadata canary is enabled; original 2026-11-01 16,916-byte and 2026-11-12 16,335-byte SHA receipts remain separately identified with the strict eleven-resource preflight. A changed public package version must fail closed rather than silently update. Asset downloading, independent scientific damage modelling, commercial bulk and address/parcel access remain separate blocked gates; no data admission or Neon write.
