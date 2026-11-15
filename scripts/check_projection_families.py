@@ -57,6 +57,12 @@ RESEARCH_ONLY_STANDALONE_JSON_SCHEMAS = {
         "KNMI_WIND_METADATA_REVIEW_V1",
     PurePosixPath("research/source_screening/windstorm_whole_chain.json"):
         "WINDSTORM_WHOLE_CHAIN_SCREEN_V1",
+    PurePosixPath("research/observations/climk_gunter_date_resolution_reference.json"):
+        "CLIMK_GUNTER_DATE_RESOLUTION_REFERENCE_V1",
+    PurePosixPath("research/observations/wind_sources_downloads_20261115.json"):
+        "__SOURCE_DOWNLOAD_RECEIPT_ROWS__",
+    PurePosixPath("research/observations/xws_downloads_20261115.json"):
+        "__SOURCE_DOWNLOAD_RECEIPT_ROWS__",
 }
 
 
@@ -97,6 +103,29 @@ def check_inventory(root: Path = ROOT) -> tuple[list[str], int]:
                 research_record = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, UnicodeError, json.JSONDecodeError):
                 errors.append(f"invalid standalone research JSON: {relative}")
+                continue
+            if required_research_schema == "__SOURCE_DOWNLOAD_RECEIPT_ROWS__":
+                # These two older receipts are JSON arrays, not canonical JSON/MD
+                # projection families. Demand exact nonempty receipt row shape.
+                if not (
+                    isinstance(research_record, list)
+                    and research_record
+                    and all(
+                        isinstance(row, dict)
+                        and isinstance(row.get("file"), str)
+                        and bool(row["file"])
+                        and isinstance(row.get("url"), str)
+                        and row["url"].startswith("https://")
+                        and isinstance(row.get("sha256"), str)
+                        and len(row["sha256"]) == 64
+                        and all(c in "0123456789abcdef" for c in row["sha256"])
+                        and type(row.get("bytes")) is int
+                        and row["bytes"] > 0
+                        and row.get("status") == "downloaded"
+                        for row in research_record
+                    )
+                ):
+                    errors.append(f"standalone research download receipt mismatch: {relative}")
                 continue
             if (
                 not isinstance(research_record, dict)
