@@ -145,6 +145,11 @@ class MeteoSwissArchiveTests(unittest.TestCase):
             with self.subTest(delta=delta), self.assertRaises(p.ArchiveBlocked):
                 p.probe(MockOpener(MockResponse(data=body, declared=str(len(body) + delta))))
 
+    def test_declared_length_overlong_and_mistyped_fails_closed(self):
+        for declared in ("9" * 5000, True, 37, "-1", "12x", "１２３"):
+            with self.subTest(declared=str(declared)[:20]), self.assertRaises(p.ArchiveBlocked):
+                p.probe(MockOpener(MockResponse(declared=declared)))
+
     def test_reject_unreviewed_compressed_body(self):
         with self.assertRaises(p.ArchiveBlocked):
             p.probe(MockOpener(MockResponse(encoding="gzip")))
