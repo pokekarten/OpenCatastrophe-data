@@ -40,6 +40,7 @@ jobs:
       - name: Synthetic original GPKG and reciprocal pairing regressions
         run: python -m unittest tests.test_luxembourg_act_overture_original_city_pair_v0 -v
       - name: Download exact public ACT original to temporary runner storage
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail
@@ -50,6 +51,7 @@ jobs:
             --max-filesize 83886080 --output "$RUNNER_TEMP/act20261001.zip" \
             'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
       - name: Full ACT original SHA proof and ephemeral original Overture geometry overlay
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail
