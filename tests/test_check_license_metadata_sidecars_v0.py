@@ -10,7 +10,10 @@ from unittest.mock import patch
 from scripts import check_license_metadata as licensing
 
 
-SIDE = "SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors\nSPDX-License-Identifier: Apache-2.0\n"
+SIDE = (
+    "SPDX-" + "FileCopyrightText: 2026 OpenCatastrophe contributors" + "\n"
+    + "SPDX-" + "License-Identifier: Apache-2.0" + "\n"
+)
 
 
 class TrackedSidecarTests(unittest.TestCase):
