@@ -74,6 +74,38 @@ class CroatianGmlWindowTest(unittest.TestCase):
             with self.assertRaises(BuildingGmlError):
                 inspect_gml(sample(points=coords))
 
+    def test_reject_crossing_exterior_with_nonzero_signed_area(self):
+        # The shoelace sum is nonzero, so an area-only test would pass.
+        crossing = (
+            "459100 5074600 459140 5074640 459100 5074650 "
+            "459140 5074600 459160 5074640 459100 5074600"
+        )
+        with self.assertRaisesRegex(BuildingGmlError, "self-intersecting"):
+            inspect_gml(sample(points=crossing))
+
+    def test_reject_nonadjacent_repeated_vertex_and_zero_length_edge(self):
+        for points in (
+            "459100 5074600 459140 5074600 459140 5074640 "
+            "459100 5074640 459140 5074600 459100 5074600",
+            "459100 5074600 459140 5074600 459140 5074600 "
+            "459140 5074640 459100 5074600",
+        ):
+            with self.subTest(points=points), self.assertRaises(BuildingGmlError):
+                inspect_gml(sample(points=points))
+
+    def test_reject_unreviewed_interior_ring(self):
+        raw = sample().replace(b"</gml:Polygon>", b"<gml:interior/>" + b"</gml:Polygon>")
+        with self.assertRaisesRegex(BuildingGmlError, "interior rings"):
+            inspect_gml(raw)
+
+    def test_allow_simple_nonconvex_exterior(self):
+        concave = (
+            "459100 5074600 459160 5074600 459160 5074660 "
+            "459130 5074630 459100 5074660 459100 5074600"
+        )
+        result = inspect_gml(sample(points=concave))
+        self.assertTrue(result["polygon_envelope_overlaps_fixed_window"])
+
     def test_reject_nonfinite_open_degenerate_or_oversize(self):
         for coords in (
             "NaN 5074600 459140 5074600 459140 5074640 459100 5074640 459100 5074600",
