@@ -95,6 +95,13 @@ def examine_invalid(geometry, barrier, geod) -> dict | None:
     if (either <= 0 or common > either * (1 + 1e-8)
             or either < max(a, b) * (1 - 1e-8)):
         raise GDWSensitivityError("empty or inconsistent geodesic overlay footprint")
+    # Geodesic area is estimated after planar topological overlay. Reject
+    # materially nonconservative partition results rather than publishing
+    # misleading spatial IoU. Tolerance accommodates small geodesic edge
+    # interpolation differences, never arbitrary mismatched area.
+    budget = max(1e-6, 1e-4 * max(a + b, common + either))
+    if abs((a + b) - (common + either)) > budget:
+        raise GDWSensitivityError("nonconservative geodesic overlay area partition")
     # The alternatives can have the SAME area yet occupy different locations,
     # changing downstream exposure overlays. Area-delta alone misses this.
     symmetric_difference_km2 = max(0.0, either - common)
@@ -256,9 +263,11 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
     try:
         print(json.dumps(audit(args.original_zip), sort_keys=True, indent=2, allow_nan=False))
-    except (GDWSensitivityError, pre.GDWArchiveError, spatial.GDWSpatialError,
-            OSError, ValueError, zipfile.BadZipFile) as exc:
-        # Avoid accidentally printing provider coordinate or source ID from GEOS.
+    except Exception:
+        # Final original-data confidentiality boundary: GEOS/PROJ/ZIP/reader
+        # exceptions and unexpected failures may embed source coordinates,
+        # IDs or WKT in their messages/tracebacks. Never print them.
+        # KeyboardInterrupt and SystemExit still propagate.
         print("BLOCKED: original GDW scientific sensitivity validation failed",
               file=sys.stderr)
         return 2
