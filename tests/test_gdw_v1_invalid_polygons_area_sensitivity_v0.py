@@ -53,6 +53,32 @@ class GDWInvalidAreaSensitivityTests(unittest.TestCase):
         self.assertEqual(receipt["footprint_symmetric_difference_km2_sum"], 20.0)
         self.assertFalse(receipt["CAT_model_input_approved"])
 
+    def test_summary_rejects_corrupted_counterfactual_metrics(self):
+        # Every case here is invented; no external source geometry is needed.
+        original = s.examine_invalid(self.bowtie, Point(0.4, 1.4), self.geod)
+        cases = (
+            ("nan_area", "linework_area_km2", float("nan")),
+            ("infinite_area", "buffer_zero_area_km2", float("inf")),
+            ("negative_union", "union_km2", -1.0),
+            ("incorrect_area_delta", "area_abs_delta_km2", 9999.0),
+            ("overlap_exceeds_union", "overlap_km2", original["union_km2"] + 99.0),
+            ("wrong_symmetric_difference", "footprint_symmetric_difference_km2", 0.0),
+            ("wrong_fraction", "footprint_change_fraction_of_union", 1.5),
+            ("fraction_is_bool", "footprint_change_fraction_of_union", True),
+            ("noninteger_parts", "linework_parts", 2.5),
+            ("nonboolean_coverage", "buffer_zero_barrier_covered", "yes"),
+            ("missing_required_metric", "union_km2", None),
+        )
+        for label, field, replacement in cases:
+            invalid = dict(original)
+            invalid[field] = replacement
+            with self.subTest(label=label), self.assertRaises(s.GDWSensitivityError):
+                s.summarize([invalid], expected=1)
+        with self.assertRaises(s.GDWSensitivityError):
+            s.summarize([original], expected=0)
+        with self.assertRaises(s.GDWSensitivityError):
+            s.summarize([original], expected=True)
+
     def test_nonconservative_geodesic_overlay_fails_closed(self):
         from unittest.mock import patch
         # Previously accepted: union 7 km2 exceeds total alternative area 5.
