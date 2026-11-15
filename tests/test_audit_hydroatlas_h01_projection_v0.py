@@ -61,7 +61,7 @@ class H01ProjectedQualityTests(unittest.TestCase):
 
     def test_missing_extra_and_renamed_columns_rejected(self):
         for modifications in (
-            {"dis_m3_pmn": None, "drop": "dis_m3_pmn"},
+            {"drop": "dis_m3_pmn"},
             {"flood_rp100": 100.},
             {"dis_m3_syr": 5., "drop": "dis_m3_pyr"},
         ):
