@@ -52,9 +52,30 @@ by documenting these public identifiers.
 A distinct research runner `research_runners/meteofrance_nord_original_gust_v0.py`
 pins exactly the **Nord 59** official provider URL, UUID, and declared byte count;
 it will attempt one memory-only 15,928,750-byte original source acquisition in
-a targeted, single-branch PR workflow. The initial execution **does not have
-a precommitted original SHA-256**: it must record the authentic digest first,
-then pin it before any future repeat. This is one observed station-cohort source,
+a targeted, single-branch PR workflow. The original source was acquired and hashed once in GitHub Actions; its exact verified SHA-256 is now pinned in the runner for all future manual replays. This is one observed station-cohort source,
 not a source-admission manifest or proof of model calibration. As with Paris,
 `STATUS_FXI3S=0` does not prove instrumentation provenance; retain
 missingness and station heterogeneity.
+
+## Executed original Nord (59) station-file proof (15 November 2026)
+
+The narrowly scoped original-data GitHub Actions job [43724594504](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43724594504) succeeded on the initial candidate execution. This is an **original provider file** (not just catalogue metadata) acquired read-only to ephemeral CI storage and never checked into Git. Five source-catalogue candidates were checked separately in [43724594540](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43724594540).
+
+| Original source identity/QA | Observed |
+|---|---:|
+| Official provider department | `59` (Nord) |
+| Original asset size (bytes) | 15,928,750 |
+| Uncompressed CSV bytes | 142,193,945 |
+| Original hourly observation rows | 419,543 |
+| Distinct station IDs in original (not disclosed) | 10 |
+| Nonmissing `FXI3S` + quality-1 validated | 117,487 |
+| `STATUS_FXI3S=1` transfer-function-derived among validated | 1,615 |
+| `STATUS_FXI3S=0` non-transfer-calculated among validated | 115,872 |
+| `QFXI3S=1` (including rows without wind value) | 117,502 |
+| `QFXI3S=9` filtered | 100,438 |
+| Missing `QFXI3S` | 201,603 |
+
+Original gzip SHA-256: `ee2b7254856875b5445aeaa67ea461f7e68145243bbeb2aa6cf4e5c1b36eb5e8`.
+Full archive identifier: `414ca541-fa77-4060-b93c-44fb3a85d693` from the original public catalogue, basename `H_59_previous-2020-2024.csv.gz`. The exact SHA-256 is now a hard gate in the executable parser. A changed original file must fail closed and be reviewed as a new source revision, not silently overwritten. The targeted source-acquisition workflow is **manual-only** after the verified one-off run to prevent uncontrolled repeat downloads.
+
+**Scientific limitation:** these 117,487 quality-1 gusts are not 117,487 independent storms or validated insurer losses. The source quality flag and transfer status do not prove an individual anemometer's height/exposure, station homogeneity, or wind speed equivalence to the event-conditioned CLIMK/C3S/XWS 72-hour 3-second gust maximum. No annual event population, AAL/OEP/AEP, hazard-calibration success or insurer contract reuse is claimed.

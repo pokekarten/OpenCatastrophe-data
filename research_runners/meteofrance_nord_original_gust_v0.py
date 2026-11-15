@@ -24,6 +24,7 @@ DEPARTMENT = "59"
 SOURCE_ID = "414ca541-fa77-4060-b93c-44fb3a85d693"
 SOURCE_URL = "https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/HOR/H_59_previous-2020-2024.csv.gz"
 SOURCE_BYTES = 15_928_750
+SOURCE_SHA256 = "ee2b7254856875b5445aeaa67ea461f7e68145243bbeb2aa6cf4e5c1b36eb5e8"
 MAX_SOURCE_BYTES = 32 * 1024 * 1024
 
 
@@ -51,7 +52,7 @@ def audit_original(catalogue: bytes, field_dictionary: bytes, original: bytes) -
     dict_sha = verify_dictionary(field_dictionary)
     if len(original) != SOURCE_BYTES:
         raise Blocked("Nord original compressed bytes changed since provider metadata preflight")
-    result = audit_gzip(original)
+    result = audit_gzip(original, expected_sha256=SOURCE_SHA256)
     if result["original_gzip_bytes"] != SOURCE_BYTES:
         raise Blocked("Nord source size assertion failed")
     if result["quality_checked_three_second_gusts"] == 0:
@@ -62,8 +63,8 @@ def audit_original(catalogue: bytes, field_dictionary: bytes, original: bytes) -
         "official_resource_id": SOURCE_ID,
         "official_original_url": SOURCE_URL,
         "official_field_dictionary_sha256": dict_sha,
-        "source_digest_newly_observed": True,
-        "digest_not_yet_pinned_as_prior_receipt": True,
+        "original_sha256_matches_20261115_receipt": True,
+        "raw_provider_bytes_committed": False,
         "source_admitted": False,
         "annual_ep_authorized": False,
         "insured_loss_calibration_authorized": False,

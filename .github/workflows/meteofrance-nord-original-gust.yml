@@ -3,11 +3,6 @@
 name: Météo-France Nord original hourly gust one-off
 
 on:
-  pull_request:
-    paths:
-      - 'research_runners/meteofrance_nord_original_gust_v0.py'
-      - 'tests/test_meteofrance_nord_original_gust_v0.py'
-      - '.github/workflows/meteofrance-nord-original-gust.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +10,6 @@ permissions:
 
 jobs:
   nord-original:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'research/20261115-meteofrance-north-original-catalogue'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

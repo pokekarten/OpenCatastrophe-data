@@ -7,7 +7,7 @@ import json
 import unittest
 
 from research_runners.meteofrance_nord_original_gust_v0 import (
-    audit_original, verify_resource, SOURCE_ID, SOURCE_URL, SOURCE_BYTES, Blocked,
+    audit_original, verify_resource, SOURCE_ID, SOURCE_URL, SOURCE_BYTES, SOURCE_SHA256, Blocked,
 )
 from research_runners.meteofrance_north_hourly_catalogue_v0 import DEPARTMENTS, PERIOD, BASE
 
@@ -46,6 +46,10 @@ def sample_resource():
 class TestNordOriginal(unittest.TestCase):
     def test_metadata_identity(self):
         verify_resource(sample_resource())
+
+    def test_source_sha256_is_pinned_to_true_original_receipt(self):
+        self.assertEqual(SOURCE_SHA256, "ee2b7254856875b5445aeaa67ea461f7e68145243bbeb2aa6cf4e5c1b36eb5e8")
+        self.assertEqual(len(SOURCE_SHA256), 64)
 
     def test_admission_or_wrong_byte_size_block(self):
         for change in [{"declared_compressed_bytes":SOURCE_BYTES+1},
