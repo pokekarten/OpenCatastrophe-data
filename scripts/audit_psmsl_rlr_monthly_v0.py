@@ -60,12 +60,17 @@ def audit_bytes(raw: bytes, *, station_id: int) -> dict[str, object]:
     if not lines or len(lines) > MAX_MONTHS:
         raise PSMSLPreflightError('no monthly records or too many records')
     missing_monthly_means = interpolated_months = caution_flags = mtl_flags = 0
+    flagged_months = 0
+    first_month = last_month = None
     previous_key: int | None = None
     for line, value in enumerate(lines, 1):
         fields = [field.strip() for field in value.split(';')]
         if len(fields) != 4:
             raise PSMSLPreflightError(f'line {line}: expected four semicolon-separated fields')
         year, month = _month(fields[0], line)
+        if first_month is None:
+            first_month = f'{year:04d}-{month:02d}'
+        last_month = f'{year:04d}-{month:02d}'
         key = year * 12 + month - 1
         if previous_key is not None and key != previous_key + 1:
             raise PSMSLPreflightError(f'line {line}: month gap, duplicate or time reversal')
@@ -83,6 +88,7 @@ def audit_bytes(raw: bytes, *, station_id: int) -> dict[str, object]:
         flags = int(flag_text, 8)
         caution_flags += bool(flags & 0o001)
         mtl_flags += bool(flags & 0o010)
+        flagged_months += bool(flags)
         missing_monthly_means += msl_int == -99999
         interpolated_months += days == 99
     return {
@@ -91,6 +97,9 @@ def audit_bytes(raw: bytes, *, station_id: int) -> dict[str, object]:
         'input_sha256': hashlib.sha256(raw).hexdigest(),
         'input_bytes': len(raw),
         'calendar_month_count': len(lines),
+        'first_month': first_month,
+        'last_month': last_month,
+        'flagged_months': flagged_months,
         'missing_monthly_means': missing_monthly_means,
         'interpolated_months': interpolated_months,
         'caution_flag_months': caution_flags,
