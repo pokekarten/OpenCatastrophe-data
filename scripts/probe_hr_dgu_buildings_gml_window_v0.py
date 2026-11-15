@@ -50,53 +50,85 @@ def fixed_url() -> str:
     return PROVIDER + "?" + parse.urlencode(params)
 
 
-def _ring_is_simple(xy: list[tuple[float, float]]) -> bool:
-    """Detect repeated points and crossing edges in one bounded exterior.
+def _cross(a: tuple[float, float], b: tuple[float, float],
+           c: tuple[float, float]) -> float:
+    return ((b[0] - a[0]) * (c[1] - a[1])
+            - (b[1] - a[1]) * (c[0] - a[0]))
 
-    Only exact planar geometry within the declared projected CRS is tested.
-    This does not prove geometry accuracy, make a cadastral topology claim, or
-    independently validate the original provider's building meaning.
-    """
+
+def _point_on_segment(p: tuple[float, float],
+                      a: tuple[float, float], b: tuple[float, float]) -> bool:
+    return (_cross(a, b, p) == 0
+            and min(a[0], b[0]) <= p[0] <= max(a[0], b[0])
+            and min(a[1], b[1]) <= p[1] <= max(a[1], b[1]))
+
+
+def _segments_intersect(a: tuple[float, float], b: tuple[float, float],
+                        c: tuple[float, float], d: tuple[float, float]) -> bool:
+    """Closed 2D segment intersection, including touches and collinear edges."""
+    if (max(a[0], b[0]) < min(c[0], d[0])
+            or max(c[0], d[0]) < min(a[0], b[0])
+            or max(a[1], b[1]) < min(c[1], d[1])
+            or max(c[1], d[1]) < min(a[1], b[1])):
+        return False
+    ab_c, ab_d = _cross(a, b, c), _cross(a, b, d)
+    cd_a, cd_b = _cross(c, d, a), _cross(c, d, b)
+    return (
+        ((ab_c > 0 > ab_d or ab_c < 0 < ab_d)
+         and (cd_a > 0 > cd_b or cd_a < 0 < cd_b))
+        or (_point_on_segment(c, a, b) or _point_on_segment(d, a, b)
+            or _point_on_segment(a, c, d) or _point_on_segment(b, c, d))
+    )
+
+
+def _ring_is_simple(xy: list[tuple[float, float]]) -> bool:
+    """Reject repeated points and self-crossing edges in a bounded exterior."""
     edges = list(zip(xy, xy[1:]))
     if len(set(xy[:-1])) != len(xy) - 1:
         return False
     if any(a == b for a, b in edges):
         return False
-
-    def _cross(a, b, c):
-        return ((b[0] - a[0]) * (c[1] - a[1])
-                - (b[1] - a[1]) * (c[0] - a[0]))
-
-    def _point_on_segment(p, a, b):
-        return (_cross(a, b, p) == 0
-                and min(a[0], b[0]) <= p[0] <= max(a[0], b[0])
-                and min(a[1], b[1]) <= p[1] <= max(a[1], b[1]))
-
-    def _intersects(a, b, c, d):
-        if (max(a[0], b[0]) < min(c[0], d[0])
-                or max(c[0], d[0]) < min(a[0], b[0])
-                or max(a[1], b[1]) < min(c[1], d[1])
-                or max(c[1], d[1]) < min(a[1], b[1])):
-            return False
-        ab_c, ab_d = _cross(a, b, c), _cross(a, b, d)
-        cd_a, cd_b = _cross(c, d, a), _cross(c, d, b)
-        return (
-            (ab_c > 0 > ab_d or ab_c < 0 < ab_d)
-            and (cd_a > 0 > cd_b or cd_a < 0 < cd_b)
-            or (_point_on_segment(c, a, b) or _point_on_segment(d, a, b)
-                or _point_on_segment(a, c, d) or _point_on_segment(b, c, d))
-        )
-
     count = len(edges)
     for i, (a, b) in enumerate(edges):
         for j in range(i + 2, count):
-            # First and final segments are neighbours around the closed ring.
             if i == 0 and j == count - 1:
                 continue
             c, d = edges[j]
-            if _intersects(a, b, c, d):
+            if _segments_intersect(a, b, c, d):
                 return False
     return True
+
+
+def _polygon_intersects_window(xy: list[tuple[float, float]],
+                               bbox: tuple[int, int, int, int]) -> bool:
+    """Check an actual simple polygon/closed rectangle intersection, not its envelope.
+
+    This detects vertices inside the window, crossing/touching boundaries and
+    a window fully enclosed by a polygon. It does not establish source rights,
+    location accuracy or positive-area overlap for boundary-only contacts.
+    """
+    bx0, by0, bx1, by1 = bbox
+    corners = [(bx0, by0), (bx1, by0), (bx1, by1), (bx0, by1)]
+    edges = list(zip(xy, xy[1:]))
+    if any(bx0 <= x <= bx1 and by0 <= y <= by1 for x, y in xy):
+        return True
+    if any(_segments_intersect(a, b, c, d)
+           for a, b in edges for c, d in zip(corners, corners[1:] + corners[:1])):
+        return True
+
+    def contains(p: tuple[float, float]) -> bool:
+        x, y = p
+        inside = False
+        for a, b in edges:
+            if _point_on_segment(p, a, b):
+                return True
+            if (a[1] > y) != (b[1] > y):
+                hit_x = a[0] + (y - a[1]) * (b[0] - a[0]) / (b[1] - a[1])
+                if x < hit_x:
+                    inside = not inside
+        return inside
+
+    return any(contains(corner) for corner in corners)
 
 
 def inspect_gml(raw: bytes) -> dict:
@@ -192,6 +224,8 @@ def inspect_gml(raw: bytes) -> dict:
     bx0, by0, bx1, by1 = BBOX
     if maxx < bx0 or minx > bx1 or maxy < by0 or miny > by1:
         raise BuildingGmlError("polygon envelope lies outside requested projected window")
+    if not _polygon_intersects_window(xy, BBOX):
+        raise BuildingGmlError("polygon itself does not intersect requested projected window")
     # No claims about topology/holes, completeness, insurance or cadastral validity.
     return {
         "receipt_profile": "hr-dgu-cadastral-building-gml-single-polygon-preflight-v0",
@@ -206,6 +240,7 @@ def inspect_gml(raw: bytes) -> dict:
         "exterior_ring_closed": True,
         "projected_xy_plausible": True,
         "polygon_envelope_overlaps_fixed_window": True,
+        "actual_polygon_intersects_fixed_window": True,
         "topology_and_inner_rings_verified": False,
         "nationwide_completeness_verified": False,
         "reusable_source_rights_fully_reviewed": False,
