@@ -40,6 +40,41 @@ class CologneHwrmProbeTests(unittest.TestCase):
         self.assertFalse(result["model_admitted"])
         self.assertFalse(result["external_bytes_persisted"])
 
+    def test_reviewed_original_service_terms_sha_is_pinned(self):
+        self.assertEqual(
+            probe.REVIEWED_WMS_SERVICE_TERMS_SHA256,
+            "2b280a54d318695d430248562d1fbc0d074349dd27df444d3e72633e2f978c03",
+        )
+        self.assertEqual(probe.REVIEWED_WMS_VERSION, "1.3.0")
+
+    def test_reviewed_metadata_cannot_silently_accept_rights_drift(self):
+        receipt = probe.parse_wms_capabilities(WMS)
+        with self.assertRaises(probe.SourceProbeError):
+            probe.verify_reviewed_service_metadata(receipt)
+        with mock.patch.object(
+            probe, "REVIEWED_WMS_SERVICE_TERMS_SHA256",
+            receipt["service_access_constraints_sha256"],
+        ):
+            checked = probe.verify_reviewed_service_metadata(receipt)
+        self.assertTrue(checked["reviewed_service_terms_match"])
+        self.assertEqual(checked["required_attribution"], "Land NRW")
+        self.assertFalse(checked["model_admitted"])
+        self.assertFalse(checked["rights_reviewed"])
+
+    def test_reviewed_wms_version_and_attribution_cannot_drift(self):
+        receipt = probe.parse_wms_capabilities(WMS)
+        with mock.patch.object(
+            probe, "REVIEWED_WMS_SERVICE_TERMS_SHA256",
+            receipt["service_access_constraints_sha256"],
+        ):
+            for mutated in (
+                {**receipt, "wms_version": "1.1.1"},
+                {**receipt, "service_mentions_attribution": False},
+                {**receipt, "named_layer_count": 0},
+            ):
+                with self.subTest(mutated=mutated), self.assertRaises(probe.SourceProbeError):
+                    probe.verify_reviewed_service_metadata(mutated)
+
     def test_wrong_root_rejected(self):
         with self.assertRaises(probe.SourceProbeError):
             probe.parse_wms_capabilities(b"<html><Layer><Name>fake</Name></Layer></html>")
@@ -125,10 +160,15 @@ class CologneHwrmProbeTests(unittest.TestCase):
                 assert request.full_url == probe.CAPABILITIES_URL
                 return Response(request.full_url)
 
-        with mock.patch.object(probe, "build_opener", return_value=Opener()):
+        expected_sha = probe.parse_wms_capabilities(WMS)["service_access_constraints_sha256"]
+        with (
+            mock.patch.object(probe, "build_opener", return_value=Opener()),
+            mock.patch.object(probe, "REVIEWED_WMS_SERVICE_TERMS_SHA256", expected_sha),
+        ):
             receipt = probe.probe_live()
         self.assertEqual(receipt["provider_url"], probe.CAPABILITIES_URL)
         self.assertTrue(receipt["verified_live"])
+        self.assertTrue(receipt["reviewed_service_terms_match"])
         self.assertFalse(receipt["external_bytes_persisted"])
         self.assertFalse(receipt["model_admitted"])
 
