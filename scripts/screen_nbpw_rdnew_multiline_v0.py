@@ -57,17 +57,23 @@ def screen_nbpw_projected_multiline(original: bytes, *, declared_crs: str) -> di
         raise NbpwGeometryError("original response is not strict UTF-8 JSON") from exc
     if not isinstance(payload, dict) or payload.get("type") != "FeatureCollection":
         raise NbpwGeometryError("expected GeoJSON FeatureCollection object")
+    if "crs" in payload:
+        raise NbpwGeometryError("embedded CRS cannot override independently declared source CRS")
     features = payload.get("features")
     if not isinstance(features, list) or len(features) != 1:
         raise NbpwGeometryError("expected exactly one bounded feature")
     feature = features[0]
     if not isinstance(feature, dict) or feature.get("type") != "Feature":
         raise NbpwGeometryError("expected one GeoJSON Feature")
+    if "crs" in feature:
+        raise NbpwGeometryError("feature-level CRS is not independently verified")
     if not isinstance(feature.get("properties"), dict):
         raise NbpwGeometryError("feature properties must be an object")
     geometry = feature.get("geometry")
     if not isinstance(geometry, dict) or geometry.get("type") != "MultiLineString":
         raise NbpwGeometryError("expected non-null MultiLineString geometry")
+    if "crs" in geometry:
+        raise NbpwGeometryError("geometry-level CRS is not independently verified")
     lines = geometry.get("coordinates")
     if not isinstance(lines, list) or not 1 <= len(lines) <= MAX_LINES:
         raise NbpwGeometryError("invalid or unbounded line count")
@@ -86,8 +92,8 @@ def screen_nbpw_projected_multiline(original: bytes, *, declared_crs: str) -> di
             if (
                 type(x) not in (int, float)
                 or type(y) not in (int, float)
-                or not math.isfinite(x)
-                or not math.isfinite(y)
+                or (type(x) is float and not math.isfinite(x))
+                or (type(y) is float and not math.isfinite(y))
             ):
                 raise NbpwGeometryError("coordinate is nonnumeric, boolean or nonfinite")
             if not (0 <= x <= 300000 and 280000 <= y <= 650000):
