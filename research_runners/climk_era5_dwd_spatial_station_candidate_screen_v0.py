@@ -5,7 +5,7 @@
 This is an exploratory source audit of a purposive station sample against
 CLIMK-WINDS v2 ERA5's selected top-50 storms. It never writes hourly source
 values or event-level comparisons to disk or stdout. Only hash-pinned source
-bytes and complete-window aggregates are admitted.
+bytes and complete Storm_Dates-day aggregates are admitted.
 """
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from scripts.inspect_climk_winds_era5_v0 import (
     PINNED_SHA256, fetch_provider_bytes, verify_source_bytes,
 )
 
-SCHEMA = "CLIMK_ERA5_DWD_SPATIALLY_DISTRIBUTED_STATION_CANDIDATE_SCREEN_V0"
+SCHEMA = "CLIMK_ERA5_DWD_SPATIALLY_DISTRIBUTED_STATION_DAILY_SCREEN_V1"
 MANIFEST = ROOT / "research/observations/climk_era5_dwd_spatial_station_candidate_sources_20261114.toml"
 WINDOW_HOURS = 72
 EVENTS = 50
@@ -171,7 +171,7 @@ def audit_candidate_sources(climk_bytes: bytes, station_list: bytes,
                 "station_id": station,
                 "filename": item["filename"],
                 "original_DWD_zip_sha256": observed_sha,
-                "filename_supported_CLIMK_72h_windows": item["filename_supported_event_windows"],
+                "filename_supported_CLIMK_event_context_windows": item["filename_supported_event_windows"],
                 "status": "BLOCKED_STATION_HISTORY_OR_SOURCE_SEMANTICS",
                 "block_reason": str(exc),
             })
@@ -182,18 +182,18 @@ def audit_candidate_sources(climk_bytes: bytes, station_list: bytes,
             raise CandidateScreenBlocked("CLIMK event labels differ across candidate stations")
         union_nodes.update(tuple(win["era5_grid_node"]) for win in windows
                            if win["era5_grid_node"] is not None)
-        count = summary["station_windows_with_complete_72h_DWD"]
+        count = summary["station_storm_dates_with_complete_24h_DWD"]
         if count == 0:
-            status = "AUDITED_NO_COMPLETE_72H_WINDOWS"
+            status = "AUDITED_NO_COMPLETE_STORM_DATE_DAYS"
         elif count < 10:
-            status = "AUDITED_LOW_COMPLETE_72H_COVERAGE"
+            status = "AUDITED_LOW_COMPLETE_STORM_DATE_COVERAGE"
         else:
-            status = "AUDITED_COMPLETE_72H_DESCRIPTIVE_ONLY"
+            status = "AUDITED_COMPLETE_STORM_DATE_DAILY_CONTRASTS_DESCRIPTIVE_ONLY"
         results.append({
             "station_id": station,
             "filename": item["filename"],
             "original_DWD_zip_sha256": observed_sha,
-            "filename_supported_CLIMK_72h_windows": _window_support(item["filename"], labels),
+            "filename_supported_CLIMK_event_context_windows": _window_support(item["filename"], labels),
             "status": status,
             **summary,
         })
@@ -212,12 +212,25 @@ def audit_candidate_sources(climk_bytes: bytes, station_list: bytes,
             "event_windows_with_verified_historical_site_instrument_and_UTC_semantics" in x
             for x in results
         ),
+        "candidate_count_with_any_complete_storm_date_day": sum(
+            x.get("station_storm_dates_with_complete_24h_DWD", 0) > 0 for x in results
+        ),
+        "candidate_count_with_10_or_more_complete_storm_date_days": sum(
+            x.get("station_storm_dates_with_complete_24h_DWD", 0) >= 10 for x in results
+        ),
+        "candidate_count_with_zero_complete_storm_date_days": sum(
+            x.get("station_storm_dates_with_complete_24h_DWD", 0) == 0
+            and x.get("status") != "BLOCKED_STATION_HISTORY_OR_SOURCE_SEMANTICS" for x in results
+        ),
         "candidate_count_blocked_by_history_or_semantics": sum(
             x["status"] == "BLOCKED_STATION_HISTORY_OR_SOURCE_SEMANTICS" for x in results
         ),
         "unique_nearest_CLIMK_ERA5_grid_nodes_across_audited_candidates": len(union_nodes),
         "stations": results,
         "DWD_and_CLIMK_temporal_support_equivalence_proven": False,
+        "DWD_daily_calendar_date_aligned_to_CLIMK_Storm_Dates": True,
+        "CLIMK_Storm_Dates_UTC_day_boundary_proven": False,
+        "gust_averaging_duration_equivalence_proven": False,
         "DWD_and_CLIMK_input_independence_proven": False,
         "sensor_height_adjustment_or_spatial_interpolation_applied": False,
         "partial_windows_used_in_primary_metrics": False,

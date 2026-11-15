@@ -1,0 +1,15 @@
+{
+  "schema": "CLIMK_GUNTER_DATE_RESOLUTION_REFERENCE_V1",
+  "source_file_sha256": "2a8cd17e582280fece757b233d08cb580787172322c7bfd98f9d224c757c7077",
+  "raw_name": "GUNTER",
+  "raw_date": "20050110",
+  "supported_date": "20150110",
+  "evidence_url": "https://github.com/pokekarten/OpenCatastrophe/blob/774fa78b176026ecde76ac951367d6e6e1581e8f/research/ruv_reference_evidence_v1/climk_ceu3_gunter_dap_check_v0.json",
+  "retrieved_evidence_sha256": "962f192d4e21dd4de4509ae6847dbd7fbbc17f0732514be52525db65eb1c9a35",
+  "matching_cells_2015": 142004,
+  "matching_cells_2005": 0,
+  "original_file_sha_verified_in_current_run": true,
+  "dwd_comparison_rerun_in_current_run": false,
+  "original_source_modified": false,
+  "annual_catalogue_complete": false
+}
