@@ -11,7 +11,7 @@
 -- This measures fractional footprint-vs-settlement area at TWO Munich windows,
 -- not same-physical-building identity and not accuracy/coverage of a
 -- population-wide buildings inventory. Source ages differ (2019 vs later).
--- Sample #28 genuinely has zero WSF class-255 cells: its "WSF share covered"
+-- Both expected pairs MUST emit rows even if missing/invalid in research Neon.\n-- A missing pair produces NULL science metrics, false window_receipt_pass,\n-- and false both_source_windows_verified on BOTH rows.\n-- Sample #28 genuinely has zero WSF class-255 cells: its "WSF share covered"
 -- is mathematically NULL, not zero. Fail CLOSED on receipt or formula drift.
 WITH expected AS (
  SELECT *
@@ -111,17 +111,39 @@ checked AS (
      OR (p.wsf_settled_cells>0 AND
          abs(p.stored_wsf_coverage-p.intersection_area/p.wsf_settled_cells)<0.00000051)
    )
+),
+finalized AS (
+ SELECT e.bvv_sample_id, e.wsf_sample_id,
+        c.wsf_settled_cells, c.bvv_bbox_candidates,
+        c.bvv_area, c.intersection_area, c.union_area,
+        c.stored_iou, c.stored_bvv_recall, c.stored_wsf_coverage,
+        c.raster_row_count, c.valid_binary_row_count,
+        (c.bvv_sample_id IS NOT NULL) AS window_receipt_pass
+ FROM expected e
+ LEFT JOIN checked c
+   ON c.bvv_sample_id=e.bvv_sample_id
+  AND c.wsf_sample_id=e.wsf_sample_id
+),
+coverage AS (
+ SELECT count(*)::integer AS expected_window_count,
+        count(*) FILTER (WHERE window_receipt_pass)::integer AS passed_window_count
+ FROM finalized
 )
 SELECT
  'bavaria-hu-by-wsf2019-original-two-window-readiness-v0'::text AS research_profile,
- bvv_sample_id,wsf_sample_id,wsf_settled_cells,bvv_bbox_candidates,
- bvv_area AS official_footprint_area_native_wsf_cell_equivalents,
- intersection_area AS footprint_settlement_intersection_native_cell_equivalents,
- union_area AS footprint_settlement_union_native_cell_equivalents,
- stored_iou AS exploratory_iou_two_different_scientific_classes,
- stored_bvv_recall AS fraction_footprint_inside_settlement_class,
- stored_wsf_coverage AS fraction_settlement_class_covered_by_footprints,
- raster_row_count,valid_binary_row_count,
+ p.bvv_sample_id,p.wsf_sample_id,
+ p.wsf_settled_cells,p.bvv_bbox_candidates,
+ p.bvv_area AS official_footprint_area_native_wsf_cell_equivalents,
+ p.intersection_area AS footprint_settlement_intersection_native_cell_equivalents,
+ p.union_area AS footprint_settlement_union_native_cell_equivalents,
+ p.stored_iou AS exploratory_iou_two_different_scientific_classes,
+ p.stored_bvv_recall AS fraction_footprint_inside_settlement_class,
+ p.stored_wsf_coverage AS fraction_settlement_class_covered_by_footprints,
+ p.raster_row_count,p.valid_binary_row_count,
+ p.window_receipt_pass,
+ coverage.expected_window_count,coverage.passed_window_count,
+ (coverage.expected_window_count=2 AND coverage.passed_window_count=2)
+    AS both_source_windows_verified,
  'EPSG:25832 native cadastral geometry vs original DLR EPSG:4326 mask'::text AS coordinate_support,
  '2019 WSF settlement class versus later-vintage BVV footprints; NOT building-vs-building IoU'::text AS semantic_limit,
  false AS population_representativeness_verified,
@@ -129,4 +151,5 @@ SELECT
  false AS historical_same_year_ground_truth_verified,
  false AS insurer_tiv_available,
  false AS cat_model_input_approved
-FROM checked ORDER BY bvv_sample_id;
+FROM finalized p CROSS JOIN coverage
+ORDER BY p.bvv_sample_id;
