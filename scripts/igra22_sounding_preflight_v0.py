@@ -10,9 +10,12 @@ source rows, or establish a CAT-model admission.
 
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import hashlib
+import json
 import re
+from pathlib import Path
 
 MAX_TEXT_BYTES = 262_144
 MAX_SOUNDINGS = 12
@@ -149,3 +152,21 @@ def screen_igra22_unzipped_text_bytes(original_text: bytes, *, station_id: str) 
         "scientific_and_model_admission": "not_admitted",
         "neon_storage": "storage_not_verified",
     }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--station-id", required=True, help="NCEI IGRA 11-character station ID")
+    parser.add_argument("text_file", type=Path, help="locally authorized, already unzipped original sounding text")
+    args = parser.parse_args()
+    try:
+        with args.text_file.open("rb") as stream:
+            raw = stream.read(MAX_TEXT_BYTES + 1)
+        receipt = screen_igra22_unzipped_text_bytes(raw, station_id=args.station_id)
+    except (OSError, Igra22FormatError) as exc:
+        parser.error(str(exc))
+    print(json.dumps(receipt, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()
