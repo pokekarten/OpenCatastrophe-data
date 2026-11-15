@@ -73,6 +73,29 @@ class NOAA2024AccessTests(unittest.TestCase):
                 with self.assertRaises(SourceAccessError):
                     validate_contract(candidate)
 
+    def test_historical_original_sha256_binding(self):
+        """Bind three distinct historical compressed receipts; not a fresh T1/T3."""
+        obj = self.contract()
+        notes = obj["operational_constraints"]["mutability_notes"]
+        report = (ROOT / "docs/research/executed-source-findings-20261103.md").read_text(
+            encoding="utf-8")
+        expected = (
+            ("details", "12,693,243",
+             "2070b83eccab041b36360ab73645b9a249c3eefc5b92b5b3fc0cbba4d9fcc09c"),
+            ("fatalities", "13,057",
+             "7113ce3232c98056867cf8d144df770e9e6b140cce40dff3ef46ff805ba17fdb"),
+            ("locations", "983,723",
+             "8847a6336e1af94000f7ecfb4a80c06bf0d5c1ac122fe39da5b2e379dc62c1b4"),
+        )
+        for kind, original_bytes, digest in expected:
+            with self.subTest(table=kind):
+                exact_name = f"StormEvents_{kind}-ftp_v1.0_d2024_c20260728.csv.gz"
+                self.assertIn(f"{kind}={digest}", notes)
+                self.assertIn(
+                    f"| `{exact_name}` | {original_bytes} | `{digest}` |", report)
+        self.assertIn("NOT freshly recomputed", notes)
+        self.assertEqual(obj["probe_contract"]["mode"], "none")
+
     def test_existing_source_inventory_links_contract_not_admission(self):
         inventory = build_inventory()
         rows = {row["source_id"]: row for row in inventory["entries"]}
