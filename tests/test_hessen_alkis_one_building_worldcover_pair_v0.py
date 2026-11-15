@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import unittest
 
 from research_runners import hessen_alkis_one_building_worldcover_pair_v0 as pair
