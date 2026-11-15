@@ -13,6 +13,7 @@ import csv
 from decimal import Decimal, InvalidOperation
 import hashlib
 import io
+import ipaddress
 import json
 from pathlib import Path
 import re
@@ -41,11 +42,23 @@ COLUMNS = tuple((
     "annuity_claims_net_eur_m,annuity_expenses_eur_m"
 ).split(","))
 NUMERIC = tuple(c for c in COLUMNS if c.endswith(("_eur_m", "_pct")))
-LEI = re.compile(r"^[A-Z0-9]{20}$")
+LEI = re.compile(r"^[A-Z0-9]{18}[0-9]{2}$")
 
 
 class Blocked(ValueError):
     """Stop rather than silently accept changed or ambiguous provider data."""
+
+
+def valid_lei(value: str) -> bool:
+    """Check ISO 17442 shape and ISO/IEC 7064 MOD 97-10 digits, not registry status."""
+    if not LEI.fullmatch(value):
+        return False
+    remainder = 0
+    for ch in value:
+        digits = str(ord(ch) - ord("A") + 10) if "A" <= ch <= "Z" else ch
+        for digit in digits:
+            remainder = (remainder * 10 + int(digit)) % 97
+    return remainder == 1
 
 
 def _source_ok(value: str) -> bool:
@@ -57,9 +70,14 @@ def _source_ok(value: str) -> bool:
         _ = url.port
     except ValueError:
         return False
-    return bool(url.scheme == "https" and host and not url.username
-                and not url.password and host.lower() != "localhost"
-                and not host.lower().endswith((".localhost", ".local", ".internal")))
+    if not (url.scheme == "https" and host and not url.username
+            and not url.password and host.lower() != "localhost"
+            and not host.lower().endswith((".localhost", ".local", ".internal"))):
+        return False
+    try:
+        return ipaddress.ip_address(host).is_global
+    except ValueError:
+        return True  # A domain is a provenance string, never fetched by this tool.
 
 
 def inspect(raw: bytes, *, expected_rows: int = EXPECTED_ROWS,
@@ -102,8 +120,8 @@ def inspect(raw: bytes, *, expected_rows: int = EXPECTED_ROWS,
             raise Blocked(f"row {line}: mixed/stale data version")
         if not _source_ok(row["source"]):
             raise Blocked(f"row {line}: missing/unsafe upstream source")
-        if row["lei"] and not LEI.fullmatch(row["lei"]):
-            raise Blocked(f"row {line}: invalid LEI shape")
+        if row["lei"] and not valid_lei(row["lei"]):
+            raise Blocked(f"row {line}: invalid LEI shape or check digits")
         for col in NUMERIC:
             cell = row[col]
             if cell == "":
