@@ -36,6 +36,12 @@
 -- reuse; publisher website metadata sample #129 is NOT a CloudFerro tile,
 -- native pixel nor approved anonymous Swift/Range API transport receipt.
 -- Explicitly hold at source-specific P1 service terms before first tile.
+-- GDW v1.0: independently verified both full source archives on trusted main
+-- workflow 41893588594. Research sample #31 binds exact original source
+-- ZIP hashes and 221 shared GEOS-invalid polygon IDs. Do not rerun a public
+-- API smoke check in place of scientific invalidity/repair-impact assessment.
+-- This exception is fail-closed to exact frozen receipt fields, with no model
+-- input, archive persistence, licence or dissemination permission inferred.
 -- PostgreSQL + pgcrypto sha256(bytea); exact canonical JSONB digest is checked
 -- rather than copying or reading provider data outside the research database.
 WITH
@@ -88,6 +94,27 @@ sample_evidence AS (
             AND source_byte_persistence_authorized IS FALSE
             AND sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex'))::int
           AS recorded_direct_github_original_exact_urls,
+        COUNT(*) FILTER (
+          WHERE source_id='globaldamwatch.gdw.v1.0'
+            AND sample_id=31 AND sample_kind='observed_values'
+            AND product_version='v1.0'
+            AND provider_response_sha256='2fe0b367ed3fcfb299160cd9652b16a8a19338951026ee2ac91edfebf1f3b7ae'
+            AND sample_json->>'original_shapefile_sha256'=provider_response_sha256
+            AND sample_json->>'original_filegdb_sha256'='5ebb1092e355f1833132be8a16340da7de979314d06aba00e57eb7412884f09f'
+            AND sample_json->>'verified_public_run'='https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41893588594'
+            AND sample_json->>'source_barrier_point_records'='41145'
+            AND sample_json->>'source_reservoir_polygon_records'='35295'
+            AND sample_json->>'geos_valid_original_reservoir_polygons'='35074'
+            AND sample_json->>'geos_invalid_original_reservoir_polygons'='221'
+            AND sample_json->>'invalid_polygon_ids_shared_between_formats'='221'
+            AND sample_json->>'invalid_polygon_ids_unique_to_either_format'='0'
+            AND sample_json->>'source_polygon_repairs_performed'='false'
+            AND sample_json->>'model_input_approved'='false'
+            AND research_only IS TRUE
+            AND model_input_approved IS FALSE
+            AND source_byte_persistence_authorized IS FALSE
+            AND sample_sha256=encode(sha256(convert_to(sample_json::text,'UTF8')),'hex')
+        )::int AS gdw_crossformat_original_receipts,
         COUNT(*) FILTER(WHERE model_input_approved)::int AS sample_model_approvals,
         ARRAY_AGG(sample_id ORDER BY sample_id) AS sample_ids,
         MAX(created_at) AS most_recent_sample
@@ -217,6 +244,8 @@ joined AS (
          + COALESCE(d.verified_additional_github_exact_urls,0))::int
           AS recorded_direct_github_original_exact_urls,
         COALESCE(s.sample_model_approvals,0)::int AS sample_model_approvals,
+        COALESCE(s.gdw_crossformat_original_receipts,0)::int
+          AS gdw_crossformat_original_receipts,
         s.sample_ids,s.most_recent_sample,
         COALESCE(a.api_smoke_receipts,0)::int AS api_smoke_receipts,
         COALESCE(a.api_smoke_successes,0)::int AS api_smoke_successes,
@@ -250,6 +279,9 @@ SELECT *,
        AND recorded_direct_github_original_exact_urls=0
        AND scoped_api_automation_results LIKE '%unknown%'
     THEN 'P1_resolve_CloudFerro_anonymous_transport_before_original_tile'
+  WHEN source_id='globaldamwatch.gdw.v1.0'
+       AND gdw_crossformat_original_receipts=1
+    THEN 'P2_quantify_GDW_native_invalid_polygon_consequences'
   WHEN last_api_shape_status='inconclusive' AND recorded_direct_github_original_exact_urls=0
     THEN 'P1_retest_provider_with_trusted_runner'
   WHEN sample_rows=0 AND registry_commercial_verdict='allowed_verified'
@@ -279,6 +311,8 @@ ORDER BY
   WHEN source_id='ec-jrc.global-surface-water.1984-2024'
        AND recorded_direct_github_original_exact_urls=0
        AND scoped_api_automation_results LIKE '%unknown%' THEN 1
+  WHEN source_id='globaldamwatch.gdw.v1.0'
+       AND gdw_crossformat_original_receipts=1 THEN 2
   WHEN last_api_shape_status='inconclusive' AND recorded_direct_github_original_exact_urls=0 THEN 1
   WHEN sample_rows=0 AND registry_commercial_verdict='allowed_verified'
     THEN 1
