@@ -63,6 +63,14 @@ class NbpwRdNewScreenTests(unittest.TestCase):
             with self.subTest(original=original[:35]), self.assertRaises(NbpwGeometryError):
                 screen_nbpw_projected_multiline(original, declared_crs="EPSG:28992")
 
+    def test_rejects_zero_length_consecutive_segments(self) -> None:
+        for xy in (
+            [[155000, 463000], [155000, 463000]],
+            [[155000, 463000], [155100, 463100], [155100, 463100]],
+        ):
+            with self.subTest(xy=xy), self.assertRaisesRegex(NbpwGeometryError, "zero-length"):
+                screen_nbpw_projected_multiline(_original(xy=xy), declared_crs="EPSG:28992")
+
     def test_rejects_boolean_ordinates_and_empty_geometry(self) -> None:
         with self.assertRaises(NbpwGeometryError):
             screen_nbpw_projected_multiline(_original(xy=[[True, 463000], [155100, 463100]]), declared_crs="EPSG:28992")
