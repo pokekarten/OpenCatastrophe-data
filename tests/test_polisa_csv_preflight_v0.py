@@ -7,7 +7,7 @@ import csv
 from io import StringIO
 import unittest
 
-from scripts.polisa_csv_preflight_v0 import COLUMNS, VERSION, Blocked, inspect
+from scripts.polisa_csv_preflight_v0 import COLUMNS, VERSION, Blocked, inspect, valid_lei
 
 
 def sample(market="Poland", ident="TEST_A", **overrides):
@@ -38,7 +38,7 @@ class PolisaPreflightTests(unittest.TestCase):
 
     def test_valid_synthetic_slice_remains_unapproved(self):
         result = self.check([sample(), sample("Estonia", "TEST_B",
-                         line_property_eur_m="0")],
+                         line_property_eur_m="0", lei="TEST0000000000000075")],
                          markets={"Poland", "Estonia"}, count=2)
         self.assertEqual(result["market_count"], 2)
         self.assertEqual(result["row_count"], 2)
@@ -79,9 +79,26 @@ class PolisaPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(Blocked, "market/year"):
             self.check([sample(market="Atlantis")])
 
-    def test_invalid_lei_fails_closed(self):
-        with self.assertRaisesRegex(Blocked, "LEI"):
-            self.check([sample(lei="BAD")])
+    def test_lei_checksum_not_just_twenty_character_shape(self):
+        # Purely synthetic, valid arithmetic; does NOT assert registered legal identity.
+        valid = "TEST0000000000000075"
+        self.assertTrue(valid_lei(valid))
+        self.assertFalse(valid_lei("TEST0000000000000076"))
+        self.assertFalse(valid_lei("TEST000000000000007A"))
+        self.assertFalse(valid_lei("BAD"))
+        for candidate in ("BAD", "TEST0000000000000076", "TEST000000000000007A"):
+            with self.subTest(candidate=candidate):
+                with self.assertRaisesRegex(Blocked, "LEI"):
+                    self.check([sample(lei=candidate)])
+
+    def test_non_public_literal_ip_source_blocked(self):
+        # Construct the negative fixture without embedding a real-looking endpoint.
+        ip = ".".join(("127", "0", "0", "1"))
+        for address in (ip, "::1"):
+            with self.subTest(address=address):
+                url = "https://" + ("[" + address + "]" if ":" in address else address) + "/report"
+                with self.assertRaisesRegex(Blocked, "source"):
+                    self.check([sample(source=url)])
 
     def test_csv_header_and_row_length_must_match(self):
         with self.assertRaisesRegex(Blocked, "schema/order"):
