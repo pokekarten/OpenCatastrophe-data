@@ -78,6 +78,21 @@ class S1MOriginalHeaderTests(unittest.TestCase):
             with self.assertRaises(s.Blocked):
                 s.check_local_identity(exact, digest.upper(), len(raw))
             self.assertEqual(s.check_local_identity(exact, digest, len(raw))["file_bytes"],len(raw))
+            # A matching checksum on fabricated bytes is NOT a valid GeoTIFF.
+            with self.assertRaises(s.Blocked):
+                s.inspect_original_tiff(exact, digest, len(raw))
+            link = Path(tmp) / "symlink-root"
+            link.mkdir()
+            forged = link / s.ORIGINAL_FILENAME
+            try:
+                forged.symlink_to(exact)
+            except (OSError, NotImplementedError):
+                pass
+            else:
+                with self.assertRaises(s.Blocked):
+                    s.check_local_identity(forged, digest, len(raw))
+            with self.assertRaises(s.Blocked):
+                s.check_local_identity(exact, digest, s.MAX_ORIGINAL_BYTES + 1)
 
     def test_gdal_parses_synthetic_real_tiff_header_without_pixel_read(self):
         try:
