@@ -30,7 +30,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Service root:** <https://www.data.gouv.fr>
 
-**Api version:** Public dataset-catalogue v1 endpoint; hourly department/decade CSV.GZ resource version and specific wind column not pinned
+**Api version:** Public data.gouv.fr dataset-catalogue v1 only (anonymous); separate account-gated Météo-France Climatologie API is not this interface; hourly department/decade CSV.GZ and exact wind variable not pinned
 
 ## Access scope
 
@@ -57,7 +57,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /api/1/datasets/donnees-climatologiques-de-base-horaires/
 
-**Parameter rules:** Documentation-only, no automatic source request or caller-selected path, unbounded domain, secrets, crawler, bulk extraction or retries. Metadata path(s) are only candidate exact origins; actual provider GET requires independently reviewed provider machine-use terms, exact URL, byte cap, body hash and source-specific approved workflow.
+**Parameter rules:** Documentation-only, no automatic source request or caller-selected path, unbounded domain, secrets, crawler, bulk extraction or retries. Metadata path(s) are only candidate exact origins; actual provider GET requires independently reviewed provider machine-use terms, exact URL, byte cap, body hash and source-specific approved workflow. The separate official Météo-France Climatologie API at portail-api.meteofrance.fr/web/fr/api/DonneesPubliquesClimatologie is account-gated and is NOT an allowed host, path, operation or authentication mode here; access to that service requires a distinct source-specific contract and authorisation.
 
 ## Response contract
 
@@ -79,7 +79,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** Service request rate and ToS are not independently reviewed; no scheduled dataset downloads, retries or crawler, only future fixed one-resource metadata preflight after rights/transport approval.
+**Rate limit notes:** No independently verified rate entitlement for the anonymous data.gouv.fr dataset metadata endpoint; retain documented_only with no approved requests or schedules. The separately advertised registered Météo-France Climatologie API states a 100 requests/minute maximum on its own official API listing (checked 2026-11-14); this is NOT a rate allowance for data.gouv.fr catalogue traffic and does not grant an account or authorise automated access.
 
 **Mutability notes:** Catalogue may include 1,000+ changing official resource entries; pin one exact department, period, last_modified and file SHA before any comparison.
 
@@ -95,7 +95,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** unknown
 
-**Notes:** Publisher catalog states Licence Ouverte / Open Licence 2.0. That is evidence for this named dataset at catalog level, not independently for each external CSV resource, automated server cadence, hazard/model suitability or derivatives of station measurements. Attribution, resource version and original quality dictionary remain mandatory.
+**Notes:** Publisher catalog states Licence Ouverte / Open Licence 2.0. That is evidence for this named dataset at catalog level, not independently for each external CSV resource, automated server cadence, hazard/model suitability or derivatives of station measurements. Attribution, resource version and original quality dictionary remain mandatory. The publisher separately advertises an account-gated Climatologie API with its own service boundary; the dataset Open Licence 2.0 must not be interpreted as proof of API account access, authorised throughput, raw-resource publication or CAT-model approval.
 
 ## Probe contract
 
@@ -118,5 +118,6 @@ _Empty array._
 - <https://www.data.gouv.fr/datasets/donnees-climatologiques-de-base-horaires>
 - <https://www.data.gouv.fr/api/1/datasets/donnees-climatologiques-de-base-horaires/>
 - <https://guides.data.gouv.fr/api-de-data.gouv.fr/reference/datasets>
+- <https://www.data.gouv.fr/dataservices/api-donnees-climatologiques>
 
-**Notes:** One public dataset JSON endpoint was accessed using an external web read on 2026-11-14, NOT through a trusted source-native GitHub runner; neither binary resource nor exact API response SHA is verified. This contract itself authorizes no HTTP requests.
+**Notes:** One public dataset JSON endpoint was accessed using an external web read on 2026-11-14, NOT through a trusted source-native GitHub runner; neither binary resource nor exact API response SHA is verified. This contract itself authorizes no HTTP requests. T0 transport distinction checked on the official French data portal on 2026-11-14: the public catalogue and registered Climatologie API are different services; the registered service advertises 100 req/min only for itself. This record does not authorise either live API probe or source-byte download.
