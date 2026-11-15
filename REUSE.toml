@@ -8,15 +8,3 @@ path = ["schemas/*.json", "manifests/*.json", "landscape/*.json", "access/*.json
 precedence = "override"
 SPDX-FileCopyrightText = "2026 OpenCatastrophe contributors"
 SPDX-License-Identifier = "Apache-2.0"
-
-# Repository-authored research receipts and screening metadata only.
-# Does not relicense KNMI observations, published sources, or original archives.
-[[annotations]]
-path = [
-  "research/observations/knmi_historical_downloads.json",
-  "research/observations/knmi_wind_metadata_review.json",
-  "research/source_screening/windstorm_whole_chain.json",
-]
-precedence = "override"
-SPDX-FileCopyrightText = "2026 OpenCatastrophe contributors"
-SPDX-License-Identifier = "Apache-2.0"
