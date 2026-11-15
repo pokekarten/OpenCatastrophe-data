@@ -57,7 +57,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /data/README.txt
 
-**Parameter rules:** Documentation-only publisher README path. README lists polisa-all-markets.csv and per-market exports, but landing page text in this review contradicts CSV availability. Do not construct dataset file requests, scrape insurer pages, enumerate endpoints, follow unreviewed export links or import provider rows. Before any executable contract, resolve current live export identity, exact file URL, source-level permissions, commercial automation rules and original response-size/hash bounds.
+**Parameter rules:** Documentation-only publisher README path. README names polisa-all-markets.csv and per-market exports; on 2026-11-15 the publisher /data page advertised CSV/Excel links for 18 markets and an all-markets CSV (1,772 rows, 727 KB as advertised). The original CSV response, row count and checksum have not been independently verified here. Do not construct dataset file requests, scrape insurer pages, enumerate endpoints, follow unreviewed export links or import provider rows. Before any executable contract, resolve current live export identity, exact file URL, source-level permissions, commercial automation rules and original response-size/hash bounds.
 
 ## Response contract
 
@@ -65,7 +65,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - text/plain
 
-**Format:** Polisa README text describes a proposed or available CSV version and detailed source caveats, not an authenticated CSV source or parsed insurer record.
+**Format:** Polisa README and /data page describe advertised CSV downloads with original-source caveats, not an independently authenticated CSV response or parsed insurer record.
 
 **Scientific semantics:** Market-level named insurer and line-of-business premiums/claims/solvency statistics reconstructed from heterogeneous regulators, associations and insurer SFCRs. Account for entity-group rollups, currencies, conversion date, year, coverage and original-source lineage; not property location, actual insured TIV or model-ready CAT loss.
 
@@ -81,7 +81,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Rate limit notes:** Documentation-only; no live provider request, bulk download or automated enumeration is authorized by this contract.
 
-**Mutability notes:** README names 2026-11-09.d5ad62; site displays another as-of date. Neither fixes a verified export file checksum nor consistent API schema; do not assume data availability from filenames.
+**Mutability notes:** README identifies 2026-11-09.d5ad62, while /data advertises files updated on 2026-11-15. A listed download link or provider-advertised row count is not an authenticated downloaded dataset, source checksum or validated schema.
 
 ## Rights and policy
 
@@ -95,7 +95,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** unknown
 
-**Notes:** Polisa-generated ratios/shares are stated CC BY 4.0 but rights from original sources remain in force; restrictions include Serbia NBS for commercial use, other national associations and Estonia share-alike. Treat commercial use as unknown pending exact market/row/source check and resolve possible export-availability contradictions before automation.
+**Notes:** Polisa-generated ratios/shares are stated CC BY 4.0 but rights from original sources remain in force; restrictions include Serbia NBS for commercial use, other national associations and Estonia share-alike. Polisa terms permit reasonable-rate automated downloading of published CSVs, but original-source reuse restrictions still apply; commercial use remains unknown pending exact market/row/source rights review. The documentation-only contract does not authorize a live dataset fetch.
 
 ## Probe contract
 
