@@ -20,3 +20,20 @@ Diese Werte bleiben fehlend; sie sind kein Nullwind. Keine wissenschaftliche
 oder rechtliche Zulassung. Vollständige lokale Ausgabe: `/dev/shm/wind-source-validation-complete.json`.
 Reproduktion: `python research_runners/validate_downloaded_wind_sources.py --directory /external/originals --output /external/validation.json`.
 Benötigt numpy und netCDF4. Zwei lokale Integritätsregressionen bestanden.
+
+## Ereignisidentitäten und LI gegenüber Wind
+
+Originaldiagnose mit `climk_event_identity_diagnostics.py`: 200 Quellansichten
+bilden 96 rein wörtliche Name-/Datumsgruppen. 18 Namen haben unterschiedliche
+Datumslabels. Besonders auffällig: Gunter mit 20050110 und 20150110.
+Das ist ein ungeklärter Quellwiderspruch, kein automatisch korrigierter Tippfehler.
+Andere Unterschiede betragen häufig einen Tag und können mit der Auswahl
+von Ereignisfenstern zusammenhängen. Keine automatische physische Zusammenführung.
+Vollständiges lokales Diagnoseergebnis: `/dev/shm/climk-identity-diagnostics.json`.
+
+An allen nicht endlichen LI_gridpoint-Stellen sind absolute_maxwindgusts
+endlich und positiv: ERA5 3.732, EUR-11 18.654, CEU-3 59.841,
+COSMO-REA6 97.097 Stellen. LI_gridpoint ist laut Originalmetadaten ein
+berechneter Verlustindex, kein Windfeld. Seine fehlenden Werte dürfen daher
+nicht als fehlende Windabdeckung oder Nullwind interpretiert werden.
+Der Grund der fehlenden Indexwerte ist damit noch nicht erklärt.
