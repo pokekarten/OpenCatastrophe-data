@@ -34,7 +34,7 @@ class DguTopographicAtomMetadataTest(unittest.TestCase):
         self.assertEqual(receipt["feed_original_sha256"], hashlib.sha256(raw).hexdigest())
         self.assertEqual(receipt["advertised_zip_bytes_not_verified"], 285995484)
         self.assertTrue(receipt["rights_reconciliation_required"])
-        self.assertTrue(receipt["independent_cadastral_wfs_source"])
+        self.assertTrue(receipt["distinct_product_identity_from_cadastral_wfs"])
         self.assertFalse(receipt["zip_downloaded"])
         self.assertFalse(receipt["raw_geometry_verified"])
         self.assertFalse(receipt["model_input_admitted"])
