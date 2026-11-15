@@ -23,12 +23,12 @@
         "levee_hazard_overlay_validation"
       ],
       "authoritative_url": "https://www.data.gov.uk/dataset/cc76738e-fc17-49f9-a216-977c61858dda/aims-spatial-flood-defences-inc-standardised-attributes",
-      "access_class_hint": "public_ogl3_provider_arcgis_feature_layer_0_single_record_no_geometry_verified_via_intermediary",
+      "access_class_hint": "public_ogl3_ea_layer0_one_record_oid_trusted_original_sha256_nonadmission",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Official catalogue declares Open Government Licence for this product; full legal, attribution and source snapshot review remains open. Original provider service https://environment.data.gov.uk/arcgis/rest/services/EA/SpatialFloodDefencesIncStandardisedAttributes/FeatureServer/0 exposes query JSON. On 2026-11-14 an intermediary fetched precisely one no-geometry OBJECTID value (HTTP content shaped as FeatureServer JSON, EPSG:27700) using a bounded GET; this is not a trusted direct runner receipt or original archive SHA. Asset presence and nominal protection standard do not establish actual defended footprint, defence reliability, breach/overtopping probability, modelled flood depth reduction or insurer exposure. No original response bytes committed or model admitted."
+      "note": "Official catalogue declares Open Government Licence for this product; full legal, attribution and source snapshot review remains open. Original provider service https://environment.data.gov.uk/arcgis/rest/services/EA/SpatialFloodDefencesIncStandardisedAttributes/FeatureServer/0 exposes query JSON. On 2026-11-14 an intermediary fetched precisely one no-geometry OBJECTID value (HTTP content shaped as FeatureServer JSON, EPSG:27700) using a bounded GET; this earlier intermediary check is not itself the trusted direct runner receipt or original archive SHA. Asset presence and nominal protection standard do not establish actual defended footprint, defence reliability, breach/overtopping probability, modelled flood depth reduction or insurer exposure. No original response bytes committed or model admitted. Trusted-main original-provider single-record no-geometry JSON read succeeded 2026-11-15 in GitHub workflow 43741910265, job 132896765587; exact transient response SHA-256 618384c208e0736cd210b9119edab439d5524a6560c78997843715e7371b2dbd. No source geometry, elevation, full-dataset or frozen-release digest acquired; no model use or source-byte storage."
     },
     {
       "candidate_id": "uk.ea.aims.asset-management-api.2026",
@@ -80,12 +80,12 @@
         "hazard_protection_uncertainty"
       ],
       "authoritative_url": "https://nld.sec.usace.army.mil/data-services/services/",
-      "access_class_hint": "public_usace_nld_arcgis_feature_layer_12_single_record_no_geometry_verified_via_intermediary",
+      "access_class_hint": "public_usace_nld_layer12_one_record_oid_trusted_original_sha256_nonadmission",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "USACE explicitly states that public NLD data may be downloaded/shared/used, but public GIS records and non-public detailed NLD records differ; independently review each API service's conditions and source provenance before publication or commercial modelling. Original https://geospatial.sec.usace.army.mil/dls/rest/services/NLD/Public/FeatureServer/12 responds with public floodwalls schema (OBJECTID, FLOODWALL_ID, WALL_HEIGHT_FEET, SYSTEM_ID). On 2026-11-14 intermediary one-record no-geometry JSON was returned, EPSG:4269. No trusted original runner receipt or source-file hash. Do not assume height is certified protection, complete national coverage, hydraulic connectivity, or actual failure probability. No geometry, TIV or raw payload admitted."
+      "note": "USACE explicitly states that public NLD data may be downloaded/shared/used, but public GIS records and non-public detailed NLD records differ; independently review each API service's conditions and source provenance before publication or commercial modelling. Original https://geospatial.sec.usace.army.mil/dls/rest/services/NLD/Public/FeatureServer/12 responds with public floodwalls schema (OBJECTID, FLOODWALL_ID, WALL_HEIGHT_FEET, SYSTEM_ID). On 2026-11-14 intermediary one-record no-geometry JSON was returned, EPSG:4269. The earlier intermediary observation was not a trusted original runner receipt or source-file hash. Do not assume height is certified protection, complete national coverage, hydraulic connectivity, or actual failure probability. No geometry, TIV or raw payload admitted. Trusted-main original-provider single-record no-geometry JSON read succeeded 2026-11-15 in GitHub workflow 43741910265, job 132896765568; exact transient response SHA-256 e4ae60379a231c7e4bc4e28f96ab00ffa4e34123b59a4c06fd879b2db63f10f8. No source geometry, elevation, full-dataset or frozen-release digest acquired; no model use or source-byte storage."
     },
     {
       "candidate_id": "us.usace.nld.public-embankments.2026",
@@ -102,7 +102,7 @@
       ],
       "spatial_scope": "United States and available territories; only levee systems represented in public NLD submissions, with variable completeness and update dates",
       "temporal_scope": "Continuously updated public NLD service; individual SURVEY_DATE and system update vintage vary; no immutable 2026 file snapshot verified",
-      "resolution_or_granularity": "USACE NLD/Public ArcGIS FeatureServer layer 11 Embankments; polyline hasZ=true, horizontal NAD83 EPSG:4269, vertical NAVD88, with EMBANK_ID/SEGMENT_ID/SYSTEM_ID, PRIMARY_MATERIAL and SURVEY_DATE fields; original feature data unexamined",
+      "resolution_or_granularity": "USACE NLD/Public ArcGIS FeatureServer layer 11 Embankments; polyline hasZ=true, horizontal NAD83 EPSG:4269, vertical NAVD88, with EMBANK_ID/SEGMENT_ID/SYSTEM_ID, PRIMARY_MATERIAL and SURVEY_DATE fields; one original OID-and-EMBANK_ID no-geometry response verified, geometry unexamined",
       "potential_roles": [
         "levee_embankment_source_schema_preflight",
         "flood_defence_material_and_vintage_context",
@@ -110,12 +110,12 @@
         "flood_hazard_protection_sensitivity"
       ],
       "authoritative_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NLD/Public/FeatureServer/11",
-      "access_class_hint": "public_usace_arcgis_layer11_metadata_examined_original_feature_bytes_rights_and_scientific_admission_pending",
+      "access_class_hint": "public_usace_nld_layer11_one_record_oid_embank_id_trusted_original_sha256_nonadmission",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Official NLD layer 11 metadata was inspected 2026-11-15. It identifies an independent Embankments polyline feature layer, NOT the previously registered Floodwalls layer 12, and includes Z-enabled geometry and survey/material identifiers; no original feature, line or response-byte digest was obtained. Critical vertical-unit discrepancy: layer heightModelInfo labels NAVD88_height_(ftUS) with us-foot, while current official NLD data dictionary says reference units recently moved to international feet. Resolve the exact data-version/unit/vertical datum per geometry and check Z missingness before any height comparison or flood-depth overlay; hasZ=true is not proof of populated or validated crest elevation. USACE notes that public NLD is not a complete inventory and records from partner submitters have uneven quality. Public download/share language is not a completed commercial service-terms, derived-redistribution or source-specific scientific review. Do not infer breach probability, defended footprint, reduced depths, insurer TIV or model approval."
+      "note": "Official NLD layer 11 metadata was inspected 2026-11-15. It identifies an independent Embankments polyline feature layer, NOT the previously registered Floodwalls layer 12, and includes Z-enabled geometry and survey/material identifiers; no original geometry or archival source-byte digest was obtained before the bounded canary. Critical vertical-unit discrepancy: layer heightModelInfo labels NAVD88_height_(ftUS) with us-foot, while current official NLD data dictionary says reference units recently moved to international feet. Resolve the exact data-version/unit/vertical datum per geometry and check Z missingness before any height comparison or flood-depth overlay; hasZ=true is not proof of populated or validated crest elevation. USACE notes that public NLD is not a complete inventory and records from partner submitters have uneven quality. Public download/share language is not a completed commercial service-terms, derived-redistribution or source-specific scientific review. Do not infer breach probability, defended footprint, reduced depths, insurer TIV or model approval. Trusted-main original-provider single-record no-geometry JSON read succeeded 2026-11-15 in GitHub workflow 43741910265, job 132896765575; exact transient response SHA-256 44404674d28a78de0dc9bde57919410480447a76a56412a1976d86ce6fbe2d16. No source geometry, elevation, full-dataset or frozen-release digest acquired; no model use or source-byte storage."
     }
   ]
 }
