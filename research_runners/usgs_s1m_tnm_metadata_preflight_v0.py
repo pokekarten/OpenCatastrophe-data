@@ -186,12 +186,12 @@ def check_raster_science_profile(profile: object) -> dict[str, object]:
         raise Blocked("S1M geoid or linear units mismatch")
     for field in ("pixel_size_x_m", "pixel_size_y_m"):
         value = profile[field]
-        if type(value) not in (int, float) or not math.isfinite(value) or value != 1:
+        if type(value) not in (int, float) or (type(value) is float and not math.isfinite(value)) or value != 1:
             raise Blocked("S1M one-metre raster spacing mismatch")
     value = profile["nodata_value"]
     if (
         type(value) not in (int, float)
-        or not math.isfinite(value)
+        or (type(value) is float and not math.isfinite(value))
         or value != PUBLISHED_S1M_NODATA
     ):
         raise Blocked("S1M -999999 NoData sentinel mismatch")
