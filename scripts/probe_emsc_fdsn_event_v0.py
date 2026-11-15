@@ -165,8 +165,9 @@ def probe(
                 raise EMSCProbeError("unexpected EMSC response encoding")
             declared = response.headers.get("Content-Length")
             if declared is not None:
-                if (type(declared) is not str or not declared.isascii()
-                        or not declared.isdecimal() or int(declared) > MAX_RESPONSE_BYTES):
+                if (type(declared) is not str or len(declared) > 10
+                        or not declared.isascii() or not declared.isdecimal()
+                        or int(declared) > MAX_RESPONSE_BYTES):
                     raise EMSCProbeError("invalid EMSC declared Content-Length")
             raw = response.read(MAX_RESPONSE_BYTES + 1)
             if declared is not None and len(raw) != int(declared):
