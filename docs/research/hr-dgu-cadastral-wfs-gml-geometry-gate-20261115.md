@@ -26,6 +26,67 @@ The [DGU government CKAN service record](https://catalog.uredjenazemlja.hr/katal
 
 The initial preflight checked polygon closure and signed area but did not reject self-intersecting exteriors with nonzero signed area, duplicate nonadjacent vertices or zero-length edges. Those can produce misleading positive shape results. The revised script rejects such rings using a bounded 2D segment intersection check. It also rejects `gml:interior` until an exact interior-ring/holes profile is independently reviewed, rather than silently approving the exterior as a complete footprint. Synthetic tests cover crossing rings, repeated vertices, zero edges, unsupported interior rings and a valid simple concave exterior. This preflight **still does not** prove provider origin, polygon semantic accuracy, separate-building uniqueness, full topological validity or insured exposure.
 
+## Original topographic ATOM metadata obtained — 2026-11-15
+
+**Original provider response observed:** a direct metadata-only HTTP retrieval of
+`https://geoportal.dgu.hr/services/atom/bu-core2d/xml` succeeded through a public
+remote HTTP source reader. This is **not** the cadastral `api.uredjenazemlja.hr`
+WFS tested elsewhere in this review. The linked official dataset is from the
+**Basic Topographic Database** rather than the cadastral Digital Map. Do not
+merge, equate, count twice or generalize their source populations.
+
+| Original HTTP/ATOM fact | Recorded value |
+| --- | --- |
+| Retrieved feed | `https://geoportal.dgu.hr/services/atom/bu-core2d/xml` |
+| Original XML response length | **1,958 bytes** |
+| Original XML SHA-256 | `ef9b09a02579fd101b8015466f069482ff24ea7781850773a5795b324aabcd8f` |
+| MIME type received | `application/xml;charset=UTF-8` |
+| Feed and entry `updated` | `2024-03-07T17:05:52.000000+01:00` |
+| Entry format/title | INSPIRE **GML 3.2.1**, **ETRS89/LAEA**, compressed ZIP |
+| Exact advertised archive URL | `https://geoportal.dgu.hr/services/atom/INSPIRE_Building_(BU-CORE2D).zip` |
+| Archive `length` in feed | **285,995,484 bytes (advertised only, unverified)** |
+| Archive MIME declared by publisher | `application/x-gmz` (not inferred ZIP header) |
+
+The original XML `rights` text reads **"ograničenje javnog pristupa prema
+članku 13 stavku 1 točki (e) INSPIRE Direktive"** (a public-access limitation
+referencing Article 13(1)(e) of the INSPIRE Directive). Meanwhile, the
+[Croatian national CKAN metadata entry for this topographic Buildings ATOM
+resource](https://data.gov.hr/ckan/en/dataset/zgrade-iz-temeljne-topografske-baze-inspire/resource/2b677f84-024e-4773-b2c9-c217e2d2b34b)
+describes it as **"Otvorena dozvola (OD)"** and lists a 2026-02-24 catalogue
+update. This is a **documented rights/metadata tension**, not proof that a
+restricted feed is legally reusable or proof that the catalogue is wrong.
+The broad [DGU open-data product page](https://geoportal.dgu.hr/cms/en/data-and-services/)
+also lists anonymous access, which is not equivalent to an unconditional
+commercial bulk-download and redistribution grant.
+
+**Fail-closed decision:** metadata may be cited; the 286 MB archive was
+**not fetched** and its advertised byte length/contents/CRS were **not**
+verified from the archive. The archive has no SHA-256 receipt, the legal
+rights conflict requires original provider clarification, and scientific
+coverage/geometry/model admission remain blocked. Do not infer `approved_raw`,
+`approved_derived`, commercial bulk permission, building count or CAT
+exposure from this ATOM feed.
+
+A new bounded validator, `scripts/probe_hr_dgu_topographic_buildings_atom_v0.py`,
+inspects a caller-provided XML receipt offline or optionally makes **one
+explicit `--live` GET of the exact ATOM feed**. It pins the product identity,
+ATOM XML shape, authoritative-restriction notice, timezone-aware update,
+exact advertised download link and declared size, and emits only source
+metadata/hash and **explicit non-admission** flags. It **never downloads the
+ZIP**; the 11 deterministic synthetic tests under
+`tests/test_probe_hr_dgu_topographic_buildings_atom_v0.py` challenge missing
+restrictions, wrong links, changed size, dates, duplicate entries and unsafe XML.
+
+```bash
+python -m unittest tests.test_probe_hr_dgu_topographic_buildings_atom_v0
+python scripts/probe_hr_dgu_topographic_buildings_atom_v0.py --live
+python scripts/probe_hr_dgu_topographic_buildings_atom_v0.py --offline-file /path/outside/repo/atom.xml
+```
+
+The exact observed SHA-256 is evidence for the **2026-11-15 original metadata
+response**, not a claim that provider bytes will remain frozen at this URL.
+A changed provider feed must be re-reviewed before using the revised release.
+
 ## Original service geometry problem
 
 Issue #1458 records a previous **one-feature GeoJSON** Zagreb-area response with `geometry: null`; a separate earlier GML request timed out. Null GeoJSON does not establish absent source GML polygons. Nor does publisher catalogue language establish actual usable polygon bytes in the requested window.
