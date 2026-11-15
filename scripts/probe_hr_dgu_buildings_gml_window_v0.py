@@ -47,6 +47,55 @@ def fixed_url() -> str:
     return PROVIDER + "?" + parse.urlencode(params)
 
 
+def _ring_is_simple(xy: list[tuple[float, float]]) -> bool:
+    """Detect repeated points and crossing edges in one bounded exterior.
+
+    Only exact planar geometry within the declared projected CRS is tested.
+    This does not prove geometry accuracy, make a cadastral topology claim, or
+    independently validate the original provider's building meaning.
+    """
+    edges = list(zip(xy, xy[1:]))
+    if len(set(xy[:-1])) != len(xy) - 1:
+        return False
+    if any(a == b for a, b in edges):
+        return False
+
+    def _cross(a, b, c):
+        return ((b[0] - a[0]) * (c[1] - a[1])
+                - (b[1] - a[1]) * (c[0] - a[0]))
+
+    def _point_on_segment(p, a, b):
+        return (_cross(a, b, p) == 0
+                and min(a[0], b[0]) <= p[0] <= max(a[0], b[0])
+                and min(a[1], b[1]) <= p[1] <= max(a[1], b[1]))
+
+    def _intersects(a, b, c, d):
+        if (max(a[0], b[0]) < min(c[0], d[0])
+                or max(c[0], d[0]) < min(a[0], b[0])
+                or max(a[1], b[1]) < min(c[1], d[1])
+                or max(c[1], d[1]) < min(a[1], b[1])):
+            return False
+        ab_c, ab_d = _cross(a, b, c), _cross(a, b, d)
+        cd_a, cd_b = _cross(c, d, a), _cross(c, d, b)
+        return (
+            (ab_c > 0 > ab_d or ab_c < 0 < ab_d)
+            and (cd_a > 0 > cd_b or cd_a < 0 < cd_b)
+            or (_point_on_segment(c, a, b) or _point_on_segment(d, a, b)
+                or _point_on_segment(a, c, d) or _point_on_segment(b, c, d))
+        )
+
+    count = len(edges)
+    for i, (a, b) in enumerate(edges):
+        for j in range(i + 2, count):
+            # First and final segments are neighbours around the closed ring.
+            if i == 0 and j == count - 1:
+                continue
+            c, d = edges[j]
+            if _intersects(a, b, c, d):
+                return False
+    return True
+
+
 def inspect_gml(raw: bytes) -> dict:
     if not isinstance(raw, bytes) or not (0 < len(raw) <= MAX_BYTES):
         raise BuildingGmlError("XML is missing or exceeds fixed byte budget")
@@ -84,6 +133,8 @@ def inspect_gml(raw: bytes) -> dict:
     }
     if dims and dims != {"2"}:
         raise BuildingGmlError("GML geometry must have two coordinate dimensions")
+    if polygons[0].findall(GML + "interior"):
+        raise BuildingGmlError("interior rings require a separately reviewed GML profile")
     exteriors = polygons[0].findall(GML + "exterior")
     if len(exteriors) != 1:
         raise BuildingGmlError("one polygon exterior is required")
@@ -99,6 +150,8 @@ def inspect_gml(raw: bytes) -> dict:
     xy = list(zip(vals[::2], vals[1::2]))
     if xy[0] != xy[-1]:
         raise BuildingGmlError("polygon exterior is not closed")
+    if not _ring_is_simple(xy):
+        raise BuildingGmlError("repeated vertices, zero edges or self-intersecting exterior")
     # National plausibility range is only a gross axis-swap guard.
     if any(not (200000 < x < 900000 and 4600000 < y < 5300000) for x, y in xy):
         raise BuildingGmlError("CRS axis order or national coordinate range implausible")
