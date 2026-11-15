@@ -11,6 +11,17 @@ import urllib.request
 BASE='https://storage.googleapis.com/gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3/'
 VARIABLE='10m_wind_gust_since_previous_post_processing'
 
+def validate_metadata(path, raw):
+    data=json.loads(raw)
+    if path=='time/.zattrs':
+        if data.get('units') not in {'hours since 1900-01-01','hours since 1900-01-01 00:00:00'} or data.get('calendar') not in {'proleptic_gregorian','gregorian'}:
+            raise ValueError('Unreviewed source time axis')
+    elif path==VARIABLE+'/.zarray':
+        if data.get('chunks')!=[1,721,1440] or data.get('dtype')!='<f4' or data.get('shape',[None])[1:]!=[721,1440]:
+            raise ValueError('Unreviewed source raster layout')
+    return data
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--output-dir',type=Path,required=True)
@@ -28,6 +39,7 @@ def main():
         with urllib.request.urlopen(BASE+path,timeout=45) as response:
             raw=response.read(20_000_001)
         if len(raw)>20_000_000:raise ValueError('Source response exceeds bound')
+        if index<2:validate_metadata(path,raw)
         name=f'{index:02d}.bin';(out/name).write_bytes(raw)
         records.append({'url':BASE+path,'file':name,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()})
         (out/'receipt.json').write_text(json.dumps({'schema':'CIARA_MISSING_DAY_RAW_V1',
