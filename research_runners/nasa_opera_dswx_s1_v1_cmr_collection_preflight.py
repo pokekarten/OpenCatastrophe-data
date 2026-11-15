@@ -47,11 +47,12 @@ def _no_invalid_constant(_value: str) -> None:
     raise CmrCollectionBlocked("non-JSON numeric constant")
 
 
-def _has_umm_errors(value: Any) -> bool:
+def _has_error_markers(value: Any) -> bool:
+    """Refuse publisher error markers at any level of the CMR response."""
     if type(value) is dict:
-        return "_errors" in value or any(_has_umm_errors(v) for v in value.values())
+        return "_errors" in value or any(_has_error_markers(v) for v in value.values())
     if type(value) is list:
-        return any(_has_umm_errors(v) for v in value)
+        return any(_has_error_markers(v) for v in value)
     return False
 
 
@@ -81,14 +82,16 @@ def validate_collection_response(
                            parse_constant=_no_invalid_constant)
     except (UnicodeError, ValueError, RecursionError) as exc:
         raise CmrCollectionBlocked("invalid CMR UTF-8 or JSON") from exc
-    if type(value) is not dict or type(value.get("hits")) is not int or value["hits"] != 1:
+    if type(value) is not dict or _has_error_markers(value):
+        raise CmrCollectionBlocked("CMR response contains error marker or is not an object")
+    if type(value.get("hits")) is not int or value["hits"] != 1:
         raise CmrCollectionBlocked("not exactly one search hit")
     items = value.get("items")
     if type(items) is not list or len(items) != 1 or type(items[0]) is not dict:
         raise CmrCollectionBlocked("not exactly one collection record")
     item = items[0]
     meta, umm = item.get("meta"), item.get("umm")
-    if type(meta) is not dict or type(umm) is not dict or _has_umm_errors(umm):
+    if type(meta) is not dict or type(umm) is not dict:
         raise CmrCollectionBlocked("missing or invalid UMM record")
     if (meta.get("concept-id") != COLLECTION_CONCEPT
             or meta.get("concept-type") != "collection"
