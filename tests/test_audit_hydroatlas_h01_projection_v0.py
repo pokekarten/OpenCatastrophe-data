@@ -80,7 +80,7 @@ class H01ProjectedQualityTests(unittest.TestCase):
                 inspect(data(row(ident=value)), layer="BasinATLAS_v10_lev02")
 
     def test_no_unreviewed_negative_sentinels_and_malformed_numeric(self):
-        for value in (-9999, -1, float("nan"), float("inf"),
+        for value in (-9999, -1, 10 ** 1000, float("nan"), float("inf"),
                       -float("inf"), True, "5", [], {}):
             with self.subTest(value=str(value)), self.assertRaises(H01Blocked):
                 inspect(data(row(mean=value)), layer="BasinATLAS_v10_lev02")
