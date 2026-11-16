@@ -33,6 +33,13 @@ PILOT_DOWNLOAD_URL = (
     "S1M/n04e15/n0450e1510/S1M_n0450e1510_20260821.tif"
 )
 PILOT_BBOX = (-81.00, 25.95, -80.95, 26.00)
+# Original TNMAccess catalogue boundingBox for this exact sourceId/product.
+# WGS84 search metadata, not native S1M raster CRS / vertical datum.
+PILOT_PRODUCT_BOUNDS_WGS84 = (
+    -81.0028601420002, 25.92070859857935,
+    -80.8895404313893, 26.025030076412904,
+)
+PILOT_PRODUCT_BOUNDS_TOL_DEGREES = 1e-7
 SHA_RE = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -147,6 +154,12 @@ def check_products(value: object) -> dict[str, object]:
         bx0, by0, bx1, by1 = PILOT_BBOX
         if not (minx <= bx0 < bx1 <= maxx and miny <= by0 < by1 <= maxy):
             raise Blocked("frozen S1M pilot extent does not cover the recorded AOI")
+        # Merely enclosing the pilot query cannot attest the frozen tile footprint.
+        if any(
+            abs(observed - frozen) > PILOT_PRODUCT_BOUNDS_TOL_DEGREES
+            for observed, frozen in zip(vals, PILOT_PRODUCT_BOUNDS_WGS84)
+        ):
+            raise Blocked("frozen S1M pilot original product bbox drift")
     return {"mode": "product_metadata_only", "dataset_tag": DATASET_TAG, "source_id": item["sourceId"],
             "identity_evidence": identity_evidence, "admission": "not_admitted",
             "external_bytes_persisted": False, "provider_request_receipt_verified": False}
