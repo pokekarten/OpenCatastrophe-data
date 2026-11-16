@@ -39,6 +39,10 @@ MEDIA = frozenset({"text/csv", "text/plain", "application/octet-stream",
 CONTENT_RANGE = re.compile(r"bytes 0-32767/([1-9][0-9]{4,10})\Z")
 HEADER_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,127}\Z")
 PROFILE = "oc-usgs-3dep-wesm-original-csv32k-v0"
+# Frozen actual original HTTP206 prefix: 2026-11-16 / Actions 43961768133.
+# This is NOT a whole-WESM-file checksum; original CSV changes almost daily.
+EXPECTED_PREFIX_SHA = "19e025e68687bbb2b61d7f58a5eeedfa6d59b29a9ba98aa159556cc801e6eb8d"
+EXPECTED_WHOLE_CSV_BYTES = 2267051
 
 
 class Blocked(ValueError):
@@ -170,6 +174,9 @@ def probe(
         raise
     except (OSError, TimeoutError, error.URLError) as exc:
         raise Blocked("one exact WESM original CSV request was unavailable") from exc
+    observed_sha = hashlib.sha256(raw).hexdigest()
+    if observed_sha != EXPECTED_PREFIX_SHA or full_size != EXPECTED_WHOLE_CSV_BYTES:
+        raise Blocked("WESM original source prefix SHA or advertised entire-file size drift")
     columns = original_csv_column_header(raw)
     t = clock()
     if not isinstance(t, datetime) or t.utcoffset() is None:
@@ -180,7 +187,7 @@ def probe(
         "retrieved_utc": t.astimezone(timezone.utc).isoformat(),
         "original_http_status": 206, "original_content_range": content_range,
         "original_prefix_bytes": len(raw),
-        "original_prefix_sha256": hashlib.sha256(raw).hexdigest(),
+        "original_prefix_sha256": observed_sha,
         "advertised_full_csv_bytes_not_full_hash": full_size,
         "request_sha256": hashlib.sha256(
             ("GET " + URL + "\nRange: " + RANGE + "\n").encode("ascii")).hexdigest(),
