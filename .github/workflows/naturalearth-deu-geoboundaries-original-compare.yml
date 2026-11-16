@@ -67,6 +67,19 @@ jobs:
             'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/DEU/ADM1/geoBoundaries-DEU-ADM1.geojson'
           # Both exact source SHA-256s and sizes are verified *before* parsing.
           # Logs contain ONLY aggregated, source-bound research statistics.
-          python -m research_runners.naturalearth_deu_geoboundaries_adm1_comparison_v0 \
-            --natural-earth-original "$ne" --geoboundaries-original "$gb"
-          echo "PASS: two independently pinned original sources; private temporary geometry removed."
+          # Capture only scalar provenance and distance-to-EITHER-border
+          # aggregates. A green CI is NOT approval of coast/inland attribution.
+          report="$(python -m research_runners.naturalearth_deu_geoboundaries_adm1_comparison_v0 \
+            --natural-earth-original "$ne" --geoboundaries-original "$gb")"
+          printf '%s\n' "$report" | python -c '
+          import json, sys
+          r = json.load(sys.stdin)
+          assert r["boundary_proximity_threshold_metres"] == [1000, 5000, 10000]
+          assert r["disagreement_bins_preserve_area"] is True
+          assert r["source_border_disagreement_is_coastal_or_inland_classified"] is False
+          assert r["boundary_reference_is_authoritative"] is False
+          assert r["model_input_approved_by_distance_profile"] is False
+          assert r["model_input_approved"] is False
+          '
+          printf '%s\n' "$report"
+          echo "PASS: distance-to-either-boundary bins conserved, no legal or model admission; temporary source files removed."
