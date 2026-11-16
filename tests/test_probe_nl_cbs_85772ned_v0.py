@@ -172,6 +172,28 @@ class CBSOutputIndexTests(unittest.TestCase):
             with self.subTest(field=field):
                 self.assertRaises(CBSOutputBlocked, validate_rows, d)
 
+    def test_exact_cbs_identity_ids_and_vat_parent_ids_reject_bool_or_float(self):
+        # Python False == 0 and True == 1 are not acceptable OData schema
+        # identities. Likewise an ID represented as 41.0 must not pass.
+        cases = [
+            ("table_info", 0, "ID", False),
+            ("table_info", 0, "ID", 0.0),
+            ("first_index", 0, "ID", False),
+            ("q2_2026_index", 0, "ID", 41.0),
+            ("properties", 0, "ID", False),
+            ("properties", 1, "ID", True),
+            ("properties", 2, "ID", 2.0),
+            ("properties", 2, "ParentID", True),
+            ("properties", 5, "ParentID", 4.0),
+        ]
+        for result, index, field, wrong in cases:
+            d = fixture()
+            d[result]["value"][index][field] = wrong
+            with self.subTest(source=result, field=field, wrong=repr(wrong)):
+                with self.assertRaises(CBSOutputBlocked):
+                    validate_rows(d)
+        self.assertEqual(validate_rows(fixture())["recent_quarter"], "2026KW02")
+
     def test_bad_http_status_redirect_encoding_or_media_fails_closed(self):
         for opts in (
             {"status": 206}, {"wrong_url": True},
