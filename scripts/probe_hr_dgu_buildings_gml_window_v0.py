@@ -158,6 +158,16 @@ def inspect_gml(raw: bytes) -> dict:
     if len(geom) != 1 or geom[0].tag != BU_BASE + "BuildingGeometry2D":
         raise BuildingGmlError("missing or ambiguous bu-base BuildingGeometry2D")
     profile = geom[0]
+    # This review covers exactly these three direct INSPIRE base geometry
+    # properties. Ignore neither extra coordinate-bearing siblings nor
+    # unexpected extension elements: a partial, ambiguous profile is unsafe.
+    approved_properties = {
+        BU_BASE + "geometry",
+        BU_BASE + "referenceGeometry",
+        BU_BASE + "horizontalGeometryReference",
+    }
+    if len(profile) != 3 or {child.tag for child in profile} != approved_properties:
+        raise BuildingGmlError("unexpected or duplicated BuildingGeometry2D property")
     reference_flags = profile.findall(BU_BASE + "referenceGeometry")
     if (len(reference_flags) != 1
             or reference_flags[0].text is None
