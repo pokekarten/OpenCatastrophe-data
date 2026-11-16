@@ -137,7 +137,7 @@ def validate_rows(bodies: dict[str, dict[str, Any]]) -> dict[str, Any]:
         raise CBSOutputBlocked("invalid CBS table metadata count")
     meta = info[0]
     if (
-        meta.get("ID") != 0
+        type(meta.get("ID")) is not int or meta["ID"] != 0
         or meta.get("Identifier") != "85772NED"
         or meta.get("Source") != "CBS."
         or meta.get("Modified") != EXPECTED_MODIFIED
@@ -149,7 +149,8 @@ def validate_rows(bodies: dict[str, dict[str, Any]]) -> dict[str, Any]:
     if len(properties) != 6 or any(type(x) is not dict for x in properties):
         raise CBSOutputBlocked("changed CBS data-property list")
     if (
-        [(x.get("ID"), x.get("Type"), x.get("Key")) for x in properties]
+        any(type(x.get("ID")) is not int for x in properties)
+        or [(x.get("ID"), x.get("Type"), x.get("Key")) for x in properties]
         != [(0, "TimeDimension", "Perioden"), (1, "TopicGroup", ""),
             (2, "Topic", "Prijsindex_1"),
             (3, "Topic", "OntwikkelingTOVEenJaarEerder_2"),
@@ -158,8 +159,10 @@ def validate_rows(bodies: dict[str, dict[str, Any]]) -> dict[str, Any]:
         or properties[4].get("Title") != "Outputprijsindex bouwkosten excl. btw"
         or properties[2].get("Unit") != "2021=100"
         or properties[5].get("Unit") != "2021=100"
-        or properties[2].get("ParentID") != 1
-        or properties[5].get("ParentID") != 4
+        or type(properties[2].get("ParentID")) is not int
+        or properties[2]["ParentID"] != 1
+        or type(properties[5].get("ParentID")) is not int
+        or properties[5]["ParentID"] != 4
     ):
         raise CBSOutputBlocked("CBS VAT/field/unit/topic mapping changed")
     if (
@@ -182,7 +185,7 @@ def validate_rows(bodies: dict[str, dict[str, Any]]) -> dict[str, Any]:
         (b, 41, "2026KW02", 133.4, 4.4),
     ]:
         if (
-            row.get("ID") != expected_id
+            type(row.get("ID")) is not int or row["ID"] != expected_id
             or row.get("Perioden") != quarter
             or type(row.get("Prijsindex_1")) not in {int, float}
             or type(row.get("Prijsindex_3")) not in {int, float}
