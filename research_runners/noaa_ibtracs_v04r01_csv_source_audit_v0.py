@@ -36,6 +36,18 @@ PINNED_COLUMNS = 174
 MAX_RECORDS = 1_000_000
 REQUIRED = ("SID", "SEASON", "BASIN", "ISO_TIME", "LAT", "LON", "WMO_WIND", "USA_WIND", "TRACK_TYPE")
 ISO_TIME = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
+# NOAA v04r01 column documentation uses "deg north" / "deg_east".
+# CF spellings are also accepted by this source-format gate, but radians,
+# metres and the opposite axes must never pass as valid geographic degrees.
+COORD_UNITS = {
+    "LAT": frozenset(("degnorth", "degreesnorth")),
+    "LON": frozenset(("degeast", "degreeseast")),
+}
+
+
+def _coord_unit(text: str) -> str:
+    """Normalize harmless formatting, never the direction or angle unit."""
+    return re.sub(r"[\s_-]+", "", text.casefold())
 
 
 class IBTrACSAuditError(ValueError):
@@ -58,8 +70,11 @@ def audit_rows(reader: object, *, expected_columns: int = PINNED_COLUMNS,
     if len(units) != expected_columns or units[0].strip():
         raise IBTrACSAuditError("original column-units row missing or malformed")
     index = {key: header.index(key) for key in REQUIRED}
-    if not units[index["LAT"]].strip() or not units[index["LON"]].strip():
-        raise IBTrACSAuditError("native coordinate units missing")
+    for field, accepted in COORD_UNITS.items():
+        if _coord_unit(units[index[field]].strip()) not in accepted:
+            raise IBTrACSAuditError(
+                "missing, swapped or unsupported native coordinate units"
+            )
     storm_ids: set[str] = set()
     count = over_180 = 0
     for row in rows:
