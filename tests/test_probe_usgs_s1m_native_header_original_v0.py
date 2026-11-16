@@ -33,7 +33,7 @@ def sample_header(*, width=10000, height=10000, big=False):
 
 class Reply:
     def __init__(self, raw=None, *, status=206, url=s.URL,
-                 content_range="bytes 0-65535/447000000", media="application/octet-stream",
+                 content_range="bytes 0-65535/447032917", media="application/octet-stream",
                  content_length="65536", encoding="identity"):
         self.raw = sample_header() if raw is None else raw
         self.status = status
@@ -113,13 +113,14 @@ class USGSS1MOriginalPrefixTests(unittest.TestCase):
         def opener(req, timeout):
             calls.append((req.full_url, req.get_method(), req.headers.get("Range"), timeout))
             return response
-        result = s.observe(
-            open_request=opener,
-            clock=lambda: datetime(2026, 11, 16, 18, 0, tzinfo=timezone.utc))
+        with patch.object(s, "EXPECTED_ORIGINAL_PREFIX_SHA256", hashlib.sha256(source).hexdigest()):
+            result = s.observe(
+                open_request=opener,
+                clock=lambda: datetime(2026, 11, 16, 18, 0, tzinfo=timezone.utc))
         self.assertEqual(calls, [(s.URL, "GET", s.BYTE_RANGE, s.TIMEOUT)])
         self.assertEqual(result["original_prefix_sha256"], hashlib.sha256(source).hexdigest())
         self.assertEqual(result["original_prefix_bytes"], 65536)
-        self.assertEqual(result["original_total_bytes_advertised_not_full_sha"], 447000000)
+        self.assertEqual(result["original_total_bytes_advertised_not_full_sha"], 447032917)
         self.assertEqual(response.read_calls, 1)
         self.assertFalse(result["full_original_tiff_sha256_verified"])
         self.assertFalse(result["original_source_lineage_geopackage_verified"])
