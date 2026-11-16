@@ -71,6 +71,7 @@ class TestOriginalPdfTextDiff(unittest.TestCase):
         r=run(p,p)
         self.assertTrue(r["normalized_extracted_text_equal"])
         self.assertFalse(r["text_content_disagreement_detected"])
+        self.assertEqual(r["changed_extracted_text_page_numbers_1_based"],[])
         self.assertTrue(r["source_pdf_bytes_are_different"])
         self.assertFalse(r["historical_source_version_safely_selected"])
         self.assertFalse(r["source_admitted"])
@@ -82,6 +83,8 @@ class TestOriginalPdfTextDiff(unittest.TestCase):
         self.assertFalse(r["normalized_extracted_text_equal"])
         self.assertTrue(r["text_content_disagreement_detected"])
         self.assertEqual(len(r["pdf_content_profiles"]),2)
+        self.assertEqual(r["changed_extracted_text_page_numbers_1_based"],[1])
+        self.assertEqual(r["changed_extracted_text_page_count"],1)
 
     def test_textless_scanned_pdf_is_not_falsely_equal(self):
         x=text_profile([""])
@@ -89,6 +92,7 @@ class TestOriginalPdfTextDiff(unittest.TestCase):
         r=run(x,y)
         self.assertIsNone(r["normalized_extracted_text_equal"])
         self.assertIsNone(r["text_content_disagreement_detected"])
+        self.assertIsNone(r["changed_extracted_text_page_numbers_1_based"])
         self.assertFalse(r["both_original_pdfs_have_extractable_text"])
 
     def test_output_leaks_no_pdf_text_or_station_id(self):

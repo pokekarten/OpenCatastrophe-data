@@ -49,6 +49,7 @@ def text_profile(pages: list[str]) -> dict:
         raise Blocked("PDF document text exceeds safe cap")
     text = normalized_text("\n".join(pages))
     nonempty_pages = sum(bool(normalized_text(p)) for p in pages)
+    page_text_sha256 = [sha256(normalized_text(p).encode("utf-8")) for p in pages]
     # Key phrases are only signals that a human should review the matched
     # passage and its context. They are NOT verified 2020 measurements.
     signals = {
@@ -63,6 +64,7 @@ def text_profile(pages: list[str]) -> dict:
         "pages_with_extracted_text": nonempty_pages,
         "normalized_extracted_text_characters": len(text),
         "normalized_extracted_text_sha256": sha256(text.encode("utf-8")),
+        "normalized_page_text_sha256_internal": page_text_sha256,
         "has_substantive_extracted_text": len(text) >= 80,
         "possible_review_subjects": signals,
     }
@@ -125,6 +127,18 @@ def compare_pdf_text(original: bytes, catalogue: bytes, *,
     enough_text = all(x.get("has_substantive_extracted_text") is True for x in profiles)
     same_text = (profiles[0].get("normalized_extracted_text_sha256") ==
                  profiles[1].get("normalized_extracted_text_sha256")) if enough_text else None
+    # A changed page index does not reveal site/coordinate text. It identifies
+    # the exact reviewer scope; compare at fixed original PDF page order.
+    page_hashes_a = profiles[0].get("normalized_page_text_sha256_internal", [])
+    page_hashes_b = profiles[1].get("normalized_page_text_sha256_internal", [])
+    if (len(page_hashes_a) != profiles[0].get("pdf_page_count")
+            or len(page_hashes_b) != profiles[1].get("pdf_page_count")):
+        raise Blocked("PDF page-text digests inconsistent with page counts")
+    changed_pages = [
+        i + 1 for i in range(max(len(page_hashes_a), len(page_hashes_b)))
+        if i >= len(page_hashes_a) or i >= len(page_hashes_b)
+        or page_hashes_a[i] != page_hashes_b[i]
+    ]
     return {
         "profile": "meteofrance-ciara2020-station-pdf-text-comparison-v0",
         "department": DEP,
@@ -143,6 +157,8 @@ def compare_pdf_text(original: bytes, catalogue: bytes, *,
         "both_original_pdfs_have_extractable_text": enough_text,
         "normalized_extracted_text_equal": same_text,
         "text_content_disagreement_detected": (not same_text) if same_text is not None else None,
+        "changed_extracted_text_page_numbers_1_based": changed_pages if enough_text else None,
+        "changed_extracted_text_page_count": len(changed_pages) if enough_text else None,
         "visual_pdf_image_content_compared": False,
         "pdf_page_text_or_station_identity_published": False,
         "february_2020_site_instrument_height_verified": False,
