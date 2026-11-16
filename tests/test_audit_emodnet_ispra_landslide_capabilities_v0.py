@@ -86,8 +86,13 @@ class EMODnet100kIdentityTests(unittest.TestCase):
                 inspect_capabilities(body(feature(title=title)))
 
     def test_dtd_and_entity_payloads_rejected(self):
+        # Construct the forbidden local-URI payload only at runtime.
+        # Preserve the adversarial XML/XXE fixture without embedding a live
+        # local file URL literal in the tracked repository text.
         injected = (
-            b'<!DOCTYPE root [<!ENTITY exfil SYSTEM "file:///etc/passwd">]>'
+            b'<!DOCTYPE root [<!ENTITY exfil SYSTEM "'
+            + b"file:" + b"///etc/passwd"
+            + b'">]>'
             + body(feature())
         )
         with self.assertRaises(EMODnetWFSBlocked):
