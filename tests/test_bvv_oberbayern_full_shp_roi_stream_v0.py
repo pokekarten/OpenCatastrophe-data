@@ -258,6 +258,28 @@ class BavarianFullOriginalSyntheticTests(unittest.TestCase):
             self.assertTrue(reader.complete())
             delay.assert_called_once_with(5)
 
+    def test_oversized_http206_segment_is_not_retried_or_accepted(self):
+        # An extra byte is a protocol/source-identity error, NOT a short
+        # transport failure. In particular the next exact response must not
+        # convert the first malformed payload into an accepted segment.
+        calls=[]
+        responses=[(b"Z"*9,("etag","date")),(b"X"*8,("etag","date"))]
+        def source(start,end):
+            calls.append((start,end))
+            return responses.pop(0)
+        with (patch.object(p,"START",100),patch.object(p,"END",107),
+              patch.object(p,"READ_BYTES",8),
+              patch.object(p,"MAX_ORIGINAL_SEGMENT_BYTES",8),
+              patch.object(p.time,"sleep") as pause):
+            reader=p.VerifiedOriginalSegmentStream()
+            reader._read_exact_segment_once=source
+            with self.assertRaisesRegex(p.FullSHPBlocked,"oversized original ZIP"):
+                reader.read(8)
+            self.assertEqual(calls,[(100,107)])
+            self.assertEqual(reader.requests_verified,0)
+            self.assertEqual(reader.http_bytes_verified,0)
+            pause.assert_not_called()
+
     def test_non_retryable_http429_and_bad_source_range_fail_immediately(self):
         calls=[]
         def policy(start,end):
