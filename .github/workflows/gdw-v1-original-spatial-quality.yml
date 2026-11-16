@@ -41,11 +41,16 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install pinned spatial source readers
-        run: python -m pip install --disable-pip-version-check --no-cache-dir --no-input "pyshp==2.3.1" "shapely==2.1.2"
+      - name: Install pinned spatial source and geodesic readers
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir --no-input --only-binary=:all: \
+            "pyshp==2.3.1" "shapely==2.1.2" "pyproj==3.7.2"
+          python -m pip check
 
       - name: Synthetic geometry/ID and publisher evidence regressions
-        run: python -m unittest tests.test_gdw_v1_shapefile_archive_preflight_v0 tests.test_gdw_v1_original_spatial_quality_v0 -v
+        run: |
+          python -m unittest tests.test_gdw_v1_shapefile_archive_preflight_v0 tests.test_gdw_v1_original_spatial_quality_v0 -v
+          python -m unittest tests.test_gdw_v1_invalid_polygons_area_sensitivity_v0 -v
 
       - name: Check one original Figshare GDW v1 ZIP and aggregate GEOS spatial quality
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -55,7 +60,8 @@ jobs:
           umask 077
           original="$RUNNER_TEMP/GDW_v1_0_shp.zip"
           aggregate="$RUNNER_TEMP/gdw-v1-spatial-aggregate.json"
-          trap 'rm -f "$original" "$aggregate"' EXIT
+          sensitivity="$RUNNER_TEMP/gdw-v1-invalid-area-aggregate.json"
+          trap 'rm -f "$original" "$aggregate" "$sensitivity"' EXIT
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 240 --retry 0 \
@@ -140,4 +146,68 @@ jobs:
           print("GDW original independent GEOS family diagnostic, source-only, "
                 "no model admission:", json.dumps(a, sort_keys=True))
           PY
-          echo "GDW source spatial diagnostic complete; no model admission or source bytes exported."
+          # One already-reviewed exact original ZIP is reused IN THE SAME
+          # trusted-main step. A second provider fetch or public artifact is
+          # prohibited. This adds independent numeric what-if diagnostics,
+          # NOT a repair or an insured-exposure/model-input promotion.
+          python research_runners/gdw_v1_invalid_polygons_area_sensitivity_v0.py \
+            --original-zip "$original" > "$sensitivity"
+          python - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+          from research_runners.gdw_v1_original_spatial_source_receipt_v0 import (
+              GDW_V1_ORIGINAL_SPATIAL_RECEIPT_V0 as e,
+          )
+          r = json.loads((Path(os.environ["RUNNER_TEMP"]) /
+                          "gdw-v1-invalid-area-aggregate.json").read_text())
+          assert r["source_id"] == "globaldamwatch.gdw.v1.0"
+          assert r["source_original_full_zip_sha256"] == e["original_file_sha256"]
+          assert r["original_archive_bytes"] == 69745749
+          assert r["original_invalid_polygon_count"] == e["invalid_reservoir_polygons"] == 221
+          assert r["original_valid_polygon_count"] == e["valid_reservoir_polygons"] == 35074
+          comparable = r["geodesic_comparable_invalid_polygons"]
+          excluded = r["excluded_antimeridian_or_polar_cases"]
+          assert (type(comparable) is int and type(excluded) is int
+                  and 0 <= comparable <= 221 and 0 <= excluded <= 221
+                  and comparable + excluded == 221)
+          assert r["complete_geodesic_population_evaluated"] is (excluded == 0)
+          assert r["counterfactual_methods"] == [
+              "GEOS make_valid(linework)", "GEOS buffer(0)"]
+          for k in ("linework_area_km2_sum", "buffer_zero_area_km2_sum",
+                    "absolute_per_feature_area_delta_km2_sum",
+                    "footprint_symmetric_difference_km2_sum",
+                    "intersection_area_km2_sum", "union_area_km2_sum"):
+              value = r[k]
+              assert type(value) in (int, float) and math.isfinite(value) and value >= 0, (
+                  "BLOCKED: nonfinite or negative GDW counterfactual area")
+          jaccard = r["area_weighted_jaccard_of_alternatives"]
+          assert jaccard is None or (
+              type(jaccard) in (int, float) and math.isfinite(jaccard)
+              and 0 <= jaccard <= 1 + 1e-8)
+          assert r["source_geometries_or_ids_exported"] is False
+          assert r["source_geometry_overwritten_or_repaired"] is False
+          assert r["independent_gis_engine_checked"] is False
+          assert r["CAT_model_input_approved"] is False
+          assert r["method_difference_is_not_a_ground_truth_error"] is True
+          # Output only curated aggregate evidence; never original source
+          # GDW_ID, coordinate, polygons, untrusted error/GEOS explanation.
+          public_keys = (
+              "source_id", "original_invalid_polygon_count",
+              "geodesic_comparable_invalid_polygons",
+              "excluded_antimeridian_or_polar_cases",
+              "linework_area_km2_sum", "buffer_zero_area_km2_sum",
+              "absolute_per_feature_area_delta_km2_sum",
+              "footprint_symmetric_difference_km2_sum",
+              "material_footprint_disagreement_over_1pct_count",
+              "equal_area_but_material_footprint_disagreement_count",
+              "paired_barrier_coverage_disagreement",
+              "area_weighted_jaccard_of_alternatives",
+          )
+          print("GDW original invalid polygon two-method counterfactual, "
+                "research-only not model-admitted:",
+                json.dumps({k: r[k] for k in public_keys},
+                           sort_keys=True, allow_nan=False))
+          PY
+          echo "GDW source spatial and invalid-area diagnostics complete; original source bytes removed at job exit."
