@@ -95,6 +95,21 @@ class USGSS1MOriginalPrefixTests(unittest.TestCase):
                 self.assertEqual(result["original_one_meter_scale_verified"], not big)
                 self.assertFalse(result["native_raster_science_admitted"])
 
+    def test_wrong_original_geokey_nodata_or_pixel_scale_block(self):
+        negatives = [
+            (6014, "<H", 6351),  # altered ProjectedCSTypeGeoKey
+            (6022, "<H", 5702),  # altered VerticalCSTypeGeoKey
+            (5005, "<B", ord("8")),  # -999998 in a copied NoData tag
+            (4000, "<d", 2.0),  # fabricated 2-meter horizontal cell
+            (6016, "<H", 3072),  # duplicate GeoKey identifier
+        ]
+        for pos, kind, value in negatives:
+            with self.subTest(pos=pos, value=value):
+                original = bytearray(sample_header())
+                struct.pack_into(kind, original, pos, value)
+                with self.assertRaises(s.Blocked):
+                    s.first_ifd(bytes(original))
+
     def test_incomplete_tiff_ifd_stays_explicitly_unverified(self):
         raw = bytearray(sample_header())
         struct.pack_into("<I", raw, 4, s.BYTE_COUNT + 1)
