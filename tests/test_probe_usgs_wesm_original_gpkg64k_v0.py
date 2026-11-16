@@ -78,8 +78,9 @@ class OriginalGPKGTests(unittest.TestCase):
             calls.append((req.full_url, req.get_method(),
                           req.headers.get("Range"), timeout))
             return response
-        out = p.observe(opener=opener,
-            clock=lambda: datetime(2026,11,16,22,20,tzinfo=timezone.utc))
+        with patch.object(p, "EXPECTED_TOTAL", 20480000):
+            out = p.observe(opener=opener,
+                clock=lambda: datetime(2026,11,16,22,20,tzinfo=timezone.utc))
         self.assertEqual(calls, [(p.URL, "GET", p.RANGE, p.TIMEOUT)])
         self.assertEqual(response.reads, 1)
         self.assertEqual(out["original_prefix_sha256"], sha256(response.raw).hexdigest())
@@ -93,6 +94,14 @@ class OriginalGPKGTests(unittest.TestCase):
                   "original_geo_source_bytes_persisted",
                   "neon_write_performed", "cat_model_input_approved"):
             self.assertIs(out[k], False)
+
+    def test_advertised_original_gpkg_total_is_strictly_pinned(self):
+        self.assertEqual(p.EXPECTED_TOTAL, 3827232768)
+        self.assertEqual(p.COUNT, 65536)
+        response = Response()
+        with self.assertRaisesRegex(p.Blocked, "full-object size drift"):
+            p.observe(opener=lambda req, timeout: response)
+        self.assertEqual(response.reads, 0)
 
     def test_http_200_ignored_range_rejected_before_source_body(self):
         response = Response(status=200)
