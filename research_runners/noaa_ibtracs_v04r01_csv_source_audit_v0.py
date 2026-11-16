@@ -43,6 +43,10 @@ COORD_UNITS = {
     "LAT": frozenset(("degnorth", "degreesnorth")),
     "LON": frozenset(("degeast", "degreeseast")),
 }
+# v04r01 reports WMO_WIND and USA_WIND in knots, but DOES NOT
+# harmonize the WMO reporting agencies' wind averaging intervals.
+WIND_FIELDS = ("WMO_WIND", "USA_WIND")
+WIND_NUMERIC = re.compile(r"[0-9]+(?:\.[0-9]+)?\Z")
 
 
 def _coord_unit(text: str) -> str:
@@ -75,6 +79,12 @@ def audit_rows(reader: object, *, expected_columns: int = PINNED_COLUMNS,
             raise IBTrACSAuditError(
                 "missing, swapped or unsupported native coordinate units"
             )
+    # These are explicitly knots in the provider's 2025 v04r01 column
+    # documentation. Unit checks DO NOT equalize 1-, 3- or 10-minute winds.
+    wind_index = {name: header.index(name) for name in WIND_FIELDS}
+    if any(units[wind_index[name]].strip().casefold() != "knots"
+           for name in WIND_FIELDS):
+        raise IBTrACSAuditError("native IBTrACS wind unit must be knots")
     storm_ids: set[str] = set()
     count = over_180 = 0
     for row in rows:
@@ -100,6 +110,23 @@ def audit_rows(reader: object, *, expected_columns: int = PINNED_COLUMNS,
             raise IBTrACSAuditError("out-of-domain original coordinate")
         if lon > 180:
             over_180 += 1
+        # Blank native values are documented missingness, not zero wind.
+        # USA_WIND has a provider-defined 0..300 knots domain. A WMO
+        # upper bound is deliberately not inferred across reporting agencies.
+        for name, column in wind_index.items():
+            native = row[column].strip()
+            if not native:
+                continue
+            if not WIND_NUMERIC.fullmatch(native):
+                raise IBTrACSAuditError("non-numeric or invalid native wind speed")
+            try:
+                speed = float(native)
+            except (ValueError, OverflowError) as exc:
+                raise IBTrACSAuditError("invalid native wind speed") from exc
+            if not math.isfinite(speed) or speed < 0 or (
+                name == "USA_WIND" and speed > 300
+            ):
+                raise IBTrACSAuditError("out-of-domain native wind speed")
     if not count:
         raise IBTrACSAuditError("no source observation rows")
     return {"data_rows": count, "distinct_storm_ids": len(storm_ids),
