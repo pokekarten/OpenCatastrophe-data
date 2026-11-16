@@ -16,7 +16,7 @@ CASES = {
     "nl.knmi.kdp.hourly-validated-edr.v1": ("blocked_credentials", "api_key", "unknown"),
     "uk.metoffice.midas-open-hourly.v202607": ("blocked_registration", "provider_account", "verified"),
     "eu.ecad.meteogate.nonblended-stations.2026": ("restricted_by_terms", "none", "restricted"),
-    "us.noaa.nhc.hurdat2.atlantic.2026-09": ("documented_only", "none", "unknown"),
+    "us.noaa.nhc.hurdat2.atlantic.2026-09": ("documented_only", "none", "verified"),
 }
 
 
@@ -68,7 +68,18 @@ class OfficialEuropeWindAndNHCSourceAccessTests(unittest.TestCase):
         self.assertEqual(source["probe_contract"]["mode"], "none")
         self.assertIn("IBTrACS", source["response_contract"]["scientific_semantics"])
         self.assertIn("not independent", source["response_contract"]["scientific_semantics"])
-        self.assertEqual(source["rights_and_policy"]["commercial_automation_status"], "unknown")
+        # NOAA's general government-data reuse ceiling is a separate
+        # dimension from service automation, acquisition, and model admission.
+        rights = source["rights_and_policy"]
+        self.assertEqual(rights["dataset_rights_status"], "verified")
+        self.assertEqual(rights["redistribution_status"], "allowed")
+        self.assertEqual(rights["api_terms_status"], "unknown")
+        self.assertEqual(rights["commercial_automation_status"], "unknown")
+        self.assertEqual(source["implementation_decision"], "document_only")
+        self.assertEqual(source["probe_contract"]["mode"], "none")
+        self.assertIsNone(source["probe_contract"]["operation"])
+        self.assertEqual(source["request_contract"]["path_templates"][-1],
+                         "/data/hurdat/hurdat2-1851-2025-092326.txt")
 
     def test_contracts_cannot_be_silently_promoted(self):
         import copy
