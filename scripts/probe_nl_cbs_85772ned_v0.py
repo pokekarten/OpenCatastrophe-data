@@ -161,6 +161,8 @@ def validate_rows(bodies: dict[str, dict[str, Any]]) -> dict[str, Any]:
         or properties[5].get("Unit") != "2021=100"
         or type(properties[2].get("ParentID")) is not int
         or properties[2]["ParentID"] != 1
+        or type(properties[3].get("ParentID")) is not int
+        or properties[3]["ParentID"] != 1
         or type(properties[5].get("ParentID")) is not int
         or properties[5]["ParentID"] != 4
     ):
