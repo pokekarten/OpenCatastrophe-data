@@ -129,6 +129,19 @@ class USGSS1MOriginalPrefixTests(unittest.TestCase):
         self.assertFalse(result["neon_write_performed"])
         self.assertNotIn("II*\0", str(result))
 
+    def test_pinned_genuine_original_receipt_blocks_synthetic_drift(self):
+        self.assertEqual(
+            s.EXPECTED_ORIGINAL_PREFIX_SHA256,
+            "56d8d147056fcd28ad916799cd6b917c57d9d08b3e07dfe06931f2a4d5edb2f2")
+        self.assertEqual(s.EXPECTED_ORIGINAL_TOTAL_BYTES, 447032917)
+        with self.assertRaisesRegex(s.Blocked, "prefix SHA"):
+            s.observe(open_request=lambda req, timeout: Reply())
+        receipt = (s.ROOT /
+                   "docs/research/usgs-s1m-florida-original-tiff-prefix-receipt-20261116.md"
+                   ).read_text(encoding="utf-8")
+        self.assertIn(s.EXPECTED_ORIGINAL_PREFIX_SHA256, receipt)
+        self.assertIn("43948359780", receipt)
+
     def test_wrong_http_200_does_not_read_body_at_all(self):
         result = Reply(status=200)
         with self.assertRaises(s.Blocked):
