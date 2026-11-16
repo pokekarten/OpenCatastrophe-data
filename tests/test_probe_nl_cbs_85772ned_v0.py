@@ -196,6 +196,35 @@ class CBSOutputIndexTests(unittest.TestCase):
                     validate_rows(d)
         self.assertEqual(validate_rows(fixture())["recent_quarter"], "2026KW02")
 
+    def test_malformed_odata_value_arrays_and_table_title_fail_closed(self):
+        # All six original bodies must retain OData array shape. In
+        # particular, a provider API drift must raise CBSOutputBlocked,
+        # never an accidental TypeError or KeyError in validate_rows().
+        for source in fixture():
+            for wrong in (None, {}, False, "not-an-array"):
+                d = fixture()
+                d[source]["value"] = wrong
+                with self.subTest(source=source, malformed=repr(wrong)):
+                    with self.assertRaises(CBSOutputBlocked):
+                        validate_rows(d)
+            d = fixture()
+            d[source] = None
+            with self.subTest(source=source, malformed="null-body"):
+                with self.assertRaises(CBSOutputBlocked):
+                    validate_rows(d)
+            d = fixture()
+            del d[source]
+            with self.subTest(source=source, malformed="missing-body"):
+                with self.assertRaises(CBSOutputBlocked):
+                    validate_rows(d)
+        for wrong in (None, [], {}, 2021, True):
+            d = fixture()
+            d["table_info"]["value"][0]["Title"] = wrong
+            with self.subTest(title=repr(wrong)):
+                with self.assertRaises(CBSOutputBlocked):
+                    validate_rows(d)
+        self.assertEqual(validate_rows(fixture())["recent_quarter"], "2026KW02")
+
     def test_bad_http_status_redirect_encoding_or_media_fails_closed(self):
         for opts in (
             {"status": 206}, {"wrong_url": True},
