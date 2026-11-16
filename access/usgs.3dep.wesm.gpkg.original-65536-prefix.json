@@ -9,7 +9,7 @@
   "status": "probe_ready",
   "documentation_url": "https://www.usgs.gov/3d-elevation-program/3dep-spatial-metadata",
   "service_root": "https://rockyweb.usgs.gov",
-  "api_version": "One original USGS WESM.gpkg current source object observed 2026-11-16; exact provider HTTP206 full-object Content-Range total 3827232768 bytes, no source body read in first discovery",
+  "api_version": "Original WESM.gpkg 2026-11-16T22:19:06.461974Z source exact: first 65536-byte SHA256 0344f898d4946a915ca0c3a5d0078fd72dc222179c54d8e9413a067c8ce5be88; original full object reported total 3827232768 bytes, whole original file SHA unknown",
   "access_scope": [
     "sample"
   ],
@@ -45,7 +45,7 @@
     "max_sample_bytes": 65536,
     "retry_policy": "none",
     "rate_limit_notes": "At most one exact anonymous USGS WESM GeoPackage 64KiB Range GET per explicitly triggered research PR workflow, no automated schedule, retries or page/range follow-ups. No provider bytes committed or uploaded to Git, Neon or workflow artifacts. Logs contain public URL, original digest, total advertised byte length, UTC and static SQLite header integers only.",
-    "mutability_notes": "The publisher says WESM is newly published almost daily. A successful source-original 65536-byte digest and Content-Range will identify one point-in-time prefix, not a complete original GeoPackage SHA or a stable versioned asset. A subsequent changed prefix/total shall fail closed when a digest is pinned; never auto-approve a refreshed source. The previous 2026-11-16 WESM.csv source full SHA-256 a5f56b54f26767311156116b4721d477bf5d7b6069056117127898852d2d1b83 belongs to CSV bytes ONLY, not the GeoPackage. First source-exact 206 attempts (public GitHub Actions jobs 133652534037 and 133653353855) returned original advertised object total 3827232768 bytes. Both were intentionally blocked BEFORE any original body read by the initial 1GiB safety ceiling. The new guard accepts ONLY this exact advertised total, not a generic increase to 4GiB, while still reading no more than a single original 65536-byte range. No full-object download, SQLite query, polygon data or model admission is authorized."
+    "mutability_notes": "The publisher says WESM is newly published almost daily. A successful source-original 65536-byte digest and Content-Range will identify one point-in-time prefix, not a complete original GeoPackage SHA or a stable versioned asset. A subsequent changed prefix/total shall fail closed when a digest is pinned; never auto-approve a refreshed source. The previous 2026-11-16 WESM.csv source full SHA-256 a5f56b54f26767311156116b4721d477bf5d7b6069056117127898852d2d1b83 belongs to CSV bytes ONLY, not the GeoPackage. First source-exact 206 attempts (public GitHub Actions jobs 133652534037 and 133653353855) returned original advertised object total 3827232768 bytes. Both were intentionally blocked BEFORE any original body read by the initial 1GiB safety ceiling. The new guard accepts ONLY this exact advertised total, not a generic increase to 4GiB, while still reading no more than a single original 65536-byte range. No full-object download, SQLite query, polygon data or model admission is authorized. Real source-original GitHub Actions run 43968769537 job 133655199029 at 2026-11-16T22:19:06.461974Z produced exact original 65536-byte body SHA-256 0344f898d4946a915ca0c3a5d0078fd72dc222179c54d8e9413a067c8ce5be88 and Content-Range bytes 0-65535/3827232768. The version-frozen runner now checks this independent source prefix SHA before interpreting SQLite bytes and rejects changed source bytes or total. No full object, polygon or SQLite table was requested."
   },
   "rights_and_policy": {
     "dataset_rights_status": "verified",
@@ -64,7 +64,8 @@
       "Actual original 65536-byte body SHA-256, retrieval UTC, code/contract SHA-256 and original request fingerprint, with no source bytes retained",
       "Strict original SQLite header magic 'SQLite format 3', page-size and GeoPackage application_id 0x47504b47 plus bounded metadata; no provider SQLite original table or geometry parse",
       "full_original_wesm_gpkg_sha256_verified=false; source_geo_srs_verified=false; original_gpkg_features_verified=false; csv_gpkg_version_parity_verified=false; florida_s1m_tile_workunit_intersection_verified=false; model_input_approved=false",
-      "Before reading 65536 original bytes, reject any original full-object Content-Range total other than 3827232768; this exact total was observed in prior blocked provider HTTP206 metadata-only jobs."
+      "Before reading 65536 original bytes, reject any original full-object Content-Range total other than 3827232768; this exact total was observed in prior blocked provider HTTP206 metadata-only jobs.",
+      "Genuine 2026-11-16 original WESM GeoPackage 65536-byte prefix SHA256 0344f898d4946a915ca0c3a5d0078fd72dc222179c54d8e9413a067c8ce5be88 MUST match source read, after exact total bytes 3827232768 guard. This original prefix is NOT a full GeoPackage SHA."
     ]
   },
   "implementation_decision": "build_adapter_now",
@@ -75,7 +76,8 @@
     "https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map",
     "https://www.geopackage.org/spec/",
     "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43968011136/job/133652534037",
-    "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43968198021/job/133653353855"
+    "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43968198021/job/133653353855",
+    "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43968769537/job/133655199029"
   ],
-  "notes": "A separate original WESM.gpkg object identity from the previously verified WESM.csv at the same source_id. The official provider link and static OGC SQLite GeoPackage header semantics are T0 only until a real exact 64KiB provider result is obtained. No approved model input, no polygons in Git/Neon, and no inference of geographical intersection with Florida S1M tile. Original GeoPackage reported 3827232768 bytes (~3.56GiB) on GitHub 2026-11-16; new gate deliberately remains partial 64KiB, with no full original GeoPackage acquisition approved."
+  "notes": "A separate original WESM.gpkg object identity from the previously verified WESM.csv at the same source_id. The official provider link and static OGC SQLite GeoPackage header semantics are T0 only until a real exact 64KiB provider result is obtained. No approved model input, no polygons in Git/Neon, and no inference of geographical intersection with Florida S1M tile. Original GeoPackage reported 3827232768 bytes (~3.56GiB) on GitHub 2026-11-16; new gate deliberately remains partial 64KiB, with no full original GeoPackage acquisition approved. Authentic source-first-page receipt and scientific boundaries are in docs/research/usgs-wesm-gpkg-original-64k-receipt-20261116.md. Source whole 3.56GiB GeoPackage cannot be assumed eligible for automatic download; future bounded spatial query needs separate review."
 }
