@@ -29,11 +29,11 @@ def sample_header(*, width=10000, height=10000, big=False):
         struct.pack_into("<2sHHHQ", raw, 0, b"II", 43, 8, 0, 16)
         struct.pack_into("<Q", raw, 16, 4)
         rows = [(256, 16, 1, width), (257, 16, 1, height),
-                (34735, 3, 8, 5000), (42113, 2, 8, 6000)]
+                (34735, 3, 8, 5000), (42113, 2, 9, 6000)]
         for i, row in enumerate(rows):
             struct.pack_into("<HHQQ", raw, 24 + 20 * i, *row)
         struct.pack_into("<8H", raw, 5000, 1, 1, 0, 1, 3072, 0, 1, 6350)
-        raw[6000:6008] = b"-999999\\x00".replace(b"\\x00", b"\x00")
+        raw[6000:6009] = b"-999999\\x00\\x00".replace(b"\\x00", b"\x00")
     return bytes(raw)
 
 
