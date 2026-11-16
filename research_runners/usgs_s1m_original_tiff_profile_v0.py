@@ -29,6 +29,14 @@ READ_CHUNK = 1024 * 1024
 LOWER_HEX_SHA = re.compile(r"[0-9a-f]{64}\Z")
 
 
+# Exact frozen TNMAccess WGS84 product bbox, not native Albers coordinates.
+FROZEN_PRODUCT_BBOX_WGS84 = (
+    -81.0028601420002, 25.92070859857935,
+    -80.8895404313893, 26.025030076412904,
+)
+MAX_BBOX_EDGE_DRIFT_DEGREES = 0.01
+
+
 class Blocked(ValueError):
     """Reject any input or raster metadata outside the frozen research scope."""
 
@@ -111,6 +119,47 @@ def check_native_header(profile: object) -> dict:
     }
 
 
+def check_frozen_florida_footprint(profile: object) -> dict:
+    """Cross-check a native Albers tile against one frozen WGS84 catalogue bbox.
+
+    A passing caller-provided profile does not attest original source bytes,
+    source-project lineage, elevation pixels or reuse permission.
+    """
+    check_native_header(profile)
+    try:
+        from rasterio.warp import transform_bounds
+    except ImportError as exc:
+        raise Blocked("pinned Rasterio/PROJ required for spatial source check") from exc
+    west_native = profile["origin_x"]
+    north_native = profile["origin_y"]
+    east_native = west_native + profile["width"] * profile["pixel_x"]
+    south_native = north_native + profile["height"] * profile["pixel_y"]
+    if not (west_native < east_native and south_native < north_native):
+        raise Blocked("native S1M raster bounds are reversed or degenerate")
+    try:
+        bbox = transform_bounds(
+            "EPSG:6350", "EPSG:4326", west_native, south_native,
+            east_native, north_native, densify_pts=21,
+        )
+    except (ValueError, RuntimeError, OverflowError) as exc:
+        raise Blocked("cannot transform S1M Albers tile bounds into WGS84") from exc
+    if (
+        len(bbox) != 4 or not all(math.isfinite(x) for x in bbox)
+        or not (bbox[0] < bbox[2] and bbox[1] < bbox[3])
+        or any(
+            abs(observed - frozen) > MAX_BBOX_EDGE_DRIFT_DEGREES
+            for observed, frozen in zip(bbox, FROZEN_PRODUCT_BBOX_WGS84)
+        )
+    ):
+        raise Blocked("native raster footprint does not match pinned Florida S1M catalogue bounds")
+    return {
+        "frozen_florida_catalogue_bbox_consistent": True,
+        "bbox_drift_tolerance_degrees": MAX_BBOX_EDGE_DRIFT_DEGREES,
+        "native_raster_provider_origin_independently_attested": False,
+        "native_raster_elevation_pixels_verified": False,
+    }
+
+
 def inspect_original_tiff(path: Path, expected_sha256: str, expected_bytes: int) -> dict:
     """Offline native-header screen after full local byte checksum verification."""
     receipt = check_local_identity(path, expected_sha256, expected_bytes)
@@ -135,6 +184,7 @@ def inspect_original_tiff(path: Path, expected_sha256: str, expected_bytes: int)
                     "origin_x": src.transform.c, "origin_y": src.transform.f,
                 }
                 result = check_native_header(profile)
+                footprint = check_frozen_florida_footprint(profile)
     except (OSError, ValueError, RuntimeError, TypeError, IndexError, AttributeError) as exc:
         if isinstance(exc, Blocked):
             raise
@@ -146,6 +196,7 @@ def inspect_original_tiff(path: Path, expected_sha256: str, expected_bytes: int)
         "identity_status": "caller_supplied_full_file_sha_matches_not_independent_provider_attestation",
         **receipt,
         **result,
+        **footprint,
         "source_provider_original_verified": False,
         "external_bytes_committed_to_git": False,
     }
