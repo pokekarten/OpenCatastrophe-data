@@ -30,7 +30,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Service root:** <https://rockyweb.usgs.gov>
 
-**Api version:** WESM CSV public current mutable daily snapshot, 2026-11-16 reviewed fixed original URL only
+**Api version:** WESM.csv observed 2026-11-16T21:36:52.911364Z; immutable original 32768-byte prefix hash pinned, full mutable WESM original CSV SHA unknown
 
 ## Access scope
 
@@ -84,7 +84,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Rate limit notes:** One original anonymous HTTP 206 partial GET, no retry, no bulk and no scheduled polling; no original WESM CSV record values printed or persisted. Only one active branch with exact reviewed code is allowed to run the live probe.
 
-**Mutability notes:** USGS WESM is reissued almost daily. A successful original 32768-byte prefix SHA256, full-size as advertised from Content-Range, original request SHA256, UTC and code/contract SHA are a point-in-time partial research receipt, NOT full original WESM CSV/GeoPackage identity and cannot support spatial/model claims. A changed next-day prefix is expected to block any frozen later replay rather than being silently accepted.
+**Mutability notes:** USGS WESM is reissued almost daily. A successful original 32768-byte prefix SHA256, full-size as advertised from Content-Range, original request SHA256, UTC and code/contract SHA are a point-in-time partial research receipt, NOT full original WESM CSV/GeoPackage identity and cannot support spatial/model claims. A changed next-day prefix is expected to block any frozen later replay rather than being silently accepted. Historical USGS original Actions run 43961768133 job 133630902143 observed 32768 raw bytes SHA256 19e025e68687bbb2b61d7f58a5eeedfa6d59b29a9ba98aa159556cc801e6eb8d and Content-Range bytes 0-32767/2267051 at 2026-11-16T21:36:52.911364Z. Runner rejects future prefix hash or total-size drift; later same-prefix replay is not a full-file identity proof.
 
 ## Rights and policy
 
@@ -114,6 +114,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - Actual original 32768-byte prefix SHA256, retrieval UTC, code/contract digest and request fingerprint; original body discarded
 - Fail-close on unrecognized CSV UTF-8 header shape or overlong number of columns; no record values logged
 - provider_original_full_csv_sha256_verified=false, original_wesm_geopackage_verified=false, s1m_florida_tile_workunit_intersection_verified=false, cat_model_input_approved=false
+- Historical exact USGS WESM 32768-byte original prefix SHA 19e025e68687bbb2b61d7f58a5eeedfa6d59b29a9ba98aa159556cc801e6eb8d and advertised full-file bytes 2267051 must match for source-original replay; never claim full CSV SHA
 
 **Implementation decision:** build_adapter_now
 
@@ -124,5 +125,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://www.usgs.gov/3d-elevation-program/3dep-spatial-metadata>
 - <https://www.usgs.gov/ngp-standards-and-specifications/wesm-data-dictionary>
 - <https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map>
+- <https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43961768133/job/133630902143>
 
-**Notes:** Separate WESM work-unit source product, not the already verified original S1M Florida GeoTIFF. This live bounded prefix is a research-only technical source check. Independent whole CSV/GPKG hash and original row geometries remain unverified; no Neon write, no original row content persistence and no model approval.
+**Notes:** Separate WESM work-unit source product, not the already verified original S1M Florida GeoTIFF. This live bounded prefix is a research-only technical source check. Independent whole CSV/GPKG hash and original row geometries remain unverified; no Neon write, no original row content persistence and no model approval. First actual original WESM prefix receipt captured in docs/research/usgs-wesm-original-csv-header-receipt-20261116.md, with historical job SHA and provider UTC. No original data rows, complete file, GeoPackage or insurer-model data admitted.
