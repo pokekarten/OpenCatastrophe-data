@@ -310,6 +310,9 @@ def verify_complete_local_v3_zip(
             expected_uncompressed_bytes=expected_csv_uncompressed_bytes,
             expected_crc32=expected_csv_crc32,
             expected_cell_sha256=expected_pixel_sha256,
+            # Enclosing complete ZIP contains following member or descriptor
+            # bytes; its pinned central directory, size and EOCD validate them.
+            require_input_eof=False,
         )
         # Source ZIP data descriptors may be absent or present. When present,
         # both the descriptor CRC and file lengths must agree with central dir.
