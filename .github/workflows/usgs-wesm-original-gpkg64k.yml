@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: USGS WESM original GeoPackage 64KiB prefix
+
+on:
+  pull_request:
+    paths:
+      - "access/usgs.3dep.wesm.gpkg.original-65536-prefix.json"
+      - "access/usgs.3dep.wesm.gpkg.original-65536-prefix.md"
+      - "scripts/probe_usgs_wesm_original_gpkg64k_v0.py"
+      - "tests/test_probe_usgs_wesm_original_gpkg64k_v0.py"
+      - ".github/workflows/usgs-wesm-original-gpkg64k.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    name: Exact WESM GPKG review and synthetic HTTP/SQLite negatives
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout reviewed source commit without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install pinned Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Validate reviewed source contract and deterministic projections
+        run: |
+          python scripts/validate_source_access.py access/usgs.3dep.wesm.gpkg.original-65536-prefix.json
+          python scripts/render_public_views.py --check
+      - name: Offline strict GeoPackage SQLite header and HTTP rejection tests
+        run: python -m unittest tests.test_probe_usgs_wesm_original_gpkg64k_v0 -v
+
+  source-original:
+    # One exact source-original GET only from this named review branch.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/usgs-wesm-gpkg-original-prefix-20261116'
+    needs: offline
+    name: Original USGS WESM GeoPackage one 64KiB HTTP206 sample
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout reviewed source commit without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install pinned Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Read precisely one source-original 65536-byte GeoPackage prefix
+        run: python scripts/probe_usgs_wesm_original_gpkg64k_v0.py --live
