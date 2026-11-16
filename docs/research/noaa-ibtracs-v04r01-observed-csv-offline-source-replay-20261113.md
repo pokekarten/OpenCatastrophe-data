@@ -19,7 +19,7 @@ Existing [executed source findings](executed-source-findings-20261103.md) record
 
 This is the **observed** NOAA IBTrACS historical catalogue, not the separate synthetic STORM v4 admission or a complete physical windfield. The fixed source is historical and may differ from the current provider's rolling revision. The repository's `access/noaa.ncei.ibtracs.v04r01.json` authorizes no execution and references a *different NetCDF distribution*. It must not be reused as a CSV service grant.
 
-NOAA's [v04r01 technical documentation](https://www.ncei.noaa.gov/sites/default/files/2025-04/IBTrACS_version4r01_Technical_Details.pdf) specifies a two-row CSV header (names and units), source-agency differences and provisional/spur track distinctions. This audit checks **only** source identity, data shape, count and coordinate validity; it does not harmonize 1-minute vs 10-minute wind, interpret landfall, select scientific track types or equate positions with insured losses.
+NOAA's [v04r01 technical documentation](https://www.ncei.noaa.gov/sites/default/files/2025-04/IBTrACS_version4r01_Technical_Details.pdf) specifies a two-row CSV header (names and units), source-agency differences and provisional/spur track distinctions. This audit checks **only** source identity, data shape, count, coordinate values and their native axis units; it does not harmonize 1-minute vs 10-minute wind, interpret landfall, select scientific track types or equate positions with insured losses.
 
 ## Offline execution
 
@@ -31,7 +31,7 @@ python research_runners/noaa_ibtracs_v04r01_csv_source_audit_v0.py \
 python -m unittest tests.test_noaa_ibtracs_v04r01_csv_source_audit_v0 -v
 ```
 
-The runner streams SHA-256 calculation without keeping the 333 MB file in memory, rejects any wrong byte count or digest, then parses all CSV rows with original units row and per-row validation. It emits **only aggregated provenance/shape evidence**, with `source_admitted=false` and `model_input_approved=false`. Local input bytes, source rows, storm identifiers and track coordinates are never emitted or committed. This change includes synthetic negative tests; **no new original asset was reacquired or run through the full checker in this contribution**.
+The runner streams SHA-256 calculation without keeping the 333 MB file in memory, rejects any wrong byte count or digest, then parses all CSV rows with original units row and per-row validation. In particular, LAT must identify angular degrees north and LON angular degrees east (accepting the documented `deg north`/`deg_east` and equivalent CF `degrees_north`/`degrees_east` spellings). A non-empty or swapped units label is not enough. This is a source-format guard, not an independent provider-origin, station, wind-averaging or scientific model-admission decision. It emits **only aggregated provenance/shape evidence**, with `source_admitted=false` and `model_input_approved=false`. Local input bytes, source rows, storm identifiers and track coordinates are never emitted or committed. This change includes synthetic negative tests; **no new original asset was reacquired or run through the full checker in this contribution**.
 
 ## Remaining independent gates
 
