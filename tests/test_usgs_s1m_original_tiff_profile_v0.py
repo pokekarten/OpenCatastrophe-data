@@ -61,6 +61,37 @@ class S1MOriginalHeaderTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(s.Blocked):
                 s.check_native_header(value)
 
+    def test_valid_header_at_wrong_coordinates_is_not_frozen_florida_tile(self):
+        # Published CRS/resolution/NoData alone are no geographic identity.
+        profile = nominal()  # Origin is far from the selected Florida tile.
+        self.assertTrue(s.check_native_header(profile)["header_matches_published_horizontal_profile"])
+        try:
+            import rasterio
+        except ImportError:
+            self.skipTest("requires pinned Rasterio/PROJ spatial test")
+        with self.assertRaisesRegex(s.Blocked, "does not match pinned Florida"):
+            s.check_frozen_florida_footprint(profile)
+
+    def test_frozen_florida_spatial_screen_does_not_attest_original_pixels(self):
+        try:
+            import rasterio
+            from rasterio.warp import transform
+        except ImportError:
+            self.skipTest("requires pinned Rasterio/PROJ spatial test")
+        west, south, east, north = s.FROZEN_PRODUCT_BBOX_WGS84
+        xs, ys = transform("EPSG:4326", "EPSG:6350",
+                           [(west + east) / 2], [(south + north) / 2])
+        profile = nominal()
+        profile["origin_x"] = xs[0] - 5000
+        profile["origin_y"] = ys[0] + 5000
+        receipt = s.check_frozen_florida_footprint(profile)
+        self.assertTrue(receipt["frozen_florida_catalogue_bbox_consistent"])
+        self.assertFalse(receipt["native_raster_provider_origin_independently_attested"])
+        self.assertFalse(receipt["native_raster_elevation_pixels_verified"])
+        profile["origin_x"] += 50000
+        with self.assertRaisesRegex(s.Blocked, "does not match pinned Florida"):
+            s.check_frozen_florida_footprint(profile)
+
     def test_full_hash_and_identity_are_required_before_parser(self):
         raw = b"II\x2a\x00" + b"not a real tiff"
         with tempfile.TemporaryDirectory() as tmp:
@@ -99,7 +130,12 @@ class S1MOriginalHeaderTests(unittest.TestCase):
             import numpy as np
             import rasterio
             from rasterio.transform import from_origin
+            from rasterio.warp import transform
             from rasterio.windows import Window
+            west, south, east, north = s.FROZEN_PRODUCT_BBOX_WGS84
+            xs, ys = transform("EPSG:4326", "EPSG:6350",
+                               [(west + east) / 2], [(south + north) / 2])
+            origin_x, origin_y = xs[0] - 5000, ys[0] + 5000
         except ImportError:
             self.skipTest("requires dedicated pinned GDAL job")
         with tempfile.TemporaryDirectory() as tmp:
@@ -107,7 +143,7 @@ class S1MOriginalHeaderTests(unittest.TestCase):
             with rasterio.open(
                 path, "w", driver="GTiff", width=10000, height=10000,
                 count=1, dtype="float32", crs="EPSG:6350",
-                transform=from_origin(600000, 2200000, 1, 1),
+                transform=from_origin(origin_x, origin_y, 1, 1),
                 nodata=-999999, tiled=True, blockxsize=256, blockysize=256,
                 compress="deflate", SPARSE_OK="YES",
             ) as dst:
@@ -115,6 +151,8 @@ class S1MOriginalHeaderTests(unittest.TestCase):
             data = path.read_bytes()
             result = s.inspect_original_tiff(path, hashlib.sha256(data).hexdigest(), len(data))
             self.assertTrue(result["header_matches_published_horizontal_profile"])
+            self.assertTrue(result["frozen_florida_catalogue_bbox_consistent"])
+            self.assertFalse(result["native_raster_provider_origin_independently_attested"])
             self.assertFalse(result["source_provider_original_verified"])
             self.assertFalse(result["model_input_approved"])
             self.assertFalse(result["pixel_values_read"])
