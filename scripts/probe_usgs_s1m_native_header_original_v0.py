@@ -13,6 +13,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import ssl
@@ -118,6 +119,11 @@ def first_ifd(prefix: bytes) -> dict[str, Any]:
         "gdal_nodata_tag_present": False,
         "model_pixel_scale_tag_present": False,
         "original_epsg_6350_verified": False,
+        "original_vertical_epsg_5703_verified": False,
+        "original_geokey_count": None,
+        "original_nodata_minus999999_verified": False,
+        "original_nodata_ascii_value": None,
+        "original_one_meter_scale_verified": False,
         "original_geoid18_verified": False,
         "original_pixel_values_verified": False,
         "native_raster_science_admitted": False,
@@ -161,6 +167,76 @@ def first_ifd(prefix: bytes) -> dict[str, Any]:
         if not 1 <= value <= 100000:
             raise Blocked("unreasonable original S1M TIFF first-IFD dimensions")
         out[label] = value
+    # Values must fit inside this independently hash-pinned 64 KiB provider
+    # response. Tag presence alone is not evidence of actual EPSG/NoData/scale.
+    def tag_data(tag: int, dtype: int, max_items: int, unit_bytes: int):
+        if tag not in tags:
+            return None
+        actual_dtype, n, inline = tags[tag]
+        if actual_dtype != dtype or not 0 < n <= max_items:
+            raise Blocked("unexpected original TIFF typed-value shape")
+        total_bytes = n * unit_bytes
+        if total_bytes <= len(inline):
+            return (inline[:total_bytes], n)
+        at = struct.unpack(endian + ("I" if kind == "classic_tiff" else "Q"), inline)[0]
+        if at < end:
+            raise Blocked("original TIFF tag data offset overlaps first IFD")
+        if at + total_bytes > len(prefix):
+            return None
+        return (prefix[at:at + total_bytes], n)
+
+    key_directory = tag_data(34735, 3, 512, 2)
+    if key_directory is not None:
+        rawkeys, nshorts = key_directory
+        shorts = struct.unpack(endian + "H" * nshorts, rawkeys)
+        if nshorts < 4 or shorts[0] != 1 or shorts[1] != 1:
+            raise Blocked("unsupported source GeoKeyDirectory header")
+        nkeys = shorts[3]
+        if nkeys > 100 or nshorts != 4 + 4 * nkeys:
+            raise Blocked("truncated or malformed source GeoKeyDirectory")
+        source_keys: dict[int, tuple[int, int, int]] = {}
+        for index in range(nkeys):
+            key_id, loc, n, value = shorts[4 + 4 * index:8 + 4 * index]
+            if key_id in source_keys:
+                raise Blocked("duplicate original source GeoKey id")
+            source_keys[key_id] = (loc, n, value)
+        out["original_geokey_count"] = nkeys
+        for key_id, expected, field in (
+            (3072, 6350, "original_epsg_6350_verified"),
+            (4096, 5703, "original_vertical_epsg_5703_verified"),
+        ):
+            if key_id not in source_keys:
+                continue
+            loc, n, value = source_keys[key_id]
+            if loc != 0 or n != 1 or value != expected:
+                raise Blocked("original source GeoKey EPSG not exact reviewed value")
+            out[field] = True
+
+    original_nodata = tag_data(42113, 2, 64, 1)
+    if original_nodata is not None:
+        raw_nodata, _ = original_nodata
+        try:
+            nodata = raw_nodata.decode("ascii").rstrip("\x00").strip()
+        except UnicodeError as exc:
+            raise Blocked("invalid original TIFF GDAL NoData ASCII") from exc
+        if not re.fullmatch(r"-999999(?:\.0+)?", nodata):
+            raise Blocked("original source TIFF NoData differs from published -999999")
+        out["original_nodata_ascii_value"] = nodata
+        out["original_nodata_minus999999_verified"] = True
+
+    native_scale = tag_data(33550, 12, 3, 8)
+    if native_scale is not None:
+        raw_scale, count_scale = native_scale
+        if count_scale != 3:
+            raise Blocked("unreviewed original TIFF PixelScale cardinality")
+        pixel_scale = struct.unpack(endian + "ddd", raw_scale)
+        if any(not math.isfinite(v) for v in pixel_scale):
+            raise Blocked("non-finite native TIFF PixelScale values")
+        if not (math.isclose(pixel_scale[0], 1, rel_tol=0, abs_tol=1e-12)
+                and math.isclose(pixel_scale[1], 1, rel_tol=0, abs_tol=1e-12)):
+            raise Blocked("original S1M raster resolution is not 1 metre")
+        out["original_one_meter_scale_verified"] = True
+
     out.update({
         "first_ifd_fully_in_prefix": True,
         "first_ifd_entry_count": count,
