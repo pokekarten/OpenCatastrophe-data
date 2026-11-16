@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "purpose": "Non-admitted USGS Work Unit Extent Spatial Metadata (WESM) source original identity and quality-lineage discovery distinct from the seamless one-meter S1M raster.",
+  "purpose": "Non-admission discovery registry of USGS Work Unit Extent Spatial Metadata (WESM) source original identity and quality-lineage discovery distinct from the seamless one-meter S1M raster.",
   "review_date": "2026-11-16",
   "entries": [
     {
