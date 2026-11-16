@@ -3,11 +3,6 @@
 name: Ciara Météo-France ambiguous original PDF content comparison
 
 on:
-  pull_request:
-    paths:
-      - 'research_runners/meteofrance_ciara2020_pdf_text_diff_v0.py'
-      - 'tests/test_meteofrance_ciara2020_pdf_text_diff_v0.py'
-      - '.github/workflows/meteofrance-ciara2020-pdf-text-diff.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +10,6 @@ permissions:
 
 jobs:
   original-pdf-text:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'research/20261116-ciara-french-pdf-text-diff'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
