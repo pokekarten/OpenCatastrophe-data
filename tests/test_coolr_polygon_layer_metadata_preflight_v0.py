@@ -58,9 +58,13 @@ class CoolrMetadataTests(unittest.TestCase):
             lambda o: o.update(type="Table"),
             lambda o: o.update(geometryType="esriGeometryPoint"),
             lambda o: o.update(objectIdField="event_id"),
+            lambda o: o.update(objectIdField=None),
             lambda o: o.update(hasZ=True),
+            lambda o: o.update(hasZ=0),
             lambda o: o.update(isDataVersioned=True),
+            lambda o: o.update(isDataVersioned=0),
             lambda o: o.update(supportsQueryWithHistoricMoment=True),
+            lambda o: o.update(supportsQueryWithHistoricMoment=0),
             lambda o: o.update(capabilities="Uploads"),
             lambda o: o.update(maxRecordCount=2001),
             lambda o: o["extent"]["spatialReference"].update(wkid=3857),
@@ -83,6 +87,8 @@ class CoolrMetadataTests(unittest.TestCase):
         for original in (b"", b"invalid", b'{"id":0,"id":0}', b'{"id":NaN}', b"x"*(MAX_METADATA_BYTES+1)):
             with self.assertRaises(CoolrMetadataError):
                 screen_coolr_polygon_layer_metadata(original, layer_kind="events_polygon")
+        with self.assertRaises(CoolrMetadataError):
+            screen_coolr_polygon_layer_metadata(encoded(fixture("events_polygon")), layer_kind=[])
 
 
 if __name__ == "__main__":
