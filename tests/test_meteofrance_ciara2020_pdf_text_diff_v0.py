@@ -50,6 +50,22 @@ class TestOriginalPdfTextDiff(unittest.TestCase):
         self.assertTrue(p["possible_review_subjects"]["mentions_instrument_word"])
         self.assertNotIn("Station:",str(p))
 
+    def test_pdf_text_limits_fail_closed(self):
+        with self.assertRaises(Blocked):
+            text_profile([])
+        with self.assertRaises(Blocked):
+            text_profile(["x"]*33)
+        with self.assertRaises(Blocked):
+            text_profile(["x"*75001])
+        with self.assertRaises(Blocked):
+            text_profile(["x"*60000]*5)
+
+    def test_2020_and_wind_words_do_not_imply_site_validation(self):
+        p=text_profile(["Site anémomètre, vent 2020 et hauteur. "*10])
+        self.assertTrue(p["possible_review_subjects"]["mentions_site_word"])
+        self.assertTrue(p["possible_review_subjects"]["mentions_height_word"])
+        self.assertFalse("source_admitted" in p)
+
     def test_equal_extracted_text_but_unequal_original_bytes(self):
         p=text_profile(["Rafale d'une station: Vent 2020. "*6])
         r=run(p,p)
