@@ -209,8 +209,33 @@ class FixedSourceProbesTests(unittest.TestCase):
         self.assertTrue(receipt["fixed_window_verified"])
         self.assertFalse(receipt["model_input_approved"])
         self.assertFalse(receipt["provider_bytes_persisted"])
-        self.assertNotIn("1.3", json.dumps(receipt))
-        self.assertNotIn("fixture_only", json.dumps(receipt))
+        # Never substring-search serialized receipts for science values:
+        # e.g. the literal "1.3" may occur innocently in retrieval_utc
+        # fractional seconds or SHA-256 metadata. Enforce the
+        # exact, metadata-only receipt schema instead, rejecting any extra
+        # raw Kp arrays, source timestamps or provider payload fields.
+        allowed = {
+            "profile", "source", "operation", "retrieval_utc",
+            "request_sha256", "probe_code_sha256",
+            "access_contract_sha256", "response_sha256",
+            "response_bytes", "content_type", "verified_shape",
+            "fixed_window_verified", "definitive_status_verified",
+            "record_count", "scientific_values_verified",
+            "provider_bytes_persisted", "model_input_approved",
+            "data_source_admitted",
+        }
+        self.assertEqual(set(receipt), allowed)
+        self.assertTrue(all(not isinstance(value, (dict, list, tuple))
+                            for value in receipt.values()))
+        self.assertFalse(receipt["scientific_values_verified"])
+        self.assertFalse(receipt["data_source_admitted"])
+        # A timestamp may contain the synthetic Kp substring "1.3" while
+        # preserving the exact secure receipt shape.
+        timestamp_collision = dict(
+            receipt, retrieval_utc="2026-11-16T21:19:51.314771+00:00"
+        )
+        self.assertIn("1.3", timestamp_collision["retrieval_utc"])
+        self.assertEqual(set(timestamp_collision), allowed)
 
     def test_noaa_2026_rtsw_wrong_shape_cannot_be_reported_as_pass(self):
         source = "noaa.swpc.real-time-solar-wind"
