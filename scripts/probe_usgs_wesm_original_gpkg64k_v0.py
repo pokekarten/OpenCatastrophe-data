@@ -39,6 +39,9 @@ MAX_TOTAL = 4 * 1024 * 1024 * 1024
 # Explicit immutable original 206 Content-Range observed in GitHub run 43968198021.
 # The size was checked without reading any original body bytes.
 EXPECTED_TOTAL = 3827232768
+# Independently observed authentic original first 65536-byte source SHA-256:
+# https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43968769537
+EXPECTED_PREFIX_SHA = "0344f898d4946a915ca0c3a5d0078fd72dc222179c54d8e9413a067c8ce5be88"
 CONTENT_RANGE = re.compile(r"bytes 0-65535/([1-9][0-9]{4,12})\Z")
 MEDIA = frozenset((
     "application/octet-stream",
@@ -192,6 +195,9 @@ def observe(
     except (OSError, TimeoutError, error.HTTPError, error.URLError) as exc:
         raise Blocked("one WESM original GeoPackage source request unavailable") from exc
 
+    original_prefix_sha = hashlib.sha256(raw).hexdigest()
+    if original_prefix_sha != EXPECTED_PREFIX_SHA:
+        raise Blocked("authentic WESM GeoPackage 64KiB original prefix SHA drift")
     original_header = sqlite_original_header(raw, total)
     timestamp = clock()
     if not isinstance(timestamp, datetime) or timestamp.utcoffset() is None:
@@ -203,7 +209,7 @@ def observe(
         "original_http_status": 206,
         "original_content_range": content_range,
         "original_prefix_bytes": len(raw),
-        "original_prefix_sha256": hashlib.sha256(raw).hexdigest(),
+        "original_prefix_sha256": original_prefix_sha,
         "original_total_bytes_advertised_not_full_hash": total,
         "observed_utc": timestamp.astimezone(timezone.utc).isoformat(),
         "request_sha256": hashlib.sha256(
