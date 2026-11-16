@@ -4,15 +4,17 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from unittest import mock
 from zipfile import ZipFile, ZIP_STORED
 
 from research_runners.bkg_vg250_2025_original_archive_preflight_v0 import (
-    BkgOriginalArchiveBlocked, EXPECTED_SRS, inspect_original_archive
+    BkgOriginalArchiveBlocked, EXPECTED_SRS, inspect_original_archive, main
 )
 
 
@@ -79,6 +81,17 @@ class BkgOriginal2025ZipSyntheticTests(unittest.TestCase):
                                "raw_geometry", "geometry_json", "site_coordinates"):
                 self.assertNotIn(prohibited, json.dumps(r))
             self.assertFalse(r["all_geom_coordinates_and_topology_validated"])
+
+    def test_block_reason_is_author_controlled_and_leaks_no_source_path(self):
+        with tempfile.TemporaryDirectory() as d:
+            original = make_zip(Path(d))
+            with mock.patch("sys.stderr", new_callable=io.StringIO) as err:
+                rc = main(["--original-zip",str(original)])
+                self.assertEqual(rc,2)
+                msg = err.getvalue()
+                self.assertIn("whole-source ZIP differs from publisher MD5 sidecar",msg)
+                self.assertNotIn(str(original),msg)
+                self.assertNotIn("DE_VG250",msg)
 
     def test_synthetic_can_never_be_mistaken_for_official_MD5(self):
         with tempfile.TemporaryDirectory() as d:
