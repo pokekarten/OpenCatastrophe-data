@@ -138,6 +138,20 @@ class CBSProbeTests(unittest.TestCase):
             with self.subTest(key=key, wrong=wrong):
                 self.assertRaises(CBSProbeBlocked, validate_rows, data)
 
+    def test_zero_ids_must_be_native_json_integers_not_bool_or_float(self):
+        # Python equality alone treats JSON false as 0, and 0.0 as 0.
+        # A source-native OData entity ID must be the integer JSON token.
+        for source_key in ("table_info", "first_observation"):
+            for wrong_id in (False, 0.0, "0", None, True):
+                data = synthetic_bodies()
+                data[source_key]["value"][0]["ID"] = wrong_id
+                with self.subTest(result=source_key, bad_id=repr(wrong_id)):
+                    with self.assertRaisesRegex(CBSProbeBlocked,
+                                                "table identity|cardinality|first native"):
+                        validate_rows(data)
+        self.assertEqual(validate_rows(synthetic_bodies())
+                         ["first_price_index_2021_100"], 90.1)
+
     def test_original_json_duplicate_key_nan_oversize_and_shape_block(self):
         payloads = (
             b'{"value":[],"value":[]}',
