@@ -5,7 +5,12 @@
 -- Run using read-only SQL against the authorized insurance Neon research database.
 -- Exactly two previously staged, research-only rows (#3 and #40).
 -- No upstream API access, source bytes, writes, licensing promotion or CAT admission.
--- Checks 8 structural/partial semantic conditions; 5 synthetic negative controls.
+-- Checks 9 structural/partial semantic conditions; 6 synthetic controls.
+-- NOAA's native s = standard deviation of the underlying 1-second samples,
+-- NOT a calibrated water-level uncertainty or CAT secondary uncertainty.
+-- Historical derived sample #40 mislabels this value as uncertainty_m.
+-- The original immutable staged research record is not rewritten here.
+-- See https://api.tidesandcurrents.noaa.gov/api/prod/responseHelp.html
 -- WARNING: only six + twelve selected observations are stored here. The 240-point
 -- full-day mean/extrema CANNOT be independently recomputed from these JSONB rows.
 -- Only observed water level relative to MLLW, not storm-surge residual, flood depth,
@@ -14,7 +19,8 @@
 -- Upstream access contract: access/noaa.coops.water-levels.json
 -- Existing original-response hash is read from Neon, not freshly reverified.
 --
--- Expected: 8 PASS records (specific research snapshot, not a general provider test).
+-- Expected: 9 PASS records. A PASS for legacy alias detection is a blocker
+-- correctly identified; it is NOT admission of a calibrated uncertainty.
 WITH pair AS (
   SELECT sample_id, source_id, sample_json, provider_response_sha256, sample_sha256,
          research_only, model_input_approved
@@ -50,21 +56,32 @@ six AS (
   (SELECT count(*)=12 AND count(DISTINCT elem->>'time_gmt')=12 AND
    bool_and(coalesce((elem->>'time_gmt')::timestamp=timestamp '2026-01-01 00:00:00'
          +(ord-1)*interval '120 minutes',false)) FROM two_hour)
- UNION ALL SELECT 'observed_values_flags_and_uncertainty',
+ UNION ALL SELECT 'observed_values_flags_and_1s_sigma',
   (SELECT count(*)=18 AND bool_and(coalesce(level_m BETWEEN -5 AND 10
-              AND uncertainty_m>=0 AND flag='v',false))
+              AND sigma_1s_m>=0 AND flag='v',false))
      FROM (
-       SELECT (elem->>'v')::numeric level_m,(elem->>'s')::numeric uncertainty_m,
+       SELECT (elem->>'v')::numeric level_m,(elem->>'s')::numeric sigma_1s_m,
               elem->>'q' flag FROM six
        UNION ALL
        SELECT (elem->>'water_level_mllw_m')::numeric,
               (elem->>'uncertainty_m')::numeric,elem->>'verified_flag' FROM two_hour
+       -- The source key above is legacy/misnamed; locally it means 1-second sigma.
      ) values_checked)
  UNION ALL SELECT 'independent_derived_rows_agree_at_midnight',
   (SELECT EXISTS(SELECT 1 FROM six a JOIN two_hour b ON
       (a.elem->>'t')=(b.elem->>'time_gmt') AND
-      (a.elem->>'v')::numeric=(b.elem->>'water_level_mllw_m')::numeric
+      (a.elem->>'v')::numeric=(b.elem->>'water_level_mllw_m')::numeric AND
+      (a.elem->>'s')::numeric=(b.elem->>'uncertainty_m')::numeric AND
+      a.elem->>'q'=b.elem->>'verified_flag'
      WHERE a.ord=1 AND b.ord=1))
+ UNION ALL SELECT 'legacy_sigma_alias_not_calibrated_uncertainty',
+ (SELECT count(*)=12 AND bool_and(coalesce(
+    (elem ? 'uncertainty_m') AND NOT (elem ? 'sigma_1s_m'),false)) FROM two_hour)
+ AND
+ (SELECT coalesce(
+    sample_json->'model_input_approved'='false'::jsonb AND
+    sample_json->'raw_full_day_provider_bytes_persisted'='false'::jsonb,
+ false) FROM newer)
  UNION ALL SELECT 'day_summary_structural_bounds_not_full_replay',
   (SELECT coalesce((sample_json->>'original_records')::int=240 AND
         (sample_json->>'cadence_minutes')::int=6 AND
@@ -76,17 +93,21 @@ six AS (
 SELECT check_id,CASE WHEN passed THEN 'PASS' ELSE 'FAIL' END AS result
 FROM checks ORDER BY check_id;
 
--- Entirely synthetic controls for NULL/flag/negative uncertainty/range behavior.
--- Expected: 5 test_pass=true. These do not reproduce the original API response.
-WITH cases(case_id,level_m,uncertainty_m,flag,expected_accept) AS (
+-- Synthetic controls distinguish 1-second sample spread from scientifically
+-- calibrated measurement uncertainty. Expected: 6 test_pass=true.
+-- These synthetic controls do not reproduce the original API response.
+WITH cases(case_id,level_m,sigma_1s_m,flag,used_as_cat_uncertainty,expected_accept) AS (
  VALUES
- ('valid',1.2::numeric,0.03::numeric,'v',true),
- ('missing_flag',1.2,0.03,NULL,false),
- ('missing_value',NULL,0.03,'v',false),
- ('negative_uncertainty',1.2,-0.01,'v',false),
- ('out_of_range',20,0.03,'v',false)
+ ('valid',1.2::numeric,0.03::numeric,'v',false,true),
+ ('missing_flag',1.2,0.03,NULL,false,false),
+ ('missing_value',NULL,0.03,'v',false,false),
+ ('negative_1s_sigma',1.2,-0.01,'v',false,false),
+ ('out_of_range',20,0.03,'v',false,false),
+ ('wrong_cat_sigma_inference',1.2,0.03,'v',true,false)
 )
 SELECT case_id,expected_accept,
-       coalesce(level_m BETWEEN -5 AND 10 AND uncertainty_m>=0 AND flag='v',false) AS actual_accept,
-       coalesce(level_m BETWEEN -5 AND 10 AND uncertainty_m>=0 AND flag='v',false)=expected_accept AS test_pass
+       coalesce(level_m BETWEEN -5 AND 10 AND sigma_1s_m>=0 AND flag='v'
+         AND NOT used_as_cat_uncertainty,false) AS actual_accept,
+       coalesce(level_m BETWEEN -5 AND 10 AND sigma_1s_m>=0 AND flag='v'
+         AND NOT used_as_cat_uncertainty,false)=expected_accept AS test_pass
 FROM cases ORDER BY case_id;
