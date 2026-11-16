@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DLR WSF3D v02 native Height GeoTIFF offline science
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/dlr_wsf3d_v02_native_height_tiff_v0.py
+      - tests/test_dlr_wsf3d_v02_native_height_tiff_v0.py
+      - .github/workflows/dlr-wsf3d-native-height-synthetic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  one-original-tile-synthetic-only:
+    name: Synthetic bounded GeoTIFF identity and numeric gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout reviewed changes without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned optional research-only native GeoTIFF reader
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            --only-binary=:all: "numpy==2.3.5" "rasterio==1.5.0"
+          python -m pip check
+      - name: Validate synthetic native TIFF SHA, CRS, pixels, mask and no-model-admission
+        run: |
+          python -m unittest tests.test_dlr_wsf3d_v02_native_height_tiff_v0 -v
+      # No source GET/HEAD/Range, no WMS GET, no original-source raster,
+      # no opaque CI artifact or externally shared file. Exact DLR original
+      # transfer remains separately blocked by its document_only contract.

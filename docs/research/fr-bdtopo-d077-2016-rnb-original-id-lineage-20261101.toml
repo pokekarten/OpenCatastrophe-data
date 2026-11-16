@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+schema_version = "1.0.0"
+receipt_kind = "FR_BDTOPO_V21_2016_D077_RNB_2023_ID_PROVENANCE_V0"
+original_source_edition = "BD TOPO v2.1 D077 2016-03-24"
+original_source_archive_mirror_sha256 = "ab3e1bab127d0e71e372d736572d80e6a8a9578131992475c23a1f0ee1871a06"
+original_ign_provider_checksum_independently_verified = false
+source_archive_integrity_and_extraction_live_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41355664164"
+modern_rnb_bdtopo_external_id_version = "bdtopo_2023_09"
+selected_historical_candidates = 3
+matched_historical_current_rnb_pairs = 2
+historical_index_zero_based = [2, 1]
+rnb_ids = ["5TR6PNH2YQPT", "TCHNNF59Y27V"]
+historical_source_id_sha256 = ["b63f2a61b7691be83277cc49981ae3cb855a916b1d4a6743243c9083ea9f559c", "3f3ecdca084090d00d8ab5a243c9cb03c3787559e83d045a3d0aaf6e3cb9637a"]
+modern_rnb_bdtopo_external_id_sha256 = ["b63f2a61b7691be83277cc49981ae3cb855a916b1d4a6743243c9083ea9f559c", "3f3ecdca084090d00d8ab5a243c9cb03c3787559e83d045a3d0aaf6e3cb9637a"]
+historical_2016_id_equals_modern_bdtopo_2023_id = [true, true]
+historic_to_modern_footprint_iou = [0.9999999998, 0.9999999999]
+historical_unmatched_bounded_candidate_count = 1
+historic_unmatched_candidate_has_same_rnb_bdtopo_id = false
+historical_bati_indifferencie_dbf_field_names = ["ID", "PREC_PLANI", "PREC_ALTI", "ORIGIN_BAT", "HAUTEUR", "Z_MIN", "Z_MAX"]
+historical_bati_industriel_dbf_field_names = ["ID", "PREC_PLANI", "PREC_ALTI", "ORIGIN_BAT", "NATURE", "HAUTEUR", "Z_MIN", "Z_MAX"]
+historical_bati_remarquable_dbf_field_names = ["ID", "PREC_PLANI", "PREC_ALTI", "ORIGIN_BAT", "NATURE", "HAUTEUR", "Z_MIN", "Z_MAX"]
+historical_building_creation_confirmation_fields_available = false
+modern_bdtopo_ids_are_not_assumed_stable_for_all_v21_data = true
+old_edition_record_id_continuity_for_two_specific_objects_observed = true
+building_construction_year_and_condition_2016_independently_confirmed = false
+original_provider_archive_authenticity_independently_verified = false
+source_specific_2016_rights_cleared = false
+original_historical_ids_or_shapes_redistributed = false
+insurer_tiv_policy_or_claims_known = false
+original_attribute_quality_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41356007529"
+historical_source_2016_origin_bat_by_selected_ordinal = ["Cadastre", "Cadastre", "Cadastre"]
+historical_source_2016_hauteur_as_stored = [9, 7, 10]
+historical_source_2016_prec_plani_as_stored = [2.5, 2.5, 2.5]
+historical_source_2016_prec_alti_as_stored = [20, 20, 20]
+historical_source_2016_z_min_as_stored = [49.3, 46.5, 49.7]
+historical_source_2016_z_max_as_stored = [49.3, 46.5, 49.7]
+historic_source_zmin_equals_zmax_in_all_three_candidates = true
+historic_attribute_units_and_physical_measurement_quality_independently_validated = false
+historic_origin_cadastre_is_not_independent_current_rnb_measurement = true
+historic_building_replacement_cost_or_insured_value_inferred = false
+
+cat_model_admitted = false

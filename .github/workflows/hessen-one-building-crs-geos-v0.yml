@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: '3.14'
       - name: Install existing pinned optional PyProj and Shapely
-        run: python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-hessen-alkis-geos.txt
       - name: Assert mandatory real pinned geospatial dependencies
         run: |
           python -m pip check
@@ -40,4 +40,5 @@ jobs:
       - name: Execute synthetic CRS, coordinate, geometry and HTTP negative tests
         run: python -m unittest tests.test_hessen_alkis_one_building_crs_geos_v0 -v
       - name: Exactly one original bounded ALKIS feature source and offline CRS audit
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         run: python -m research_runners.hessen_alkis_one_building_crs_geos_v0 --live

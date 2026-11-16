@@ -8,10 +8,13 @@ import io
 import csv
 import json
 import unittest
+import warnings
+from unittest.mock import patch
+import zlib
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from research_runners.eu_grid_native_sample_preflight_v0 import (
-    CSV_FIELDS, DWD_BASE, GHSL_MEMBER, GHSL_ROWS, SourceGateError,
+    CSV_FIELDS, DWD_BASE, GHSL_MEMBER, GHSL_TIFF_MEMBER, GHSL_ROWS, SourceGateError,
     parse_census_prefix, parse_ghsl_legend,
     classify_dwd_radklim_2021_archive, verify_ghsl_zip,
 )
@@ -108,15 +111,77 @@ class EUGridQA(unittest.TestCase):
         with self.assertRaises(SourceGateError):
             parse_ghsl_legend(modified,sha(modified))
 
-    def test_ghsl_zip_requires_original_crc_and_full_original_sha(self):
-        buf=io.BytesIO()
-        with ZipFile(buf,"w",compression=ZIP_DEFLATED) as zf:
+    def _ghsl_zip(self, *, tif_header=None, tif_name=GHSL_TIFF_MEMBER,
+                  include_raster=True, duplicate=False, extra_name=None):
+        # Tiny synthetic archive; never copied from JRC original.
+        if tif_header is None:
+            tif_header = b"II*\x00\x08\x00\x00\x00" + b"\x00" * 24
+        buf = io.BytesIO()
+        with ZipFile(buf, "w", compression=ZIP_DEFLATED) as zf:
             zf.writestr(GHSL_MEMBER, synthetic_ghsl_legend())
-        data=buf.getvalue()
-        with self.assertRaisesRegex(SourceGateError,"legend ZIP metadata mismatch"):
-            verify_ghsl_zip(data,sha(data))
-        with self.assertRaisesRegex(SourceGateError,"SHA-256 mismatch"):
-            verify_ghsl_zip(data,"0"*64)
+            if include_raster:
+                zf.writestr(tif_name, tif_header)
+                if duplicate:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", UserWarning)
+                        zf.writestr(tif_name, tif_header)
+            if extra_name is not None:
+                zf.writestr(extra_name, b"synthetic")
+        return buf.getvalue()
+
+    def test_ghsl_zip_requires_original_crc_and_full_original_sha(self):
+        data = self._ghsl_zip()
+        with self.assertRaisesRegex(SourceGateError, "legend ZIP metadata mismatch"):
+            verify_ghsl_zip(data, sha(data))
+        with self.assertRaisesRegex(SourceGateError, "SHA-256 mismatch"):
+            verify_ghsl_zip(data, "0" * 64)
+
+    def test_valid_synthetic_ghsl_raster_header_does_not_approve_pixels(self):
+        data = self._ghsl_zip()
+        synthetic_crc = zlib.crc32(synthetic_ghsl_legend())
+        with patch("research_runners.eu_grid_native_sample_preflight_v0.GHSL_EXPECTED_CRC", synthetic_crc):
+            result = verify_ghsl_zip(data, sha(data))
+        self.assertEqual(result["archive_member_count"], 2)
+        self.assertEqual(result["reviewed_raster_entry_name"], GHSL_TIFF_MEMBER)
+        self.assertTrue(result["tiff_header_only_verified"])
+        self.assertFalse(result["raster_pixel_count_verified"])
+        self.assertFalse(result["raster_crs_verified"])
+        self.assertFalse(result["raster_nodata_verified"])
+        self.assertFalse(result["original_raster_member_sha256_verified"])
+        self.assertFalse(result["model_input_approved"])
+
+    def test_ghsl_legend_only_archive_does_not_prove_raster(self):
+        data = self._ghsl_zip(include_raster=False)
+        crc = zlib.crc32(synthetic_ghsl_legend())
+        with patch("research_runners.eu_grid_native_sample_preflight_v0.GHSL_EXPECTED_CRC", crc):
+            with self.assertRaises(SourceGateError):
+                verify_ghsl_zip(data, sha(data))
+
+    def test_wrong_raster_product_magic_and_ifd_fail_closed(self):
+        wrong_magic = b"not TIFF" + b"\x00" * 24
+        out_of_bounds = b"II*\x00" + (1_000_000).to_bytes(4, "little") + b"\x00" * 24
+        invalid_bigtiff = b"II+\x00\x04\x00\x00\x00" + b"\x00" * 24
+        cases = (
+            self._ghsl_zip(tif_name="GHS_AGE_1975052020_GLOBE_R2025A_54009_1000_V1_0.tif"),
+            self._ghsl_zip(tif_header=wrong_magic),
+            self._ghsl_zip(tif_header=out_of_bounds),
+            self._ghsl_zip(tif_header=invalid_bigtiff),
+        )
+        crc = zlib.crc32(synthetic_ghsl_legend())
+        with patch("research_runners.eu_grid_native_sample_preflight_v0.GHSL_EXPECTED_CRC", crc):
+            for data in cases:
+                with self.subTest(digest=sha(data)), self.assertRaises(SourceGateError):
+                    verify_ghsl_zip(data, sha(data))
+
+    def test_duplicate_and_traversal_zip_names_rejected(self):
+        crc = zlib.crc32(synthetic_ghsl_legend())
+        cases = (self._ghsl_zip(duplicate=True),
+                 self._ghsl_zip(extra_name="../unsafe.txt"),
+                 self._ghsl_zip(extra_name="\\\\unsafe\\\\path"))
+        with patch("research_runners.eu_grid_native_sample_preflight_v0.GHSL_EXPECTED_CRC", crc):
+            for data in cases:
+                with self.subTest(digest=sha(data)), self.assertRaises(SourceGateError):
+                    verify_ghsl_zip(data, sha(data))
 
     def test_dwd_2021_invalid_original_rejected(self):
         bad = DWD_BASE + "2021/RW2017.002_2021_netcdf.tar.gz"

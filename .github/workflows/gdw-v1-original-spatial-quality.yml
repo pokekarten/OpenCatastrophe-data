@@ -100,6 +100,43 @@ jobs:
           assert not a["source_coordinates_ids_attributes_exported"]
           assert not a["polygon_repairs_or_snapping_performed"]
           assert sum(a["invalid_geometry_reason_family_counts"].values()) == 221
+          # First *original archive* replay of the strict native spatial
+          # predicate merged in PR #1746. Do not assume all GEOS-valid
+          # reservoirs survive the separate dateline/strict-point gate.
+          candidates = a["native_reservoir_geometry_overlay_candidate_count"]
+          excluded = a["native_reservoir_geometry_overlay_excluded_count"]
+          assert type(candidates) is int and type(excluded) is int, (
+              "BLOCKED: noninteger native overlay disposition"
+          )
+          assert 0 <= candidates <= e["valid_reservoir_polygons"], (
+              "BLOCKED: overlay candidate count exceeds GEOS-valid source"
+          )
+          assert (excluded >= e["invalid_reservoir_polygons"]
+                  + e["unparseable_reservoir_polygons"]
+                  + e["valid_polygon_matched_point_boundary"]
+                  + e["valid_polygon_matched_point_outside"]), (
+              "BLOCKED: source-invalid or unpaired reservoir not excluded"
+          )
+          assert candidates + excluded == e["reservoir_polygons"], (
+              "BLOCKED: original reservoir overlay dispositions do not reconcile"
+          )
+          assert a["native_reservoir_geometry_overlay_mask_is_scoped_to_verified_original_archive"] is True
+          assert a["native_reservoir_geometry_overlay_decision_is_geometry_only"] is True
+          assert a["native_reservoir_geometry_overlay_is_model_admitted"] is False
+          assert a["source_reservoir_ordinal_ids_or_coordinates_emitted"] is False
+          assert a["original_archive_sha256"] == e["original_file_sha256"]
+          # Only a non-identifying aggregate is released in the workflow log.
+          # No ID, footprint, original feature or model-use approval.
+          print("GDW original native geometry overlay screen, "
+                "research only / not model admitted:",
+                json.dumps({
+                    "original_archive_sha256": a["original_archive_sha256"],
+                    "original_reservoir_count": a["reservoir_polygons"],
+                    "native_geometry_candidates": candidates,
+                    "excluded_original_reservoir_geometries": excluded,
+                    "geos_invalid_reservoirs": a["invalid_reservoir_polygons"],
+                    "independent_scientific_model_admission": False,
+                }, sort_keys=True))
           print("GDW original independent GEOS family diagnostic, source-only, "
                 "no model admission:", json.dumps(a, sort_keys=True))
           PY

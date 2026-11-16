@@ -1,0 +1,125 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+schema = "KNMI_HOURLY_ARCHIVE_BATCH_RECEIPT_V1"
+scientific_admission = false
+rights_review_complete = false
+
+[[downloads]]
+station = 235
+period = "2001-2010"
+url = "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_235_2001-2010.zip"
+bytes = 1748163
+sha256 = "d5b0bf4fe2fca2db28eb9a1c032fa90b9a253869e79821caaf4cb11e9890216a"
+rows = 87648
+valid_fx = 87626
+first_date = "20010101"
+last_date = "20101231"
+status = "downloaded_and_parsed"
+
+[[downloads]]
+station = 235
+period = "2011-2020"
+url = "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_235_2011-2020.zip"
+bytes = 1740085
+sha256 = "30a5a68a8f4e93083f006539e55da1e1fe967516ad846d17f82e3932d221c48e"
+rows = 87672
+valid_fx = 87672
+first_date = "20110101"
+last_date = "20201231"
+status = "downloaded_and_parsed"
+
+[[downloads]]
+station = 260
+period = "2001-2010"
+url = "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_260_2001-2010.zip"
+bytes = 1765648
+sha256 = "80df74621a857ddba646732a49932daffc0bbeb5f482419c334109311d381261"
+rows = 87648
+valid_fx = 87648
+first_date = "20010101"
+last_date = "20101231"
+status = "downloaded_and_parsed"
+
+[[downloads]]
+station = 260
+period = "2011-2020"
+url = "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_260_2011-2020.zip"
+bytes = 1758375
+sha256 = "3e343fbe8d8964ab2273981747701e2d21beec5cfa2e2e5535c881710c6ac94b"
+rows = 87672
+valid_fx = 87672
+first_date = "20110101"
+last_date = "20201231"
+status = "downloaded_and_parsed"
+
+[[downloads]]
+station = 280
+period = "2001-2010"
+url = "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_280_2001-2010.zip"
+bytes = 1767899
+sha256 = "499e3807e98125b17e6e6a62ec61bfb7167bc656fc21e9db89b67e354c45bc73"
+rows = 87648
+valid_fx = 87648
+first_date = "20010101"
+last_date = "20101231"
+status = "downloaded_and_parsed"
+
+[[downloads]]
+station = 280
+period = "2011-2020"
+url = "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_280_2011-2020.zip"
+bytes = 1755516
+sha256 = "6c6dc1166a681e5e15c81f5cb22a2c877b23161ba12a2fb1e8ac7cef5b672c8b"
+rows = 87672
+valid_fx = 87672
+first_date = "20110101"
+last_date = "20201231"
+status = "downloaded_and_parsed"
+
+[[downloads]]
+station = 310
+period = "2001-2010"
+url = "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_310_2001-2010.zip"
+bytes = 1751899
+sha256 = "79e2e425fcf42201baeb6daddab875470d2841e5285793a2e08d69eed513fa18"
+rows = 87648
+valid_fx = 87648
+first_date = "20010101"
+last_date = "20101231"
+status = "downloaded_and_parsed"
+
+[[downloads]]
+station = 310
+period = "2011-2020"
+url = "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_310_2011-2020.zip"
+bytes = 1754723
+sha256 = "c6b7d0c6ed43df40796121b9b895738eac6a57f0963e6fd46431bef48636342d"
+rows = 87672
+valid_fx = 87672
+first_date = "20110101"
+last_date = "20201231"
+status = "downloaded_and_parsed"
+
+[[downloads]]
+station = 330
+period = "2001-2010"
+url = "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_330_2001-2010.zip"
+bytes = 1608428
+sha256 = "e43b5988c16f0e65276be530464a15b223905c2df3a38342faa1a0f99c64feb2"
+rows = 87648
+valid_fx = 87648
+first_date = "20010101"
+last_date = "20101231"
+status = "downloaded_and_parsed"
+
+[[downloads]]
+station = 330
+period = "2011-2020"
+url = "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_330_2011-2020.zip"
+bytes = 1590080
+sha256 = "52a9a5858dafabeef54c97ab311e8ee1b3085740b13001679c48967f87560d07"
+rows = 87672
+valid_fx = 87672
+first_date = "20110101"
+last_date = "20201231"
+status = "downloaded_and_parsed"

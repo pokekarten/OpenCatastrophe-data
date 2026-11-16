@@ -34,7 +34,10 @@ def nfip_row(i, **kw):
 
 def disaster_row(i, **kw):
     row = {"id": f"SYNTHETIC-DECL-{i}", "disasterNumber": 4700 + i,
-           "state": "XY", "designatedArea": "SYNTHETIC COUNTY",
+           "state": "XY", "declarationType": "DR",
+           "femaDeclarationString": f"DR-{4700 + i}-XY",
+           "fipsCountyCode": f"{i:03d}",
+           "designatedArea": f"SYNTHETIC COUNTY {i}",
            "incidentType": "Flood", "declarationDate": "2024-03-01T00:00:00Z"}
     row.update(kw)
     return row
@@ -88,7 +91,67 @@ class FixedOpenFEMATests(unittest.TestCase):
         self.assertEqual(out["version"], "v2")
         self.assertEqual(out["rows"], 2)
         self.assertIsNone(out["ratio_over_100pct_field_count"])
+        self.assertEqual(out["unique_declaration_ids_in_bounded_page"], 2)
+        self.assertEqual(out["distinct_designated_areas_in_bounded_page"], 2)
+        self.assertFalse(out["declaration_rows_are_independent_hazard_events"])
+        self.assertFalse(out["physical_hazard_event_frequency_verified"])
         self.assertNotIn("SYNTHETIC COUNTY", json.dumps(out))
+
+    def test_two_counties_one_disaster_declaration_not_two_hazard_events(self):
+        a = disaster_row(1)
+        b = disaster_row(2, disasterNumber=4701,
+                         femaDeclarationString="DR-4701-XY")
+        out = validate_response(DISASTER, payload(DISASTER, [a, b]))
+        self.assertEqual(out["rows"], 2)
+        self.assertEqual(out["unique_declaration_ids_in_bounded_page"], 1)
+        self.assertEqual(out["distinct_designated_areas_in_bounded_page"], 2)
+        self.assertFalse(out["declaration_rows_are_independent_hazard_events"])
+        self.assertFalse(out["physical_hazard_event_frequency_verified"])
+        self.assertNotIn("SYNTHETIC-DECL", json.dumps(out))
+
+    def test_duplicate_designated_area_does_not_inflate_unique_areas(self):
+        a = disaster_row(1)
+        b = disaster_row(2, disasterNumber=4701,
+                         femaDeclarationString="DR-4701-XY",
+                         designatedArea=a["designatedArea"],
+                         fipsCountyCode=a["fipsCountyCode"])
+        out = validate_response(DISASTER, payload(DISASTER, [a, b]))
+        self.assertEqual(out["unique_declaration_ids_in_bounded_page"], 1)
+        self.assertEqual(out["distinct_designated_areas_in_bounded_page"], 1)
+        self.assertFalse(out["physical_hazard_event_frequency_verified"])
+
+    def test_missing_county_fips_and_fm_assistance_are_still_area_rows(self):
+        # FEMA area designations can be state-wide or non-county; a missing
+        # county FIPS is not automatically a malformed disaster declaration.
+        a = disaster_row(1, fipsCountyCode=None,
+                         designatedArea="SYNTHETIC STATEWIDE")
+        b = disaster_row(2, declarationType="FM",
+                         femaDeclarationString="FM-4702-XY",
+                         fipsCountyCode="000",
+                         designatedArea="SYNTHETIC FIRE ASSISTANCE")
+        out = validate_response(DISASTER, payload(DISASTER, [a, b]))
+        self.assertEqual(out["rows"], 2)
+        self.assertEqual(out["unique_declaration_ids_in_bounded_page"], 2)
+        self.assertEqual(out["distinct_designated_areas_in_bounded_page"], 2)
+        self.assertFalse(out["physical_hazard_event_frequency_verified"])
+        self.assertFalse(out["commercial_underwriting_authorized"])
+
+    def test_rejects_wrong_declaration_key_and_bad_geography(self):
+        bad = [
+            disaster_row(1, femaDeclarationString="EM-4701-XY"),
+            disaster_row(1, femaDeclarationString="DR-4701-NY"),
+            disaster_row(1, declarationType="FL"),
+            disaster_row(1, fipsCountyCode="1"),
+            disaster_row(1, fipsCountyCode=1),
+            disaster_row(1, designatedArea=""),
+            disaster_row(1, state="XY1"),
+            disaster_row(1, incidentType=""),
+            disaster_row(1, disasterNumber=True),
+        ]
+        for row in bad:
+            with self.subTest(bad=row):
+                with self.assertRaises(SourceError):
+                    validate_response(DISASTER, payload(DISASTER, [row, disaster_row(2)]))
 
     def test_schema_drift_and_count_violation_block(self):
         with self.assertRaisesRegex(SourceError, "wrong version"):

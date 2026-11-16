@@ -11,6 +11,11 @@ updates:
       time: "06:00"
       timezone: "Etc/UTC"
     open-pull-requests-limit: 1
+    # This source-locked manual HU2022 replay is an audited research workflow,
+    # not a rolling action dependency. Its caller uses and checkout source_ref
+    # must change together only after explicit source/CI validation.
+    ignore:
+      - dependency-name: "pokekarten/OpenCatastrophe-data/.github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml"
     commit-message:
       prefix: "deps(actions)"
 

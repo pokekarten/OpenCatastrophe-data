@@ -122,6 +122,63 @@ class NOAACoopsProbeTests(unittest.TestCase):
         self.assertFalse(result["model_input_admitted"])
         self.assertNotIn("-0.098", json.dumps(result))
 
+    def test_sigma_means_one_second_standard_deviation_not_cat_uncertainty(self):
+        summary = inspect_json_bytes(encode(payload()))
+        self.assertTrue(summary["sigma_is_one_second_sample_standard_deviation"])
+        self.assertFalse(summary["sigma_is_calibrated_cat_uncertainty"])
+        self.assertTrue(summary["provider_quality_codes_structurally_validated"])
+        self.assertFalse(summary["quality_scientifically_assessed"])
+        self.assertEqual(summary["reported_verified_observation_rows"], 2)
+        self.assertEqual(summary["reported_preliminary_observation_rows"], 0)
+        self.assertEqual(summary["observations_with_nonzero_provider_flags"], 0)
+        # The metadata-only receipt must not leak raw sigma or water-level values.
+        self.assertNotIn("0.033", json.dumps(summary))
+        self.assertNotIn("-0.098", json.dumps(summary))
+
+    def test_preliminary_outlier_count_is_not_a_verified_inference_flag(self):
+        value = payload()
+        value["data"][0]["q"] = "p"
+        value["data"][0]["f"] = "4,0,0,0"  # Preliminary O=count, not boolean.
+        value["data"][1]["f"] = "1,0,0,0"  # Verified I=inferred flag.
+        summary = inspect_json_bytes(encode(value))
+        self.assertEqual(summary["reported_preliminary_observation_rows"], 1)
+        self.assertEqual(summary["reported_verified_observation_rows"], 1)
+        self.assertEqual(summary["observations_with_nonzero_provider_flags"], 2)
+        self.assertFalse(summary["quality_scientifically_assessed"])
+        self.assertFalse(summary["sigma_is_calibrated_cat_uncertainty"])
+
+    def test_rejects_bad_one_second_sigma_without_borrowing_uncertainty_rights(self):
+        for sigma in (None, -0.03, "-0.01", "NaN", "Infinity",
+                      "not-a-number", "1e309", True):
+            value = payload()
+            if sigma is None:
+                del value["data"][0]["s"]
+            else:
+                value["data"][0]["s"] = sigma
+            with self.subTest(sigma=sigma), self.assertRaises(COOPSProbeError):
+                inspect_json_bytes(encode(value))
+
+    def test_rejects_invalid_quality_codes_or_flag_shapes(self):
+        for quality, flags in (
+            ("unknown", "0,0,0,0"),
+            ("V", "0,0,0,0"),
+            ("v", "2,0,0,0"),  # Verified inferred flag is binary.
+            ("v", "0,0,0"),  # Missing quality flag.
+            ("v", "0,0,0,0,0"),
+            ("v", "0,2,0,0"),
+            ("v", "0,0,0,-1"),
+            ("v", "0,0,0,x"),
+            ("p", "361,0,0,0"),  # At most 360 1-second samples per 6 min.
+            ("p", "-1,0,0,0"),
+            ("p", "x,0,0,0"),
+            ("p", "０,0,0,0"),
+        ):
+            value = payload()
+            value["data"][0]["q"] = quality
+            value["data"][0]["f"] = flags
+            with self.subTest(quality=quality, flags=flags), self.assertRaises(COOPSProbeError):
+                inspect_json_bytes(encode(value))
+
     def test_rejects_provider_error(self):
         with self.assertRaises(COOPSProbeError):
             inspect_json_bytes(encode({"error": {"message": "invalid request"}}))
