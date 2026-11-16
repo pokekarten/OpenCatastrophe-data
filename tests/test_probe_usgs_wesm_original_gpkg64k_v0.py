@@ -78,7 +78,8 @@ class OriginalGPKGTests(unittest.TestCase):
             calls.append((req.full_url, req.get_method(),
                           req.headers.get("Range"), timeout))
             return response
-        with patch.object(p, "EXPECTED_TOTAL", 20480000):
+        with patch.object(p, "EXPECTED_TOTAL", 20480000), \
+             patch.object(p, "EXPECTED_PREFIX_SHA", sha256(response.raw).hexdigest()):
             out = p.observe(opener=opener,
                 clock=lambda: datetime(2026,11,16,22,20,tzinfo=timezone.utc))
         self.assertEqual(calls, [(p.URL, "GET", p.RANGE, p.TIMEOUT)])
@@ -102,6 +103,21 @@ class OriginalGPKGTests(unittest.TestCase):
         with self.assertRaisesRegex(p.Blocked, "full-object size drift"):
             p.observe(opener=lambda req, timeout: response)
         self.assertEqual(response.reads, 0)
+
+    def test_genuine_source_sha_pin_and_spoofed_prefix_blocked(self):
+        self.assertEqual(p.EXPECTED_PREFIX_SHA,
+            "0344f898d4946a915ca0c3a5d0078fd72dc222179c54d8e9413a067c8ce5be88")
+        self.assertEqual(p.EXPECTED_TOTAL, 3827232768)
+        receipt = (
+            p.ROOT / "docs/research/usgs-wesm-gpkg-original-64k-receipt-20261116.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn(p.EXPECTED_PREFIX_SHA, receipt)
+        self.assertIn("43968769537", receipt)
+        response = Response()
+        with patch.object(p, "EXPECTED_TOTAL", 20480000):
+            with self.assertRaisesRegex(p.Blocked, "prefix SHA drift"):
+                p.observe(opener=lambda req, timeout: response)
+        self.assertEqual(response.reads, 1)
 
     def test_http_200_ignored_range_rejected_before_source_body(self):
         response = Response(status=200)
