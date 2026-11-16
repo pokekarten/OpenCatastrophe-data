@@ -76,12 +76,19 @@ def inspect_topology(original: bytes, *, require_pinned_identity: bool = True) -
     # no NaNs, ring closure, country IDs, 177 features and the exact SHA.
     document = json.loads(original.decode("utf-8"))
     valid_geometries: list[Any] = []
+    # Indices refer ONLY to immutable original FeatureCollection order.
+    # Never emit ADM0 identifiers, geopolitically disputed labels, or
+    # coordinates. A feature position is not a model admission.
+    indexed_original_positions: list[int] = []
+    excluded_invalid_or_empty: set[int] = set()
+    excluded_antimeridian: set[int] = set()
+    excluded_any_positive_overlap: set[int] = set()
     invalid_reasons: Counter[str] = Counter()
     antimeridian_ambiguous = 0
     valid = 0
     empty_or_zero = 0
     source_geometry_types: Counter[str] = Counter()
-    for feature in document["features"]:
+    for original_position, feature in enumerate(document["features"]):
         try:
             geometry = shape(feature["geometry"])
             source_geometry_types[geometry.geom_type] += 1
@@ -89,6 +96,7 @@ def inspect_topology(original: bytes, *, require_pinned_identity: bool = True) -
                 raise NaturalEarthTopologyError("nonpolygon geometry after source gate")
             if geometry.is_empty:
                 empty_or_zero += 1
+                excluded_invalid_or_empty.add(original_position)
                 continue
             xmin, ymin, xmax, ymax = geometry.bounds
             if not all(math.isfinite(n) for n in (xmin, ymin, xmax, ymax)):
@@ -97,16 +105,20 @@ def inspect_topology(original: bytes, *, require_pinned_identity: bool = True) -
             # Check validity BEFORE area to preserve its causal failure family.
             if not geometry.is_valid:
                 invalid_reasons[_reason_family(explain_validity(geometry))] += 1
+                excluded_invalid_or_empty.add(original_position)
                 continue
             if not math.isfinite(geometry.area) or geometry.area <= 0:
                 empty_or_zero += 1
+                excluded_invalid_or_empty.add(original_position)
                 continue
             valid += 1
             # Prevent interpreting Cartesian intersections of wrap-spanning
             # features as country border overlaps on the globe.
             if xmax - xmin > 180:
                 antimeridian_ambiguous += 1
+                excluded_antimeridian.add(original_position)
             else:
+                indexed_original_positions.append(original_position)
                 valid_geometries.append(geometry)
         except (ValueError, TypeError, OverflowError, shapely.errors.GEOSException) as exc:
             raise NaturalEarthTopologyError("GEOS source geometry processing failed") from exc
@@ -115,6 +127,7 @@ def inspect_topology(original: bytes, *, require_pinned_identity: bool = True) -
     # intersections on plain CRS84 are diagnostics, not disputed-border truth.
     overlapping_pairs = 0
     touching_pairs = 0
+    tiny_positive_overlap_pairs = 0
     if valid_geometries:
         try:
             tree = STRtree(valid_geometries)
@@ -128,8 +141,17 @@ def inspect_topology(original: bytes, *, require_pinned_identity: bool = True) -
                         continue
                     if intersection.area > PLANAR_INTERIOR_EPSILON:
                         overlapping_pairs += 1
+                    elif intersection.area > 0:
+                        # A sub-epsilon but strictly positive interior
+                        # overlap cannot be treated as safely touching.
+                        tiny_positive_overlap_pairs += 1
                     else:
                         touching_pairs += 1
+                    if intersection.area > 0:
+                        # Uniqueness requires both involved features excluded;
+                        # never silently choose the first bounding polygon.
+                        excluded_any_positive_overlap.add(indexed_original_positions[i])
+                        excluded_any_positive_overlap.add(indexed_original_positions[j])
         except (ValueError, TypeError, OverflowError, shapely.errors.GEOSException) as exc:
             raise NaturalEarthTopologyError("GEOS overlap diagnostic failed") from exc
 
@@ -137,6 +159,15 @@ def inspect_topology(original: bytes, *, require_pinned_identity: bool = True) -
     invalid = sum(invalid_reasons.values())
     if valid + invalid + empty_or_zero != feature_count:
         raise NaturalEarthTopologyError("topological feature-count reconciliation failed")
+    excluded_positions = (
+        excluded_invalid_or_empty | excluded_antimeridian
+        | excluded_any_positive_overlap
+    )
+    if any(position < 0 or position >= feature_count for position in excluded_positions):
+        raise NaturalEarthTopologyError("source feature positions out of range")
+    candidate_positions = sorted(set(range(feature_count)) - excluded_positions)
+    if len(candidate_positions) + len(excluded_positions) != feature_count:
+        raise NaturalEarthTopologyError("candidate/exclusion reconciliation failed")
     return {
         "profile": PROFILE,
         "source_id": structural["source_id"],
@@ -151,7 +182,18 @@ def inspect_topology(original: bytes, *, require_pinned_identity: bool = True) -
         "invalid_reason_families": dict(sorted(invalid_reasons.items())),
         "antimeridian_width_gt_180_features_excluded_from_overlap": antimeridian_ambiguous,
         "planar_crs84_material_overlap_pairs": overlapping_pairs,
+        "planar_crs84_sub_epsilon_positive_overlap_pairs": tiny_positive_overlap_pairs,
         "planar_crs84_touching_pairs": touching_pairs,
+        # Conservative research-only mask; feature order is pinned to the
+        # exact source SHA. These are ordinal positions, not country IDs.
+        "excluded_original_feature_positions": sorted(excluded_positions),
+        "excluded_invalid_or_empty_positions": len(excluded_invalid_or_empty),
+        "excluded_antimeridian_positions": len(excluded_antimeridian),
+        "excluded_any_positive_overlap_positions": len(excluded_any_positive_overlap),
+        "remaining_candidate_feature_positions": candidate_positions,
+        "remaining_candidate_feature_count": len(candidate_positions),
+        "country_join_global_uniqueness_proven": False,
+        "country_join_scientifically_admitted": False,
         "planar_overlap_area_is_physical_km2": False,
         "topology_qa_pass": invalid == 0 and empty_or_zero == 0,
         "ambiguous_country_point_joins_may_remain": True,
