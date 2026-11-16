@@ -129,9 +129,18 @@ def _inspect_gpkg(path: Path) -> dict[str, Any]:
                     (str(row[0]) if row[0] is not None else "NULL"): row[1]
                     for row in db.execute(f"SELECT GF,count(*) FROM {key} GROUP BY GF")
                 }
+                # Source authority: BKG VG250 publication valid for edition
+                # 31.12.2025, section 3.2.3 (GF Geofaktor):
+                # 1 = ohne Struktur Gewässer
+                # 2 = mit Struktur Gewässer
+                # 3 = ohne Struktur Land
+                # 4 = mit Struktur Land.
+                # Never coerce unstructured land (3) into structured land (4),
+                # or unstructured water (1) into structured water (2).
+                # Unknown/null provider values still block.
                 for raw_gf in gf:
-                    if raw_gf not in {"2", "4"}:
-                        raise BkgOriginalArchiveBlocked("unexpected land/water GF class")
+                    if raw_gf not in {"1", "2", "3", "4"}:
+                        raise BkgOriginalArchiveBlocked("unknown official GF 1/2/3/4 code")
                 count_gf4_distinct = db.execute(
                     f"SELECT count(DISTINCT AGS) FROM {key} WHERE CAST(GF AS INTEGER)=4"
                 ).fetchone()[0]
@@ -139,6 +148,12 @@ def _inspect_gpkg(path: Path) -> dict[str, Any]:
                     raise BkgOriginalArchiveBlocked("implausible administrative feature count")
                 layers[name] = {
                     "original_feature_records": physical,
+                    "gf1_unstructured_water_records": gf.get("1",0),
+                    "gf2_structured_water_records": gf.get("2",0),
+                    "gf3_unstructured_land_records": gf.get("3",0),
+                    "gf4_structured_land_records": gf.get("4",0),
+                    # Keep legacy output names for existing source-receipt
+                    # clients; they still explicitly mean ONLY GF=2/4.
                     "gf4_land_records": gf.get("4",0),
                     "gf2_water_records": gf.get("2",0),
                     "distinct_ags_gf4_land": count_gf4_distinct,
