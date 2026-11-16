@@ -86,6 +86,24 @@ class CroatianGmlWindowTest(unittest.TestCase):
         with self.assertRaises(BuildingGmlError):
             inspect_gml(raw)
 
+    def test_reject_unreviewed_extra_base_geometry_properties(self):
+        # Fail closed when extra direct property children could carry a second
+        # geometry or introduce coordinate metadata outside the reviewed scope.
+        original = sample()
+        insertion_point = b"</base:BuildingGeometry2D>"
+        for extra in (
+            b"<base:geometry><gml:Point/></base:geometry>",
+            b"<base:unreviewedExtension><gml:pos>0 0</gml:pos></base:unreviewedExtension>",
+            b"<base:horizontalGeometryEstimatedAccuracy>1</base:horizontalGeometryEstimatedAccuracy>",
+            b"<base:referenceGeometry>false</base:referenceGeometry>",
+        ):
+            with self.subTest(extra=extra), self.assertRaisesRegex(
+                BuildingGmlError, "unexpected or duplicated"
+            ):
+                inspect_gml(original.replace(insertion_point, extra + insertion_point, 1))
+        # The exact reviewed three-property fixture remains valid.
+        self.assertEqual(inspect_gml(original)["feature_records_checked"], 1)
+
     def test_reject_missing_or_false_insPIRE_reference_geometry(self):
         for raw in (
             sample(ref="false"),
