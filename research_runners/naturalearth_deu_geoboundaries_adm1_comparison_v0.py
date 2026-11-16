@@ -44,6 +44,74 @@ class IndependentBorderBlocked(ValueError):
     """Immutable source identity or scientific comparison failed closed."""
 
 
+def _boundary_disagreement_distance_profile(natural_equal, admin_equal) -> dict:
+    """Allocate the planar symmetric difference by distance from *either* source border.
+
+    This is a diagnostic of two *competing* source boundaries, not a division
+    into coastlines, inland borders or legally correct country territory.
+    The EPSG:3035 metre buffers have a finite-arc discretisation (quad_segs=4).
+    No feature geometry, sample point, per-ADM1 attribute or coordinates leave.
+    """
+    from shapely.ops import unary_union
+    import shapely
+
+    try:
+        disagreement = natural_equal.symmetric_difference(admin_equal)
+        mismatch_km2 = disagreement.area / 1_000_000
+        if not math.isfinite(mismatch_km2) or mismatch_km2 < 0:
+            raise IndependentBorderBlocked("invalid projected mismatch area")
+        if mismatch_km2 == 0:
+            bands = (0.0, 0.0, 0.0, 0.0)
+        else:
+            border_lines = unary_union(
+                [natural_equal.boundary, admin_equal.boundary]
+            )
+            if border_lines.is_empty:
+                raise IndependentBorderBlocked("missing comparison border")
+            remaining = []
+            for distance_metres in (1000, 5000, 10000):
+                # The buffer is a geometric tolerance *around both input
+                # boundaries*, not an assertion that any line is coastline.
+                corridor = border_lines.buffer(distance_metres, quad_segs=4)
+                beyond_km2 = disagreement.difference(corridor).area / 1_000_000
+                if not math.isfinite(beyond_km2):
+                    raise IndependentBorderBlocked("nonfinite distance-band area")
+                remaining.append(beyond_km2)
+            r1, r5, r10 = remaining
+            tol = max(1e-3, 1e-6 * mismatch_km2)
+            if (r1 < -tol or r5 < -tol or r10 < -tol
+                    or r1 > mismatch_km2 + tol
+                    or r5 > r1 + tol or r10 > r5 + tol):
+                raise IndependentBorderBlocked("nonmonotonic mismatch distance bands")
+            bands = (mismatch_km2-r1, r1-r5, r5-r10, r10)
+            if any(b < -tol for b in bands) or abs(sum(bands)-mismatch_km2) > tol:
+                raise IndependentBorderBlocked("nonconservative mismatch distance bins")
+            bands = tuple(max(0.0, b) for b in bands)
+    except (ValueError, TypeError, OverflowError, shapely.errors.GEOSException) as exc:
+        raise IndependentBorderBlocked("distance-band geometry operation failed") from exc
+
+    a, b, c, d = bands
+    return {
+        "boundary_proximity_method": (
+            "original_geometries_projected_EPSG3035; GEOS_2D_planar_distance_to_"
+            "EITHER_input_boundary; quad_segs=4; not_geodetic_distance"
+        ),
+        "boundary_proximity_threshold_metres": [1000, 5000, 10000],
+        "boundary_proximity_total_disagreement_km2": round(mismatch_km2, 3),
+        "disagreement_within_1km_of_either_source_border_km2": round(a, 3),
+        "disagreement_between_1km_and_5km_from_both_borders_km2": round(b, 3),
+        "disagreement_between_5km_and_10km_from_both_borders_km2": round(c, 3),
+        "disagreement_farther_than_10km_from_either_border_km2": round(d, 3),
+        "disagreement_farther_than_10km_fraction": (
+            round(d / mismatch_km2, 6) if mismatch_km2 else 0.0
+        ),
+        "disagreement_bins_preserve_area": True,
+        "source_border_disagreement_is_coastal_or_inland_classified": False,
+        "boundary_reference_is_authoritative": False,
+        "model_input_approved_by_distance_profile": False,
+    }
+
+
 def compare_geometries(natural_de, admin1_geometries: list) -> dict:
     """Synthetic-testable scientific core. Only aggregates leave the function."""
     import shapely
@@ -105,7 +173,14 @@ def compare_geometries(natural_de, admin1_geometries: list) -> dict:
             or abs(adm_area-common-adm_only) > tol
             or abs(union_area-common-nat_only-adm_only) > tol):
         raise IndependentBorderBlocked("nonconservative projected area partition")
+    proximity = _boundary_disagreement_distance_profile(natural_equal, admin_equal)
+    proximity_delta = abs(
+        proximity["boundary_proximity_total_disagreement_km2"] - (nat_only+adm_only)
+    )
+    if proximity_delta > max(0.01, 1e-6 * union_area):
+        raise IndependentBorderBlocked("distance-band total differs from polygon disagreement")
     return {
+        **proximity,
         "compared_admin1_geometries": len(admin1_geometries),
         "comparison_crs": ANALYSIS_CRS,
         "area_unit": "km2_approx_equal_area_projection_not_source_truth",
