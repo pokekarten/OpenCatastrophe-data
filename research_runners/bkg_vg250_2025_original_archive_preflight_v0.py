@@ -94,8 +94,11 @@ def _sql_identifier(name: str) -> str:
 
 
 def _inspect_gpkg(path: Path) -> dict[str, Any]:
-    if path.stat().st_size < 100 or path.open("rb").read(16) != b"SQLite format 3\x00":
+    if path.stat().st_size < 100:
         raise BkgOriginalArchiveBlocked("GPKG SQLite signature missing")
+    with path.open("rb") as opened:
+        if opened.read(16) != b"SQLite format 3\x00":
+            raise BkgOriginalArchiveBlocked("GPKG SQLite signature missing")
     try:
         # Strictly read-only/immutable; no migrations, pragmas that write, or
         # third-party extensions. All table names below are fixed constants.
@@ -173,8 +176,9 @@ def inspect_original_archive(path: Path, *,
     expected = synthetic_expected_md5 or OFFICIAL_PUBLISHED_MD5
     if digest != expected:
         raise BkgOriginalArchiveBlocked("whole-source ZIP differs from publisher MD5 sidecar")
-    if path.open("rb").read(4) != b"PK\x03\x04":
-        raise BkgOriginalArchiveBlocked("original bytes are not a ZIP")
+    with path.open("rb") as opened:
+        if opened.read(4) != b"PK\x03\x04":
+            raise BkgOriginalArchiveBlocked("original bytes are not a ZIP")
     try:
         with ZipFile(path, "r") as archive:
             gpkg_member, count, uncompressed = _scan_members(archive)
@@ -227,8 +231,14 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         result = inspect_original_archive(args.original_zip)
-    except (BkgOriginalArchiveBlocked, OSError, ValueError, OverflowError, MemoryError):
-        print("BLOCKED: BKG 2025 full original ZIP/GPKG research preflight", file=sys.stderr)
+    except BkgOriginalArchiveBlocked as exc:
+        # Only raise this error with author-controlled constant strings.
+        # Provider names, feature values, CRS payload, paths and coordinates
+        # must never be injected into exception text.
+        print(f"BLOCKED: BKG 2025 source proof — {exc}", file=sys.stderr)
+        return 2
+    except (OSError, ValueError, OverflowError, MemoryError):
+        print("BLOCKED: BKG 2025 original archive unexpected system failure", file=sys.stderr)
         return 2
     print(json.dumps(result, sort_keys=True, indent=2, allow_nan=False))
     return 0

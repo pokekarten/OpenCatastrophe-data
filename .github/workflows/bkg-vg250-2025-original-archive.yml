@@ -58,6 +58,9 @@ jobs:
             --max-filesize 104857600 --retry 0 \
             --output "$zipfile" \
             'https://daten.gdz.bkg.bund.de/produkte/vg/vg250_ebenen_1231/aktuell/vg250_12-31.utm32s.gpkg.ebenen.zip'
+          # The checked-in preflight prints only an author-controlled
+          # failure category (never original source paths/values) when blocked.
+          # No bypass or data selection occurs on a scientific mismatch.
           python -m research_runners.bkg_vg250_2025_original_archive_preflight_v0 \
             --original-zip "$zipfile"
           echo "Source original ZIP and derived temporary GPKG deleted at job exit; NOT admitted."
