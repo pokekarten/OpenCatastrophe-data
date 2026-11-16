@@ -69,6 +69,10 @@ class FullOriginalWESMTests(unittest.TestCase):
         self.assertEqual(out["original_wesm_data_row_count"],4)
         self.assertEqual(out["original_wesm_header_columns"],28)
         self.assertEqual(out["duplicate_workunit_id_occurrences"],1)
+        self.assertEqual(out["duplicate_workunit_project_row_occurrences"],1)
+        self.assertEqual(out["reused_workunit_id_other_project_occurrences"],0)
+        self.assertEqual(out["reused_workunit_id_conflicting_seamless_category_occurrences"],1)
+        self.assertFalse(out["workunit_duplicate_structure_scientifically_resolved"])
         self.assertTrue(out["has_unrecognized_seamless_quality_status"])
         self.assertEqual(out["original_wesm_seamless_quality_category_counts"]["Meets"],1)
         self.assertEqual(out["original_wesm_seamless_quality_category_counts"]["unknown_or_blank"],1)
@@ -86,7 +90,8 @@ class FullOriginalWESMTests(unittest.TestCase):
              patch.object(s,"HEADER_NAMES_SHA",hashlib.sha256("\n".join(FIELDS).encode()).hexdigest()), \
              patch.object(s,"EXPECTED_BYTES",len(data)), \
              patch.object(s,"PREFIX_BYTES",64), \
-             patch.object(s,"PREFIX_SHA",hashlib.sha256(data[:64]).hexdigest()):
+             patch.object(s,"PREFIX_SHA",hashlib.sha256(data[:64]).hexdigest()), \
+             patch.object(s,"EXPECTED_FULL_SHA",hashlib.sha256(data).hexdigest()):
             output=s.observe(opener=opener,clock=lambda:datetime(2026,11,16,tzinfo=timezone.utc))
         self.assertEqual(requests,[(s.URL,"GET",s.TIMEOUT)])
         self.assertEqual(output["original_complete_csv_sha256"],hashlib.sha256(data).hexdigest())
@@ -107,6 +112,9 @@ class FullOriginalWESMTests(unittest.TestCase):
              patch.object(s,"PREFIX_BYTES",64):
             with self.assertRaisesRegex(s.Blocked,"previously verified"):
                 s.observe(opener=lambda req,timeout:Response(data,length=len(data)))
+            with patch.object(s,"PREFIX_SHA",hashlib.sha256(data[:64]).hexdigest()):
+                with self.assertRaisesRegex(s.Blocked,"complete original WESM CSV SHA256 changed"):
+                    s.observe(opener=lambda req,timeout:Response(data,length=len(data)))
             with self.assertRaisesRegex(s.Blocked,"Content-Length"):
                 s.observe(opener=lambda req,timeout:Response(data,length=len(data)+1))
             with self.assertRaisesRegex(s.Blocked,"complete byte length"):
