@@ -30,7 +30,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Service root:** <https://rockyweb.usgs.gov>
 
-**Api version:** USGS WESM daily-mutable CSV snapshot: exact 2026-11-16 original prefix SHA and original advertised total bound
+**Api version:** One USGS WESM original complete CSV as observed 2026-11-16T21:49:08.229071Z; immutable 2267051-byte SHA-256 a5f56b54f26767311156116b4721d477bf5d7b6069056117127898852d2d1b83
 
 ## Access scope
 
@@ -84,7 +84,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Rate limit notes:** Exactly ONE public full WESM CSV GET per user-triggered source PR branch workflow, with maximum 2267052 body read and no redirect/retry. No sensitive data, original source rows, raw provider bytes or signed URLs in Git, logs or Neon. No recurring schedule; no GeoPackage access.
 
-**Mutability notes:** The upstream USGS original WESM CSV is updated nearly daily. Exact 2026-11-16T21:36:52Z authentic prefix original SHA256 is 19e025e68687bbb2b61d7f58a5eeedfa6d59b29a9ba98aa159556cc801e6eb8d, original Content-Range bytes 0-32767/2267051. Separate original read is authorised ONLY for that same 2267051-byte apparent source version. A changed full CSV tail is possible even with identical first 32KiB; compute the full independent SHA256 and bind retrieval UTC/real provider response metadata. No claim to immutable upstream historical download URL.
+**Mutability notes:** The upstream USGS original WESM CSV is updated nearly daily. Exact 2026-11-16T21:36:52Z authentic prefix original SHA256 is 19e025e68687bbb2b61d7f58a5eeedfa6d59b29a9ba98aa159556cc801e6eb8d, original Content-Range bytes 0-32767/2267051. Separate original read is authorised ONLY for that same 2267051-byte apparent source version. A changed full CSV tail is possible even with identical first 32KiB; compute the full independent SHA256 and bind retrieval UTC/real provider response metadata. No claim to immutable upstream historical download URL. First complete original source live run 43963850431 job 133638077985 successfully verified exactly 2267051 bytes and original SHA-256 a5f56b54f26767311156116b4721d477bf5d7b6069056117127898852d2d1b83. New runner source-version replay MUST reject changed full-body hash even if first 32768 bytes and total size remain unchanged; no automatic updated source selection.
 
 ## Rights and policy
 
@@ -115,6 +115,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - Original entire 2267051-byte file SHA256, UTF-8 CSV header name digest c2893167ec1839f74db9c67704f9f3fbd3c4ed9d6d65359bf1914ce19abb2746 and 28 columns
 - Aggregated original source work-unit row count and known quality status label counts only, no row values, no duplicate workunit raw IDs, no provider body persisted
 - original_wesm_geopackage_verified=false, florida_s1m_tile_lineage_verified=false, cat_model_input_approved=false
+- Full original WESM 2267051-byte SHA-256 a5f56b54f26767311156116b4721d477bf5d7b6069056117127898852d2d1b83 is frozen after first public original GitHub run; any later replay drift blocks. This is NOT an original GeoPackage or model admission.
 
 **Implementation decision:** build_adapter_now
 
@@ -126,5 +127,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://www.usgs.gov/ngp-standards-and-specifications/wesm-data-dictionary>
 - <https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map>
 - <https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43961768133/job/133630902143>
+- <https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43963850431/job/133638077985>
 
-**Notes:** Second and separately reviewed exact USGS WESM original CSV access operation. This is not authorization for the alternate WESM.gpkg spatial dataset, not an S1M original DEM, not a perpetual CSV revision collector, and not a full-source model asset admission. Only an exact current-provider version matching the preverified 32KiB prefix and advertised size may be hashed; source update blocks rather than auto-selects another day.
+**Notes:** Second and separately reviewed exact USGS WESM original CSV access operation. This is not authorization for the alternate WESM.gpkg spatial dataset, not an S1M original DEM, not a perpetual CSV revision collector, and not a full-source model asset admission. Only an exact current-provider version matching the preverified 32KiB prefix and advertised size may be hashed; source update blocks rather than auto-selects another day. One original 2026-11-16 source snapshot 2267051 bytes, 28 columns, 3308 rows and complete SHA has been independently verified in public original GitHub job 133638077985. This is complete-CSV only, no provider raw body retained or published.
