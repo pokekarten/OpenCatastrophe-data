@@ -163,8 +163,14 @@ def verify_csv_deflate_member(
     expected_cell_sha256: str = EXPECTED_TIFF_PIXEL_14_BAND_SHA256,
     target_grid_id: str = TARGET_GRID_ID,
     target_country: str = TARGET_CNTR_ID,
+    require_input_eof: bool = True,
 ) -> dict:
-    """One pass, O(chunk + one CSV line) RAM; no original data returned."""
+    """One pass, O(chunk + one CSV line) RAM; no original data returned.
+
+    Raw member streams must end after the exact original compressed bytes.
+    An enclosing ZIP stream may have following ZIP entries or descriptor bytes;
+    only the independently verified complete-ZIP wrapper disables this gate.
+    """
     _require(isinstance(expected_compressed_bytes, int)
              and 1 <= expected_compressed_bytes <= MAX_COMPRESSED_BYTES,
              "unapproved compressed source size")
@@ -265,6 +271,10 @@ def verify_csv_deflate_member(
         raise CSVParityBlocked("original CSV inflater flush failed") from exc
     _require(reader.eof and not reader.unused_data and not reader.unconsumed_tail,
              "original ZIP CSV deflate stream incomplete")
+    _require(type(require_input_eof) is bool, "raw-member EOF policy must be bool")
+    if require_input_eof:
+        _require(stream.read(1) == b"",
+                 "raw DEFLATE member stream has trailing unapproved source bytes")
     _require(consumed_uncompressed == expected_uncompressed_bytes,
              "original CSV uncompressed length mismatch")
     _require(uncompressed_crc == expected_crc32, "original member CRC32 mismatch")
