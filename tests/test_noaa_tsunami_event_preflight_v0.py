@@ -51,6 +51,20 @@ class TsunamiEventPreflightTests(unittest.TestCase):
         self.assertEqual(out["unconfirmed_or_non_tsunami_event_count"], 2)
         self.assertFalse(out["historical_calendar_and_source_deduplication_verified"])
 
+    def test_transfer_limit_requires_actual_json_boolean(self):
+        for value in (0, 0.0, 1, "false", "true", [], {}):
+            with self.subTest(value=repr(value)):
+                sample = fixture((4,))
+                sample["exceededTransferLimit"] = value
+                with self.assertRaises(TsunamiEventPreflightError):
+                    screen_noaa_tsunami_event_json(encoded(sample))
+        for omit in (False, True):
+            sample = fixture((4,))
+            if omit:
+                sample.pop("exceededTransferLimit")
+            out = screen_noaa_tsunami_event_json(encoded(sample))
+            self.assertEqual(out["features_screened"], 1)
+
     def test_fail_closes_bad_geometry_dates_validity_schema_and_json(self):
         rejects = []
         def add(change):
