@@ -170,7 +170,7 @@ def observe(
                 raise Blocked("original GeoPackage Content-Range does not match fixed GET")
             total = int(matched.group(1))
             if total < MIN_TOTAL or total > MAX_TOTAL:
-                raise Blocked("unreviewed original GeoPackage byte-size envelope")
+                raise Blocked(f"unreviewed original GeoPackage byte-size envelope: provider advertised {total} bytes; no body read")
             media = response.headers.get("Content-Type", "").lower().split(";", 1)[0].strip()
             if media not in MEDIA:
                 raise Blocked("unreviewed GeoPackage Content-Type")
