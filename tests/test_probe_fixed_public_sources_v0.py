@@ -209,8 +209,22 @@ class FixedSourceProbesTests(unittest.TestCase):
         self.assertTrue(receipt["fixed_window_verified"])
         self.assertFalse(receipt["model_input_approved"])
         self.assertFalse(receipt["provider_bytes_persisted"])
-        self.assertNotIn("1.3", json.dumps(receipt))
-        self.assertNotIn("fixture_only", json.dumps(receipt))
+        # The provider's 1.3 Kp fixture value must not leak into receipt
+        # scientific fields. The wall-clock retrieval_utc is independent
+        # metadata and may legitimately contain the digits "1.3".
+        science_free_receipt = {key: value for key, value in receipt.items()
+                                if key != "retrieval_utc"}
+        self.assertNotIn("1.3", json.dumps(science_free_receipt))
+        self.assertNotIn("Kp", science_free_receipt)
+        self.assertNotIn("fixture_only", json.dumps(science_free_receipt))
+        # Regression: the exact UTC fractional timestamp that caused the
+        # Python 3.12 CI failure must never make this leak test fail.
+        with_ambiguous_clock = dict(receipt, retrieval_utc="2026-11-16T21:19:51.314771+00:00")
+        self.assertIn("1.3", json.dumps(with_ambiguous_clock))
+        self.assertNotIn("1.3", json.dumps({
+            key: value for key, value in with_ambiguous_clock.items()
+            if key != "retrieval_utc"
+        }))
 
     def test_noaa_2026_rtsw_wrong_shape_cannot_be_reported_as_pass(self):
         source = "noaa.swpc.real-time-solar-wind"
