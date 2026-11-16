@@ -7,6 +7,7 @@
 -- This idempotent manual research-staging SQL does not access the provider,
 -- change immutable prior rows, grant model admission, or store raw 240-point
 -- responses. The original 12 two-hour derived values are already staged.
+-- sample_id is GENERATED ALWAYS AS IDENTITY: never assign IDs manually.
 --
 -- Official CO-OPS API s: sigma = standard deviation of 1-second samples
 -- used to compute each 6-minute water-level height; NEVER calibrated
@@ -80,12 +81,11 @@ WITH original AS (
  FROM prior CROSS JOIN permission_gate WHERE permission_gate.permitted
 )
 INSERT INTO research.source_sample_v0
- (sample_id,source_id,source_url,sample_kind,sample_json,
+ (source_id,source_url,sample_kind,sample_json,
   provider_response_sha256,sample_sha256,provider_license,licence_evidence_url,
   rights_scope,product_version,request_identity,retrieved_at,
   research_only,model_input_approved,source_byte_persistence_authorized)
-SELECT (SELECT COALESCE(MAX(sample_id),0)+1 FROM research.source_sample_v0),
- source_id,source_url,'observed_values',corrected_json,
+SELECT source_id,source_url,'observed_values',corrected_json,
  provider_response_sha256,encode(sha256(convert_to(corrected_json::text,'UTF8')),'hex'),
  provider_license,licence_evidence_url,
  'Research-only 12 original-day sampled values with correctly named 1-second sigma; public NOAA provenance retained; no provider-original bytes, no calibrated uncertainty or CAT-model input admitted.',
