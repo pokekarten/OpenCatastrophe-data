@@ -14,7 +14,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Schema version:** `1.0.0`  
 **Review date:** `2026-11-16`  
-**Purpose:** Non-admitted USGS Work Unit Extent Spatial Metadata (WESM) source original identity and quality-lineage discovery distinct from the seamless one-meter S1M raster.
+**Purpose:** Non-admission discovery registry of USGS Work Unit Extent Spatial Metadata (WESM) source original identity and quality-lineage discovery distinct from the seamless one-meter S1M raster.
 
 **Entries:** 1
 
