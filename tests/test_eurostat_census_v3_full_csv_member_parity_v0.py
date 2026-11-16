@@ -73,6 +73,24 @@ class OneCellCSVSourceParityTests(unittest.TestCase):
         with self.assertRaisesRegex(CSVParityBlocked,"disagree"):
             run_fake(source,member,"0"*64)
 
+    def test_raw_deflate_member_rejects_trailing_unreviewed_bytes(self):
+        # The standalone raw-member reader must not attest a prefix while
+        # silently ignoring a malicious or accidentally appended source byte.
+        source, member, digest = fake_member()
+        self.assertTrue(run_fake(source, member, digest)
+                        ["source_same_release_csv_tiff_14_band_parity"])
+        for suffix in (b"\\x00", b"SECOND-MEMBER"):
+            with self.subTest(suffix=suffix), self.assertRaisesRegex(
+                CSVParityBlocked, "trailing unapproved source bytes"
+            ):
+                verify_csv_deflate_member(
+                    io.BytesIO(member + suffix),
+                    expected_compressed_bytes=len(member),
+                    expected_uncompressed_bytes=len(source),
+                    expected_crc32=zlib.crc32(source),
+                    expected_cell_sha256=digest,
+                )
+
     def test_wrong_full_csv_crc_and_size_block(self):
         source,member,digest=fake_member()
         with self.assertRaisesRegex(CSVParityBlocked,"CRC32"):
