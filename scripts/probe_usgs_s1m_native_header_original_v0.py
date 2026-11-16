@@ -41,6 +41,10 @@ PROFILE = "oc-usgs-3dep-s1m-florida-original-prefix-t1-v0"
 EXPECTED_MEDIA = {"image/tiff", "application/x-tiff",
                   "application/octet-stream", "binary/octet-stream"}
 RANGE_PATTERN = re.compile(r"bytes 0-65535/([1-9][0-9]{0,12})\Z")
+# Exact original HTTP206 source receipt: GitHub run 43948359780 job 133583989829.
+# This is NOT a checksum of the whole 447MB provider GeoTIFF.
+EXPECTED_ORIGINAL_PREFIX_SHA256 = "56d8d147056fcd28ad916799cd6b917c57d9d08b3e07dfe06931f2a4d5edb2f2"
+EXPECTED_ORIGINAL_TOTAL_BYTES = 447032917
 
 
 class Blocked(ValueError):
@@ -223,6 +227,9 @@ def observe(
     except (error.HTTPError, error.URLError, OSError, TimeoutError) as exc:
         raise Blocked("fixed USGS original prefix request unavailable") from exc
 
+    observed_prefix_sha = hashlib.sha256(raw).hexdigest()
+    if total != EXPECTED_ORIGINAL_TOTAL_BYTES or observed_prefix_sha != EXPECTED_ORIGINAL_PREFIX_SHA256:
+        raise Blocked("pinned USGS S1M original prefix SHA or complete-object size drift")
     headers = first_ifd(raw)
     ts = clock()
     if not isinstance(ts, datetime) or ts.utcoffset() is None:
@@ -241,7 +248,7 @@ def observe(
         "original_http_status": 206,
         "original_content_range": content_range,
         "original_prefix_bytes": len(raw),
-        "original_prefix_sha256": hashlib.sha256(raw).hexdigest(),
+        "original_prefix_sha256": observed_prefix_sha,
         "original_total_bytes_advertised_not_full_sha": total,
         **headers,
         "full_original_tiff_sha256_verified": False,
