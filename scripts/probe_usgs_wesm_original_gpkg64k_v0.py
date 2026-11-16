@@ -35,7 +35,10 @@ COUNT = 65536
 RANGE = "bytes=0-65535"
 TIMEOUT = 30
 MIN_TOTAL = COUNT + 1
-MAX_TOTAL = 1024 * 1024 * 1024
+MAX_TOTAL = 4 * 1024 * 1024 * 1024
+# Explicit immutable original 206 Content-Range observed in GitHub run 43968198021.
+# The size was checked without reading any original body bytes.
+EXPECTED_TOTAL = 3827232768
 CONTENT_RANGE = re.compile(r"bytes 0-65535/([1-9][0-9]{4,12})\Z")
 MEDIA = frozenset((
     "application/octet-stream",
@@ -169,8 +172,8 @@ def observe(
             if not matched:
                 raise Blocked("original GeoPackage Content-Range does not match fixed GET")
             total = int(matched.group(1))
-            if total < MIN_TOTAL or total > MAX_TOTAL:
-                raise Blocked(f"unreviewed original GeoPackage byte-size envelope: provider advertised {total} bytes; no body read")
+            if total != EXPECTED_TOTAL:
+                raise Blocked(f"original WESM GeoPackage full-object size drift: provider advertised {total} vs frozen {EXPECTED_TOTAL}; no body read")
             media = response.headers.get("Content-Type", "").lower().split(";", 1)[0].strip()
             if media not in MEDIA:
                 raise Blocked("unreviewed GeoPackage Content-Type")
