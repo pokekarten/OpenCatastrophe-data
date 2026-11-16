@@ -120,6 +120,22 @@ class FixedOpenFEMATests(unittest.TestCase):
         self.assertEqual(out["distinct_designated_areas_in_bounded_page"], 1)
         self.assertFalse(out["physical_hazard_event_frequency_verified"])
 
+    def test_missing_county_fips_and_fm_assistance_are_still_area_rows(self):
+        # FEMA area designations can be state-wide or non-county; a missing
+        # county FIPS is not automatically a malformed disaster declaration.
+        a = disaster_row(1, fipsCountyCode=None,
+                         designatedArea="SYNTHETIC STATEWIDE")
+        b = disaster_row(2, declarationType="FM",
+                         femaDeclarationString="FM-4702-XY",
+                         fipsCountyCode="000",
+                         designatedArea="SYNTHETIC FIRE ASSISTANCE")
+        out = validate_response(DISASTER, payload(DISASTER, [a, b]))
+        self.assertEqual(out["rows"], 2)
+        self.assertEqual(out["unique_declaration_ids_in_bounded_page"], 2)
+        self.assertEqual(out["distinct_designated_areas_in_bounded_page"], 2)
+        self.assertFalse(out["physical_hazard_event_frequency_verified"])
+        self.assertFalse(out["commercial_underwriting_authorized"])
+
     def test_rejects_wrong_declaration_key_and_bad_geography(self):
         bad = [
             disaster_row(1, femaDeclarationString="EM-4701-XY"),
