@@ -51,6 +51,11 @@ class NaturalEarthTopologyResearchTests(unittest.TestCase):
         self.assertEqual(got["planar_crs84_material_overlap_pairs"], 0)
         self.assertEqual(got["invalid_reason_families"], {})
         self.assertTrue(got["topology_qa_pass"])
+        self.assertEqual(got["excluded_original_feature_positions"], [])
+        self.assertEqual(got["remaining_candidate_feature_positions"], [0, 1])
+        self.assertEqual(got["remaining_candidate_feature_count"], 2)
+        self.assertFalse(got["country_join_global_uniqueness_proven"])
+        self.assertFalse(got["country_join_scientifically_admitted"])
         self.assertFalse(got["CAT_model_input_approved"])
         self.assertFalse(got["original_or_modified_geometries_persisted"])
 
@@ -59,12 +64,17 @@ class NaturalEarthTopologyResearchTests(unittest.TestCase):
         got = self.inspect(doc)
         self.assertEqual(got["planar_crs84_material_overlap_pairs"], 0)
         self.assertEqual(got["planar_crs84_touching_pairs"], 1)
+        self.assertEqual(got["excluded_original_feature_positions"], [])
+        self.assertEqual(got["remaining_candidate_feature_count"], 2)
 
     def test_material_interior_overlap_count_is_symmetric_once(self):
         doc = payload([[1, 1], [3, 1], [3, 3], [1, 3], [1, 1]])
         got = self.inspect(doc)
         self.assertEqual(got["planar_crs84_material_overlap_pairs"], 1)
         self.assertEqual(got["planar_crs84_touching_pairs"], 0)
+        self.assertEqual(got["excluded_any_positive_overlap_positions"], 2)
+        self.assertEqual(got["excluded_original_feature_positions"], [0, 1])
+        self.assertEqual(got["remaining_candidate_feature_count"], 0)
         self.assertTrue(got["topology_qa_pass"])
         self.assertFalse(got["country_code_alignment_verified"])
         self.assertFalse(got["precise_border_or_cadastral_use_approved"])
@@ -79,6 +89,9 @@ class NaturalEarthTopologyResearchTests(unittest.TestCase):
         self.assertEqual(got["ogc_valid_features"], 1)
         self.assertEqual(got["empty_or_zero_area_features"], 0)
         self.assertEqual(got["invalid_reason_families"], {"self_intersection": 1})
+        self.assertEqual(got["excluded_invalid_or_empty_positions"], 1)
+        self.assertEqual(got["excluded_original_feature_positions"], [0])
+        self.assertEqual(got["remaining_candidate_feature_positions"], [1])
         self.assertFalse(got["topology_qa_pass"])
         self.assertFalse(got["automatic_repairs_performed"])
         self.assertNotIn("coordinates", json.dumps(got))
@@ -105,7 +118,47 @@ class NaturalEarthTopologyResearchTests(unittest.TestCase):
         self.assertEqual(
             got["antimeridian_width_gt_180_features_excluded_from_overlap"], 1
         )
+        self.assertEqual(got["excluded_antimeridian_positions"], 1)
+        self.assertEqual(got["excluded_original_feature_positions"], [0])
+        self.assertEqual(got["remaining_candidate_feature_positions"], [1])
         self.assertFalse(got["independent_national_boundary_completeness_verified"])
+
+    def test_tiny_positive_intersection_blocks_both_join_candidates(self):
+        # Planar overlap below a reporting threshold is still real ambiguity.
+        doc = payload([[2 - 1e-13, 0], [3, 0], [3, 2],
+                       [2 - 1e-13, 2], [2 - 1e-13, 0]])
+        got = self.inspect(doc)
+        self.assertEqual(got["planar_crs84_material_overlap_pairs"], 0)
+        self.assertEqual(got["planar_crs84_sub_epsilon_positive_overlap_pairs"], 1)
+        self.assertEqual(got["excluded_original_feature_positions"], [0, 1])
+        self.assertEqual(got["remaining_candidate_feature_count"], 0)
+        self.assertFalse(got["country_join_global_uniqueness_proven"])
+
+    def test_join_mask_reports_only_original_positions_no_country_identity(self):
+        # Third synthetic feature remains a candidate when the first two
+        # overlap; exclude only proven ambiguous geometry positions.
+        doc = payload([[1, 1], [3, 1], [3, 3], [1, 3], [1, 1]])
+        doc["features"].append({
+            "type": "Feature",
+            "properties": {"ADM0_A3": "CCC", "ISO_A2": "CC"},
+            "geometry": {"type": "Polygon", "coordinates": [
+                [[10, 10], [11, 10], [11, 11], [10, 11], [10, 10]]
+            ]},
+        })
+        got = self.inspect(doc)
+        self.assertEqual(got["excluded_original_feature_positions"], [0, 1])
+        self.assertEqual(got["remaining_candidate_feature_positions"], [2])
+        self.assertEqual(got["remaining_candidate_feature_count"], 1)
+        self.assertEqual(
+            got["remaining_candidate_feature_count"]
+            + len(got["excluded_original_feature_positions"]),
+            got["feature_count"],
+        )
+        self.assertNotIn("AAA", json.dumps(got))
+        self.assertNotIn("BBB", json.dumps(got))
+        self.assertNotIn("CCC", json.dumps(got))
+        self.assertNotIn("coordinates", json.dumps(got))
+        self.assertFalse(got["CAT_model_input_approved"])
 
     def test_multipolygon_is_safely_counted_and_not_modified(self):
         doc = payload()
