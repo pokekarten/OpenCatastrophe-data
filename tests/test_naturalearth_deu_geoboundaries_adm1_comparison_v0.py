@@ -81,7 +81,7 @@ class NaturalEarthVsIndependentAdmin1Tests(unittest.TestCase):
         for raw in (None,b"",b"version https://git-lfs.github.com/spec/v1\n"):
             with self.subTest(raw=raw), self.assertRaises(IndependentBorderBlocked):
                 compare_original_bytes(raw,b"other")
-        with self.assertRaisesRegex(IndependentBorderBlocked, "geoBoundaries original source"):
+        with self.assertRaisesRegex(IndependentBorderBlocked, "Natural Earth immutable"):
             compare_original_bytes(b"x"*838726,b"not-an-original")
 
     def test_reverse_sources_and_untrusted_bytes_never_accepted(self):
