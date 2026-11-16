@@ -79,7 +79,7 @@ class OneCellCSVSourceParityTests(unittest.TestCase):
         source, member, digest = fake_member()
         self.assertTrue(run_fake(source, member, digest)
                         ["source_same_release_csv_tiff_14_band_parity"])
-        for suffix in (b"\\x00", b"SECOND-MEMBER"):
+        for suffix in (b"\x00", b"SECOND-MEMBER"):
             with self.subTest(suffix=suffix), self.assertRaisesRegex(
                 CSVParityBlocked, "trailing unapproved source bytes"
             ):
