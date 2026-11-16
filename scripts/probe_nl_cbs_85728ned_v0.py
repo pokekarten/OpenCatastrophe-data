@@ -130,7 +130,7 @@ def validate_rows(payloads: dict[str, dict[str, Any]]) -> dict[str, Any]:
     )
     if (
         len(info) != 1 or type(info[0]) is not dict
-        or info[0].get("ID") != 0
+        or type(info[0].get("ID")) is not int or info[0]["ID"] != 0
         or info[0].get("Identifier") != "85728NED"
         or info[0].get("Source") != "CBS."
         or "inputprijsindex bouwkosten 2021=100" not in info[0].get("Title", "")
@@ -163,7 +163,7 @@ def validate_rows(payloads: dict[str, dict[str, Any]]) -> dict[str, Any]:
     row = observations[0]
     index_value = row.get("InputprijsindexBouwkosten_1")
     if (
-        row.get("ID") != 0
+        type(row.get("ID")) is not int or row["ID"] != 0
         or row.get("Perioden") != "2018MM01"
         or row.get("Componenten") != "T001363"
         or type(index_value) not in {float, int}
