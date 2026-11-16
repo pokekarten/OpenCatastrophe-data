@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Natural Earth DEU vs original geoBoundaries ADM1 independent area audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/naturalearth_deu_geoboundaries_adm1_comparison_v0.py
+      - tests/test_naturalearth_deu_geoboundaries_adm1_comparison_v0.py
+      - .github/workflows/naturalearth-deu-geoboundaries-original-compare.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/naturalearth-deu-geoboundaries-original-compare.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: naturalearth-deu-gb-adm1-original-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compare-original-deu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout audited exact git revision without persist-credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned off-Git original geometry validation wheels
+        run: |
+          python -m pip install --disable-pip-version-check --no-input --only-binary=:all: \
+            "shapely==2.1.2" "pyproj==3.7.2"
+          python -m pip check
+      - name: Exercise synthetic negative source and geometry challenges
+        run: |
+          python -m unittest \
+            tests.test_naturalearth_admin0_geojson_preflight \
+            tests.test_geoboundaries_deu_adm1_original_geojson_v0 \
+            tests.test_naturalearth_deu_geoboundaries_adm1_comparison_v0 -v
+      - name: Independently obtain two pinned provider originals and compare DEU footprint
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          ne="$RUNNER_TEMP/naturalearth-deu-v511-original.geojson"
+          gb="$RUNNER_TEMP/geoboundaries-deu-adm1-2021-original.geojson"
+          trap 'rm -f "$ne" "$gb"' EXIT
+          # Provider GitHub commit and separate public-domain original transport.
+          curl --fail --silent --show-error \
+            --proto '=https' --connect-timeout 20 --max-time 120 --retry 0 \
+            --max-filesize 1048576 --output "$ne" \
+            'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_110m_admin_0_countries.geojson'
+          # geoBoundaries Git-LFS content delivery (not the 132-byte pointer).
+          curl --fail --silent --show-error --location \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 7340032 --output "$gb" \
+            'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/DEU/ADM1/geoBoundaries-DEU-ADM1.geojson'
+          # Both exact source SHA-256s and sizes are verified *before* parsing.
+          # Logs contain ONLY aggregated, source-bound research statistics.
+          python -m research_runners.naturalearth_deu_geoboundaries_adm1_comparison_v0 \
+            --natural-earth-original "$ne" --geoboundaries-original "$gb"
+          echo "PASS: two independently pinned original sources; private temporary geometry removed."
