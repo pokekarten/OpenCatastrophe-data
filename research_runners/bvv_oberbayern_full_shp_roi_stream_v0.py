@@ -417,7 +417,12 @@ class VerifiedOriginalSegmentStream:
                     raise FullSHPBlocked("original source segment response not bytes")
                 if len(payload)==want:
                     return payload,validators
-                problem="truncated_or_oversized_original_response"
+                if len(payload)>want:
+                    # An overlong HTTP206 body violates the exact approved
+                    # Range boundary. Retrying it would mask a source/transport
+                    # identity defect rather than recover a short response.
+                    raise FullSHPBlocked("oversized original ZIP segment response")
+                problem="truncated_original_response"
             except HTTPError as exc:
                 # 429 may signal provider rate limits. Do not automatically
                 # retry it, nor any 403/404, redirect or policy rejection.
