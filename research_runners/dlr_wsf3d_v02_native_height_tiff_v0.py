@@ -139,7 +139,7 @@ def inspect_native_bytes(original: bytes, *, expected_sha256: str) -> dict:
 
 def audit_file(path: Path, *, expected_sha256: str) -> dict:
     """Exact filename, regular file, byte cap, SHA; no provider GET."""
-    if (type(path) is not Path or path.name != TILE_NAME or path.is_symlink()
+    if (not isinstance(path, Path) or path.name != TILE_NAME or path.is_symlink()
             or not path.is_file() or path.stat().st_size > MAX_SOURCE_BYTES):
         raise WSF3DScienceBlocked("wrong source file path or original-byte bound")
     with path.open("rb") as stream:
