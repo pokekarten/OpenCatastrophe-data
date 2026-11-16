@@ -75,7 +75,10 @@ class BkgOriginal2025ZipSyntheticTests(unittest.TestCase):
             self.assertFalse(r["cat_model_input_approved"])
             self.assertFalse(r["insurance_geolocation_approved"])
             self.assertFalse(r["original_zip_or_gpkg_persisted_in_git_or_neon"])
-            self.assertNotIn("coordinates",json.dumps(r))
+            for prohibited in ("original_feature_coordinates", "source_polygon_wkt",
+                               "raw_geometry", "geometry_json", "site_coordinates"):
+                self.assertNotIn(prohibited, json.dumps(r))
+            self.assertFalse(r["all_geom_coordinates_and_topology_validated"])
 
     def test_synthetic_can_never_be_mistaken_for_official_MD5(self):
         with tempfile.TemporaryDirectory() as d:
