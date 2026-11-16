@@ -48,7 +48,7 @@ def inspect_native_bytes(original: bytes, *, expected_sha256: str) -> dict:
     measured_sha256 = hashlib.sha256(original).hexdigest()
     if measured_sha256 != expected_sha256:
         raise WSF3DScienceBlocked("original source SHA256 mismatch")
-    if original[:4] not in {b"II*\\x00", b"MM\\x00*"}:
+    if original[:4] not in {b"II*\x00", b"MM\x00*"}:
         raise WSF3DScienceBlocked("not a classic unmodified TIFF byte stream")
     try:
         import numpy as np
