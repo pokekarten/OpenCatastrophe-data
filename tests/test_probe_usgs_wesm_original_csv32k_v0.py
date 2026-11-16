@@ -56,7 +56,8 @@ class OriginalWESMTests(unittest.TestCase):
         def opener(req, timeout):
             requests.append((req.get_method(), req.full_url, req.headers.get("Range"),timeout))
             return response
-        out = s.probe(opener=opener,clock=lambda: datetime(2026,11,16,21,30,tzinfo=timezone.utc))
+        with patch.object(s, "EXPECTED_PREFIX_SHA", hashlib.sha256(response.body).hexdigest()):
+            out = s.probe(opener=opener,clock=lambda: datetime(2026,11,16,21,30,tzinfo=timezone.utc))
         self.assertEqual(requests, [("GET",s.URL,s.RANGE,s.TIMEOUT)])
         self.assertEqual(out["original_prefix_sha256"],hashlib.sha256(response.body).hexdigest())
         self.assertEqual(out["advertised_full_csv_bytes_not_full_hash"],12000000)
@@ -66,6 +67,17 @@ class OriginalWESMTests(unittest.TestCase):
                   "neon_write_performed", "cat_model_input_approved"):
             self.assertIs(out[k], False)
         self.assertNotIn("PRIVATE ORIGINAL ROW", str(out))
+
+    def test_real_original_prefix_identity_is_frozen_and_synthetic_drift_blocks(self):
+        self.assertEqual(s.EXPECTED_PREFIX_SHA,
+                         "19e025e68687bbb2b61d7f58a5eeedfa6d59b29a9ba98aa159556cc801e6eb8d")
+        self.assertEqual(s.EXPECTED_WHOLE_CSV_BYTES, 2267051)
+        with self.assertRaisesRegex(s.Blocked, "original source prefix SHA"):
+            s.probe(opener=lambda req, timeout: Response())
+        receipt = (s.ROOT / "docs/research/usgs-wesm-original-csv-header-receipt-20261116.md"
+                   ).read_text(encoding="utf-8")
+        self.assertIn(s.EXPECTED_PREFIX_SHA, receipt)
+        self.assertIn("43961768133", receipt)
 
     def test_http200_range_ignored_never_reads_source_body(self):
         response = Response(status=200)
