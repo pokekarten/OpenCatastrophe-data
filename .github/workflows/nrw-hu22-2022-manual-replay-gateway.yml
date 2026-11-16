@@ -16,7 +16,7 @@ jobs:
   original-hu22-replay:
     # Calls the exact separately reviewed historical research workflow.
     # The called workflow checks out source_ref, not this default-branch SHA.
-    uses: pokekarten/OpenCatastrophe-data/.github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml@75dba089478927003d201032cb41303ebf587952
+    uses: pokekarten/OpenCatastrophe-data/.github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml@f0e0263245ff7e1f38b8710c311bcb50c47c1fa2
     with:
       source_ref: 75dba089478927003d201032cb41303ebf587952
     permissions:
