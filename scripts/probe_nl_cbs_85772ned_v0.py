@@ -126,8 +126,15 @@ def decode_original(raw: bytes) -> dict[str, Any]:
 
 
 def validate_rows(bodies: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    if set(bodies) != {name for name, _ in OBJECTS}:
-        raise CBSOutputBlocked("not exactly six reviewed CBS responses")
+    # Public helper: reject malformed provider/test payloads before selecting
+    # rows. Do not leak KeyError/TypeError when a nested OData body is missing
+    # or its 'value' collection is unexpectedly null, scalar or mapping.
+    expected = {name for name, _ in OBJECTS}
+    if (type(bodies) is not dict or set(bodies) != expected
+            or any(type(bodies[name]) is not dict
+                   or type(bodies[name].get("value")) is not list
+                   for name in expected)):
+        raise CBSOutputBlocked("not exactly six reviewed CBS OData response arrays")
     info, first, early, properties, recent, late = (
         bodies[name]["value"]
         for name in ("table_info", "first_index", "first_period",
@@ -141,7 +148,8 @@ def validate_rows(bodies: dict[str, dict[str, Any]]) -> dict[str, Any]:
         or meta.get("Identifier") != "85772NED"
         or meta.get("Source") != "CBS."
         or meta.get("Modified") != EXPECTED_MODIFIED
-        or "outputprijsindex bouwkosten 2021=100" not in meta.get("Title", "")
+        or type(meta.get("Title")) is not str
+        or "outputprijsindex bouwkosten 2021=100" not in meta["Title"]
         or meta.get("Frequency") != "Perkwartaal"
     ):
         raise CBSOutputBlocked("unreviewed CBS table identity or publication revision")
