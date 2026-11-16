@@ -184,6 +184,8 @@ class CBSOutputIndexTests(unittest.TestCase):
             ("properties", 1, "ID", True),
             ("properties", 2, "ID", 2.0),
             ("properties", 2, "ParentID", True),
+            ("properties", 3, "ParentID", False),
+            ("properties", 3, "ParentID", 4),
             ("properties", 5, "ParentID", 4.0),
         ]
         for result, index, field, wrong in cases:
