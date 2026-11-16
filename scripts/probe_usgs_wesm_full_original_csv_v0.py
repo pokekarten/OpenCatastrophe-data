@@ -35,6 +35,8 @@ OPERATION = "one_wesm_original_csv_full_verified"
 EXPECTED_BYTES = 2267051
 PREFIX_BYTES = historical.BYTES
 PREFIX_SHA = "19e025e68687bbb2b61d7f58a5eeedfa6d59b29a9ba98aa159556cc801e6eb8d"
+# Independently verified full original provider body: Actions job 133638077985.
+EXPECTED_FULL_SHA = "a5f56b54f26767311156116b4721d477bf5d7b6069056117127898852d2d1b83"
 HEADER_NAMES_SHA = "c2893167ec1839f74db9c67704f9f3fbd3c4ed9d6d65359bf1914ce19abb2746"
 TIMEOUT = 30
 MEDIA = frozenset({"text/csv", "text/plain", "application/octet-stream",
@@ -123,6 +125,12 @@ def summarize_original_csv(data: bytes) -> dict:
     missing_identity = 0
     duplicates = 0
     seen_ids = set()
+    seen_pairs = set()
+    seen_project_for_id = {}
+    seen_status_for_id = {}
+    repeated_workunit_project_rows = 0
+    cross_project_reused_workunit_occurrences = 0
+    conflicting_workunit_status_occurrences = 0
     rows = 0
     try:
         for row in table:
@@ -142,6 +150,20 @@ def summarize_original_csv(data: bytes) -> dict:
             else:
                 seen_ids.add(workunit)
             status = row[keys["seamless_category"]]
+            if workunit and project:
+                pair = (workunit, project)
+                if pair in seen_pairs:
+                    repeated_workunit_project_rows += 1
+                else:
+                    seen_pairs.add(pair)
+                if workunit in seen_project_for_id and seen_project_for_id[workunit] != project:
+                    cross_project_reused_workunit_occurrences += 1
+                else:
+                    seen_project_for_id.setdefault(workunit, project)
+                if workunit in seen_status_for_id and seen_status_for_id[workunit] != status:
+                    conflicting_workunit_status_occurrences += 1
+                else:
+                    seen_status_for_id.setdefault(workunit, status)
             states[status if status in CATEGORIES["seamless_category"] else "unknown_or_blank"] += 1
     except (UnicodeError, csv.Error) as exc:
         raise Blocked("original WESM CSV rows are malformed") from exc
@@ -154,6 +176,10 @@ def summarize_original_csv(data: bytes) -> dict:
         "original_wesm_seamless_quality_category_counts": states,
         "missing_workunit_or_project_id_count": missing_identity,
         "duplicate_workunit_id_occurrences": duplicates,
+        "duplicate_workunit_project_row_occurrences": repeated_workunit_project_rows,
+        "reused_workunit_id_other_project_occurrences": cross_project_reused_workunit_occurrences,
+        "reused_workunit_id_conflicting_seamless_category_occurrences": conflicting_workunit_status_occurrences,
+        "workunit_duplicate_structure_scientifically_resolved": False,
         "has_unrecognized_seamless_quality_status": states["unknown_or_blank"] != 0,
         "all_original_quality_rows_scientifically_approved": False,
         "original_record_values_logged": False,
@@ -194,6 +220,9 @@ def observe(*, opener: Callable = _open,
     prefix_sha = hashlib.sha256(raw[:PREFIX_BYTES]).hexdigest()
     if prefix_sha != PREFIX_SHA:
         raise Blocked("original complete CSV differs from previously verified WESM 32KiB header")
+    complete_sha = hashlib.sha256(raw).hexdigest()
+    if complete_sha != EXPECTED_FULL_SHA:
+        raise Blocked("complete original WESM CSV SHA256 changed despite matching prefix and length")
     analysis = summarize_original_csv(raw)
     timestamp = clock()
     if not isinstance(timestamp, datetime) or timestamp.utcoffset() is None:
@@ -205,7 +234,7 @@ def observe(*, opener: Callable = _open,
         "original_http_status": 200,
         "retrieved_utc": timestamp.astimezone(timezone.utc).isoformat(),
         "original_complete_csv_bytes": len(raw),
-        "original_complete_csv_sha256": hashlib.sha256(raw).hexdigest(),
+        "original_complete_csv_sha256": complete_sha,
         "original_header_prefix_sha256": prefix_sha,
         "original_request_sha256": hashlib.sha256(("GET " + URL + "\n").encode("ascii")).hexdigest(),
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
