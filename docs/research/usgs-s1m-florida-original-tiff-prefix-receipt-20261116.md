@@ -23,6 +23,26 @@ The 64 KiB sample is a genuine fixed provider-original source prefix, with **cla
 
 **Scientific limits:** tag *presence* did NOT establish actual EPSG:6350, EPSG:5703/NAVD88/GEOID18, units or the native NoData numeric value. No pixel-value blocks were downloaded or decoded. Full original TIFF SHA-256, independent horizontal/vertical CRS validation, companion source-project spatial metadata GeoPackage, void-fill provenance and actual elevation quality are still unverified. A valid TIFF prefix is not a CAT-model input.
 
+## Independent second source-original replay: actual scientific TIFF tag values
+
+The original **same** 65,536-byte TIFF prefix was retrieved and hash-checked again in trusted public [GitHub run 43949836747 / job 133589184974](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43949836747/job/133589184974), executed **2026-11-16T20:27:08.673211Z**. The original provider range remained `bytes 0-65535/447032917` and original prefix SHA-256 remained `56d8d147056fcd28ad916799cd6b917c57d9d08b3e07dfe06931f2a4d5edb2f2`; the second run script SHA-256 was `cc931c1b8be9f3eb5c82df6019adb67c35ae0d67e07d5726a171e22ee32f69dc` and contract SHA-256 `80538c1c3a69733a07740e2673ee7dd9aa6a346c40530a5e65aeb48cb524145f`.
+
+The revised bounded parser required the pinned source-prefix SHA and advertised file size **before examining values**, then decoded the original source GeoKeyDirectory, GDAL_NODATA and ModelPixelScale tags. Its reproducible result was:
+
+| Scientific check from original TIFF prefix | Result |
+| --- | --- |
+| Original first IFD, `10000 × 10000` | Verified |
+| GeoKeyDirectory member count | **5** |
+| Original projected coordinate-system key (EPSG) | **6350 verified** |
+| Original vertical coordinate-system key (EPSG) | **5703 verified** |
+| Original GDAL NoData ASCII value | **`-999999` verified** |
+| Original horizontal model pixel scales | **1 metre × 1 metre verified** |
+| Original source **GEOID18 transformation chain** | **NOT verified** |
+| Original full TIFF / pixel-value decoder and per-cell lineage | **NOT verified** |
+| Full TIFF original SHA-256, independent relief accuracy, insurer/CAT input | **NOT verified / NOT approved** |
+
+This is a stronger original *metadata-value* proof than presence-only first-IFD tags; it does not certify the complete underlying raster or the 3DEP lidar acquisition lineage. The source-native numeric CRS/NoData/scale checks are scientific T3 **partial** only. They must not be mistaken for a full source-asset admission or an independent hydrological validation.
+
 ## Access and admission decision
 
 USGS official National Map downloadable datasets are public domain with requested USGS acknowledgement. The distinct exact-original-header access contract `access/usgs.3dep.s1m.florida-native-tiff-prefix.json` permits only **one limited 64KiB GET per explicit, reviewed workflow run** and explicitly reserves raw redistribution, large asset retrieval, any automatic full-file fetch, GeoPackage and insurance-model use for further review. No original source bytes were committed, uploaded to Neon, or otherwise persisted by this job.
