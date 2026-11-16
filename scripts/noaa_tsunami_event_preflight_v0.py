@@ -88,9 +88,11 @@ def screen_noaa_tsunami_event_json(original: bytes) -> dict[str, object]:
         "geometryType", "spatialReference",
     }:
         raise TsunamiEventPreflightError("unexpected ArcGIS response shape or error payload")
-    if raw.get("objectIdFieldName") != "OBJECTID" or raw.get("exceededTransferLimit") is True:
+    transfer_limit = raw.get("exceededTransferLimit")
+    if raw.get("objectIdFieldName") != "OBJECTID" or transfer_limit is True:
         raise TsunamiEventPreflightError("wrong layer OID or truncated ArcGIS result")
-    if raw.get("exceededTransferLimit") not in (None, False):
+    # Do not accept numeric 0/0.0 as JSON false via Python's equality semantics.
+    if transfer_limit is not None and transfer_limit is not False:
         raise TsunamiEventPreflightError("unexpected transfer-limit indicator")
     if raw.get("geometryType") not in (None, "esriGeometryPoint"):
         raise TsunamiEventPreflightError("source-event point layer mismatch")
