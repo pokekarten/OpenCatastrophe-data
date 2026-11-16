@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: USGS S1M one original TIFF 64KiB prefix
+
+on:
+  pull_request:
+    paths:
+      - "access/usgs.3dep.s1m.florida-native-tiff-prefix.json"
+      - "access/usgs.3dep.s1m.florida-native-tiff-prefix.md"
+      - "scripts/probe_usgs_s1m_native_header_original_v0.py"
+      - "tests/test_probe_usgs_s1m_native_header_original_v0.py"
+      - ".github/workflows/usgs-s1m-florida-native-prefix.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    name: Exact contract and synthetic original 206 rejects
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact source commit without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install pinned Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Strict original source contract / view validation
+        run: |
+          python scripts/validate_source_access.py access/usgs.3dep.s1m.florida-native-tiff-prefix.json
+          python scripts/render_public_views.py --check
+      - name: Execute all bounded synthetic TIFF / HTTP status negative controls
+        run: python -m unittest tests.test_probe_usgs_s1m_native_header_original_v0 -v
+
+  original-prefix:
+    # One exact public provider Range GET per consciously scoped research PR.
+    # No secret, full COG, pixels, storage, Neon or model inputs.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/usgs-s1m-florida-native-64k-prefix-20261116'
+    needs: offline
+    name: Source original single 65536-byte HTTP206 receipt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact reviewed source commit without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install pinned Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Probe ONE original public USGS S1M TIFF prefix without upload
+        run: python scripts/probe_usgs_s1m_native_header_original_v0.py --live
