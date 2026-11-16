@@ -56,7 +56,8 @@ class OriginalWESMTests(unittest.TestCase):
         def opener(req, timeout):
             requests.append((req.get_method(), req.full_url, req.headers.get("Range"),timeout))
             return response
-        with patch.object(s, "EXPECTED_PREFIX_SHA", hashlib.sha256(response.body).hexdigest()):
+        with patch.object(s, "EXPECTED_PREFIX_SHA", hashlib.sha256(response.body).hexdigest()), \
+             patch.object(s, "EXPECTED_WHOLE_CSV_BYTES", 12000000):
             out = s.probe(opener=opener,clock=lambda: datetime(2026,11,16,21,30,tzinfo=timezone.utc))
         self.assertEqual(requests, [("GET",s.URL,s.RANGE,s.TIMEOUT)])
         self.assertEqual(out["original_prefix_sha256"],hashlib.sha256(response.body).hexdigest())
