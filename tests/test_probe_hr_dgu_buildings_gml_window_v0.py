@@ -146,6 +146,33 @@ class CroatianGmlWindowTest(unittest.TestCase):
             with self.subTest(raw=raw[:80]), self.assertRaises(BuildingGmlError):
                 inspect_gml(raw)
 
+    def test_reject_only_nested_crs_without_polygon_crs(self):
+        # GML srsName on a LinearRing/posList does not establish the polygon's
+        # own source CRS. Such nested-only metadata used to pass because a
+        # descendant-wide union contained the expected EPSG:3765 value.
+        original = sample()
+        without_polygon_crs = original.replace(
+            b'<gml:Polygon srsName="EPSG:3765"',
+            b'<gml:Polygon', 1,
+        )
+        self.assertNotEqual(original, without_polygon_crs)
+        nested_crs_cases = [without_polygon_crs]
+        for tag in ("LinearRing", "posList"):
+            before = ("<gml:" + tag + ">").encode("ascii")
+            after = ('<gml:' + tag + ' srsName="EPSG:3765">').encode("ascii")
+            self.assertIn(before, without_polygon_crs)
+            nested_crs_cases.append(
+                without_polygon_crs.replace(before, after, 1)
+            )
+        for raw in nested_crs_cases:
+            with self.subTest(raw=raw[:250]):
+                with self.assertRaisesRegex(
+                    BuildingGmlError, "polygon must directly declare"
+                ):
+                    inspect_gml(raw)
+        # The original single-footprint explicit polygon CRS remains accepted.
+        self.assertEqual(inspect_gml(original)["feature_records_checked"], 1)
+
     def test_reject_swapped_axes_and_outside_window(self):
         for coords in (
             "5074600 459100 5074600 459140 5074640 459140 5074640 459100 5074600 459100",
