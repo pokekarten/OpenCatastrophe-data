@@ -33,6 +33,14 @@ An actual **authentic original source prefix** was successfully retrieved in [Gi
 
 The original 65,536 provider bytes were processed **in memory only** and discarded. No work-unit polygon records, feature values, project identifiers or images were read from this original GeoPackage. Only structural header integers, original 64KiB hash, UTC and fingerprints were printed. No provider raw content was committed, stored in Neon or uploaded as a workflow artifact.
 
+## Independent exact-original replay with immutable original SHA gate
+
+A second public original HTTP206 acquisition, after pinning the authentic 65,536-byte first-page SHA and exact provider-reported full-object size, succeeded in [GitHub Actions run 43969250636, job 133657031343](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/43969250636/job/133657031343) at `2026-11-16T22:22:24.950498Z`.
+
+The original `WESM.gpkg` first 65,536 bytes **again** had SHA-256 `0344f898d4946a915ca0c3a5d0078fd72dc222179c54d8e9413a067c8ce5be88`; the original `Content-Range` total again was **3827232768 bytes**, and the SQLite header again declared **934383 pages × 4096 bytes**. No altered original source was silently accepted. This source-run script had SHA-256 `48890c100af38a7772d33e99b04306f9075e0aab59f23c6c7618baa2455c8770`, and its canonical access contract SHA-256 was `13aa6f7bd5ea2939c338020fb1554f34dbc4bc0d3fdbf0a47d6f277985197636`. These are historical executed-code digests and must not be replaced by later commits' hashes.
+
+Both original checks concern **only 64KiB source-prefix bytes**. They do not verify the other 3.56GiB of the provider GeoPackage or its polygons. Because the source grows/rebuilds almost daily, equal first-page hashes do not guarantee a constant entire file beyond this narrow observation.
+
 ## Scientific source admission boundary
 
 - **T0/T1/T3 partial source:** authentic fixed original WESM.gpkg HTTP 206 range and first GeoPackage/SQLite page header verified. This is an independent **original source-prefix** technical receipt.
