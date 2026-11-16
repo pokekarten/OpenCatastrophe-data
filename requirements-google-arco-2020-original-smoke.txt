@@ -7,4 +7,4 @@ numpy==1.26.4
 xarray==2024.7.0
 zarr==2.18.2
 numcodecs==0.13.1
-gcsfs==2024.6.1
+gcsfs==2026.10.1
