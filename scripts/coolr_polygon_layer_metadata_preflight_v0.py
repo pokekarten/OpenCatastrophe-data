@@ -79,7 +79,7 @@ def screen_coolr_polygon_layer_metadata(original: bytes, *, layer_kind: str) -> 
     The caller must pin the exact NASA service/layer request beforehand. The
     supplied bytes' SHA-256 does not independently establish provider origin.
     """
-    if layer_kind not in LAYERS:
+    if not isinstance(layer_kind, str) or layer_kind not in LAYERS:
         raise CoolrMetadataError("unknown COOLR product/layer identity")
     if not isinstance(original, bytes) or not 0 < len(original) <= MAX_METADATA_BYTES:
         raise CoolrMetadataError("empty or oversized metadata bytes")
@@ -95,13 +95,14 @@ def screen_coolr_polygon_layer_metadata(original: bytes, *, layer_kind: str) -> 
             obj.get("name") != cfg["name"] or obj.get("type") != "Feature Layer" or
             obj.get("geometryType") != "esriGeometryPolygon"):
         raise CoolrMetadataError("COOLR layer identity or geometry mismatch")
-    if obj.get("objectIdField", "objectid").lower() != "objectid":
+    oid_field = obj.get("objectIdField", "objectid")
+    if not isinstance(oid_field, str) or oid_field.lower() != "objectid":
         raise CoolrMetadataError("unrecognized ObjectID field")
-    if obj.get("hasZ") not in (None, False) or obj.get("hasM") not in (None, False):
+    if any(obj.get(key) is not None and obj.get(key) is not False for key in ("hasZ", "hasM")):
         raise CoolrMetadataError("unexpected 3D or measure geometry")
-    if obj.get("isDataVersioned") not in (None, False):
+    if obj.get("isDataVersioned") is not None and obj.get("isDataVersioned") is not False:
         raise CoolrMetadataError("unexpected historical-version semantics")
-    if obj.get("supportsQueryWithHistoricMoment") not in (None, False):
+    if obj.get("supportsQueryWithHistoricMoment") is not None and obj.get("supportsQueryWithHistoricMoment") is not False:
         raise CoolrMetadataError("unexpected historic-moment capability")
     caps = obj.get("capabilities")
     if not isinstance(caps, str) or "Query" not in {x.strip() for x in caps.split(",")}:
