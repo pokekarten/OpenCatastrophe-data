@@ -1,0 +1,262 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+schema = "WINDSTORM_EUROPE_REPOSITORY_SOURCE_INDEX_V0"
+scope = "Repository discovery and gap analysis; provider availability and terms not reverified"
+landscape_json_files_scanned = 107
+selected_source_records = 32
+
+[[sources]]
+catalog = "landscape/sources-europe-cat-model-components.json"
+catalog_sha256 = "4a13b5fa0c9824df43c942be79012fb7bcb7eb9ed4a7823a7b7d6d8091e7d34c"
+candidate_id = "copernicus.c3s.european-windstorm-reanalysis"
+name = "Copernicus Enhanced European Windstorm tracks and footprints"
+provider_url = "https://cds.climate.copernicus.eu/datasets/sis-european-wind-storm-reanalysis?tab=overview"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-europe-cat-model-components.json"
+catalog_sha256 = "4a13b5fa0c9824df43c942be79012fb7bcb7eb9ed4a7823a7b7d6d8091e7d34c"
+candidate_id = "eiopa.catastrophe-data-hub"
+name = "EIOPA Catastrophe Data Hub for insured exposure and losses"
+provider_url = "https://www.eiopa.europa.eu/tools-and-data/catastrophe-data-hub_en"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-europe-cat-model-components.json"
+catalog_sha256 = "4a13b5fa0c9824df43c942be79012fb7bcb7eb9ed4a7823a7b7d6d8091e7d34c"
+candidate_id = "xws.european-extreme-windstorms"
+name = "XWS European extreme windstorm tracks and footprints"
+provider_url = "https://www.europeanwindstorms.org/"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "de.adv.lod2-de"
+name = "Germany nationwide LoD2-DE 3D buildings"
+provider_url = "https://www.ldbv.bayern.de/vermessung/zshh/lod2-de_en.html"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "de.bayern.lod2.open"
+name = "Bavaria open LoD2 3D buildings"
+provider_url = "https://geodaten.bayern.de/opengeodata/OpenDataDetail.html?pn=lod2"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "nl.kadaster.bag"
+name = "Netherlands Basic Register of Addresses and Buildings (BAG)"
+provider_url = "https://api.pdok.nl/kadaster/bag/ogc/v2"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "nl.tudelft.3dbag"
+name = "Netherlands 3DBAG building models"
+provider_url = "https://docs.3dbag.nl/en/delivery/webservices/"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "fr.rnb.buildings"
+name = "France Référentiel National des Bâtiments (RNB)"
+provider_url = "https://www.data.gouv.fr/datasets/referentiel-national-des-batiments"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "fr.ign.bdtopo.buildings"
+name = "France IGN BD TOPO buildings and RNB crosswalk"
+provider_url = "https://bdtopoexplorer.ign.fr/batiment_rnb_lien_bdtopo"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "fr.cstb.bdnb"
+name = "France Base de Données Nationale des Bâtiments (BDNB)"
+provider_url = "https://bdnb.io/download/"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "fr.ademe.dpe"
+name = "France ADEME building energy performance diagnostics (DPE)"
+provider_url = "https://www.data.gouv.fr/dataservices/api-dpe-logements"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "pl.gugik.bdot10k"
+name = "Poland BDOT10k national topographic object database"
+provider_url = "https://www.geoportal.gov.pl/pl/dane/baza-danych-obiektow-topograficznych-bdot10k/"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "pl.gugik.buildings3d"
+name = "Poland official 3D building models based on BDOT10k"
+provider_url = "https://www.geoportal.gov.pl/en/data/other-data/3d-models-of-building/"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "cz.cuzk.ruian.buildings"
+name = "Czechia RÚIAN building and address register"
+provider_url = "https://vdp.cuzk.gov.cz/vdp/ruian"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "es.catastro.inspire.buildings"
+name = "Spain Dirección General del Catastro INSPIRE Buildings"
+provider_url = "https://www.catastro.hacienda.gob.es/webinspire/index_eng.html"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "ch.swisstopo.swissbuildings3d3"
+name = "Switzerland swissBUILDINGS3D 3.0 Beta"
+provider_url = "https://www.swisstopo.admin.ch/en/landscape-model-swissbuildings3d-3-0-beta"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "dk.datafordeler.bbr"
+name = "Denmark Building and Dwelling Register (BBR)"
+provider_url = "https://datafordeler.dk/dataoversigt/bygnings-og-boligregistret-bbr/bbr-graphql/"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "fi.nls.inspire.buildings"
+name = "Finland National Land Survey INSPIRE Buildings polygons"
+provider_url = "https://www.maanmittauslaitos.fi/en/maps-and-spatial-data/datasets-and-interfaces/map-interface-services/inspire-directive-compliant"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "no.geonorge.fkb-bygning"
+name = "Norway FKB-Bygning building geometries"
+provider_url = "https://kartkatalog.geonorge.no/metadata/fkb-bygning/8b4304ea-4fb0-479c-a24d-fa225e2c6e97"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "se.lantmateriet.buildings"
+name = "Sweden Lantmäteriet Building Download / INSPIRE"
+provider_url = "https://www.lantmateriet.se/en/geodata/our-products/product-list/building-download-inspire"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "uk.gov.epc.england-wales"
+name = "England and Wales official Energy Performance Certificates bulk data"
+provider_url = "https://get-energy-performance-data.communities.gov.uk/"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "eu.eurostat.construction-cost-index"
+name = "Eurostat construction costs of new residential buildings"
+provider_url = "https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Construction_producer_price_and_construction_cost_indices_overview"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-european-building-registers.json"
+catalog_sha256 = "bf214932f3b7e4b0818279cabda0652fdd9d6299416f630331cfbb965cf17543"
+candidate_id = "eu.crosscert.epc.reference"
+name = "crossCERT open database for energy performance certificate testing"
+provider_url = "https://www.crosscert.eu/our-solutions/open-database-for-epc-testing"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-event-loss-benchmarks-2026.json"
+catalog_sha256 = "cadd90a1d201243f27e11615ed8d6dc8c03da98fa0e2f4d4dd02cdc251d59126"
+candidate_id = "climk.winds.storm-footprints.v2"
+name = "CLIMK-WINDS Extreme European Winter Storm Footprints v2"
+provider_url = "https://zenodo.org/records/15305753"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-exposure-impact-validation.json"
+catalog_sha256 = "1cb7deaf027d8b63ab30b77fba21cc9e875a1956a03ed1a2decb6e0009775070"
+candidate_id = "overture.maps.buildings"
+name = "Overture Maps Buildings"
+provider_url = "https://docs.overturemaps.org/guides/buildings/"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-ghsl-built-s-2026.json"
+catalog_sha256 = "4d716721ad87d77f6846f8e83953d87531106974c66784a95ece458cda75f777"
+candidate_id = "ec-jrc.ghsl.ghs-built-s.r2023a"
+name = "GHSL GHS-BUILT-S R2023A"
+provider_url = "https://human-settlement.emergency.copernicus.eu/ghs_buS2023.php"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-ghsl-built-v-2026.json"
+catalog_sha256 = "adfc7ecebe0f7a3f46a094950ffa94a547122cac5af6bd03610d076f6783089b"
+candidate_id = "ec-jrc.ghsl.ghs-built-v.r2023a"
+name = "GHSL GHS-BUILT-V R2023A"
+provider_url = "https://human-settlement.emergency.copernicus.eu/ghs_buV2023.php"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-luxembourg-cross-domain-building-20261101.json"
+catalog_sha256 = "fc30abf93ff35e0c1d61eb9b22d4e2e354bb8718bd13421a08026145a3fb1eea"
+candidate_id = "eu.eurostat.census21.dwelling-age-nuts3"
+name = "Eurostat Census 2021 occupied dwellings by construction period and NUTS3"
+provider_url = "https://ec.europa.eu/eurostat/databrowser/product/page/cens_21dwop_r3"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-oasis-model-input-leads-20261105.json"
+catalog_sha256 = "31299914c64d5c67636628d50b883abc3cf051f23e2fd0ca013e2da98996a441"
+candidate_id = "copernicus.c3s.wisc.synthetic-windstorms.22980"
+name = "C3S WISC synthetic European windstorms (22,980 footprints)"
+provider_url = "https://cds.climate.copernicus.eu/datasets/sis-european-wind-storm-synthetic-events?tab=overview"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-oasis-model-input-leads-20261105.json"
+catalog_sha256 = "31299914c64d5c67636628d50b883abc3cf051f23e2fd0ca013e2da98996a441"
+candidate_id = "research.elcok.wisc.european-wind-damage"
+name = "ElcoK/WISC: European windstorm building loss and risk modelling code"
+provider_url = "https://github.com/ElcoK/WISC"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-oasis-public-models-20261105.json"
+catalog_sha256 = "e167220e70b97ad97ee29b43ff877737327e6969d17a708d487198406808f9c0"
+candidate_id = "oasislmf.scenarios.impact-forecasting.euws"
+name = "Impact Forecasting EUWS deterministic windstorm scenarios"
+provider_url = "https://github.com/OasisLMF/Scenarios/tree/main/ImpactForecasting/EUWS"
+acquisition_verified_by_this_index = false
+
+[[sources]]
+catalog = "landscape/sources-observation-context.json"
+catalog_sha256 = "4e4e273a1cab660f5ee1ce006f17afc33abc132aae5786d3b6d3af4e1196f3ba"
+candidate_id = "eubucco.buildings.v0.2"
+name = "EUBUCCO v0.2 European building stock database"
+provider_url = "https://docs.eubucco.com/"
+acquisition_verified_by_this_index = false

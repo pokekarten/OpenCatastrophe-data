@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Exact, science-reviewed ALKIS EPSG:4258 -> ESA WorldCover WGS84/GEOS
+# source-validation runtime. Do not substitute the generic EU flood GIS profile:
+# research_runners/hessen_alkis_one_building_crs_geos_v0.py explicitly
+# fail-closes on any other version before inspecting a real geometry.
+# No network acquisition or data rights are implied by these dependencies.
+pyproj==3.7.2
+shapely==2.1.2

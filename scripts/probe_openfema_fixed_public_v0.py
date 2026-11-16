@@ -85,6 +85,8 @@ def validate_response(source_id: str, raw: bytes) -> dict:
     seen = set()
     abnormal_ratio = 0
     missing_denominators = 0
+    declaration_ids: set[str] = set()
+    designated_areas: set[tuple[str, str, str | None]] = set()
     for row in rows:
         if not isinstance(row, dict):
             raise SourceError("row must be JSON object")
@@ -116,14 +118,31 @@ def validate_response(source_id: str, raw: bytes) -> dict:
                 elif isinstance(val, bool) or not isinstance(val, int) or val < 0:
                     raise SourceError("NFIP count invalid")
         else:
-            if (isinstance(row.get("disasterNumber"), bool)
-                    or not isinstance(row.get("disasterNumber"), int)
-                    or row["disasterNumber"] < 1
-                    or not isinstance(row.get("state"), str)
-                    or not row["state"]
-                    or not isinstance(row.get("designatedArea"), str)
-                    or not isinstance(row.get("incidentType"), str)):
-                raise SourceError("declaration metadata drift")
+            disaster_no = row.get("disasterNumber")
+            state = row.get("state")
+            declaration_type = row.get("declarationType")
+            declaration_string = row.get("femaDeclarationString")
+            area = row.get("designatedArea")
+            county_code = row.get("fipsCountyCode")
+            if (type(disaster_no) is not int or disaster_no < 1
+                    or type(state) is not str
+                    or not re.fullmatch(r"[A-Z]{2}", state)
+                    or type(declaration_type) is not str
+                    or declaration_type not in {"DR", "EM", "FM"}
+                    or type(declaration_string) is not str
+                    or declaration_string != f"{declaration_type}-{disaster_no}-{state}"
+                    or type(area) is not str or not area.strip()
+                    or (county_code is not None and
+                        (type(county_code) is not str or
+                         not re.fullmatch(r"[0-9]{3}", county_code)))
+                    or type(row.get("incidentType")) is not str
+                    or not row["incidentType"].strip()):
+                raise SourceError("declaration identity or area drift")
+            # FEMA response rows describe administrative area designations,
+            # NOT independent physical disaster events; two counties can share
+            # one FEMA disaster declaration.
+            declaration_ids.add(declaration_string)
+            designated_areas.add((declaration_string, area, county_code))
     return {
         "source_id": source_id,
         "profile": "openfema-exact-two-public-rows-source-probe-v0",
@@ -134,6 +153,12 @@ def validate_response(source_id: str, raw: bytes) -> dict:
         "response_sha256": hashlib.sha256(raw).hexdigest(),
         "ratio_over_100pct_field_count": abnormal_ratio if version == "v1" else None,
         "missing_structure_denominator_fields": missing_denominators if version == "v1" else None,
+        "unique_declaration_ids_in_bounded_page":
+            len(declaration_ids) if version == "v2" else None,
+        "distinct_designated_areas_in_bounded_page":
+            len(designated_areas) if version == "v2" else None,
+        "declaration_rows_are_independent_hazard_events": False,
+        "physical_hazard_event_frequency_verified": False,
         "fema_terms": TERMS,
         "provider_data_bytes_persisted": False,
         "model_input_approved": False,
