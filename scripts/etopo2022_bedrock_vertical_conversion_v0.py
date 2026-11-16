@@ -76,8 +76,11 @@ def _axis_indices(values: Sequence[float], *, label: str, size: int,
         if not 0 <= index < 3600 or abs(offset - index) > 0.00002:
             raise ETOPOVerticalBlocked(f"{label} off the 15s cell-centre lattice")
         indices.append(index)
-    if any(abs(b - a) != 1 for a, b in zip(indices, indices[1:])):
-        raise ETOPOVerticalBlocked(f"{label} axis has gaps, duplicates or irregular step")
+    steps = [b - a for a, b in zip(indices, indices[1:])]
+    # A zig-zag 0,1,0 has valid *absolute* neighbour distances but repeats
+    # the first pixel: each axis must be strictly monotone, either direction.
+    if steps and (abs(steps[0]) != 1 or any(step != steps[0] for step in steps[1:])):
+        raise ETOPOVerticalBlocked(f"{label} axis has gaps, duplicates or reverses direction")
     return tuple(indices)
 
 
