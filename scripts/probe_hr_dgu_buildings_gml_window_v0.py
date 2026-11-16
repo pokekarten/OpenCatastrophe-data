@@ -186,6 +186,12 @@ def inspect_gml(raw: bytes) -> dict:
         raise BuildingGmlError("unsupported reference footprint GML geometry type")
     if len(profile.findall(".//" + GML + "Polygon")) != 1:
         raise BuildingGmlError("multiple or nested footprint polygons are unreviewed")
+    # The geometry itself must declare the reviewed projected CRS. A child
+    # posList/LinearRing carrying EPSG:3765 must not supply a missing
+    # polygon-level CRS: otherwise the source coordinate axis semantics are
+    # silently inferred from a nested attribute with different GML scope.
+    if polygon.get("srsName") not in CRS_ALIASES:
+        raise BuildingGmlError("polygon must directly declare reviewed EPSG:3765 CRS")
     crs_values = {
         value for element in polygon.iter()
         for key, value in element.attrib.items() if key == "srsName"
