@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admitted USGS Work Unit Extent Spatial Metadata (WESM) source original identity and quality-lineage discovery distinct from the seamless one-meter S1M raster.",
+  "review_date": "2026-11-16",
+  "entries": [
+    {
+      "candidate_id": "usgs.3dep.wesm.workunit-metadata",
+      "name": "USGS 3DEP Work Unit Extent Spatial Metadata (WESM) CSV and GeoPackage",
+      "provider": "U.S. Geological Survey (USGS) 3D Elevation Program",
+      "categories": [
+        "elevation",
+        "terrain",
+        "geospatial_validation",
+        "flood"
+      ],
+      "spatial_scope": "USGS published 3DEP work units; not an S1M tile-to-source spatial join and not guaranteed universal one-meter lidar coverage.",
+      "temporal_scope": "WESM source is reissued nearly daily; collection dates, original snapshot retrieval UTC, exact source byte hashes and separate GeoPackage geometry are mandatory for reproducibility.",
+      "resolution_or_granularity": "Work unit source metadata and status categories, not individual S1M elevation raster pixels.",
+      "potential_roles": [
+        "lidar_source_workunit_quality_review",
+        "source_dem_lineage_validation",
+        "original_lidar_survey_date_context"
+      ],
+      "authoritative_url": "https://www.usgs.gov/3d-elevation-program/3dep-spatial-metadata",
+      "access_class_hint": "official_public_rockyweb_wesm_csv_and_geopackage",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official USGS WESM source CSV and GeoPackage are published on rockyweb.usgs.gov. The CSV is a non-spatial workunit table; complete source provenance and link to exact Florida S1M tile require a separately verified GeoPackage polygon spatial join. One bounded 32KiB original CSV header may later be reviewed/verified through its own access contract. This discovery record grants no full CSV, no original GeoPackage, no byte redistribution or CAT-model admission."
+    }
+  ]
+}
