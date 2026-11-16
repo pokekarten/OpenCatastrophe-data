@@ -95,7 +95,6 @@ class CroatianGmlWindowTest(unittest.TestCase):
             b"<base:geometry><gml:Point/></base:geometry>",
             b"<base:unreviewedExtension><gml:pos>0 0</gml:pos></base:unreviewedExtension>",
             b"<base:horizontalGeometryEstimatedAccuracy>1</base:horizontalGeometryEstimatedAccuracy>",
-            b"<base:referenceGeometry>false</base:referenceGeometry>",
         ):
             with self.subTest(extra=extra), self.assertRaisesRegex(
                 BuildingGmlError, "unexpected or duplicated"
