@@ -22,6 +22,8 @@ def make_zip(root: Path, *, states: int = 16,
              water_states: int = 2,
              srs: int = EXPECTED_SRS,
              land_gf: int = 4,
+             without_structure_land: int = 0,
+             without_structure_water: int = 0,
              name: str = "DE_VG250.gpkg",
              no_ags: bool = False,
              with_second_gpkg: bool = False) -> Path:
@@ -48,6 +50,14 @@ def make_zip(root: Path, *, states: int = 16,
     for i in range(water_states):
         db.execute("INSERT INTO vg250_lan(GF,"+("BAD_CODE" if no_ags else "AGS")+") VALUES (?,?)",
                    (2, f"{i+1:02d}"))
+    # Synthetic source GF=3 and GF=1 are separate provider records;
+    # they never increase GF4 land key coverage or GF2 water counts.
+    for i in range(without_structure_land):
+        db.execute("INSERT INTO vg250_lan(GF,"+("BAD_CODE" if no_ags else "AGS")+") VALUES (?,?)",
+                   (3, f"{i+1:02d}"))
+    for i in range(without_structure_water):
+        db.execute("INSERT INTO vg250_lan(GF,"+("BAD_CODE" if no_ags else "AGS")+") VALUES (?,?)",
+                   (1, f"{i+1:02d}"))
     db.commit()
     db.close()
     archive = root / "synthetic.zip"
@@ -105,6 +115,38 @@ class BkgOriginal2025ZipSyntheticTests(unittest.TestCase):
             self.assertEqual(r["source_gpkg_layers"]["vg250_lan"]["gf2_water_records"],5)
             self.assertEqual(r["source_gpkg_layers"]["vg250_lan"]["distinct_ags_gf4_land"],16)
             self.assertEqual(r["source_gpkg_layers"]["vg250_lan"]["original_feature_records"],21)
+
+    def test_documented_official_GF1_and_GF3_are_distinct_source_records(self):
+        with tempfile.TemporaryDirectory() as d:
+            report=check_fixture(make_zip(Path(d),water_states=2,
+                                          without_structure_land=2,
+                                          without_structure_water=3))
+            layer=report["source_gpkg_layers"]["vg250_lan"]
+            self.assertEqual(layer["gf1_unstructured_water_records"],3)
+            self.assertEqual(layer["gf2_structured_water_records"],2)
+            self.assertEqual(layer["gf3_unstructured_land_records"],2)
+            self.assertEqual(layer["gf4_structured_land_records"],16)
+            self.assertEqual(layer["gf4_land_records"],16)
+            self.assertEqual(layer["gf2_water_records"],2)
+            self.assertEqual(layer["distinct_ags_gf4_land"],16)
+            self.assertEqual(layer["original_feature_records"],23)
+            self.assertFalse(report["cat_model_input_approved"])
+            self.assertFalse(report["source_vintage_inside_zip_independently_verified"])
+
+    def test_GF3_cannot_replace_GF4_land_key_for_an_official_state(self):
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaisesRegex(BkgOriginalArchiveBlocked,"16 official state"):
+                check_fixture(make_zip(Path(d),states=15,
+                                       without_structure_land=1))
+
+    def test_GF1_unstructured_water_never_increases_GF2_water_count(self):
+        with tempfile.TemporaryDirectory() as d:
+            r=check_fixture(make_zip(Path(d),water_states=0,
+                                     without_structure_water=5))
+            layer=r["source_gpkg_layers"]["vg250_lan"]
+            self.assertEqual(layer["gf1_unstructured_water_records"],5)
+            self.assertEqual(layer["gf2_water_records"],0)
+            self.assertEqual(layer["distinct_ags_gf4_land"],16)
 
     def test_missing_one_land_state_is_blocked(self):
         with tempfile.TemporaryDirectory() as d:
