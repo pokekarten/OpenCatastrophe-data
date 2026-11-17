@@ -1,12 +1,14 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 """Synthetic-only negative and positive cases; never access original WFS."""
+import hashlib
+import json
 import unittest
 from urllib.parse import parse_qs, urlsplit
 
 from scripts.probe_hr_dgu_buildings_gml_window_v0 import (
-    BBOX, BuildingGmlError, FOOTPRINT_URI, NoRedirect, _signed_twice_area,
-    fixed_url, inspect_gml, validate_content_length,
+    BBOX, BuildingGmlError, FOOTPRINT_URI, COMBINED_URI, NoRedirect, _signed_twice_area,
+    fixed_url, inspect_gml, inspect_semantic_label, validate_content_length,
 )
 
 
@@ -137,6 +139,53 @@ class CroatianGmlWindowTest(unittest.TestCase):
                 BuildingGmlError, "footPrint"
             ):
                 inspect_gml(raw)
+
+    def test_native_combined_semantics_audited_but_footprint_rejected(self):
+        # Source-observed combination: old OGC EPSG URI + combined reference.
+        native_crs = "http://www.opengis.net/gml/srs/epsg.xml#3765"
+        # Inject only a synthetic string to prove the receipt never echoes IDs.
+        raw = sample(crs=native_crs, href=COMBINED_URI).replace(
+            b"<bu:Building>",
+            b'<bu:Building sourceIdentifier="synthetic-DO-NOT-PRINT">',
+            1,
+        )
+        receipt = inspect_semantic_label(raw)
+        self.assertEqual(receipt["inspire_horizontal_geometry_reference"], "combined")
+        self.assertEqual(receipt["original_xml_sha256"], hashlib.sha256(raw).hexdigest())
+        self.assertEqual(receipt["original_xml_bytes"], len(raw))
+        for key in (
+            "actual_polygon_geometry_verified", "ground_footprint_verified",
+            "reusable_source_rights_fully_reviewed", "model_input_admitted",
+        ):
+            self.assertFalse(receipt[key])
+        self.assertNotIn("synthetic-DO-NOT-PRINT", json.dumps(receipt))
+        self.assertNotIn("459100", json.dumps(receipt))
+        with self.assertRaisesRegex(BuildingGmlError, "footPrint"):
+            inspect_gml(raw)
+        self.assertEqual(
+            inspect_semantic_label(sample())["inspire_horizontal_geometry_reference"],
+            "footPrint"
+        )
+
+    def test_semantic_audit_fail_closed_on_unreviewed_inputs(self):
+        clean = sample()
+        for raw in (
+            sample(duplicate=True),
+            sample(number="2"),
+            sample(geometry_type="Point"),
+            sample(crs="EPSG:4326"),
+            sample(href="https://example.test/not-reviewed"),
+            sample(ref="false"),
+            sample(geom=False),
+            b'<!DOCTYPE x [<!ENTITY leak "secret">]>' + clean,
+            clean.replace(
+                b"</base:BuildingGeometry2D>",
+                b"<base:geometry><gml:Point/></base:geometry>"
+                b"</base:BuildingGeometry2D>", 1
+            ),
+        ):
+            with self.subTest(raw_length=len(raw)), self.assertRaises(BuildingGmlError):
+                inspect_semantic_label(raw)
 
     def test_reject_non_polygon_geometry_profile(self):
         with self.assertRaisesRegex(BuildingGmlError, "unsupported"):
