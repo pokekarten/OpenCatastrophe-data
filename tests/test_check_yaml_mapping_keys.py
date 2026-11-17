@@ -53,6 +53,39 @@ class GitHubYAMLMappingKeysTests(unittest.TestCase):
     def test_empty_document_is_rejected(self) -> None:
         self.assertIn("empty YAML document", self.inspect("# empty\n")[0])
 
+    def test_unsupported_explicit_tags_fail_closed(self) -> None:
+        for source in (
+            "jobs: !dangerous payload\n",
+            "jobs: !!int 10\n",
+            "jobs: !unknown [a, b]\n",
+            "!unknown {name: config}\n",
+        ):
+            with self.subTest(source=source):
+                self.assertIn("unsupported YAML tag", self.inspect(source)[0])
+
+    def test_explicit_typed_mapping_key_fails_closed(self) -> None:
+        errors = self.inspect("!!int 1: value\n")
+        self.assertEqual(len(errors), 1)
+        self.assertIn("unsupported YAML key tag", errors[0])
+
+    def test_shared_alias_subtrees_are_inspected_once(self) -> None:
+        # An alias graph has exponentially many *paths* but only linearly many
+        # YAML nodes. The same ambiguous mapping needs one diagnostic, not 2**n.
+        source = "leaf: &leaf {same: one, same: two}\n"
+        source += "".join(
+            f"level{index}: &level{index} [*{previous}, *{previous}]\n"
+            for index, previous in ((index, "leaf" if index == 1 else f"level{index-1}")
+                                    for index in range(1, 12))
+        )
+        errors = self.inspect(source)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("duplicate key 'same'", errors[0])
+
+    def test_yaml_alias_cycle_still_fails_when_nodes_are_shared(self) -> None:
+        errors = self.inspect("other: &other [a]\ncycle: &cycle [*other, *cycle]\n")
+        self.assertEqual(len(errors), 1)
+        self.assertIn("recursive YAML alias", errors[0])
+
     def test_scan_includes_issue_templates_and_workflows(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
