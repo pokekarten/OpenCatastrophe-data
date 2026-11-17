@@ -134,6 +134,11 @@ class TestNldEmbankmentVerticalMetadata(unittest.TestCase):
         with self.assertRaisesRegex(PreflightError, "non-finite JSON number"):
             validate_metadata(raw)
 
+    def test_huge_json_integer_is_controlled_source_failure(self):
+        huge = encode(fixture())[:-1] + b',"unrelated":' + b"9" * 5000 + b"}"
+        with self.assertRaisesRegex(PreflightError, "invalid JSON metadata"):
+            validate_metadata(huge)
+
     def test_transport_fixed_origin_size_and_hash_without_raw_values(self):
         raw = encode(fixture())
 
@@ -190,6 +195,7 @@ class TestNldEmbankmentVerticalMetadata(unittest.TestCase):
             {"Content-Type": "application/json", "Content-Length": "-1"},
             {"Content-Type": "application/json", "Content-Length": "NaN"},
             {"Content-Type": "application/json", "Content-Length": str(MAX_BYTES + 1)},
+            {"Content-Type": "application/json", "Content-Length": "9" * 5000},
             {"Content-Type": "application/json", "Content-Length": str(len(raw) - 1)},
             {"Content-Type": "application/json", "Content-Length": str(len(raw) + 1)},
         ):
