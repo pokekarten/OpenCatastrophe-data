@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 import copy
+import json
 import unittest
 
-from research_runners.wind_event_catalogue_completeness import INPUT_SCHEMA, audit
+from research_runners.wind_event_catalogue_completeness import INPUT_SCHEMA, audit, parse_manifest_json
 
 
 def fixture():
@@ -103,6 +104,23 @@ class CompletenessTest(unittest.TestCase):
         data["months"][0]["events"] = [{"event_id": "e", "footprint_verified": 1}]
         with self.assertRaisesRegex(ValueError, "must be boolean"):
             audit(data)
+
+    def test_raw_json_duplicate_keys_are_rejected_at_every_level(self):
+        # json.loads alone silently keeps the last value. A reported source
+        # receipt cannot safely have competing event, month or schema claims.
+        cases = (
+            '{"schema":"WIND_EVENT_CATALOGUE_MONTHLY_INPUT_V1","schema":"invalid"}',
+            '{"months":[{"month":"2020-01","month":"2020-02"}]}',
+            '{"months":[{"events":[{"event_id":"a","event_id":"b"}]}]}',
+        )
+        for raw in cases:
+            with self.subTest(raw=raw), self.assertRaisesRegex(
+                ValueError, "duplicate JSON key"
+            ):
+                parse_manifest_json(raw)
+        # Existing valid manifests retain their exact public audit behavior.
+        self.assertEqual(audit(parse_manifest_json(json.dumps(fixture()))),
+                         audit(fixture()))
 
     def test_wrong_manifest_shape_is_rejected_without_uncaught_type_error(self):
         for data in ([], None, {"schema": "other"}, {"schema": INPUT_SCHEMA, "months": {}}):
