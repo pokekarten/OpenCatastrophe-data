@@ -88,6 +88,7 @@ class TestNldEmbankmentVerticalMetadata(unittest.TestCase):
             ("archivingInfo", {"supportsQueryWithHistoricMoment": True}),
             ("archivingInfo", {}),
             ("sourceSpatialReference", {"wkid": 4326}),
+            ("sourceSpatialReference", {"wkid": 4269.0}),
             ("heightModelInfo", None),
             ("heightModelInfo", {"heightUnit": "international-foot"}),
             ("sourceHeightModelInfo", {"heightUnit": "international-foot"}),
@@ -124,6 +125,14 @@ class TestNldEmbankmentVerticalMetadata(unittest.TestCase):
         ):
             with self.subTest(body=raw[:20]), self.assertRaises(PreflightError):
                 validate_metadata(raw)
+
+    def test_finite_json_metadata_blocks_float_overflow(self):
+        # RFC JSON exponent syntax is legal, but Python's default decoder
+        # silently converts its overflow to float('inf'). Fail closed even
+        # when the anomalous value is outside the required schema fields.
+        raw = encode(fixture())[:-1] + b',"unexpected_value":1e999}'
+        with self.assertRaisesRegex(PreflightError, "non-finite JSON number"):
+            validate_metadata(raw)
 
     def test_transport_fixed_origin_size_and_hash_without_raw_values(self):
         raw = encode(fixture())
