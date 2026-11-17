@@ -27,8 +27,9 @@ reproduzieren. Auch eine vollständig geprüfte Lieferliste autorisiert keine
 jährlichen Risikowerte ohne Auswahlregel, Zeitbasis, Häufigkeitsgewichte und
 wissenschaftliche Prüfung.
 
-Stand 17.11.2026: acht synthetische Offline-Tests prüfen auch fehlerhafte
-Monatsangaben, Hashformate, Schema-/Typfehler, doppelte IDs, gemischte
+Stand 17.11.2026: neun synthetische Offline-Tests prüfen auch fehlerhafte
+Monatsangaben, Hashformate, Schema-/Typfehler, doppelte JSON-Schlüssel,
+doppelte IDs, gemischte
 Produktversionen und die Grenze zwischen Vollständigkeitsbehauptung und
 wissenschaftlicher Zulassung. Es wurde weiterhin kein vollständiger realer
 Monatskatalog eingelesen. Die Umgebung besitzt weder CDS-Konfiguration noch
