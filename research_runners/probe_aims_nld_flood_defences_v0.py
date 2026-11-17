@@ -98,7 +98,9 @@ def validate_payload(raw: bytes, target: Target) -> dict[str, str | int]:
     try:
         data = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_pairs,
                           parse_constant=_reject_constant, parse_float=_finite_json_float)
-    except (UnicodeError, json.JSONDecodeError) as exc:
+    except ProbeFailure:
+        raise
+    except (UnicodeError, ValueError) as exc:
         raise ProbeFailure("not valid UTF-8 JSON") from exc
     if not isinstance(data, dict) or "error" in data:
         raise ProbeFailure("ArcGIS error or non-object response")
@@ -169,7 +171,8 @@ def get_one(target: Target, opener=None) -> dict[str, str | int]:
             declared = response.headers.get("Content-Length")
             if declared is not None and (
                 type(declared) is not str or not declared.isascii()
-                or not declared.isdecimal() or int(declared) > MAX_BYTES
+                or not declared.isdecimal() or len(declared) > len(str(MAX_BYTES))
+                or int(declared) > MAX_BYTES
             ):
                 raise ProbeFailure("invalid declared response Content-Length")
             body = response.read(MAX_BYTES + 1)
