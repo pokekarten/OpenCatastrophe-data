@@ -248,7 +248,7 @@ jobs:
                   0 <= single <= 221 and 0 <= total <= 221 and
                   single + total == budget), (
                   "BLOCKED: bounded independent exclusion categories do not reconcile")
-          assert r["max_source_vertices_per_feature_cap"] == 150000
+          assert r["max_source_vertices_per_feature_cap"] == 180000
           assert r["total_geodesic_source_vertices_cap"] == 3000000
           assert r["independent_geodesic_source_vertex_budget_used"] <= 3000000
           original_vertex_total = r["invalid_original_source_vertices_total"]

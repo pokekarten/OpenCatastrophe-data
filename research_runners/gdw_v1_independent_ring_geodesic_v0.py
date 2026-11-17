@@ -28,7 +28,10 @@ from research_runners import gdw_v1_invalid_polygons_area_sensitivity_v0 as sens
 
 SOURCE = "globaldamwatch.gdw.v1.0"
 PROFILE = "gdw-v1-independent-ring-vertex-and-geodesic-20261117-v0"
-MAX_SOURCE_VERTICES_PER_FEATURE = 150_000
+# Verified original main run 43986513551 observed a largest native-invalid
+# reservoir with 171,901 vertices; the previous 150k cap excluded two
+# originals. Raise ONLY the per-feature cap; preserve the 3m total bound.
+MAX_SOURCE_VERTICES_PER_FEATURE = 180_000
 MAX_TOTAL_GEODESIC_SOURCE_VERTICES = 3_000_000
 
 
