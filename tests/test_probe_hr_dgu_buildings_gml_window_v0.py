@@ -4,11 +4,13 @@
 import hashlib
 import json
 import unittest
+from unittest.mock import patch
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
 
 from scripts.probe_hr_dgu_buildings_gml_window_v0 import (
     BBOX, BuildingGmlError, FOOTPRINT_URI, COMBINED_URI, NoRedirect, _signed_twice_area,
-    fixed_url, inspect_gml, inspect_semantic_label, validate_content_length,
+    fixed_url, inspect_gml, inspect_semantic_label, live_one_original, validate_content_length,
 )
 
 
@@ -438,6 +440,39 @@ class CroatianGmlWindowTest(unittest.TestCase):
                          "0", str(512 * 1024 + 1), "11", ""):
             with self.subTest(declared=str(declared)[:24]), self.assertRaises(BuildingGmlError):
                 validate_content_length(declared, 12)
+
+    def test_original_http_vs_network_failures_are_sanitized(self):
+        class RefusingOpener:
+            def __init__(self, exc):
+                self.exc = exc
+
+            def open(self, *args, **kwargs):
+                raise self.exc
+
+        for status in (400, 403, 429, 500):
+            # Deliberately embed a sensitive-looking error reason to confirm
+            # that only numeric HTTP status can leave the source runner.
+            exc = HTTPError(fixed_url(), status, "SECRET-NEVER-PRINT", {}, None)
+            with patch(
+                "scripts.probe_hr_dgu_buildings_gml_window_v0.request.build_opener",
+                return_value=RefusingOpener(exc)
+            ):
+                with self.assertRaises(BuildingGmlError) as caught:
+                    live_one_original()
+            error_text = str(caught.exception)
+            self.assertIn(f"original WFS HTTP {status}", error_text)
+            self.assertNotIn("SECRET-NEVER-PRINT", error_text)
+            self.assertNotIn("api.uredjenazemlja.hr", error_text)
+
+        with patch(
+            "scripts.probe_hr_dgu_buildings_gml_window_v0.request.build_opener",
+            return_value=RefusingOpener(URLError("SECRET-NEVER-PRINT"))
+        ):
+            with self.assertRaisesRegex(
+                BuildingGmlError, "original WFS network unavailable"
+            ) as caught:
+                live_one_original()
+        self.assertNotIn("SECRET-NEVER-PRINT", str(caught.exception))
 
     def test_redirect_never_followed(self):
         with self.assertRaises(BuildingGmlError):
