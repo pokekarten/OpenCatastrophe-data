@@ -187,6 +187,25 @@ class CroatianGmlWindowTest(unittest.TestCase):
             with self.subTest(raw_length=len(raw)), self.assertRaises(BuildingGmlError):
                 inspect_semantic_label(raw)
 
+    def test_semantic_audit_error_reports_only_bounded_schema_field_names(self):
+        # Diagnose provider schema drift without disclosing data or attributes.
+        bad = sample().replace(
+            b"</base:BuildingGeometry2D>",
+            b'<base:horizontalGeometryEstimatedAccuracy secret="PRIVATE-DO-NOT-PRINT">'
+            b'459100 5074600 PRIVATE-DO-NOT-PRINT'
+            b'</base:horizontalGeometryEstimatedAccuracy>'
+            b"</base:BuildingGeometry2D>",
+            1,
+        )
+        with self.assertRaises(BuildingGmlError) as caught:
+            inspect_semantic_label(bad)
+        message = str(caught.exception)
+        self.assertIn("horizontalGeometryEstimatedAccuracy", message)
+        self.assertIn("count=4", message)
+        self.assertNotIn("PRIVATE-DO-NOT-PRINT", message)
+        self.assertNotIn("459100", message)
+        self.assertLess(len(message), 260)
+
     def test_reject_non_polygon_geometry_profile(self):
         with self.assertRaisesRegex(BuildingGmlError, "unsupported"):
             inspect_gml(sample(geometry_type="Point"))
