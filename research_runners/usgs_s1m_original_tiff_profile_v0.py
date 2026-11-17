@@ -17,6 +17,19 @@ from pathlib import Path
 import re
 import sys
 
+# Run consistently as a module or via 'python research_runners/...py'.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+# One canonical, trusted original-prefix observation. A caller-supplied full
+# SHA alone is not independent provider-origin evidence.
+from scripts.probe_usgs_s1m_native_header_original_v0 import (
+    BYTE_COUNT as TRUSTED_PREFIX_BYTES,
+    EXPECTED_ORIGINAL_PREFIX_SHA256 as TRUSTED_ORIGINAL_PREFIX_SHA256,
+    EXPECTED_ORIGINAL_TOTAL_BYTES as TRUSTED_ORIGINAL_TOTAL_BYTES,
+    URL as TRUSTED_ORIGINAL_URL,
+)
+
 SOURCE_ID = "usgs.3dep.seamless-1m.s1m"
 PILOT_SOURCE_ID = "6a9785801ba49b050c166274"
 ORIGINAL_FILENAME = "S1M_n0450e1510_20260821.tif"
@@ -69,6 +82,41 @@ def check_local_identity(path: Path, expected_sha256: str, expected_bytes: int) 
     if seen != expected_bytes or sha.hexdigest() != expected_sha256:
         raise Blocked("original full-file SHA-256 or byte count mismatch")
     return {"file_sha256":sha.hexdigest(), "file_bytes":seen}
+
+
+def check_pinned_florida_original_prefix(path: Path, expected_bytes: int) -> dict:
+    """Match a local full TIFF to the separately attested *partial* source receipt.
+
+    This checks only the first 64 KiB and advertised whole-file byte count,
+    NOT provider provenance of the rest of the file. Neither this check nor a
+    caller-supplied full hash proves a trusted complete original download.
+    """
+    if TRUSTED_ORIGINAL_URL != ORIGINAL_URL:
+        raise Blocked("pinned source receipt URL no longer matches original TIFF identity")
+    if type(expected_bytes) is not int or expected_bytes != TRUSTED_ORIGINAL_TOTAL_BYTES:
+        raise Blocked("supplied S1M full-file size disagrees with trusted original range receipt")
+    if path.name != ORIGINAL_FILENAME or path.is_symlink() or not path.is_file():
+        raise Blocked("not the pinned regular local S1M original filename")
+    try:
+        if path.stat().st_size != TRUSTED_ORIGINAL_TOTAL_BYTES:
+            raise Blocked("local S1M file size disagrees with trusted original range receipt")
+        with path.open("rb") as stream:
+            prefix = stream.read(TRUSTED_PREFIX_BYTES)
+    except OSError as exc:
+        raise Blocked("local S1M original prefix unavailable") from exc
+    if len(prefix) != TRUSTED_PREFIX_BYTES:
+        raise Blocked("truncated S1M original prefix")
+    digest = hashlib.sha256(prefix).hexdigest()
+    if digest != TRUSTED_ORIGINAL_PREFIX_SHA256:
+        raise Blocked("local S1M original prefix disagrees with trusted provider SHA-256")
+    return {
+        "pinned_original_prefix_sha256": digest,
+        "pinned_original_prefix_bytes": len(prefix),
+        "pinned_original_prefix_matches_trusted_receipt": True,
+        "complete_original_provider_file_attested": False,
+        "source_lineage_geopackage_verified": False,
+        "model_input_approved": False,
+    }
 
 
 def check_native_header(profile: object) -> dict:
@@ -162,6 +210,7 @@ def check_frozen_florida_footprint(profile: object) -> dict:
 
 def inspect_original_tiff(path: Path, expected_sha256: str, expected_bytes: int) -> dict:
     """Offline native-header screen after full local byte checksum verification."""
+    original_prefix = check_pinned_florida_original_prefix(path, expected_bytes)
     receipt = check_local_identity(path, expected_sha256, expected_bytes)
     try:
         import rasterio
@@ -195,6 +244,7 @@ def inspect_original_tiff(path: Path, expected_sha256: str, expected_bytes: int)
         "catalogue_download_url_reference_only": ORIGINAL_URL,
         "identity_status": "caller_supplied_full_file_sha_matches_not_independent_provider_attestation",
         **receipt,
+        **original_prefix,
         **result,
         **footprint,
         "source_provider_original_verified": False,

@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from research_runners import usgs_s1m_original_tiff_profile_v0 as s
 
@@ -60,6 +61,39 @@ class S1MOriginalHeaderTests(unittest.TestCase):
         for value in (None, "header", [], 1):
             with self.subTest(value=value), self.assertRaises(s.Blocked):
                 s.check_native_header(value)
+
+    def test_caller_chosen_full_hash_cannot_replace_original_provider_prefix(self):
+        # Synthetic bytes stand in for the trusted prefix under a test-only
+        # patch; the production constants remain frozen from the original job.
+        prefix = b"X" * 65536
+        original = prefix + b"synthetic tail"
+        digest = hashlib.sha256(prefix).hexdigest()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / s.ORIGINAL_FILENAME
+            path.write_bytes(original)
+            with patch.object(s, "TRUSTED_ORIGINAL_TOTAL_BYTES", len(original)), \
+                 patch.object(s, "TRUSTED_ORIGINAL_PREFIX_SHA256", digest):
+                receipt = s.check_pinned_florida_original_prefix(path, len(original))
+                self.assertTrue(receipt["pinned_original_prefix_matches_trusted_receipt"])
+                self.assertFalse(receipt["complete_original_provider_file_attested"])
+                self.assertFalse(receipt["model_input_approved"])
+                with self.assertRaisesRegex(s.Blocked, "supplied S1M full-file size"):
+                    s.check_pinned_florida_original_prefix(path, len(original) + 1)
+                changed = b"Y" + original[1:]
+                path.write_bytes(changed)
+                # A matching caller-chosen full SHA remains a false provenance
+                # witness if the first source-original 64 KiB were replaced.
+                self.assertEqual(
+                    s.check_local_identity(path, hashlib.sha256(changed).hexdigest(), len(changed))["file_bytes"],
+                    len(changed),
+                )
+                with self.assertRaisesRegex(s.Blocked, "trusted provider SHA-256"):
+                    s.check_pinned_florida_original_prefix(path, len(changed))
+                with self.assertRaisesRegex(s.Blocked, "trusted provider SHA-256"):
+                    s.inspect_original_tiff(path, hashlib.sha256(changed).hexdigest(), len(changed))
+            # Even the same bytes must be rejected at the real frozen 447 MB size.
+            with self.assertRaisesRegex(s.Blocked, "trusted original range receipt"):
+                s.check_pinned_florida_original_prefix(path, len(changed))
 
     def test_valid_header_at_wrong_coordinates_is_not_frozen_florida_tile(self):
         # Published CRS/resolution/NoData alone are no geographic identity.
@@ -149,19 +183,27 @@ class S1MOriginalHeaderTests(unittest.TestCase):
             ) as dst:
                 dst.write(np.ones((256,256),dtype="float32"),1,window=Window(0,0,256,256))
             data = path.read_bytes()
-            result = s.inspect_original_tiff(path, hashlib.sha256(data).hexdigest(), len(data))
+            # The fixture is synthetic, never the public 447 MB provider file:
+            # override both trusted original observations only inside this test.
+            fixture_prefix_bytes = min(len(data), s.TRUSTED_PREFIX_BYTES)
+            with patch.object(s, "TRUSTED_ORIGINAL_TOTAL_BYTES", len(data)), \
+                 patch.object(s, "TRUSTED_PREFIX_BYTES", fixture_prefix_bytes), \
+                 patch.object(s, "TRUSTED_ORIGINAL_PREFIX_SHA256",
+                              hashlib.sha256(data[:fixture_prefix_bytes]).hexdigest()):
+                result = s.inspect_original_tiff(path, hashlib.sha256(data).hexdigest(), len(data))
+                with self.assertRaises(s.Blocked):
+                    s.inspect_original_tiff(path, "0" * 64, len(data))
             self.assertTrue(result["header_matches_published_horizontal_profile"])
             self.assertTrue(result["frozen_florida_catalogue_bbox_consistent"])
             self.assertFalse(result["native_raster_provider_origin_independently_attested"])
+            self.assertTrue(result["pinned_original_prefix_matches_trusted_receipt"])
+            self.assertFalse(result["complete_original_provider_file_attested"])
             self.assertFalse(result["source_provider_original_verified"])
             self.assertFalse(result["model_input_approved"])
             self.assertFalse(result["pixel_values_read"])
             self.assertEqual(result["file_sha256"],hashlib.sha256(data).hexdigest())
             # A header-valid TIFF with an unverified source is NOT source attestation.
             self.assertIn("not_independent_provider_attestation",result["identity_status"])
-            with self.assertRaises(s.Blocked):
-                s.inspect_original_tiff(path, "0" * 64, len(data))
-
 
 if __name__ == "__main__":
     unittest.main()
