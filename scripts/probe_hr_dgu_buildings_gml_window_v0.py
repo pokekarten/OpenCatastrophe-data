@@ -33,6 +33,7 @@ BU = "{http://inspire.ec.europa.eu/schemas/bu-core2d/4.0}"
 BU_BASE = "{http://inspire.ec.europa.eu/schemas/bu-base/4.0}"
 XLINK = "{http://www.w3.org/1999/xlink}"
 FOOTPRINT_URI = "http://inspire.ec.europa.eu/codelist/HorizontalGeometryReferenceValue/footPrint"
+COMBINED_URI = "http://inspire.ec.europa.eu/codelist/HorizontalGeometryReferenceValue/combined"
 # The final legacy OGC URI was observed as the Polygon's own srsName in
 # one bounded Croatian cadastral WFS GML intermediary response on 2026-11-17.
 # It is an exact EPSG:3765 syntax, not permission to accept arbitrary URIs.
@@ -150,6 +151,72 @@ def _polygon_intersects_window(xy: list[tuple[float, float]],
         return inside
 
     return any(contains(corner) for corner in corners)
+
+
+def inspect_semantic_label(raw: bytes) -> dict:
+    """Report one source-labelled INSPIRE reference, without validating a footprint.
+
+    This is a metadata-only *negative-evidence* lane for a provider returning
+    'combined'. No original coordinates, feature identifiers, attributes,
+    licence clearance or exposure claims may appear in its receipt. It
+    deliberately does not replace inspect_gml's strict footPrint gate.
+    """
+    if not isinstance(raw, bytes) or not (0 < len(raw) <= MAX_BYTES):
+        raise BuildingGmlError("XML is missing or exceeds fixed byte budget")
+    if re.search(rb"<!\\s*(?:DOCTYPE|ENTITY)\\b", raw, flags=re.I):
+        raise BuildingGmlError("DTD and entity declarations prohibited")
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError as exc:
+        raise BuildingGmlError("XML parse error") from exc
+    if root.tag != WFS + "FeatureCollection" or root.get("numberReturned") != "1":
+        raise BuildingGmlError("expected one WFS 2.0 original feature")
+    members = root.findall(WFS + "member")
+    if len(members) != 1 or len(members[0]) != 1 or members[0][0].tag != BU + "Building":
+        raise BuildingGmlError("expected exactly one INSPIRE Building")
+    geometries = members[0][0].findall(BU + "geometry2D")
+    if len(geometries) != 1 or len(geometries[0]) != 1:
+        raise BuildingGmlError("expected one direct geometry2D")
+    profile = geometries[0][0]
+    if profile.tag != BU_BASE + "BuildingGeometry2D":
+        raise BuildingGmlError("expected bu-base BuildingGeometry2D")
+    required = {
+        BU_BASE + "geometry", BU_BASE + "referenceGeometry",
+        BU_BASE + "horizontalGeometryReference",
+    }
+    if len(profile) != 3 or {child.tag for child in profile} != required:
+        raise BuildingGmlError("unreviewed or duplicated reference geometry properties")
+    refs = profile.findall(BU_BASE + "referenceGeometry")
+    if len(refs) != 1 or refs[0].text is None or refs[0].text.strip() != "true":
+        raise BuildingGmlError("referenceGeometry must be uniquely true")
+    labels = profile.findall(BU_BASE + "horizontalGeometryReference")
+    label_uris = {FOOTPRINT_URI: "footPrint", COMBINED_URI: "combined"}
+    if len(labels) != 1 or labels[0].get(XLINK + "href") not in label_uris:
+        raise BuildingGmlError("unsupported INSPIRE horizontal reference")
+    geometry = profile.findall(BU_BASE + "geometry")
+    if len(geometry) != 1 or len(geometry[0]) != 1:
+        raise BuildingGmlError("missing or ambiguous inline source geometry")
+    polygon = geometry[0][0]
+    if polygon.tag != GML + "Polygon" or polygon.get("srsName") not in CRS_ALIASES:
+        raise BuildingGmlError("unsupported geometry or projected CRS for semantic audit")
+    # Deliberately no coordinate inspection and no geometry-validity verdict.
+    # Even a claimed footPrint here does not pass the separate strict gate.
+    return {
+        "receipt_profile": "hr-dgu-gml-reference-semantics-observation-v0",
+        "source_id": SOURCE_ID,
+        "wfs_type": FEATURE_TYPE,
+        "original_xml_bytes": len(raw),
+        "original_xml_sha256": hashlib.sha256(raw).hexdigest(),
+        "feature_records_checked": 1,
+        "polygon_crs_declaration": CRS,
+        "inspire_reference_geometry_verified": True,
+        "inspire_horizontal_geometry_reference": label_uris[labels[0].get(XLINK + "href")],
+        "actual_polygon_geometry_verified": False,
+        "ground_footprint_verified": False,
+        "reusable_source_rights_fully_reviewed": False,
+        "insurer_locations_or_tiv_verified": False,
+        "model_input_admitted": False,
+    }
 
 
 def inspect_gml(raw: bytes) -> dict:
@@ -340,6 +407,10 @@ def main(argv: list[str] | None = None) -> int:
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument("--live", action="store_true", help="One bounded original WFS GET")
     mode.add_argument("--offline-file", type=Path, help="Inspect one local XML; no network")
+    p.add_argument(
+        "--audit-semantics", action="store_true",
+        help="Metadata-only source-label receipt; does not validate/admit a footprint",
+    )
     a = p.parse_args(argv)
     try:
         if a.live:
@@ -349,7 +420,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise BuildingGmlError("offline XML must be a regular file")
             with a.offline_file.open("rb") as stream:
                 raw = stream.read(MAX_BYTES + 1)
-        result = inspect_gml(raw)
+        result = inspect_semantic_label(raw) if a.audit_semantics else inspect_gml(raw)
         result["live_original_fetch_in_this_run"] = bool(a.live)
     except (BuildingGmlError, OSError) as exc:
         print("BLOCKED: " + str(exc), file=sys.stderr)
