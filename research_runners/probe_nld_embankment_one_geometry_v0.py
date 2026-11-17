@@ -94,7 +94,9 @@ def validate_geometry_response(raw: bytes) -> dict[str, object]:
             parse_constant=_reject_constant,
             parse_float=_finite_json_float,
         )
-    except (UnicodeError, json.JSONDecodeError) as exc:
+    except GeometryCanaryError:
+        raise
+    except (UnicodeError, ValueError) as exc:
         raise GeometryCanaryError("invalid JSON source response") from exc
     if not isinstance(data, dict) or "error" in data:
         raise GeometryCanaryError("unexpected ArcGIS response or error")
@@ -202,7 +204,8 @@ def get_one_original_geometry(opener=None) -> dict[str, object]:
             declared = response.headers.get("Content-Length")
             if declared is not None and (
                 type(declared) is not str or not declared.isascii()
-                or not declared.isdecimal() or int(declared) > MAX_BYTES
+                or not declared.isdecimal() or len(declared) > len(str(MAX_BYTES))
+                or int(declared) > MAX_BYTES
             ):
                 raise GeometryCanaryError("invalid original Content-Length")
             raw = response.read(MAX_BYTES + 1)
