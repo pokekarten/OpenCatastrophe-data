@@ -21,7 +21,11 @@ from urllib import error, parse, request
 import xml.etree.ElementTree as ET
 
 PROVIDER = "https://api.uredjenazemlja.hr/services/inspire/bu/wfs"
+# The landscape source ID is a *shared discovery candidate*, not a dataset
+# identity: it covers the separate Digital Cadastral Map WFS and topographic
+# ATOM product. Every receipt must additionally bind the exact WFS product.
 SOURCE_ID = "hr.dgu.inspire-buildings-wfs-atom.2026"
+WFS_PRODUCT = "DGU Digital Cadastral Map INSPIRE Buildings WFS"
 FEATURE_TYPE = "bu:Building"
 CRS = "EPSG:3765"
 BBOX = (459000, 5074500, 459600, 5075100)
@@ -234,6 +238,9 @@ def inspect_semantic_label(raw: bytes) -> dict:
     return {
         "receipt_profile": "hr-dgu-gml-reference-semantics-observation-v0",
         "source_id": SOURCE_ID,
+        "source_id_scope": "shared_discovery_candidate_not_dataset",
+        "source_product": WFS_PRODUCT,
+        "source_endpoint": PROVIDER,
         "wfs_type": FEATURE_TYPE,
         "original_xml_bytes": len(raw),
         "original_xml_sha256": hashlib.sha256(raw).hexdigest(),
@@ -375,6 +382,9 @@ def inspect_gml(raw: bytes) -> dict:
     return {
         "receipt_profile": "hr-dgu-cadastral-building-gml-single-polygon-preflight-v0",
         "source_id": SOURCE_ID,
+        "source_id_scope": "shared_discovery_candidate_not_dataset",
+        "source_product": WFS_PRODUCT,
+        "source_endpoint": PROVIDER,
         "wfs_type": FEATURE_TYPE,
         "declared_crs": CRS,
         "original_xml_bytes": len(raw),
