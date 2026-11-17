@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import urllib.error
 import urllib.request
 
@@ -49,6 +50,14 @@ def _reject_constant(value):
     raise PreflightError("non-finite JSON number")
 
 
+def _finite_json_float(token: str) -> float:
+    # json.loads accepts e.g. 1e999 as float('inf') unless explicitly checked.
+    value = float(token)
+    if not math.isfinite(value):
+        raise PreflightError("non-finite JSON number")
+    return value
+
+
 def validate_metadata(raw: bytes) -> dict[str, str | bool]:
     if not raw or len(raw) > MAX_BYTES:
         raise PreflightError("empty or oversized original metadata")
@@ -59,6 +68,7 @@ def validate_metadata(raw: bytes) -> dict[str, str | bool]:
             raw.decode("utf-8"),
             object_pairs_hook=_unique_pairs,
             parse_constant=_reject_constant,
+            parse_float=_finite_json_float,
         )
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise PreflightError("invalid JSON metadata") from exc
@@ -82,7 +92,9 @@ def validate_metadata(raw: bytes) -> dict[str, str | bool]:
     if not isinstance(archive, dict) or archive.get("supportsQueryWithHistoricMoment") is not False:
         raise PreflightError("historical query support changed or unknown")
     source_sr = data.get("sourceSpatialReference")
-    if not isinstance(source_sr, dict) or source_sr.get("wkid") != 4269:
+    if (not isinstance(source_sr, dict)
+            or type(source_sr.get("wkid")) is not int
+            or source_sr["wkid"] != 4269):
         raise PreflightError("unexpected horizontal CRS")
     height = data.get("heightModelInfo")
     source_height = data.get("sourceHeightModelInfo")
