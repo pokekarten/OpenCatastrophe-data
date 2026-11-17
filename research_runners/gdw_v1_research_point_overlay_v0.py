@@ -45,6 +45,29 @@ def _valid_exposure_point(value: object) -> bool:
         return False
 
 
+def _excluded_footprint_bounds(shape: object) -> tuple[float, float, float, float] | None:
+    """Use only coarse bounds to quarantine exposure points near an excluded area.
+
+    A malformed/non-polygon/empty/out-of-domain footprint has unknown extent;
+    callers must quarantine ALL exposure points rather than infer uniqueness.
+    Bounding boxes are an over-exclusion, never an independent flood footprint.
+    """
+    try:
+        from shapely.geometry.base import BaseGeometry
+        if (not isinstance(shape, BaseGeometry)
+                or shape.geom_type not in ("Polygon", "MultiPolygon")
+                or shape.is_empty):
+            return None
+        west, south, east, north = shape.bounds
+        if (not all(math.isfinite(v) for v in (west, south, east, north))
+                or west < -180 or east > 180 or south < -90 or north > 90
+                or west > east or south > north):
+            return None
+        return west, south, east, north
+    except Exception:
+        return None
+
+
 def screen_synthetic_reservoir_exposure_points(
     reservoir_dam_pairs: list[tuple[object, object]] | tuple[tuple[object, object], ...],
     exposure_points: list[object] | tuple[object, ...],
@@ -60,7 +83,11 @@ def screen_synthetic_reservoir_exposure_points(
     A point strictly in exactly one eligible reservoir is a bounded synthetic
     match, never a globally unique or scientific/insured exposure join. A
     border touch on any other eligible polygon makes even one interior hit
-    ambiguous; two strictly containing polygons are also ambiguous.
+    ambiguous; two strictly containing polygons are also ambiguous. Importantly,
+    an excluded polygon is NOT evidence of geographic absence: if its coarse
+    bounding rectangle covers a point, that point is quarantined even when
+    one other eligible polygon contains it. An excluded unknown/unparseable
+    footprint extent quarantines every point; no unique inference is allowed.
     """
     if synthetic_research_only is not True:
         raise GDWResearchOverlayBlocked("synthetic-only research consent is required")
@@ -71,6 +98,8 @@ def screen_synthetic_reservoir_exposure_points(
         raise GDWResearchOverlayBlocked("unsupported synthetic input collection or size")
 
     eligible = []
+    excluded_bounds = []
+    unknown_exclusion_extents = 0
     excluded = 0
     for pair in reservoir_dam_pairs:
         if type(pair) not in (list, tuple) or len(pair) != 2:
@@ -80,8 +109,17 @@ def screen_synthetic_reservoir_exposure_points(
             eligible.append(shape)
         else:
             excluded += 1
+            bounds = _excluded_footprint_bounds(shape)
+            if bounds is None:
+                unknown_exclusion_extents += 1
+            else:
+                excluded_bounds.append(bounds)
+
+    if excluded != len(excluded_bounds) + unknown_exclusion_extents:
+        raise GDWResearchOverlayBlocked("excluded reservoir extents do not reconcile")
 
     counts = {
+        "points_quarantined_near_excluded_or_unknown_footprints": 0,
         "single_candidate_interior_points": 0,
         "multiple_or_boundary_ambiguous_points": 0,
         "boundary_only_excluded_points": 0,
@@ -90,6 +128,14 @@ def screen_synthetic_reservoir_exposure_points(
     for point in exposure_points:
         if not _valid_exposure_point(point):
             raise GDWResearchOverlayBlocked("non-WGS84 or malformed synthetic exposure point")
+        # Even a GEOS-invalid source polygon may still occupy a footprint.
+        # Only a coarse bbox is touched: do not query invalid polygon interior,
+        # repair its geometry or assume that dropping it proves no overlap.
+        if (unknown_exclusion_extents
+                or any(w <= point.x <= e and s <= point.y <= n
+                       for w, s, e, n in excluded_bounds)):
+            counts["points_quarantined_near_excluded_or_unknown_footprints"] += 1
+            continue
         inside = 0
         touching = 0
         try:
@@ -123,8 +169,11 @@ def screen_synthetic_reservoir_exposure_points(
         "research_input_reservoir_pairs": len(reservoir_dam_pairs),
         "native_geometry_candidate_pairs": len(eligible),
         "native_geometry_excluded_pairs": excluded,
+        "excluded_footprint_coarse_bounds_known": len(excluded_bounds),
+        "excluded_footprint_extents_unknown": unknown_exclusion_extents,
         "synthetic_exposure_points": len(exposure_points),
         **counts,
+        "excluded_footprint_contact_scientifically_resolved": False,
         "global_geospatial_join_uniqueness_proven": False,
         "hydraulic_inundation_or_failure_hazard_proven": False,
         "insured_exposure_or_value_verified": False,
