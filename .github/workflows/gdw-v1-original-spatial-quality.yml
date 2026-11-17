@@ -242,6 +242,20 @@ jobs:
               assert type(value) is int and 0 <= value <= 221, (
                   "BLOCKED: invalid independent aggregate count")
           assert compared + domain + budget == 221
+          single = r["per_feature_vertex_excluded"]
+          total = r["total_vertex_budget_excluded"]
+          assert (type(single) is int and type(total) is int and
+                  0 <= single <= 221 and 0 <= total <= 221 and
+                  single + total == budget), (
+                  "BLOCKED: bounded independent exclusion categories do not reconcile")
+          assert r["max_source_vertices_per_feature_cap"] == 150000
+          assert r["total_geodesic_source_vertices_cap"] == 3000000
+          assert r["independent_geodesic_source_vertex_budget_used"] <= 3000000
+          original_vertex_total = r["invalid_original_source_vertices_total"]
+          largest_original = r["largest_invalid_original_source_vertices"]
+          assert (type(original_vertex_total) is int and
+                  type(largest_original) is int and
+                  original_vertex_total >= largest_original >= 0)
           discrepancy = r["max_wgs84_area_mismatch_km2"]
           assert type(discrepancy) in (int, float)
           assert math.isfinite(discrepancy) and discrepancy >= 0
@@ -260,6 +274,12 @@ jobs:
                     "independent_numeric_geodesic_comparisons": compared,
                     "numeric_geodesic_domain_exclusions": domain,
                     "numeric_geodesic_vertex_budget_exclusions": budget,
+                    "per_feature_vertex_exclusions": single,
+                    "total_vertex_budget_exclusions": total,
+                    "all_original_invalid_source_vertices": original_vertex_total,
+                    "max_original_invalid_polygon_vertices": largest_original,
+                    "numeric_geodesic_source_vertices_checked":
+                        r["independent_geodesic_source_vertex_budget_used"],
                     "max_geodesic_area_mismatch_km2": discrepancy,
                     "independent_topology_engine_verified": False,
                     "CAT_model_input_admitted": False,
