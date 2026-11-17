@@ -28,8 +28,8 @@ from research_runners import gdw_v1_invalid_polygons_area_sensitivity_v0 as sens
 
 SOURCE = "globaldamwatch.gdw.v1.0"
 PROFILE = "gdw-v1-independent-ring-vertex-and-geodesic-20261117-v0"
-MAX_SOURCE_VERTICES_PER_FEATURE = 30_000
-MAX_TOTAL_GEODESIC_SOURCE_VERTICES = 250_000
+MAX_SOURCE_VERTICES_PER_FEATURE = 150_000
+MAX_TOTAL_GEODESIC_SOURCE_VERTICES = 3_000_000
 
 
 class IndependentDiagnosticError(ValueError):
@@ -143,7 +143,11 @@ def audit(original_zip: Path) -> dict:
     geodesic_checked = 0
     geodesic_domain_excluded = 0
     geodesic_vertex_budget_excluded = 0
+    per_feature_vertex_excluded = 0
+    total_vertex_budget_excluded = 0
     geodesic_source_vertex_budget_used = 0
+    invalid_original_source_vertices_total = 0
+    largest_invalid_original_source_vertices = 0
     max_geodesic_discrepancy = 0.0
     with zipfile.ZipFile(original_zip) as z:
         members = pre._members(z)
@@ -162,6 +166,10 @@ def audit(original_zip: Path) -> dict:
                     raise IndependentDiagnosticError("unreviewed native invalidity class")
                 repeated_native_vertices += int(
                     has_nonclosure_ring_vertex_repeat(row.shape))
+                vertices = len(row.shape.points)
+                invalid_original_source_vertices_total += vertices
+                largest_invalid_original_source_vertices = max(
+                    largest_invalid_original_source_vertices, vertices)
                 west, south, east, north = geom.bounds
                 if (not all(math.isfinite(v) for v in (west, south, east, north))
                         or not (-180 <= west <= east <= 180
@@ -170,10 +178,13 @@ def audit(original_zip: Path) -> dict:
                 if east - west > 180 or south < -85 or north > 85:
                     geodesic_domain_excluded += 1
                     continue
-                vertices = len(row.shape.points)
-                if (vertices > MAX_SOURCE_VERTICES_PER_FEATURE
-                        or geodesic_source_vertex_budget_used + vertices
-                           > MAX_TOTAL_GEODESIC_SOURCE_VERTICES):
+                if vertices > MAX_SOURCE_VERTICES_PER_FEATURE:
+                    per_feature_vertex_excluded += 1
+                    geodesic_vertex_budget_excluded += 1
+                    continue
+                if (geodesic_source_vertex_budget_used + vertices
+                        > MAX_TOTAL_GEODESIC_SOURCE_VERTICES):
+                    total_vertex_budget_excluded += 1
                     geodesic_vertex_budget_excluded += 1
                     continue
                 max_geodesic_discrepancy = max(
@@ -188,6 +199,9 @@ def audit(original_zip: Path) -> dict:
     if (geodesic_checked + geodesic_domain_excluded
             + geodesic_vertex_budget_excluded != invalid):
         raise IndependentDiagnosticError("incomplete original source coverage")
+    if (per_feature_vertex_excluded + total_vertex_budget_excluded
+            != geodesic_vertex_budget_excluded):
+        raise IndependentDiagnosticError("vertex-budget categories do not reconcile")
     return {
         "source_id": SOURCE,
         "profile": PROFILE,
@@ -199,6 +213,12 @@ def audit(original_zip: Path) -> dict:
         "numerically_crosschecked_counterfactuals": geodesic_checked,
         "independent_geodesic_domain_excluded": geodesic_domain_excluded,
         "independent_geodesic_vertex_budget_excluded": geodesic_vertex_budget_excluded,
+        "per_feature_vertex_excluded": per_feature_vertex_excluded,
+        "total_vertex_budget_excluded": total_vertex_budget_excluded,
+        "max_source_vertices_per_feature_cap": MAX_SOURCE_VERTICES_PER_FEATURE,
+        "total_geodesic_source_vertices_cap": MAX_TOTAL_GEODESIC_SOURCE_VERTICES,
+        "invalid_original_source_vertices_total": invalid_original_source_vertices_total,
+        "largest_invalid_original_source_vertices": largest_invalid_original_source_vertices,
         "independent_geodesic_source_vertex_budget_used":
             geodesic_source_vertex_budget_used,
         "max_wgs84_area_mismatch_km2": max_geodesic_discrepancy,
