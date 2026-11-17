@@ -33,7 +33,15 @@ BU = "{http://inspire.ec.europa.eu/schemas/bu-core2d/4.0}"
 BU_BASE = "{http://inspire.ec.europa.eu/schemas/bu-base/4.0}"
 XLINK = "{http://www.w3.org/1999/xlink}"
 FOOTPRINT_URI = "http://inspire.ec.europa.eu/codelist/HorizontalGeometryReferenceValue/footPrint"
-CRS_ALIASES = {"EPSG:3765", "urn:ogc:def:crs:EPSG::3765", "http://www.opengis.net/def/crs/EPSG/0/3765"}
+# The final legacy OGC URI was observed as the Polygon's own srsName in
+# one bounded Croatian cadastral WFS GML intermediary response on 2026-11-17.
+# It is an exact EPSG:3765 syntax, not permission to accept arbitrary URIs.
+CRS_ALIASES = {
+    "EPSG:3765",
+    "urn:ogc:def:crs:EPSG::3765",
+    "http://www.opengis.net/def/crs/EPSG/0/3765",
+    "http://www.opengis.net/gml/srs/epsg.xml#3765",
+}
 
 
 class BuildingGmlError(ValueError):
