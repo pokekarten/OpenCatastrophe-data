@@ -346,6 +346,42 @@ counts as an original provider footprint, admission, or licence receipt.
 Any schema drift must be reviewed property by property before extending
 the explicit semantic-audit allowlist.
 
+## INSPIRE-approved extra metadata names; no source admission (2026-11-17)
+
+The [INSPIRE Buildings Technical Guidelines, §5.3.2.2.4
+BuildingGeometry2D](https://inspire-mif.github.io/technical-guidelines/data/bu/dataspecification_bu.html)
+define three optional **metadata** properties in addition to the
+`geometry`, `referenceGeometry` and `horizontalGeometryReference`
+fields used by our bounded observation:
+
+- `verticalGeometryReference` — the vertical reference element;
+- `horizontalGeometryEstimatedAccuracy` — nominal XY accuracy;
+- `verticalGeometryEstimatedAccuracy` — nominal Z accuracy.
+
+These extra properties may explain a real WFS reply rejected by the
+earlier **exactly-three-properties** audit, but their actual presence in
+the original Croatian response is **not yet observed or proven**. The
+`--audit-semantics` mode now allows only those exact INSPIRE base
+property names, at most one of each, with no nested child elements.
+It checks that the three core properties still occur **exactly once**,
+rejects any unrecognised, duplicated or coordinate-bearing additional
+element, and records only sorted names of recognized optional fields.
+It does **not** parse, display or certify the optional values, accuracy,
+original geometry, complete XSD conformance, rights or model fitness.
+Tests also verify that `combined` remains rejected by the original
+strict `inspect_gml` path, even with optional metadata.
+
+The source workflow previously ran a single original WFS request for
+every relevant PR synchronization. After one structurally blocked
+original GML response and two intermittent service/network failures,
+that causes low-value extra requests. Now automatic PR runs execute
+**only the offline synthetic checks**. An original-source request is
+exclusively a `workflow_dispatch` step on reviewed `main` once this
+workflow has passed review and is present on the default branch.
+The current Draft PR **does not** claim such a dispatched live run.
+This preserves reproducibility without silently retrying a service
+whose automation limits and exact rights remain under review.
+
 ## Next causal evidence
 
 1. Re-run the explicit `--live` command in a network-capable, provider-permitted environment; check original byte count, SHA-256 and the precise GML geometry type. If the original uses GML MultiSurface/Surface rather than Polygon, **retain failure** and add a separately tested exact shape profile; do not weaken the classifier generically.
