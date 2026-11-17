@@ -84,6 +84,16 @@ class GDWIndependentDiagnosticTests(unittest.TestCase):
                 source.compare_geodesic_counterfactuals(
                     bowtie, Geod(ellps="WGS84"))
 
+    def test_single_feature_cap_covers_observed_original_max_without_unbounding_run(self):
+        # Verified original trusted-main run 43986513551 (Nov 17, 2026):
+        # 221 native-invalid reservoir polygons, 1,190,727 source vertices;
+        # max one polygon = 171,901. Prior 150k bound excluded two.
+        # Numeric check is not original-geometry or CAT admission.
+        self.assertGreaterEqual(source.MAX_SOURCE_VERTICES_PER_FEATURE, 171901)
+        self.assertLessEqual(source.MAX_SOURCE_VERTICES_PER_FEATURE, 180000)
+        self.assertGreaterEqual(source.MAX_TOTAL_GEODESIC_SOURCE_VERTICES, 1190727)
+        self.assertLessEqual(source.MAX_TOTAL_GEODESIC_SOURCE_VERTICES, 3000000)
+
     def test_cli_fail_closed_without_original_coordinate_leak(self):
         stderr = StringIO()
         with patch.object(source, "audit", side_effect=RuntimeError(
