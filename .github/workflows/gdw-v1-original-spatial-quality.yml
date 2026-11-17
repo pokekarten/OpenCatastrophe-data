@@ -12,6 +12,8 @@ on:
       - "research_runners/gdw_v1_original_spatial_quality_v0.py"
       - "research_runners/gdw_v1_original_spatial_source_receipt_v0.py"
       - "tests/test_gdw_v1_original_spatial_quality_v0.py"
+      - "research_runners/gdw_v1_research_point_overlay_v0.py"
+      - "tests/test_gdw_v1_research_point_overlay_v0.py"
       - "research_runners/gdw_v1_independent_ring_geodesic_v0.py"
       - "tests/test_gdw_v1_independent_ring_geodesic_v0.py"
   push:
@@ -54,6 +56,7 @@ jobs:
           python -m unittest tests.test_gdw_v1_shapefile_archive_preflight_v0 tests.test_gdw_v1_original_spatial_quality_v0 -v
           python -m unittest tests.test_gdw_v1_invalid_polygons_area_sensitivity_v0 -v
           python -m unittest tests.test_gdw_v1_independent_ring_geodesic_v0 -v
+          python -m unittest tests.test_gdw_v1_research_point_overlay_v0 -v
 
       - name: Check one original Figshare GDW v1 ZIP and aggregate GEOS spatial quality
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
