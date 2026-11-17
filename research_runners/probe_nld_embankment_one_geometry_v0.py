@@ -55,6 +55,13 @@ def _reject_constant(value):
     raise GeometryCanaryError("non-finite JSON number")
 
 
+def _finite_json_float(token: str) -> float:
+    value = float(token)
+    if not math.isfinite(value):
+        raise GeometryCanaryError("non-finite JSON exponent")
+    return value
+
+
 def _finite_number(value):
     if type(value) not in (int, float):
         return False
@@ -85,6 +92,7 @@ def validate_geometry_response(raw: bytes) -> dict[str, object]:
             raw.decode("utf-8"),
             object_pairs_hook=_unique_pairs,
             parse_constant=_reject_constant,
+            parse_float=_finite_json_float,
         )
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise GeometryCanaryError("invalid JSON source response") from exc
@@ -188,10 +196,18 @@ def get_one_original_geometry(opener=None) -> dict[str, object]:
                 raise GeometryCanaryError("unexpected original HTTP status or URL")
             if response.headers.get("Content-Encoding", "identity").lower() != "identity":
                 raise GeometryCanaryError("compressed response forbidden")
-            ctype = response.headers.get("Content-Type", "").lower()
-            if not (ctype.startswith("application/json") or ctype.startswith("text/plain")):
+            ctype = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            if ctype not in ("application/json", "text/plain"):
                 raise GeometryCanaryError("unexpected content type")
+            declared = response.headers.get("Content-Length")
+            if declared is not None and (
+                type(declared) is not str or not declared.isascii()
+                or not declared.isdecimal() or int(declared) > MAX_BYTES
+            ):
+                raise GeometryCanaryError("invalid original Content-Length")
             raw = response.read(MAX_BYTES + 1)
+            if declared is not None and len(raw) != int(declared):
+                raise GeometryCanaryError("original response Content-Length mismatch")
     except (OSError, urllib.error.URLError) as exc:
         raise GeometryCanaryError("original provider request failed") from exc
     summary = validate_geometry_response(raw)
