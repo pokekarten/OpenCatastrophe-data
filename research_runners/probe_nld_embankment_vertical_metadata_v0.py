@@ -70,7 +70,9 @@ def validate_metadata(raw: bytes) -> dict[str, str | bool]:
             parse_constant=_reject_constant,
             parse_float=_finite_json_float,
         )
-    except (UnicodeError, json.JSONDecodeError) as exc:
+    except PreflightError:
+        raise
+    except (UnicodeError, ValueError) as exc:
         raise PreflightError("invalid JSON metadata") from exc
     if not isinstance(data, dict) or "error" in data:
         raise PreflightError("ArcGIS error or non-object metadata")
@@ -159,10 +161,19 @@ def get_original_metadata(opener=None) -> dict[str, str | bool]:
                 raise PreflightError("original source URL or status changed")
             if response.headers.get("Content-Encoding", "identity").lower() != "identity":
                 raise PreflightError("unexpected compressed metadata")
-            content_type = response.headers.get("Content-Type", "").lower()
-            if not (content_type.startswith("application/json") or content_type.startswith("text/plain")):
+            content_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            if content_type not in ("application/json", "text/plain"):
                 raise PreflightError("unexpected response content type")
+            declared = response.headers.get("Content-Length")
+            if declared is not None and (
+                type(declared) is not str or not declared.isascii()
+                or not declared.isdecimal() or len(declared) > len(str(MAX_BYTES))
+                or int(declared) > MAX_BYTES
+            ):
+                raise PreflightError("invalid original metadata Content-Length")
             raw = response.read(MAX_BYTES + 1)
+            if declared is not None and len(raw) != int(declared):
+                raise PreflightError("original metadata Content-Length mismatch")
     except (OSError, urllib.error.URLError) as exc:
         raise PreflightError("original metadata transport failure") from exc
     summary = validate_metadata(raw)

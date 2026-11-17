@@ -172,6 +172,14 @@ class TestNldOneOriginalGeometry(unittest.TestCase):
             with self.subTest(raw=value[:20]), self.assertRaises(GeometryCanaryError):
                 validate_geometry_response(value)
 
+    def test_hidden_json_exponent_overflow_is_rejected(self):
+        body = encode(make_fixture())[:-1] + b',"provider_overflow":1e999}'
+        with self.assertRaisesRegex(GeometryCanaryError, "non-finite JSON exponent"):
+            validate_geometry_response(body)
+        huge = encode(make_fixture())[:-1] + b',"hidden":' + b"9" * 5000 + b"}"
+        with self.assertRaisesRegex(GeometryCanaryError, "invalid JSON source response"):
+            validate_geometry_response(huge)
+
     def test_original_transport_fixed_endpoint_status_size_and_hash(self):
         body = encode(make_fixture())
 
@@ -214,6 +222,31 @@ class TestNldOneOriginalGeometry(unittest.TestCase):
             get_one_original_geometry(RedirectOpener())
         with self.assertRaises(GeometryCanaryError):
             NoRedirect().redirect_request(None, None, 302, "redirect", {}, "https://host.invalid")
+
+        class CustomHeadersOpener(Opener):
+            def __init__(self, headers):
+                self.headers = headers
+            def open(self, request, timeout):
+                class CustomResponse(Response):
+                    headers = self.headers
+                return CustomResponse()
+
+        for invalid in (
+            {"Content-Type": "application/jsonp"},
+            {"Content-Type": "text/plain-vendor"},
+            {"Content-Type": "application/json", "Content-Length": "-1"},
+            {"Content-Type": "application/json", "Content-Length": "NaN"},
+            {"Content-Type": "application/json", "Content-Length": str(MAX_BYTES + 1)},
+            {"Content-Type": "application/json", "Content-Length": "9" * 5000},
+            {"Content-Type": "application/json", "Content-Length": str(len(body) - 1)},
+            {"Content-Type": "application/json", "Content-Length": str(len(body) + 1)},
+        ):
+            with self.subTest(headers=invalid), self.assertRaises(GeometryCanaryError):
+                get_one_original_geometry(CustomHeadersOpener(invalid))
+        good = {"Content-Type": "application/json; charset=utf-8",
+                "Content-Length": str(len(body))}
+        self.assertEqual(get_one_original_geometry(CustomHeadersOpener(good))[
+            "original_response_sha256"], result["original_response_sha256"])
 
     def test_cli_never_reads_network_without_opt_in(self):
         with patch(
