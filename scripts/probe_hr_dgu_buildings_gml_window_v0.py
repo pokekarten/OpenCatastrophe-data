@@ -81,6 +81,19 @@ def _segments_intersect(a: tuple[float, float], b: tuple[float, float],
     )
 
 
+def _signed_twice_area(xy: list[tuple[float, float]]) -> float:
+    """Compute projected shoelace area with translated, compensated sums.
+
+    Untranslated EPSG:3765 x*y terms are around 1e12; subtraction can
+    cancel small but nondegenerate footprints near the fixed area gate.
+    """
+    x0, y0 = xy[0]
+    return math.fsum(
+        (a[0] - x0) * (b[1] - y0) - (b[0] - x0) * (a[1] - y0)
+        for a, b in zip(xy, xy[1:])
+    )
+
+
 def _ring_is_simple(xy: list[tuple[float, float]]) -> bool:
     """Reject repeated points and self-crossing edges in a bounded exterior."""
     edges = list(zip(xy, xy[1:]))
@@ -206,6 +219,8 @@ def inspect_gml(raw: bytes) -> dict:
         raise BuildingGmlError("GML geometry must have two coordinate dimensions")
     if polygon.findall(GML + "interior"):
         raise BuildingGmlError("interior rings require a separately reviewed GML profile")
+    if len(polygon) != 1 or polygon[0].tag != GML + "exterior":
+        raise BuildingGmlError("unexpected GML Polygon child outside reviewed single exterior")
     exteriors = polygon.findall(GML + "exterior")
     if len(exteriors) != 1:
         raise BuildingGmlError("one polygon exterior is required")
@@ -216,6 +231,13 @@ def inspect_gml(raw: bytes) -> dict:
     ring = exteriors[0][0]
     if len(ring) != 1 or ring[0].tag != GML + "posList" or not ring[0].text:
         raise BuildingGmlError("missing or ambiguous GML exterior posList")
+    if len(ring[0]):
+        raise BuildingGmlError("nested coordinate elements in GML posList are unreviewed")
+    if any(value and value.strip() for value in (
+        polygon.text, exteriors[0].text, exteriors[0].tail,
+        ring.text, ring.tail, ring[0].tail,
+    )):
+        raise BuildingGmlError("mixed coordinate text outside GML posList is unreviewed")
     try:
         vals = [float(n) for n in ring[0].text.split()]
     except ValueError as exc:
@@ -230,9 +252,7 @@ def inspect_gml(raw: bytes) -> dict:
     # National plausibility range is only a gross axis-swap guard.
     if any(not (200000 < x < 900000 and 4600000 < y < 5300000) for x, y in xy):
         raise BuildingGmlError("CRS axis order or national coordinate range implausible")
-    twice_area = sum(
-        a[0] * b[1] - b[0] * a[1] for a, b in zip(xy, xy[1:])
-    )
+    twice_area = _signed_twice_area(xy)
     if not math.isfinite(twice_area) or abs(twice_area) <= 0.001:
         raise BuildingGmlError("degenerate footprint exterior")
     minx, miny, maxx, maxy = (
