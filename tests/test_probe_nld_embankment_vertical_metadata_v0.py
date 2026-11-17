@@ -37,7 +37,14 @@ def fixture():
         "isDataVersioned": True,
         "isDataArchived": False,
         "archivingInfo": {"supportsQueryWithHistoricMoment": False},
-        "sourceSpatialReference": {"wkid": 4269},
+        "spatialReference": {
+            "wkid": 4269, "vcsWkid": 105703, "latestVcsWkid": 6360,
+            "zUnits": 3048.0060960121905,
+        },
+        "sourceSpatialReference": {
+            "wkid": 4269, "vcsWkid": 105703, "latestVcsWkid": 6360,
+            "zUnits": 3048.0060960121905,
+        },
         "heightModelInfo": dict(height),
         "sourceHeightModelInfo": dict(height),
         "fields": [
@@ -62,6 +69,10 @@ class TestNldEmbankmentVerticalMetadata(unittest.TestCase):
         self.assertEqual(report["horizontal_crs"], "EPSG:4269")
         self.assertEqual(report["vertical_crs"], "NAVD88_height_(ftUS)")
         self.assertEqual(report["service_height_unit"], "us-foot")
+        self.assertEqual(report["service_vcs_wkid"], 105703)
+        self.assertEqual(report["service_latest_vcs_wkid"], 6360)
+        self.assertTrue(report["source_vertical_crs_views_consistent"])
+        self.assertTrue(report["z_storage_resolution_verified_not_unit_conversion"])
         self.assertEqual(DICTIONARY_REFERENCE_UNIT, "international-foot")
         self.assertTrue(report["unit_conflict_unresolved"])
         self.assertTrue(report["service_is_data_versioned"])
@@ -102,6 +113,27 @@ class TestNldEmbankmentVerticalMetadata(unittest.TestCase):
         d["heightModelInfo"]["vertCRS"] = "unknown"
         with self.assertRaises(PreflightError):
             validate_metadata(encode(d))
+
+    def test_independent_vertical_crs_views_reject_drift_and_bad_storage_units(self):
+        for where in ("spatialReference", "sourceSpatialReference"):
+            for key, bad in (
+                ("wkid", 4326), ("wkid", True),
+                ("vcsWkid", 6360), ("vcsWkid", True),
+                ("latestVcsWkid", 105703), ("latestVcsWkid", 6360.0),
+                ("zUnits", -1), ("zUnits", "3048.006"),
+                ("zUnits", 10000), ("zUnits", True),
+                ("zUnits", float("inf")), ("zUnits", 10 ** 400),
+                ("zUnits", -(10 ** 400)),
+            ):
+                d = fixture()
+                d[where][key] = bad
+                with self.subTest(where=where, key=key, bad=bad), self.assertRaises(PreflightError):
+                    validate_metadata(encode(d))
+            for missing in ("vcsWkid", "latestVcsWkid", "zUnits"):
+                d = fixture()
+                d[where].pop(missing)
+                with self.subTest(where=where, missing=missing), self.assertRaises(PreflightError):
+                    validate_metadata(encode(d))
 
     def test_join_and_survey_schema_drift_fail_closed(self):
         for change in ("missing", "wrong_type", "duplicate", "invalid"):
