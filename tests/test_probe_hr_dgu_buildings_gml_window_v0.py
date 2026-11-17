@@ -147,6 +147,30 @@ class CroatianGmlWindowTest(unittest.TestCase):
             with self.subTest(raw=raw[:80]), self.assertRaises(BuildingGmlError):
                 inspect_gml(raw)
 
+    def test_exact_original_legacy_ogc_http_crs_alias(self):
+        # An anonymous, bounded provider GML intermediary response on
+        # 2026-11-17 declared this exact legacy OGC URI directly on its
+        # Polygon; a strict EPSG-only preflight otherwise rejected it.
+        native = "http://www.opengis.net/gml/srs/epsg.xml#3765"
+        receipt = inspect_gml(sample(crs=native))
+        self.assertEqual(receipt["declared_crs"], "EPSG:3765")
+        self.assertEqual(receipt["feature_records_checked"], 1)
+        self.assertFalse(receipt["model_input_admitted"])
+
+        # Exact provider evidence does not authorize nearby CRS IDs,
+        # URI schemes or opportunistic alias expansion.
+        for other in (
+            "http://www.opengis.net/gml/srs/epsg.xml#3766",
+            "https://www.opengis.net/gml/srs/epsg.xml#3765",
+            "http://www.opengis.net/gml/srs/epsg.xml#4326",
+            "http://www.opengis.net/gml/srs/epsg.xml",
+        ):
+            with self.subTest(other=other):
+                with self.assertRaisesRegex(
+                    BuildingGmlError, "must directly declare reviewed EPSG:3765"
+                ):
+                    inspect_gml(sample(crs=other))
+
     def test_reject_only_nested_crs_without_polygon_crs(self):
         # GML srsName on a LinearRing/posList does not establish the polygon's
         # own source CRS. Such nested-only metadata used to pass because a
