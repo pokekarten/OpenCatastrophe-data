@@ -27,12 +27,29 @@ def check_file(path: Path) -> list[str]:
         return [f"{path}: invalid YAML: {exc}"]
 
     errors: list[str] = []
+    # Aliases form a graph, not a tree. Visiting a shared subtree repeatedly can
+    # take exponential time even for a very small, otherwise valid YAML file.
+    finished: set[int] = set()
+    allowed_tags = {
+        yaml.ScalarNode: "tag:yaml.org,2002:str",
+        yaml.MappingNode: "tag:yaml.org,2002:map",
+        yaml.SequenceNode: "tag:yaml.org,2002:seq",
+    }
 
     def visit(node: yaml.Node, location: str, ancestors: frozenset[int]) -> None:
-        if id(node) in ancestors:
+        identity = id(node)
+        if identity in ancestors:
             errors.append(f"{path}: recursive YAML alias at {location}")
             return
-        parents = ancestors | {id(node)}
+        if identity in finished:
+            return
+        # Reject custom/typed tags that GitHub's configuration parser may not
+        # interpret like PyYAML's BaseLoader; never treat a parse as approval.
+        expected_tag = allowed_tags.get(type(node))
+        if expected_tag is None or node.tag != expected_tag:
+            errors.append(f"{path}:{node.start_mark.line + 1}: unsupported YAML tag at {location}")
+            return
+        parents = ancestors | {identity}
         if isinstance(node, yaml.MappingNode):
             seen: dict[str, int] = {}
             for key, value in node.value:
@@ -41,6 +58,8 @@ def check_file(path: Path) -> list[str]:
                     continue
                 name = key.value
                 line = key.start_mark.line + 1
+                if key.tag != allowed_tags[yaml.ScalarNode]:
+                    errors.append(f"{path}:{line}: unsupported YAML key tag at {location}")
                 if name == "<<":
                     errors.append(f"{path}:{line}: YAML merge key is ambiguous at {location}")
                 elif name in seen:
@@ -54,6 +73,7 @@ def check_file(path: Path) -> list[str]:
         elif isinstance(node, yaml.SequenceNode):
             for index, value in enumerate(node.value):
                 visit(value, f"{location}/{index}", parents)
+        finished.add(identity)
 
     if document is not None:
         if not isinstance(document, yaml.MappingNode):
