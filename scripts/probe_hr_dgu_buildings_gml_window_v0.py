@@ -185,7 +185,17 @@ def inspect_semantic_label(raw: bytes) -> dict:
         BU_BASE + "horizontalGeometryReference",
     }
     if len(profile) != 3 or {child.tag for child in profile} != required:
-        raise BuildingGmlError("unreviewed or duplicated reference geometry properties")
+        # Source-science troubleshooting only. Emit short *schema tag names*,
+        # never XML text, attributes, original identifiers or coordinate values.
+        # Keep refusal in place until every extra property is reviewed.
+        names = []
+        for child in list(profile)[:10]:
+            local = child.tag.removeprefix(BU_BASE) if child.tag.startswith(BU_BASE) else ""
+            names.append(local if re.fullmatch(r"[A-Za-z][A-Za-z0-9]{0,47}", local) else "unreviewed")
+        raise BuildingGmlError(
+            "unreviewed or duplicated reference geometry properties "
+            f"(count={len(profile)}, schema_fields={','.join(names)})"
+        )
     refs = profile.findall(BU_BASE + "referenceGeometry")
     if len(refs) != 1 or refs[0].text is None or refs[0].text.strip() != "true":
         raise BuildingGmlError("referenceGeometry must be uniquely true")
