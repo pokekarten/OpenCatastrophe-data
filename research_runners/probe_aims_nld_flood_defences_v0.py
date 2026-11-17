@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Manual-only, bounded original ArcGIS flood-defence one-record canary.
 
-Only source-provided OBJECTID is read (without geometry), never stored or
-printed. This script does not authorize source admission, CAT input or Neon writes.
+Only a fixed one-record OBJECTID (and for embankments, the join-key field)
+is read without geometry, never stored or printed. The optional join-key is
+verified for shape, not emitted. This does not admit CAT input or Neon writes.
 Run: python -m research_runners.probe_aims_nld_flood_defences_v0 --live\nRun one: python -m research_runners.probe_aims_nld_flood_defences_v0 --live --source uk.ea.aims.spatial-flood-defences.2026
 """
 from __future__ import annotations
@@ -11,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -25,6 +27,7 @@ class Target:
     url: str
     oid: str
     wkid: int
+    identity_field: str | None = None
 
 
 TARGETS = (
@@ -43,6 +46,15 @@ TARGETS = (
         "?where=1%3D1&outFields=OBJECTID&returnGeometry=false&resultRecordCount=1&f=json",
         "OBJECTID",
         4269,
+    ),
+    Target(
+        "us.usace.nld.public-embankments.2026",
+        "https://geospatial.sec.usace.army.mil/dls/rest/services/"
+        "NLD/Public/FeatureServer/11/query"
+        "?where=1%3D1&outFields=OBJECTID%2CEMBANK_ID&returnGeometry=false&resultRecordCount=1&f=json",
+        "OBJECTID",
+        4269,
+        "EMBANK_ID",
     ),
 )
 
@@ -86,23 +98,41 @@ def validate_payload(raw: bytes, target: Target) -> dict[str, str | int]:
     if not isinstance(spatial_ref, dict) or spatial_ref.get("wkid") != target.wkid:
         raise ProbeFailure("unexpected source CRS")
     fields = data.get("fields")
-    if not isinstance(fields, list) or len(fields) != 1 or not isinstance(fields[0], dict):
+    expected_names = [target.oid] + ([target.identity_field] if target.identity_field else [])
+    if not isinstance(fields, list) or len(fields) != len(expected_names):
         raise ProbeFailure("unexpected fields selection")
-    if fields[0].get("name") != target.oid or fields[0].get("type") != "esriFieldTypeOID":
-        raise ProbeFailure("unexpected OID column")
+    if any(not isinstance(field, dict) for field in fields):
+        raise ProbeFailure("malformed fields selection")
+    if [field.get("name") for field in fields] != expected_names:
+        raise ProbeFailure("unexpected field identities or order")
+    if fields[0].get("type") != "esriFieldTypeOID":
+        raise ProbeFailure("unexpected OID type")
+    if target.identity_field and fields[1].get("type") != "esriFieldTypeDouble":
+        raise ProbeFailure("unexpected embankment join-field type")
     features = data.get("features")
     if not isinstance(features, list) or len(features) != 1 or not isinstance(features[0], dict):
         raise ProbeFailure("exactly one record required")
     if "geometry" in features[0]:
         raise ProbeFailure("geometry returned despite no-geometry contract")
     attrs = features[0].get("attributes")
-    if not isinstance(attrs, dict) or set(attrs) != {target.oid}:
+    if not isinstance(attrs, dict) or set(attrs) != set(expected_names):
         raise ProbeFailure("unexpected record attributes")
     if type(attrs[target.oid]) is not int or attrs[target.oid] < 0:
         raise ProbeFailure("invalid OBJECTID")
+    if target.identity_field:
+        value = attrs[target.identity_field]
+        if value is not None and (
+            type(value) not in (int, float) or not math.isfinite(value) or value < 0
+        ):
+            raise ProbeFailure("invalid embankment join-field value")
     if "exceededTransferLimit" in data and type(data["exceededTransferLimit"]) is not bool:
         raise ProbeFailure("invalid transfer-limit marker")
-    return {"source_id": target.source_id, "shape": "one_oid_no_geometry", "wkid": target.wkid}
+    return {
+        "source_id": target.source_id,
+        "shape": "one_oid_one_join_id_no_geometry" if target.identity_field else "one_oid_no_geometry",
+        "wkid": target.wkid,
+        "join_id_present": bool(target.identity_field and attrs[target.identity_field] is not None),
+    }
 
 
 def get_one(target: Target, opener=None) -> dict[str, str | int]:
@@ -136,7 +166,7 @@ def main(argv=None) -> int:
     parser.add_argument("--live", action="store_true", help="Opt in to original bounded provider reads")
     parser.add_argument(
         "--source", choices=tuple(target.source_id for target in TARGETS),
-        help="Select exactly one of the two compile-time fixed provider contracts",
+        help="Select exactly one of the three compile-time fixed provider contracts",
     )
     args = parser.parse_args(argv)
     if not args.live:

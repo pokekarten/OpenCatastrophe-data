@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of official Météo-France weather station instrumentation and siting metadata relevant to verifying actual 3-second wind-gust observations in the Windstorm Europe hazard model.",
+  "review_date": "2026-11-15",
+  "entries": [
+    {
+      "candidate_id": "fr.meteofrance.station-sheets.2026",
+      "name": "Meteo-France station information sheets: siting, location history and instrument metadata",
+      "provider": "Meteo-France via data.gouv.fr",
+      "categories": [
+        "windstorm",
+        "station_metadata",
+        "instruments",
+        "station_history",
+        "observation_validation"
+      ],
+      "spatial_scope": "France mainland and overseas station metadata; exact instrument coverage and site-vintage vary per station",
+      "temporal_scope": "Official public catalogue shown updated in September 2026; each station PDF carries its own opening/closure/site history",
+      "resolution_or_granularity": "Individual station PDF sheet listing position, successive locations, opening and closure dates, site quality, measured parameters, sensor/instrument descriptions and station photos; one PDF is not one meteorological hourly sample",
+      "potential_roles": [
+        "nord_france_gust_station_site_history",
+        "instrument_wind_measurement_class_validation",
+        "station_relocation_and_observational_holdout"
+      ],
+      "authoritative_url": "https://www.data.gouv.fr/datasets/fiches-dinformations-sur-les-stations",
+      "access_class_hint": "public_data_gouv_meteofrance_open_licence_v2_per_station_pdf_ids_and_original_bytes_not_yet_verified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official Météo-France publisher description covers station positions, successive site placements, opening/closure, site quality, measurement classes, instrumentation and photos. Portal displays about 15,184 publicly listed PDF resources, NOT a validated count of unique physical measurement sites or historic independent stations. No station PDF original bytes or SHA-256 were acquired in this pass. Pin exact station IDs and PDF vintage, original bytes, site class and instrument changes before independent FXI3S vs CLIMK/ERA5/C3S validation; matched measurements remain external and the recorded station PDFs do not imply insurable event-loss evidence."
+    }
+  ]
+}

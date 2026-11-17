@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "uk.ea.aims.asset-management-api.2026",
+  "source_ids": [
+    "uk.ea.aims.asset-management-api.2026"
+  ],
+  "provider": "UK Environment Agency — Asset Management API",
+  "interface_type": "rest",
+  "status": "documented_only",
+  "documentation_url": "https://environment.data.gov.uk/asset-management/doc/reference",
+  "service_root": "https://environment.data.gov.uk",
+  "api_version": "Provider documentation describes API meta.version 0.1 (alpha); public operational service is mutable",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "document_list_assets",
+      "document_list_maintenance_activities"
+    ],
+    "path_templates": [
+      "/asset-management/id/asset.json",
+      "/asset-management/id/maintenance-activity.json"
+    ],
+    "parameter_rules": "T0 documentation only; no network authority is granted by this contract. Provider documents HTTP GET with JSON suffix, _limit and _offset and optional typed asset/maintenance filters. Future single-request anonymous canary must be independently reviewed and fixed to one path, _limit=1, _offset=0, without _view=full, arbitrary ids, filters, host, redirects, pagination, geometry, follow-on links, bulk queries, retries or credential injection. Do not inherit the separate ArcGIS Spatial Flood Defences FeatureServer authorization or PR #1602 original-source results."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "EA Asset Management API JSON: object with meta publisher/licence/version and items array; per-item @id is source identity, not an independently resolved cross-dataset identifier.",
+    "scientific_semantics": "AIMS asset descriptions and maintenance activities are heterogeneous operational records, not verified geometry, actual protection probability, breach history, insurer assets or insured losses. Planned or funded maintenance is not proof of completion, inspected condition or structural effectiveness; only some assets have maintenance schedules. Asset linkage to AIMS spatial FeatureServer must be independently proven with identifiers and geography. API summary is mutable and may be incomplete."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 15,
+    "max_probe_bytes": 8192,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "No rate-limit entitlement, automation cadence, retry-after policy or commercial API service assurance was established. Documentation lists _limit/_offset but does not grant unbounded harvesting; no live probe, sampling or automated ingestion is authorized by this documented-only contract.",
+    "mutability_notes": "API documentation describes meta.version 0.1 and a forward-compatibility intent, not immutable snapshots. Any later original receipt must pin exact request, response UTC, response body SHA-256, byte count, content type, observed meta.version/licence and item identifiers, then independently validate as-of and maintenance-period fields."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://environment.data.gov.uk/asset-management/doc/about",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Official EA asset-management About page states content is under Open Government Licence v3.0 except where otherwise stated; the developer reference includes an OGL 3 link in example response metadata. This is authoritative evidence of a potential licence path, not an independent exact product/version and every-field rights review. Separate service automation/rate rules, third-party field exclusions, asset-level privacy, historical retention, commercial model-derived outputs and any redistribution remain unresolved. No raw or derived asset approval."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-14",
+  "evidence_urls": [
+    "https://environment.data.gov.uk/asset-management/doc/reference",
+    "https://environment.data.gov.uk/asset-management/doc/about",
+    "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+  ],
+  "notes": "Scope is one exact existing main landscape candidate, not the separate AIMS spatial FeatureServer source. T0 documentary route confirmed. T1 direct origin response was not obtained in this work; T2 not applicable to documented anonymous route. T3 original sample/hash, T4 health, science review, Neon write/readback and repository admission are not verified. No credentials or external data bytes are included."
+}

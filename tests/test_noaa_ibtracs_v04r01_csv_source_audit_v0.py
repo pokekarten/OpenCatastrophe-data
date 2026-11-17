@@ -13,18 +13,24 @@ from research_runners.noaa_ibtracs_v04r01_csv_source_audit_v0 import (
 )
 
 
-def synthetic_csv(*, lon="266.9", units=True, malformed=False, duplicate=False):
+def synthetic_csv(*, lon="266.9", units=True, malformed=False, duplicate=False,
+                  iso_time="2001-01-01 00:00:00",
+                  lat_units="degrees_north", lon_units="degrees_east",
+                  wmo_wind="", usa_wind="34",
+                  wmo_units="knots", usa_units="knots"):
     header = list(REQUIRED) + [f"FILL_{i}" for i in range(174 - len(REQUIRED))]
     if duplicate:
         header[-1] = header[0]
     unit_fields = ["" for _ in header]
-    unit_fields[header.index("LAT")] = "degrees_north"
-    unit_fields[header.index("LON")] = "degrees_east"
+    unit_fields[header.index("LAT")] = lat_units
+    unit_fields[header.index("LON")] = lon_units
+    unit_fields[header.index("WMO_WIND")] = wmo_units
+    unit_fields[header.index("USA_WIND")] = usa_units
     row = ["" for _ in header]
     for name, value in {
-        "SID": "2001011N22345", "ISO_TIME": "2001-01-01 00:00:00",
+        "SID": "2001011N22345", "ISO_TIME": iso_time,
         "LAT": "-16.2", "LON": lon, "SEASON": "2001", "BASIN": "SP",
-        "TRACK_TYPE": "main", "WMO_WIND": "", "USA_WIND": "34",
+        "TRACK_TYPE": "main", "WMO_WIND": wmo_wind, "USA_WIND": usa_wind,
     }.items():
         row[header.index(name)] = value
     if malformed:
@@ -47,6 +53,126 @@ class IBTrACSOriginalSourceAuditTests(unittest.TestCase):
         ):
             with self.subTest(payload=payload[:40]), self.assertRaises(IBTrACSAuditError):
                 audit_rows(io.StringIO(payload))
+
+    def test_native_coordinate_units_must_match_the_correct_axis(self):
+        # Both the CF form and the NOAA 2025 column-documentation
+        # spellings are accepted. Units are not inferred from numeric values.
+        for north, east in (
+            ("degrees_north", "degrees_east"),
+            ("deg north", "deg_east"),
+            ("DEG-NORTH", "DEGREES EAST"),
+        ):
+            with self.subTest(valid=(north, east)):
+                observed = audit_rows(io.StringIO(
+                    synthetic_csv(lat_units=north, lon_units=east)
+                ))
+                self.assertEqual(observed["longitude_gt_180_rows"], 1)
+
+        for north, east in (
+            ("degrees_east", "degrees_north"),  # axis swap
+            ("radians", "radians"),
+            ("meters", "degrees_east"),
+            ("degrees_north", "feet"),
+            ("degrees_south", "degrees_west"),
+            ("", "degrees_east"),
+            ("degrees_north", ""),
+            ("degrees", "degrees"),
+        ):
+            with self.subTest(invalid=(north, east)), self.assertRaisesRegex(
+                IBTrACSAuditError, "coordinate units"
+            ):
+                audit_rows(io.StringIO(
+                    synthetic_csv(lat_units=north, lon_units=east)
+                ))
+
+    def test_matching_synthetic_sha_and_counts_do_not_override_bad_units(self):
+        # Checking SHA-256 proves exact bytes; it cannot authenticate the
+        # source semantics. An internally consistent but invalid source is
+        # rejected *after* a matching checksum, rather than promoted.
+        raw = synthetic_csv(
+            lat_units="degrees_east", lon_units="degrees_north"
+        ).encode()
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "synthetic-ibtracs-wrong-axis.csv"
+            path.write_bytes(raw)
+            with self.assertRaisesRegex(IBTrACSAuditError, "coordinate units"):
+                audit_original_file(
+                    path, expected_bytes=len(raw),
+                    expected_sha256=hashlib.sha256(raw).hexdigest(),
+                    expected_metrics=(1, 1, 1),
+                )
+
+    def test_wmo_and_usa_native_wind_units_must_be_knots(self):
+        for wmo_unit, usa_unit in (
+            ("m/s", "knots"), ("knots", "m/s"),
+            ("knots", "km/h"), ("", "knots"),
+            ("knots", ""), ("kts", "knots"),
+            ("degrees_east", "knots"),
+        ):
+            with self.subTest(units=(wmo_unit, usa_unit)), self.assertRaisesRegex(
+                IBTrACSAuditError, "wind unit"
+            ):
+                audit_rows(io.StringIO(synthetic_csv(
+                    wmo_units=wmo_unit, usa_units=usa_unit
+                )))
+        self.assertEqual(audit_rows(io.StringIO(synthetic_csv(
+            wmo_units=" KNOTS ", usa_units="KnOtS",
+        )))["data_rows"], 1)
+
+    def test_native_wind_values_reject_negative_nonfinite_and_usa_over_300(self):
+        for field, value in (
+            ("WMO_WIND", "-1"), ("USA_WIND", "-1"),
+            ("WMO_WIND", "NaN"), ("USA_WIND", "inf"),
+            ("WMO_WIND", "1e309"), ("USA_WIND", "100000000"),
+            ("WMO_WIND", "invalid"), ("USA_WIND", "40 knots"),
+            ("WMO_WIND", "12_3"), ("USA_WIND", "3e2"),
+            ("WMO_WIND", "9" * 5000),
+        ):
+            override = {"wmo_wind": value} if field == "WMO_WIND" else {
+                "usa_wind": value
+            }
+            with self.subTest(field=field, value=value[:24]), self.assertRaisesRegex(
+                IBTrACSAuditError, "wind speed"
+            ):
+                audit_rows(io.StringIO(synthetic_csv(**override)))
+
+    def test_native_missingness_and_provider_usa_wind_domain_are_preserved(self):
+        # No wind is not equal to a reported zero; this source format preflight
+        # never imputes or equates agency-specific averaging intervals.
+        for wmo, usa in (
+            ("", ""), ("0", "0"), ("40.5", "300"),
+            ("301", "34"), ("185", "34.0"),
+        ):
+            with self.subTest(wmo=wmo, usa=usa):
+                self.assertEqual(audit_rows(io.StringIO(synthetic_csv(
+                    wmo_wind=wmo, usa_wind=usa
+                )))["data_rows"], 1)
+
+    def test_matching_synthetic_hash_does_not_authorize_corrupt_native_wind(self):
+        raw = synthetic_csv(usa_wind="NaN").encode()
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "synthetic-invalid-wind.csv"
+            path.write_bytes(raw)
+            with self.assertRaisesRegex(IBTrACSAuditError, "wind speed"):
+                audit_original_file(
+                    path, expected_bytes=len(raw),
+                    expected_sha256=hashlib.sha256(raw).hexdigest(),
+                    expected_metrics=(1, 1, 1),
+                )
+
+    def test_calendar_invalid_dates_fail_closed(self):
+        self.assertEqual(
+            audit_rows(io.StringIO(synthetic_csv(iso_time="2024-02-29 06:00:00")))["data_rows"],
+            1,
+        )
+        for timestamp in (
+            "2023-02-29 00:00:00",
+            "2024-04-31 00:00:00",
+            "2024-01-01 24:00:00",
+            "0000-01-01 00:00:00",
+        ):
+            with self.subTest(timestamp=timestamp), self.assertRaises(IBTrACSAuditError):
+                audit_rows(io.StringIO(synthetic_csv(iso_time=timestamp)))
 
     def test_bad_coordinates_and_nan_fail_closed(self):
         for lon in ("401", "NaN", "inf", "abc"):

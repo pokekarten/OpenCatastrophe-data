@@ -16,6 +16,7 @@ import csv
 import hashlib
 import json
 import math
+from datetime import datetime
 from pathlib import Path
 import re
 
@@ -35,6 +36,22 @@ PINNED_COLUMNS = 174
 MAX_RECORDS = 1_000_000
 REQUIRED = ("SID", "SEASON", "BASIN", "ISO_TIME", "LAT", "LON", "WMO_WIND", "USA_WIND", "TRACK_TYPE")
 ISO_TIME = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
+# NOAA v04r01 column documentation uses "deg north" / "deg_east".
+# CF spellings are also accepted by this source-format gate, but radians,
+# metres and the opposite axes must never pass as valid geographic degrees.
+COORD_UNITS = {
+    "LAT": frozenset(("degnorth", "degreesnorth")),
+    "LON": frozenset(("degeast", "degreeseast")),
+}
+# v04r01 reports WMO_WIND and USA_WIND in knots, but DOES NOT
+# harmonize the WMO reporting agencies' wind averaging intervals.
+WIND_FIELDS = ("WMO_WIND", "USA_WIND")
+WIND_NUMERIC = re.compile(r"[0-9]+(?:\.[0-9]+)?\Z")
+
+
+def _coord_unit(text: str) -> str:
+    """Normalize harmless formatting, never the direction or angle unit."""
+    return re.sub(r"[\s_-]+", "", text.casefold())
 
 
 class IBTrACSAuditError(ValueError):
@@ -57,8 +74,17 @@ def audit_rows(reader: object, *, expected_columns: int = PINNED_COLUMNS,
     if len(units) != expected_columns or units[0].strip():
         raise IBTrACSAuditError("original column-units row missing or malformed")
     index = {key: header.index(key) for key in REQUIRED}
-    if not units[index["LAT"]].strip() or not units[index["LON"]].strip():
-        raise IBTrACSAuditError("native coordinate units missing")
+    for field, accepted in COORD_UNITS.items():
+        if _coord_unit(units[index[field]].strip()) not in accepted:
+            raise IBTrACSAuditError(
+                "missing, swapped or unsupported native coordinate units"
+            )
+    # These are explicitly knots in the provider's 2025 v04r01 column
+    # documentation. Unit checks DO NOT equalize 1-, 3- or 10-minute winds.
+    wind_index = {name: header.index(name) for name in WIND_FIELDS}
+    if any(units[wind_index[name]].strip().casefold() != "knots"
+           for name in WIND_FIELDS):
+        raise IBTrACSAuditError("native IBTrACS wind unit must be knots")
     storm_ids: set[str] = set()
     count = over_180 = 0
     for row in rows:
@@ -68,8 +94,13 @@ def audit_rows(reader: object, *, expected_columns: int = PINNED_COLUMNS,
         if len(row) != expected_columns:
             raise IBTrACSAuditError("ragged original CSV observation")
         sid = row[index["SID"]].strip()
-        if not sid or not ISO_TIME.fullmatch(row[index["ISO_TIME"]].strip()):
+        iso_time = row[index["ISO_TIME"]].strip()
+        if not sid or not ISO_TIME.fullmatch(iso_time):
             raise IBTrACSAuditError("missing SID or malformed ISO_TIME")
+        try:
+            datetime.strptime(iso_time, "%Y-%m-%d %H:%M:%S")
+        except ValueError as exc:
+            raise IBTrACSAuditError("invalid native ISO_TIME calendar date/time") from exc
         storm_ids.add(sid)
         try:
             lat, lon = float(row[index["LAT"]]), float(row[index["LON"]])
@@ -79,6 +110,23 @@ def audit_rows(reader: object, *, expected_columns: int = PINNED_COLUMNS,
             raise IBTrACSAuditError("out-of-domain original coordinate")
         if lon > 180:
             over_180 += 1
+        # Blank native values are documented missingness, not zero wind.
+        # USA_WIND has a provider-defined 0..300 knots domain. A WMO
+        # upper bound is deliberately not inferred across reporting agencies.
+        for name, column in wind_index.items():
+            native = row[column].strip()
+            if not native:
+                continue
+            if not WIND_NUMERIC.fullmatch(native):
+                raise IBTrACSAuditError("non-numeric or invalid native wind speed")
+            try:
+                speed = float(native)
+            except (ValueError, OverflowError) as exc:
+                raise IBTrACSAuditError("invalid native wind speed") from exc
+            if not math.isfinite(speed) or speed < 0 or (
+                name == "USA_WIND" and speed > 300
+            ):
+                raise IBTrACSAuditError("out-of-domain native wind speed")
     if not count:
         raise IBTrACSAuditError("no source observation rows")
     return {"data_rows": count, "distinct_storm_ids": len(storm_ids),

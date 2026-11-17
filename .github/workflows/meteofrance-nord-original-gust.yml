@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Météo-France Nord original hourly gust one-off
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nord-original:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline exact-resource and physics safety tests
+        run: python -m unittest tests.test_meteofrance_nord_original_gust_v0 -v
+      - name: Fetch one 15.9 MB publicly licensed official source to ephemeral memory
+        run: python -m research_runners.meteofrance_nord_original_gust_v0 --live

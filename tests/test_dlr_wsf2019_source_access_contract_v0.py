@@ -33,7 +33,12 @@ class DLRWSF2019AccessTests(unittest.TestCase):
             "requires_credentials": False, "expected_evidence": [],
         })
         self.assertEqual(c["rights_and_policy"]["dataset_rights_status"], "verified")
-        self.assertEqual(c["rights_and_policy"]["api_terms_status"], "unknown")
+        self.assertEqual(c["rights_and_policy"]["api_terms_status"], "separate_reviewed")
+        self.assertEqual(c["rights_and_policy"]["terms_url"],
+                         "https://geoservice.dlr.de/resources/licenses/geoservice/EOC_Geoservice_AUP_v1.1.pdf")
+        self.assertIn(c["rights_and_policy"]["terms_url"], c["evidence_urls"])
+        self.assertIn("download.geoservice.dlr.de", c["rights_and_policy"]["notes"])
+        self.assertIn("no numeric Range-request rate", c["operational_constraints"]["rate_limit_notes"])
         self.assertEqual(c["rights_and_policy"]["commercial_automation_status"], "unknown")
         self.assertEqual(c["rights_and_policy"]["redistribution_status"], "unknown")
         self.assertEqual(c["implementation_decision"], "document_only")
@@ -49,7 +54,7 @@ class DLRWSF2019AccessTests(unittest.TestCase):
         self.assertIn("not individual buildings",
                       c["response_contract"]["scientific_semantics"])
 
-    def test_unknown_service_terms_cannot_enable_an_active_probe(self):
+    def test_reviewed_aup_without_automation_grant_cannot_enable_probe(self):
         c = deepcopy(validate_path(CONTRACT))
         c["status"] = "probe_ready"
         c["probe_contract"] = {

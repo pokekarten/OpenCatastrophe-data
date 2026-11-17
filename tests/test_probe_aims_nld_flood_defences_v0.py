@@ -13,12 +13,17 @@ from research_runners.probe_aims_nld_flood_defences_v0 import (
 
 
 def fixture(target):
+    fields = [{"name": target.oid, "type": "esriFieldTypeOID"}]
+    attributes = {target.oid: 37}
+    if target.identity_field:
+        fields.append({"name": target.identity_field, "type": "esriFieldTypeDouble"})
+        attributes[target.identity_field] = 129.0
     return {
         "objectIdFieldName": target.oid,
         "geometryType": "esriGeometryPolyline",
         "spatialReference": {"wkid": target.wkid},
-        "fields": [{"name": target.oid, "type": "esriFieldTypeOID"}],
-        "features": [{"attributes": {target.oid: 37}}],
+        "fields": fields,
+        "features": [{"attributes": attributes}],
         "exceededTransferLimit": True,
     }
 
@@ -28,20 +33,21 @@ def encoded(payload):
 
 
 class TestFloodDefenceProbe(unittest.TestCase):
-    def test_both_sources_accept_one_bounded_no_geometry_oid(self):
+    def test_all_sources_accept_one_bounded_no_geometry_id(self):
         for target in TARGETS:
             with self.subTest(target=target.source_id):
                 result = validate_payload(encoded(fixture(target)), target)
                 self.assertEqual(result["wkid"], target.wkid)
-                self.assertEqual(result["shape"], "one_oid_no_geometry")
+                self.assertEqual(result["shape"], "one_oid_one_join_id_no_geometry" if target.identity_field else "one_oid_no_geometry")
                 self.assertNotIn("geometry", result)
 
     def test_query_is_fully_fixed_and_bounded(self):
-        self.assertEqual(len(TARGETS), 2)
+        self.assertEqual(len(TARGETS), 3)
         for t in TARGETS:
             self.assertIn("resultRecordCount=1", t.url)
             self.assertIn("returnGeometry=false", t.url)
             self.assertIn("outFields=" + t.oid, t.url)
+            self.assertIn("returnGeometry=false", t.url)
             self.assertIn("f=json", t.url)
             self.assertTrue(t.url.startswith("https://"))
 
@@ -73,6 +79,37 @@ class TestFloodDefenceProbe(unittest.TestCase):
             data[key] = bad
             with self.subTest(key=key, bad=bad), self.assertRaises(ProbeFailure):
                 validate_payload(encoded(data), target)
+
+    def test_embankment_source_uses_unique_field_and_no_geometry_or_raw_id_output(self):
+        target = TARGETS[2]
+        self.assertEqual(target.source_id, "us.usace.nld.public-embankments.2026")
+        self.assertIn("/FeatureServer/11/query", target.url)
+        self.assertIn("outFields=OBJECTID%2CEMBANK_ID", target.url)
+        self.assertEqual(target.identity_field, "EMBANK_ID")
+        valid = fixture(target)
+        summary = validate_payload(encoded(valid), target)
+        self.assertTrue(summary["join_id_present"])
+        self.assertEqual(summary["shape"], "one_oid_one_join_id_no_geometry")
+        self.assertNotIn("EMBANK_ID", json.dumps(summary))
+        self.assertNotIn("129", json.dumps(summary))
+        for key, bad in (
+            ("fields", [{"name": target.oid, "type": "esriFieldTypeOID"}]),
+            ("fields", [
+                {"name": target.oid, "type": "esriFieldTypeOID"},
+                {"name": "FLOODWALL_ID", "type": "esriFieldTypeDouble"},
+            ]),
+            ("features", [{"attributes": {target.oid: 37, "FLOODWALL_ID": 129}}]),
+            ("features", [{"attributes": {target.oid: 37, "EMBANK_ID": True}}]),
+            ("features", [{"attributes": {target.oid: 37, "EMBANK_ID": -1}}]),
+            ("features", [{"attributes": {target.oid: 37, "EMBANK_ID": 129}, "geometry": {"paths": []}}]),
+        ):
+            data = fixture(target)
+            data[key] = bad
+            with self.subTest(key=key, bad=bad), self.assertRaises(ProbeFailure):
+                validate_payload(encoded(data), target)
+        nullable = fixture(target)
+        nullable["features"][0]["attributes"]["EMBANK_ID"] = None
+        self.assertFalse(validate_payload(encoded(nullable), target)["join_id_present"])
 
     def test_rejects_two_returned_features(self):
         payload = fixture(TARGETS[1])
