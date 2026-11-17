@@ -216,6 +216,49 @@ python -m unittest tests.test_probe_hr_dgu_buildings_gml_window_v0
 
 An offline success is **not proof of provider origin**; only a successful actual `--live` run can mark `live_original_fetch_in_this_run: true`. Even a live positive preflight would confirm just one bounded GML polygon form, not topology/holes, full Croatia coverage, licence clearance, polygon accuracy, insured TIV or CAT-model readiness.
 
+## Bounded original Croatian cadastral WFS shape observed via intermediary (2026-11-17)
+
+A fresh anonymous request to the **official** DGU cadastral
+`https://api.uredjenazemlja.hr/services/inspire/bu/wfs` returned an
+HTTP 200 GML response **through an external web-fetch intermediary**, using
+the already pinned WFS 2.0 `bu:Building`, `COUNT=1`, `STARTINDEX=0`,
+EPSG:3765, 600 × 600 m Zagreb window. This is **not** a trusted direct
+GitHub/own-Linux `--live` receipt and not an independently verified original
+HTTP body SHA-256. Other attempts from the intermediaries yielded timeouts
+or HTTP 400 service errors. Our own Linux environment could not resolve
+the provider host. Do not promote the fetch to a reliable production API.
+
+The transient, non-retained XML inspection established:
+
+- WFS 2.0 `FeatureCollection` with `numberReturned=1`;
+- one `wfs:member` containing the INSPIRE `bu-core2d:Building`;
+- `bu-core2d:geometry2D / bu-base:BuildingGeometry2D /
+  bu-base:geometry / gml:Polygon / gml:exterior /
+  gml:LinearRing / gml:posList`;
+- exactly one observed `Polygon` and a 2D closed finite ring within the
+  bounded projected window; a `referenceGeometry=true` element was present;
+- **native polygon `srsName` exactly
+  `http://www.opengis.net/gml/srs/epsg.xml#3765`**, rather than any
+  previously accepted URI spellings.
+
+The older OGC HTTP `srsName` form is an explicit EPSG URI syntax, not a
+different coordinate reference system (see
+[OGC WFS SRS format examples](https://portal.ogc.org/files/8339) and
+[GeoServer WFS documentation](https://docs.geoserver.org/main/en/user/services/wfs/webadmin/)).
+The newly added code supports **only that exact EPSG:3765 legacy form**,
+with a synthetic regression test and negative near-miss cases.
+Neither an unreviewed `horizontalGeometryReference` attribute value
+nor its complete footprint semantics, geometry accuracy, a live source
+digest, full national coverage or specific reuse scope has been
+independently established by these intermediary observations.
+
+**Boundary unchanged:** no original XML, source identifiers, coordinates,
+building attributes, raw archive or personally identifying records have
+been committed to Git. Cadastral WFS and topographic ATOM products remain
+separate. The ATOM archive has a conflicting restrictions/open-licence
+record; its rights remain blocked. A native Polygon shape alone cannot
+admit exposures, insured locations, TIV or model inputs.
+
 ## Next causal evidence
 
 1. Re-run the explicit `--live` command in a network-capable, provider-permitted environment; check original byte count, SHA-256 and the precise GML geometry type. If the original uses GML MultiSurface/Surface rather than Polygon, **retain failure** and add a separately tested exact shape profile; do not weaken the classifier generically.
