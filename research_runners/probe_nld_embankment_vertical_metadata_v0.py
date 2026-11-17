@@ -24,6 +24,12 @@ SPEC_URL = "https://levees.sec.usace.army.mil/data-services/dictionary/"
 # Reviewed official dictionary 2026-11-15. A dictionary version change requires
 # human reconciliation; this literal is not a dynamic assertion of source bytes.
 DICTIONARY_REFERENCE_UNIT = "international-foot"
+# Original USACE NLD layer 11 metadata at the already trusted exact URL,
+# independently repeated in main source workflow receipts (2026-11-15/17).
+# Esri legacy vertical WKID 105703 maps to latest EPSG:6360 (NAVD88 ftUS).
+EXPECTED_VERTICAL_LEGACY_WKID = 105703
+EXPECTED_VERTICAL_LATEST_WKID = 6360
+EXPECTED_SPATIAL_Z_UNITS = 3048.0060960121905
 MAX_BYTES = 65536
 TIMEOUT_SECONDS = 15
 
@@ -93,11 +99,25 @@ def validate_metadata(raw: bytes) -> dict[str, str | bool]:
     archive = data.get("archivingInfo")
     if not isinstance(archive, dict) or archive.get("supportsQueryWithHistoricMoment") is not False:
         raise PreflightError("historical query support changed or unknown")
-    source_sr = data.get("sourceSpatialReference")
-    if (not isinstance(source_sr, dict)
-            or type(source_sr.get("wkid")) is not int
-            or source_sr["wkid"] != 4269):
-        raise PreflightError("unexpected horizontal CRS")
+    # ArcGIS advertises a vertical CRS independently from heightModelInfo.
+    # Require all original metadata views to agree before claiming an intact
+    # source-vertical identity. zUnits is an ArcGIS *coordinate storage
+    # resolution* parameter, NOT a physical Z unit conversion factor.
+    for field_name in ("spatialReference", "sourceSpatialReference"):
+        sr = data.get(field_name)
+        if (type(sr) is not dict
+                or type(sr.get("wkid")) is not int or sr["wkid"] != 4269
+                or type(sr.get("vcsWkid")) is not int
+                or sr["vcsWkid"] != EXPECTED_VERTICAL_LEGACY_WKID
+                or type(sr.get("latestVcsWkid")) is not int
+                or sr["latestVcsWkid"] != EXPECTED_VERTICAL_LATEST_WKID):
+            raise PreflightError(field_name + " horizontal/vertical CRS drift")
+        z_units = sr.get("zUnits")
+        if (type(z_units) not in (int, float)
+                or not math.isfinite(z_units)
+                or not math.isclose(z_units, EXPECTED_SPATIAL_Z_UNITS,
+                                    rel_tol=1e-12, abs_tol=1e-9)):
+            raise PreflightError(field_name + " source Z storage-resolution drift")
     height = data.get("heightModelInfo")
     source_height = data.get("sourceHeightModelInfo")
     expected_height = {
@@ -134,6 +154,10 @@ def validate_metadata(raw: bytes) -> dict[str, str | bool]:
         "shape": "metadata_only_no_feature_or_geometry",
         "horizontal_crs": "EPSG:4269",
         "vertical_crs": expected_height["vertCRS"],
+        "service_vcs_wkid": EXPECTED_VERTICAL_LEGACY_WKID,
+        "service_latest_vcs_wkid": EXPECTED_VERTICAL_LATEST_WKID,
+        "source_vertical_crs_views_consistent": True,
+        "z_storage_resolution_verified_not_unit_conversion": True,
         "service_height_unit": expected_height["heightUnit"],
         "current_dictionary_reference_unit": DICTIONARY_REFERENCE_UNIT,
         "unit_conflict_unresolved": True,
