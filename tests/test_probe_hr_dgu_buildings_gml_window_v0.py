@@ -5,7 +5,8 @@ import unittest
 from urllib.parse import parse_qs, urlsplit
 
 from scripts.probe_hr_dgu_buildings_gml_window_v0 import (
-    BBOX, BuildingGmlError, FOOTPRINT_URI, NoRedirect, fixed_url, inspect_gml, validate_content_length,
+    BBOX, BuildingGmlError, FOOTPRINT_URI, NoRedirect, _signed_twice_area,
+    fixed_url, inspect_gml, validate_content_length,
 )
 
 
@@ -256,6 +257,52 @@ class CroatianGmlWindowTest(unittest.TestCase):
                 inspect_gml(clean.replace(
                     b"</gml:posList>", b"</gml:posList>" + extra, 1
                 ))
+
+    def test_reject_unreviewed_polygon_and_nested_position_content(self):
+        clean = sample()
+        unreviewed = (
+            (clean.replace(
+                b"</gml:exterior>",
+                b"</gml:exterior><gml:posList>459120 5074620</gml:posList>", 1
+            ), "unexpected GML Polygon"),
+            (clean.replace(
+                b"</gml:posList>",
+                b"<gml:pos>459120 5074620</gml:pos></gml:posList>", 1
+            ), "nested coordinate elements"),
+            (clean.replace(
+                b"<gml:posList>",
+                b"459120 5074620<gml:posList>", 1
+            ), "mixed coordinate text"),
+            (clean.replace(
+                b"</gml:posList>",
+                b"</gml:posList>459120 5074620", 1
+            ), "mixed coordinate text"),
+        )
+        for raw, expected in unreviewed:
+            with self.subTest(expected=expected, raw_length=len(raw)):
+                with self.assertRaisesRegex(BuildingGmlError, expected):
+                    inspect_gml(raw)
+        self.assertEqual(inspect_gml(clean)["feature_records_checked"], 1)
+
+    def test_translated_shoelace_area_near_degeneracy_gate(self):
+        x0, y0 = 459100.0, 5074600.0
+
+        def square(side):
+            xy = [
+                (x0, y0), (x0 + side, y0),
+                (x0 + side, y0 + side), (x0, y0 + side), (x0, y0),
+            ]
+            return xy, sample(points=" ".join(f"{x:.8f} {y:.8f}" for x, y in xy))
+
+        accepted_xy, accepted_xml = square(0.0225)
+        self.assertAlmostEqual(
+            _signed_twice_area(accepted_xy), 2 * 0.0225 ** 2, places=8
+        )
+        self.assertEqual(inspect_gml(accepted_xml)["feature_records_checked"], 1)
+        self.assertFalse(inspect_gml(accepted_xml)["model_input_admitted"])
+        _, rejected_xml = square(0.0223)
+        with self.assertRaisesRegex(BuildingGmlError, "degenerate"):
+            inspect_gml(rejected_xml)
 
     def test_reject_unreviewed_interior_ring(self):
         raw = sample().replace(b"</gml:Polygon>", b"<gml:interior/>" + b"</gml:Polygon>")
