@@ -176,6 +176,9 @@ class TestNldOneOriginalGeometry(unittest.TestCase):
         body = encode(make_fixture())[:-1] + b',"provider_overflow":1e999}'
         with self.assertRaisesRegex(GeometryCanaryError, "non-finite JSON exponent"):
             validate_geometry_response(body)
+        huge = encode(make_fixture())[:-1] + b',"hidden":' + b"9" * 5000 + b"}"
+        with self.assertRaisesRegex(GeometryCanaryError, "invalid JSON source response"):
+            validate_geometry_response(huge)
 
     def test_original_transport_fixed_endpoint_status_size_and_hash(self):
         body = encode(make_fixture())
@@ -234,6 +237,7 @@ class TestNldOneOriginalGeometry(unittest.TestCase):
             {"Content-Type": "application/json", "Content-Length": "-1"},
             {"Content-Type": "application/json", "Content-Length": "NaN"},
             {"Content-Type": "application/json", "Content-Length": str(MAX_BYTES + 1)},
+            {"Content-Type": "application/json", "Content-Length": "9" * 5000},
             {"Content-Type": "application/json", "Content-Length": str(len(body) - 1)},
             {"Content-Type": "application/json", "Content-Length": str(len(body) + 1)},
         ):
