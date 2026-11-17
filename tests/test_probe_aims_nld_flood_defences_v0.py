@@ -111,6 +111,24 @@ class TestFloodDefenceProbe(unittest.TestCase):
         nullable["features"][0]["attributes"]["EMBANK_ID"] = None
         self.assertFalse(validate_payload(encoded(nullable), target)["join_id_present"])
 
+    def test_join_identifier_is_lossless_integer_even_when_esri_double(self):
+        target = TARGETS[2]
+        for bad in (129.5, 2 ** 53, 10 ** 400, True, -1, "129",
+                    float("inf"), float("nan")):
+            row = fixture(target)
+            row["features"][0]["attributes"]["EMBANK_ID"] = bad
+            with self.subTest(bad=str(bad)[:25]), self.assertRaises(ProbeFailure):
+                validate_payload(encoded(row), target)
+        for good in (0, 129, 129.0, (2 ** 53) - 1):
+            row = fixture(target)
+            row["features"][0]["attributes"]["EMBANK_ID"] = good
+            with self.subTest(good=good):
+                self.assertTrue(validate_payload(encoded(row), target)["join_id_present"])
+        row = fixture(target)
+        row["features"][0]["attributes"]["OBJECTID"] = 10 ** 400
+        with self.assertRaises(ProbeFailure):
+            validate_payload(encoded(row), target)
+
     def test_rejects_two_returned_features(self):
         payload = fixture(TARGETS[1])
         payload["features"].append({"attributes": {"OBJECTID": 38}})

@@ -19,6 +19,7 @@ from dataclasses import dataclass
 
 MAX_BYTES = 8192
 TIMEOUT_SECONDS = 15
+MAX_EXACT_JSON_INTEGER_ID = (1 << 53) - 1
 
 
 @dataclass(frozen=True)
@@ -117,12 +118,16 @@ def validate_payload(raw: bytes, target: Target) -> dict[str, str | int]:
     attrs = features[0].get("attributes")
     if not isinstance(attrs, dict) or set(attrs) != set(expected_names):
         raise ProbeFailure("unexpected record attributes")
-    if type(attrs[target.oid]) is not int or attrs[target.oid] < 0:
+    if (type(attrs[target.oid]) is not int
+            or not 0 <= attrs[target.oid] <= MAX_EXACT_JSON_INTEGER_ID):
         raise ProbeFailure("invalid OBJECTID")
     if target.identity_field:
         value = attrs[target.identity_field]
         if value is not None and (
-            type(value) not in (int, float) or not math.isfinite(value) or value < 0
+            type(value) not in (int, float)
+            or not 0 <= value <= MAX_EXACT_JSON_INTEGER_ID
+            or (type(value) is float and not math.isfinite(value))
+            or value != int(value)
         ):
             raise ProbeFailure("invalid embankment join-field value")
     if "exceededTransferLimit" in data and type(data["exceededTransferLimit"]) is not bool:
