@@ -274,6 +274,48 @@ separate. The ATOM archive has a conflicting restrictions/open-licence
 record; its rights remain blocked. A native Polygon shape alone cannot
 admit exposures, insured locations, TIV or model inputs.
 
+## Separate metadata-only semantic audit lane (2026-11-17)
+
+The official [INSPIRE Buildings Technical Guidelines](https://inspire-mif.github.io/technical-guidelines/data/bu/dataspecification_bu.html)
+(section 5.4.1.1, Figure 26) give an explicit example where a
+`combined` Building geometry merges a part represented by its ground
+footprint with another part represented by its lowest above-ground floor.
+Thus `combined` is **not equivalent to `footPrint`**; it is not sufficient
+for directly extracting insured ground footprints or building-level TIV.
+Keep the original strict `inspect_gml` rejection intact.
+
+To make a future **single original-provider WFS response** reproducible even
+when it correctly fails the strict footprint gate, the same bounded probe
+now has an *opt-in, non-admission* source-label mode:
+
+```bash
+python scripts/probe_hr_dgu_buildings_gml_window_v0.py --live --audit-semantics
+python scripts/probe_hr_dgu_buildings_gml_window_v0.py --offline-file /path/outside/repo/source.xml --audit-semantics
+python -m unittest tests.test_probe_hr_dgu_buildings_gml_window_v0
+```
+
+The audit reuses the existing single-feature URL, byte/timeout/redirect
+limits, and rejects XML entity declarations, unexpected feature shape,
+duplicate properties, non-reference geometries, unsupported CRS, and
+unknown reference labels. Its receipt contains **only** the original XML
+size and SHA-256, one reviewed label (`footPrint` or `combined`),
+and explicit false verdicts for polygon-geometry verification, ground
+footprint verification, source-rights clearance and model admission.
+No feature IDs, source coordinates, attributes or original bytes are
+written. A valid **audit receipt is not a successful footprint check**:
+the ordinary `--live`/ `--offline-file` path keeps rejecting
+`combined` and must remain the sole stricter semantic profile.
+
+Rights remain **product-specific**: the official
+[NIPP 1543 cadastral dataset](https://registri.nipp.hr/izvori/1709)
+and its [NIPP 1545 WFS](https://registri.nipp.hr/izvori/1711)
+link specifically to the Croatian Open Licence, whereas the separately
+sourced *topographic* ATOM archive advertises an INSPIRE 13(1)(e)
+access restriction despite other open-licence metadata. No licence
+statement for the WFS is inherited by ATOM; operative API constraints,
+privacy, exact release terms and explicit model/data admission remain
+subject to separate review.
+
 ## Next causal evidence
 
 1. Re-run the explicit `--live` command in a network-capable, provider-permitted environment; check original byte count, SHA-256 and the precise GML geometry type. If the original uses GML MultiSurface/Surface rather than Polygon, **retain failure** and add a separately tested exact shape profile; do not weaken the classifier generically.
