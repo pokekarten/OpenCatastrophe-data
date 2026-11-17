@@ -33,6 +33,18 @@ def _required_text(value: object, field: str) -> str:
     return value
 
 
+def parse_manifest_json(raw: str) -> object:
+    """Reject duplicate object keys at every JSON nesting level before audit."""
+    def unique_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        obj: dict[str, object] = {}
+        for key, value in pairs:
+            _fail_if(key in obj, f"duplicate JSON key: {key}")
+            obj[key] = value
+        return obj
+
+    return json.loads(raw, object_pairs_hook=unique_pairs)
+
+
 def audit(data: object) -> dict:
     """Check a declared month/event ledger, without authenticating its sources.
 
@@ -127,7 +139,7 @@ def main() -> int:
     parser.add_argument("manifest", type=Path)
     args = parser.parse_args()
     try:
-        data = json.loads(args.manifest.read_text(encoding="utf-8"))
+        data = parse_manifest_json(args.manifest.read_text(encoding="utf-8"))
         result = audit(data)
     except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
         parser.error(str(exc))
