@@ -10,7 +10,8 @@ from urllib.parse import parse_qs, urlsplit
 
 from scripts.probe_hr_dgu_buildings_gml_window_v0 import (
     BBOX, BuildingGmlError, FOOTPRINT_URI, COMBINED_URI, NoRedirect, _signed_twice_area,
-    fixed_url, inspect_gml, inspect_semantic_label, live_one_original, validate_content_length,
+    PROVIDER, SOURCE_ID, WFS_PRODUCT, fixed_url, inspect_gml, inspect_semantic_label,
+    live_one_original, validate_content_length,
 )
 
 
@@ -49,6 +50,27 @@ def sample(
     return raw.encode("utf-8")
 
 class CroatianGmlWindowTest(unittest.TestCase):
+    def test_shared_landscape_candidate_does_not_conflate_wfs_and_atom(self):
+        # The canonical landscape entry intentionally covers both products.
+        # A WFS metadata receipt must still unambiguously identify which
+        # source endpoint and *product* produced its digest.
+        from scripts.probe_hr_dgu_topographic_buildings_atom_v0 import (
+            FEED_URL, ZIP_URL,
+        )
+        self.assertEqual(SOURCE_ID, "hr.dgu.inspire-buildings-wfs-atom.2026")
+        self.assertNotEqual(PROVIDER, FEED_URL)
+        self.assertNotEqual(PROVIDER, ZIP_URL)
+        for receipt in (inspect_gml(sample()), inspect_semantic_label(sample(href=COMBINED_URI))):
+            self.assertEqual(receipt["source_id"], SOURCE_ID)
+            self.assertEqual(receipt["source_id_scope"], "shared_discovery_candidate_not_dataset")
+            self.assertEqual(receipt["source_product"], WFS_PRODUCT)
+            self.assertEqual(receipt["source_endpoint"], PROVIDER)
+            self.assertIn("Cadastral", receipt["source_product"])
+            self.assertNotIn("ATOM", receipt["source_product"])
+            self.assertNotEqual(receipt["source_endpoint"], FEED_URL)
+            self.assertFalse(receipt["model_input_admitted"])
+            self.assertFalse(receipt["reusable_source_rights_fully_reviewed"])
+
     def test_fixed_provider_count_and_window(self):
         u = urlsplit(fixed_url())
         self.assertEqual(u.scheme, "https")
