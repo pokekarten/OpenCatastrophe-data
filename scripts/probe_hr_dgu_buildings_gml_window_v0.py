@@ -163,7 +163,7 @@ def inspect_semantic_label(raw: bytes) -> dict:
     """
     if not isinstance(raw, bytes) or not (0 < len(raw) <= MAX_BYTES):
         raise BuildingGmlError("XML is missing or exceeds fixed byte budget")
-    if re.search(rb"<!\\s*(?:DOCTYPE|ENTITY)\\b", raw, flags=re.I):
+    if re.search(rb"<!\s*(?:DOCTYPE|ENTITY)\b", raw, flags=re.I):
         raise BuildingGmlError("DTD and entity declarations prohibited")
     try:
         root = ET.fromstring(raw)
