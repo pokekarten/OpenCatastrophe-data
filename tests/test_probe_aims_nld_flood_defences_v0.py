@@ -62,6 +62,12 @@ class TestFloodDefenceProbe(unittest.TestCase):
             with self.assertRaises(ProbeFailure):
                 validate_payload(raw, TARGETS[0])
 
+    def test_hidden_json_exponent_overflow_is_rejected(self):
+        target = TARGETS[2]
+        raw = encoded(fixture(target))[:-1] + b',"unrelated_provider_number":1e999}'
+        with self.assertRaisesRegex(ProbeFailure, "non-finite JSON exponent"):
+            validate_payload(raw, target)
+
     def test_rejects_schema_drift(self):
         target = TARGETS[0]
         for key, bad in (
@@ -210,6 +216,31 @@ class TestFloodDefenceProbe(unittest.TestCase):
 
         with self.assertRaises(ProbeFailure):
             get_one(target, WrongURLOpener())
+
+        class CustomHeadersOpener(Opener):
+            def __init__(self, headers):
+                self.headers = headers
+            def open(self, request, timeout):
+                class CustomResponse(Response):
+                    headers = self.headers
+                return CustomResponse()
+
+        for invalid in (
+            {"Content-Type": "application/jsonp"},
+            {"Content-Type": "text/plainness"},
+            {"Content-Type": "application/json", "Content-Length": "-1"},
+            {"Content-Type": "application/json", "Content-Length": "invalid"},
+            {"Content-Type": "application/json", "Content-Length": str(MAX_BYTES + 1)},
+            {"Content-Type": "application/json", "Content-Length": str(len(body) + 1)},
+            {"Content-Type": "application/json", "Content-Length": str(len(body) - 1)},
+        ):
+            with self.subTest(headers=invalid), self.assertRaises(ProbeFailure):
+                get_one(target, CustomHeadersOpener(invalid))
+
+        valid_headers = {"Content-Type": "application/json; charset=utf-8",
+                         "Content-Length": str(len(body))}
+        self.assertEqual(len(get_one(target, CustomHeadersOpener(valid_headers))[
+            "original_response_sha256"]), 64)
 
 
 if __name__ == "__main__":
