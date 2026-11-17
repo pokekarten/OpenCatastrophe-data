@@ -176,6 +176,30 @@ class TestNldEmbankmentVerticalMetadata(unittest.TestCase):
         with self.assertRaises(PreflightError):
             get_original_metadata(WrongURLOpener())
 
+        class CustomHeadersOpener(Opener):
+            def __init__(self, headers):
+                self.headers = headers
+            def open(self, request, timeout):
+                class CustomResponse(Response):
+                    headers = self.headers
+                return CustomResponse()
+
+        for invalid in (
+            {"Content-Type": "application/jsonp"},
+            {"Content-Type": "text/plain-vendor"},
+            {"Content-Type": "application/json", "Content-Length": "-1"},
+            {"Content-Type": "application/json", "Content-Length": "NaN"},
+            {"Content-Type": "application/json", "Content-Length": str(MAX_BYTES + 1)},
+            {"Content-Type": "application/json", "Content-Length": str(len(raw) - 1)},
+            {"Content-Type": "application/json", "Content-Length": str(len(raw) + 1)},
+        ):
+            with self.subTest(headers=invalid), self.assertRaises(PreflightError):
+                get_original_metadata(CustomHeadersOpener(invalid))
+        good = {"Content-Type": "application/json; charset=utf-8",
+                "Content-Length": str(len(raw))}
+        self.assertEqual(get_original_metadata(CustomHeadersOpener(good))[
+            "original_response_sha256"], report["original_response_sha256"])
+
     def test_no_redirect_and_no_implicit_network_access(self):
         with self.assertRaises(PreflightError):
             NoRedirect().redirect_request(
