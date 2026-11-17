@@ -382,6 +382,29 @@ The current Draft PR **does not** claim such a dispatched live run.
 This preserves reproducibility without silently retrying a service
 whose automation limits and exact rights remain under review.
 
+## Shared landscape candidate versus original product identity (2026-11-17)
+
+The canonical [Europe national buildings candidate registry](../../landscape/sources-europe-national-building-gaps-20261108.json)
+uses `candidate_id=hr.dgu.inspire-buildings-wfs-atom.2026` to
+**discover two DGU product/access paths**, not to assert they are the
+same geographic dataset. The standalone cadastral WFS probes previously
+returned that shared candidate in `source_id` with no separate product
+identity; such a receipt could be misread as evidence for topographic
+ATOM. To preserve the existing landscape link without creating a
+second source-of-truth registry entry, both the strict GML and the
+non-admitting semantic audit now report:
+
+- `source_id`: the unchanged, shared canonical **discovery** candidate;
+- `source_id_scope=shared_discovery_candidate_not_dataset`;
+- `source_product=DGU Digital Cadastral Map INSPIRE Buildings WFS`;
+- `source_endpoint=https://api.uredjenazemlja.hr/services/inspire/bu/wfs`.
+
+Deterministic tests compare that endpoint with the distinct ATOM feed
+and ZIP URLs, and challenge both receipt modes. A matching candidate
+ID never licenses, verifies or admits the separate ATOM product, its
+archive, a building footprint, or an insured exposure. No canonical
+landscape or admitted source manifest was changed.
+
 ## Next causal evidence
 
 1. Re-run the explicit `--live` command in a network-capable, provider-permitted environment; check original byte count, SHA-256 and the precise GML geometry type. If the original uses GML MultiSurface/Surface rather than Polygon, **retain failure** and add a separately tested exact shape profile; do not weaken the classifier generically.
