@@ -29,6 +29,8 @@ MAX_BYTES = 32768
 MAX_VERTICES = 4096
 MAX_PATHS = 64
 TIMEOUT_SECONDS = 15
+# JSON doubles cannot preserve consecutive integer identifiers above 2**53-1.
+MAX_EXACT_JSON_INTEGER_ID = (1 << 53) - 1
 
 
 class GeometryCanaryError(ValueError):
@@ -54,7 +56,23 @@ def _reject_constant(value):
 
 
 def _finite_number(value):
-    return type(value) in (int, float) and math.isfinite(value)
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value)
+    except (OverflowError, ValueError):
+        # Legal JSON integers can be bigger than Python's float range.
+        return False
+
+
+def _exact_double_join_id(value):
+    # The ArcGIS schema stores EMBANK_ID as Double, but this is an identity
+    # *join key*, not a physical measurement. A fraction or >53-bit integer
+    # cannot be losslessly represented as a JSON double identifier.
+    return (type(value) in (int, float)
+            and 0 <= value <= MAX_EXACT_JSON_INTEGER_ID
+            and _finite_number(value)
+            and value == int(value))
 
 
 def validate_geometry_response(raw: bytes) -> dict[str, object]:
@@ -102,10 +120,10 @@ def validate_geometry_response(raw: bytes) -> dict[str, object]:
     if not isinstance(attributes, dict) or set(attributes) != {"OBJECTID", "EMBANK_ID"}:
         raise GeometryCanaryError("unexpected source attributes")
     oid = attributes["OBJECTID"]
-    if type(oid) is not int or oid < 0:
+    if type(oid) is not int or not 0 <= oid <= MAX_EXACT_JSON_INTEGER_ID:
         raise GeometryCanaryError("invalid OBJECTID")
     embank_id = attributes["EMBANK_ID"]
-    if not _finite_number(embank_id) or embank_id < 0:
+    if not _exact_double_join_id(embank_id):
         raise GeometryCanaryError("invalid EMBANK_ID")
     geom = feature["geometry"]
     if not isinstance(geom, dict) or geom.get("hasZ") is not True:
