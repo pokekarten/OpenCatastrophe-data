@@ -247,10 +247,25 @@ different coordinate reference system (see
 [GeoServer WFS documentation](https://docs.geoserver.org/main/en/user/services/wfs/webadmin/)).
 The newly added code supports **only that exact EPSG:3765 legacy form**,
 with a synthetic regression test and negative near-miss cases.
-Neither an unreviewed `horizontalGeometryReference` attribute value
-nor its complete footprint semantics, geometry accuracy, a live source
-digest, full national coverage or specific reuse scope has been
-independently established by these intermediary observations.
+A later bounded 2026-11-17 external-intermediary HTTP 200 GML inspection
+also observed the **exact INSPIRE
+`bu-base:horizontalGeometryReference` code `combined`**, not
+`footPrint`, on the single returned reference-marked BuildingGeometry2D.
+This is a **scientifically material negative for the current
+single-footprint profile**: even with the corrected EPSG:3765 alias,
+`inspect_gml` must reject that response instead of silently treating
+`combined` as a cadastral ground footprint. The existing
+`test_reject_unreviewed_geometry_horizontal_reference` already
+asserts refusal of `combined` and `roofEdge`, so no relaxation or
+new profile is warranted. This is an intermediary structural observation,
+not an independently hashed direct-provider `--live` receipt; follow-up
+must establish whether the publisher offers an explicitly
+`footPrint`-labelled geometry product/feature type without assuming that
+the current `combined` polygon suffices.
+
+Neither geometry accuracy, a direct live source digest, nationwide
+completeness, an admissible alternative footprint profile, nor
+specific commercial reuse scope has been independently established.
 
 **Boundary unchanged:** no original XML, source identifiers, coordinates,
 building attributes, raw archive or personally identifying records have
