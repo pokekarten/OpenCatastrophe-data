@@ -67,6 +67,9 @@ class TestFloodDefenceProbe(unittest.TestCase):
         raw = encoded(fixture(target))[:-1] + b',"unrelated_provider_number":1e999}'
         with self.assertRaisesRegex(ProbeFailure, "non-finite JSON exponent"):
             validate_payload(raw, target)
+        oversized_integer = encoded(fixture(target))[:-1] + b',"hidden":' + b"9" * 5000 + b"}"
+        with self.assertRaisesRegex(ProbeFailure, "not valid UTF-8 JSON"):
+            validate_payload(oversized_integer, target)
 
     def test_rejects_schema_drift(self):
         target = TARGETS[0]
@@ -231,6 +234,7 @@ class TestFloodDefenceProbe(unittest.TestCase):
             {"Content-Type": "application/json", "Content-Length": "-1"},
             {"Content-Type": "application/json", "Content-Length": "invalid"},
             {"Content-Type": "application/json", "Content-Length": str(MAX_BYTES + 1)},
+            {"Content-Type": "application/json", "Content-Length": "9" * 5000},
             {"Content-Type": "application/json", "Content-Length": str(len(body) + 1)},
             {"Content-Type": "application/json", "Content-Length": str(len(body) - 1)},
         ):
