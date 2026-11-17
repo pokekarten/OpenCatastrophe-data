@@ -122,7 +122,8 @@ class TestNldEmbankmentVerticalMetadata(unittest.TestCase):
                 ("latestVcsWkid", 105703), ("latestVcsWkid", 6360.0),
                 ("zUnits", -1), ("zUnits", "3048.006"),
                 ("zUnits", 10000), ("zUnits", True),
-                ("zUnits", float("inf")),
+                ("zUnits", float("inf")), ("zUnits", 10 ** 400),
+                ("zUnits", -(10 ** 400)),
             ):
                 d = fixture()
                 d[where][key] = bad
