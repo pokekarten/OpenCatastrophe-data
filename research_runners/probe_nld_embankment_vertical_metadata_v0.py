@@ -114,6 +114,7 @@ def validate_metadata(raw: bytes) -> dict[str, str | bool]:
             raise PreflightError(field_name + " horizontal/vertical CRS drift")
         z_units = sr.get("zUnits")
         if (type(z_units) not in (int, float)
+                or z_units <= 0 or z_units > 10000
                 or not math.isfinite(z_units)
                 or not math.isclose(z_units, EXPECTED_SPATIAL_Z_UNITS,
                                     rel_tol=1e-12, abs_tol=1e-9)):
