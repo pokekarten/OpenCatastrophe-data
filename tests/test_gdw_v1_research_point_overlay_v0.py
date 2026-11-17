@@ -66,7 +66,63 @@ class GDWSyntheticExposureOverlayTests(unittest.TestCase):
                       [Point(0.5, 1)])
         self.assertEqual(r["native_geometry_candidate_pairs"], 0)
         self.assertEqual(r["native_geometry_excluded_pairs"], 2)
+        # Excluded source footprint is not empty space. The point is inside
+        # both source bounding rectangles and must be quarantined.
+        self.assertEqual(r["points_quarantined_near_excluded_or_unknown_footprints"], 1)
+        self.assertEqual(r["outside_all_screened_reservoirs_points"], 0)
+        self.assertEqual(r["excluded_footprint_coarse_bounds_known"], 2)
+
+    def test_valid_candidate_cannot_hide_invalid_polygon_bbox(self):
+        # Before this regression, the invalid bowtie was discarded and
+        # the center looked like a unique valid reservoir/exposure match.
+        safe = square(0, 0, 4, 4)
+        bowtie = Polygon([(1, 1), (3, 3), (1, 3), (3, 1), (1, 1)])
+        r = self.call([(safe, Point(0.5, 0.5)),
+                       (bowtie, Point(2, 2))],
+                      [Point(2, 2), Point(0.5, 0.5), Point(10, 10)])
+        self.assertEqual(r["native_geometry_candidate_pairs"], 1)
+        self.assertEqual(r["native_geometry_excluded_pairs"], 1)
+        self.assertEqual(r["excluded_footprint_coarse_bounds_known"], 1)
+        self.assertEqual(r["excluded_footprint_extents_unknown"], 0)
+        self.assertEqual(r["points_quarantined_near_excluded_or_unknown_footprints"], 1)
+        self.assertEqual(r["single_candidate_interior_points"], 1)
         self.assertEqual(r["outside_all_screened_reservoirs_points"], 1)
+        self.assertFalse(r["excluded_footprint_contact_scientifically_resolved"])
+
+    def test_valid_but_wrong_dam_pair_bbox_also_quarantines(self):
+        # An excluded polygon may be GEOS-valid but not contain its paired
+        # source dam. It is still not proof of geographic absence.
+        r = self.call([(square(0, 0, 4, 4), Point(1, 1)),
+                       (square(2, 2, 5, 5), Point(30, 30))],
+                      [Point(3, 3), Point(0.5, 0.5), Point(4.5, 4.5)])
+        self.assertEqual(r["native_geometry_excluded_pairs"], 1)
+        self.assertEqual(r["points_quarantined_near_excluded_or_unknown_footprints"], 2)
+        self.assertEqual(r["single_candidate_interior_points"], 1)
+        self.assertEqual(r["synthetic_exposure_points"], 3)
+
+    def test_unknown_excluded_footprint_extent_quarantines_all(self):
+        r = self.call([(square(), Point(1, 1)),
+                       (None, Point(1, 1))],
+                      [Point(1, 1), Point(30, 30)])
+        self.assertEqual(r["excluded_footprint_extents_unknown"], 1)
+        self.assertEqual(r["excluded_footprint_coarse_bounds_known"], 0)
+        self.assertEqual(r["points_quarantined_near_excluded_or_unknown_footprints"], 2)
+        self.assertEqual(r["single_candidate_interior_points"], 0)
+        self.assertEqual(r["outside_all_screened_reservoirs_points"], 0)
+        self.assertEqual(sum(r[key] for key in (
+            "single_candidate_interior_points",
+            "multiple_or_boundary_ambiguous_points",
+            "boundary_only_excluded_points",
+            "outside_all_screened_reservoirs_points",
+            "points_quarantined_near_excluded_or_unknown_footprints",
+        )), 2)
+
+    def test_coarse_bbox_boundary_is_quarantined_no_false_unique(self):
+        r = self.call([(square(0, 0, 4, 4), Point(1, 1)),
+                       (square(2, 2, 3, 3), Point(9, 9))],
+                      [Point(2, 2), Point(3, 3), Point(1, 1)])
+        self.assertEqual(r["points_quarantined_near_excluded_or_unknown_footprints"], 2)
+        self.assertEqual(r["single_candidate_interior_points"], 1)
 
     def test_empty_hole_multipolygon_and_barrier_outside(self):
         with_hole = Polygon([(0, 0), (4, 0), (4, 4), (0, 4), (0, 0)],
