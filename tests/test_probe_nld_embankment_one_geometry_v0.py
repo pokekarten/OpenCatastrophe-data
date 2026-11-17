@@ -121,6 +121,29 @@ class TestNldOneOriginalGeometry(unittest.TestCase):
         with self.assertRaises(GeometryCanaryError):
             validate_geometry_response(encode(data))
 
+    def test_embankment_ids_must_be_lossless_integer_join_keys(self):
+        for bad in (1.5, -1, True, "71", 2 ** 53, 10 ** 400,
+                    float("nan"), float("inf")):
+            row = make_fixture()
+            row["features"][0]["attributes"]["EMBANK_ID"] = bad
+            with self.subTest(value=str(bad)[:32]), self.assertRaises(GeometryCanaryError):
+                validate_geometry_response(encode(row))
+        for good in (0, 71, 71.0, (2 ** 53) - 1):
+            row = make_fixture()
+            row["features"][0]["attributes"]["EMBANK_ID"] = good
+            with self.subTest(good=good):
+                self.assertTrue(validate_geometry_response(encode(row))["one_feature"])
+
+    def test_oversized_json_integers_rejected_without_python_overflow(self):
+        for mutation in ("oid", "z"):
+            row = make_fixture()
+            if mutation == "oid":
+                row["features"][0]["attributes"]["OBJECTID"] = 10 ** 400
+            else:
+                row["features"][0]["geometry"]["paths"][0][0][2] = 10 ** 400
+            with self.subTest(mutation=mutation), self.assertRaises(GeometryCanaryError):
+                validate_geometry_response(encode(row))
+
     def test_bad_vertices_and_malformed_paths_fail_closed(self):
         bad_paths = [
             [], [[]], [[[0, 0, 1]]],
