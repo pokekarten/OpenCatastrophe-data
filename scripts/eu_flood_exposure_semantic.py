@@ -78,11 +78,16 @@ def _validate_support(support: HazardSupport) -> tuple[Decimal, str]:
     if fraction <= 0 or fraction > 1:
         raise SemanticError("support fraction must be in (0, 1]")
 
+    # Do not coerce externally sourced quality flags: e.g. bool("false") is
+    # True and silently changes the scientific exposure classification.
     flags = {
-        "nodata": bool(support.nodata),
-        "permanent_water": bool(support.permanent_water),
-        "spurious_depth": bool(support.spurious_depth),
+        "nodata": support.nodata,
+        "permanent_water": support.permanent_water,
+        "spurious_depth": support.spurious_depth,
     }
+    for flag_name, flag_value in flags.items():
+        if type(flag_value) is not bool:
+            raise SemanticError(f"{flag_name} must be a boolean")
     active_flags = [name for name, active in flags.items() if active]
     if len(active_flags) > 1:
         raise SemanticError(

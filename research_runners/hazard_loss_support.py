@@ -6,6 +6,10 @@ from datetime import datetime
 
 def assess(hazard_start, hazard_end_exclusive, loss_start, loss_end_exclusive,
            geographic_coverage_verified=False):
+    # A non-empty string such as "false" is truthy in Python and must never
+    # constitute scientific evidence that geographic coverage was checked.
+    if type(geographic_coverage_verified) is not bool:
+        raise ValueError("geographic_coverage_verified must be a boolean")
     hs,he,ls,le=map(datetime.fromisoformat,
                    [hazard_start,hazard_end_exclusive,loss_start,loss_end_exclusive])
     if any(t.tzinfo is None for t in [hs,he,ls,le]):
