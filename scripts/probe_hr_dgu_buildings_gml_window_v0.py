@@ -184,18 +184,38 @@ def inspect_semantic_label(raw: bytes) -> dict:
         BU_BASE + "geometry", BU_BASE + "referenceGeometry",
         BU_BASE + "horizontalGeometryReference",
     }
-    if len(profile) != 3 or {child.tag for child in profile} != required:
-        # Source-science troubleshooting only. Emit short *schema tag names*,
-        # never XML text, attributes, original identifiers or coordinate values.
-        # Keep refusal in place until every extra property is reviewed.
+    # INSPIRE Buildings Base, BuildingGeometry2D (5.3.2.2.4) defines
+    # three additional optional fields. In this metadata-only lane, names
+    # may be observed, but values are not interpreted or used for admission.
+    optional = {
+        BU_BASE + "verticalGeometryReference",
+        BU_BASE + "horizontalGeometryEstimatedAccuracy",
+        BU_BASE + "verticalGeometryEstimatedAccuracy",
+    }
+    children = list(profile)
+    tags = [child.tag for child in children]
+    valid_profile = (
+        len(children) <= 6
+        and set(tags).issubset(required | optional)
+        and all(tags.count(key) == 1 for key in required)
+        and all(tags.count(key) <= 1 for key in optional)
+        # Never ignore a nested geometry or other XML inside optional data.
+        and all(len(child) == 0 for child in children if child.tag in optional)
+    )
+    if not valid_profile:
+        # Diagnostic: only short reviewed XML *tag names*, never source
+        # text, attributes, coordinates, identifiers or property values.
         names = []
-        for child in list(profile)[:10]:
+        for child in children[:10]:
             local = child.tag.removeprefix(BU_BASE) if child.tag.startswith(BU_BASE) else ""
             names.append(local if re.fullmatch(r"[A-Za-z][A-Za-z0-9]{0,47}", local) else "unreviewed")
         raise BuildingGmlError(
             "unreviewed or duplicated reference geometry properties "
-            f"(count={len(profile)}, schema_fields={','.join(names)})"
+            f"(count={len(children)}, schema_fields={','.join(names)})"
         )
+    observed_optional = sorted(
+        key.removeprefix(BU_BASE) for key in optional if key in tags
+    )
     refs = profile.findall(BU_BASE + "referenceGeometry")
     if len(refs) != 1 or refs[0].text is None or refs[0].text.strip() != "true":
         raise BuildingGmlError("referenceGeometry must be uniquely true")
@@ -221,6 +241,8 @@ def inspect_semantic_label(raw: bytes) -> dict:
         "polygon_crs_declaration": CRS,
         "inspire_reference_geometry_verified": True,
         "inspire_horizontal_geometry_reference": label_uris[labels[0].get(XLINK + "href")],
+        "recognized_optional_geometry2d_fields": observed_optional,
+        "optional_geometry2d_values_interpreted": False,
         "actual_polygon_geometry_verified": False,
         "ground_footprint_verified": False,
         "reusable_source_rights_fully_reviewed": False,
