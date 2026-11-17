@@ -70,7 +70,9 @@ def validate_metadata(raw: bytes) -> dict[str, str | bool]:
             parse_constant=_reject_constant,
             parse_float=_finite_json_float,
         )
-    except (UnicodeError, json.JSONDecodeError) as exc:
+    except PreflightError:
+        raise
+    except (UnicodeError, ValueError) as exc:
         raise PreflightError("invalid JSON metadata") from exc
     if not isinstance(data, dict) or "error" in data:
         raise PreflightError("ArcGIS error or non-object metadata")
@@ -165,7 +167,8 @@ def get_original_metadata(opener=None) -> dict[str, str | bool]:
             declared = response.headers.get("Content-Length")
             if declared is not None and (
                 type(declared) is not str or not declared.isascii()
-                or not declared.isdecimal() or int(declared) > MAX_BYTES
+                or not declared.isdecimal() or len(declared) > len(str(MAX_BYTES))
+                or int(declared) > MAX_BYTES
             ):
                 raise PreflightError("invalid original metadata Content-Length")
             raw = response.read(MAX_BYTES + 1)
