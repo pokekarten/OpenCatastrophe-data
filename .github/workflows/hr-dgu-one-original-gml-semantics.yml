@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Croatia DGU one original GML semantics receipt
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_hr_dgu_buildings_gml_window_v0.py'
+      - 'tests/test_probe_hr_dgu_buildings_gml_window_v0.py'
+      - 'docs/research/hr-dgu-cadastral-wfs-gml-geometry-gate-20261115.md'
+      - '.github/workflows/hr-dgu-one-original-gml-semantics.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hr-dgu-original-gml-semantics-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  one-original-semantic-receipt:
+    # Exactly one public source feature for the owned draft PR; never on push
+    # to main or unrelated pull requests. No tokens, downloads or artifacts.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/hr-dgu-cadastral-gml-geometry-20261115'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact source without retained credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Offline GML envelope, CRS, semantic, XML and source-ID negatives
+        run: python -m unittest tests.test_probe_hr_dgu_buildings_gml_window_v0 -v
+      - name: Exactly one original DGU cadastral WFS feature semantics (no model admission)
+        run: python scripts/probe_hr_dgu_buildings_gml_window_v0.py --live --audit-semantics
