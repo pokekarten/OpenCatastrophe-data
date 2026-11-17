@@ -7,10 +7,45 @@ from pathlib import Path
 import re
 import unittest
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/nrw-hu22-2022-manual-replay-gateway.yml"
 SOURCE_SHA = "75dba089478927003d201032cb41303ebf587952"
 TARGET = "pokekarten/OpenCatastrophe-data/.github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml"
+
+
+class NoDuplicateKeysBaseLoader(yaml.BaseLoader):
+    """Keep GitHub's 'on' literal and reject ambiguous duplicate YAML keys."""
+
+    def construct_mapping(self, node, deep=False):
+        if not isinstance(node, yaml.MappingNode):
+            raise ValueError("Expected a mapping in gateway YAML")
+        result = {}
+        for key_node, value_node in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if not isinstance(key, str) or key in result:
+                raise ValueError(f"Duplicate or non-string YAML key in gateway: {key!r}")
+            result[key] = self.construct_object(value_node, deep=deep)
+        return result
+
+
+def verify_manual_gateway_shape(raw: str) -> None:
+    """Fail closed if a 901 MB manual gateway gains any execution surface."""
+    workflow = yaml.load(raw, Loader=NoDuplicateKeysBaseLoader)
+    assert isinstance(workflow, dict)
+    assert set(workflow) == {"name", "on", "permissions", "jobs"}
+    assert workflow["on"] == {"workflow_dispatch": ""}
+    assert workflow["permissions"] == {"contents": "read"}
+    assert isinstance(workflow["jobs"], dict)
+    assert set(workflow["jobs"]) == {"original-hu22-replay"}
+    job = workflow["jobs"]["original-hu22-replay"]
+    assert isinstance(job, dict)
+    assert job == {
+        "uses": f"{TARGET}@{SOURCE_SHA}",
+        "with": {"source_ref": SOURCE_SHA},
+        "permissions": {"contents": "read"},
+    }
 
 
 class TestManualOriginalResearchReplayGateway(unittest.TestCase):
@@ -44,6 +79,24 @@ class TestManualOriginalResearchReplayGateway(unittest.TestCase):
         self.assertNotIn("run: |", self.raw)
         self.assertNotIn("curl ", self.raw)
         self.assertNotIn("git clone", self.raw)
+
+    def test_complete_yaml_shape_no_hidden_jobs_or_extra_triggers(self):
+        verify_manual_gateway_shape(self.raw)
+
+    def test_mutations_fail_closed(self):
+        variants = {
+            "push-trigger": self.raw.replace("  workflow_dispatch:\n", "  workflow_dispatch:\n  push:\n"),
+            "duplicate-on-key": self.raw + "\non:\n  push:\n",
+            "second-job": self.raw + "  injected-job:\n    runs-on: ubuntu-latest\n",
+            "extra-permission": self.raw.replace("  contents: read\n", "  contents: read\n  actions: write\n", 1),
+            "unreviewed-script-step": self.raw + "    steps:\n      - run: echo 'unexpected'\n",
+            "pinned-source-drift": self.raw.replace(f"source_ref: {SOURCE_SHA}", "source_ref: " + "f" * 40),
+            "duplicate-source-ref": self.raw.replace(f"source_ref: {SOURCE_SHA}", f"source_ref: {SOURCE_SHA}\n      source_ref: {SOURCE_SHA}"),
+        }
+        for label, variant in variants.items():
+            with self.subTest(mutant=label):
+                with self.assertRaises((AssertionError, ValueError, yaml.YAMLError)):
+                    verify_manual_gateway_shape(variant)
 
 
 if __name__ == "__main__":
