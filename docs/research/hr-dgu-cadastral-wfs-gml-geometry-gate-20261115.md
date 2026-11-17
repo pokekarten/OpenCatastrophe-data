@@ -316,6 +316,36 @@ statement for the WFS is inherited by ATOM; operative API constraints,
 privacy, exact release terms and explicit model/data admission remain
 subject to separate review.
 
+## First direct public GitHub-runner source challenge — 2026-11-17
+
+The dedicated unprivileged, exact-PR GitHub workflow
+[`hr-dgu-one-original-gml-semantics.yml`](../../.github/workflows/hr-dgu-one-original-gml-semantics.yml)
+ran from commit `b9df3da5`. The 28 synthetic GML tests **passed**
+[workflow run 44169526862](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/44169526862).
+The **one bounded direct live request reached original XML semantic
+validation**, but it was **blocked** at the exact
+`BuildingGeometry2D` child-property allowlist:
+`unreviewed or duplicated reference geometry properties`.
+The runner therefore **did not** emit a valid audit receipt or
+an original XML hash. This proves a mismatch between the current
+synthetic three-property profile and that particular provider response,
+not permission to ignore additional source fields.
+
+A follow-up [run 44169897063](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/44169897063)
+passed **30 synthetic tests** and then blocked the single live request
+with `original WFS unavailable`. Provider availability or the exact
+HTTP status could not be determined from the earlier generic error.
+The probe now distinguishes a **sanitized numeric HTTP status** from
+network unavailability, without ever logging raw upstream messages or
+response body; synthetic HTTP/URL-error tests enforce redaction.
+
+Both original-source jobs are failures by design while evidence is
+incomplete. This is not a GitHub private-runner outage. The independent
+repository CI for the earlier head had passed, but neither live failure
+counts as an original provider footprint, admission, or licence receipt.
+Any schema drift must be reviewed property by property before extending
+the explicit semantic-audit allowlist.
+
 ## Next causal evidence
 
 1. Re-run the explicit `--live` command in a network-capable, provider-permitted environment; check original byte count, SHA-256 and the precise GML geometry type. If the original uses GML MultiSurface/Surface rather than Polygon, **retain failure** and add a separately tested exact shape profile; do not weaken the classifier generically.
