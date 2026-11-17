@@ -82,13 +82,22 @@ def _reject_constant(value):
     raise ProbeFailure("non-finite JSON number")
 
 
+def _finite_json_float(token: str) -> float:
+    # 1e999 is valid JSON syntax but Python otherwise decodes it to infinity.
+    value = float(token)
+    if not math.isfinite(value):
+        raise ProbeFailure("non-finite JSON exponent")
+    return value
+
+
 def validate_payload(raw: bytes, target: Target) -> dict[str, str | int]:
     if not raw or len(raw) > MAX_BYTES:
         raise ProbeFailure("empty or oversized provider response")
     if raw.lstrip().startswith((b"<", b"<!")):
         raise ProbeFailure("HTML/XML is not ArcGIS JSON")
     try:
-        data = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
+        data = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_pairs,
+                          parse_constant=_reject_constant, parse_float=_finite_json_float)
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise ProbeFailure("not valid UTF-8 JSON") from exc
     if not isinstance(data, dict) or "error" in data:
@@ -154,10 +163,18 @@ def get_one(target: Target, opener=None) -> dict[str, str | int]:
                 raise ProbeFailure("unexpected HTTP status or response URL")
             if response.headers.get("Content-Encoding", "identity").lower() != "identity":
                 raise ProbeFailure("compressed responses forbidden")
-            content_type = response.headers.get("Content-Type", "").lower()
-            if not (content_type.startswith("application/json") or content_type.startswith("text/plain")):
+            content_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            if content_type not in ("application/json", "text/plain"):
                 raise ProbeFailure("unexpected content type")
+            declared = response.headers.get("Content-Length")
+            if declared is not None and (
+                type(declared) is not str or not declared.isascii()
+                or not declared.isdecimal() or int(declared) > MAX_BYTES
+            ):
+                raise ProbeFailure("invalid declared response Content-Length")
             body = response.read(MAX_BYTES + 1)
+            if declared is not None and len(body) != int(declared):
+                raise ProbeFailure("original response Content-Length mismatch")
     except (OSError, urllib.error.URLError) as exc:
         raise ProbeFailure("network read failed") from exc
     summary = validate_payload(body, target)
