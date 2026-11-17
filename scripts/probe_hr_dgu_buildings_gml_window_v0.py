@@ -407,8 +407,14 @@ def live_one_original() -> bytes:
             data = response.read(MAX_BYTES + 1)
             declared = response.headers.get("Content-Length")
             validate_content_length(declared, len(data))
+    except error.HTTPError as exc:
+        # Never echo the upstream error body, URL, arbitrary reason or source
+        # attributes. HTTP status is enough to distinguish access policy,
+        # invalid request and transient infrastructure failures.
+        status = exc.code if type(exc.code) is int and 100 <= exc.code <= 599 else "unknown"
+        raise BuildingGmlError(f"original WFS HTTP {status}; no source admission") from exc
     except (error.URLError, TimeoutError) as exc:
-        raise BuildingGmlError("original WFS unavailable; no source admission") from exc
+        raise BuildingGmlError("original WFS network unavailable; no source admission") from exc
     return data
 
 
