@@ -169,6 +169,60 @@ class CroatianGmlWindowTest(unittest.TestCase):
             "footPrint"
         )
 
+    def test_semantic_audit_approved_optional_insPIRE_fields_not_values(self):
+        # These are the three extra properties defined for BuildingGeometry2D
+        # by INSPIRE 5.3.2.2.4, not licence/admission evidence.
+        options = (
+            ("verticalGeometryReference", "http://example.test/reference"),
+            ("horizontalGeometryEstimatedAccuracy", "SECRET-DO-NOT-PRINT"),
+            ("verticalGeometryEstimatedAccuracy", "2.3"),
+        )
+        for number in (1, 2, 3):
+            added = "".join(
+                '<base:' + name + ' uom="m">' + val + '</base:' + name + '>'
+                for name, val in options[:number]
+            ).encode("utf-8")
+            raw = sample(href=COMBINED_URI).replace(
+                b"</base:BuildingGeometry2D>",
+                added + b"</base:BuildingGeometry2D>",
+                1,
+            )
+            with self.subTest(number=number):
+                receipt = inspect_semantic_label(raw)
+                self.assertEqual(
+                    receipt["recognized_optional_geometry2d_fields"],
+                    sorted(name for name, _ in options[:number]),
+                )
+                self.assertFalse(receipt["optional_geometry2d_values_interpreted"])
+                self.assertFalse(receipt["ground_footprint_verified"])
+                self.assertFalse(receipt["model_input_admitted"])
+                self.assertNotIn("SECRET-DO-NOT-PRINT", json.dumps(receipt))
+                self.assertNotIn("http://example.test/reference", json.dumps(receipt))
+                with self.assertRaises(BuildingGmlError):
+                    inspect_gml(raw)
+        self.assertEqual(inspect_semantic_label(sample())["recognized_optional_geometry2d_fields"], [])
+
+    def test_semantic_audit_reject_duplicates_unknowns_and_nested_optional_geometry(self):
+        base = sample(href=COMBINED_URI)
+        candidates = (
+            b'<base:horizontalGeometryEstimatedAccuracy>1</base:horizontalGeometryEstimatedAccuracy>'
+            b'<base:horizontalGeometryEstimatedAccuracy>2</base:horizontalGeometryEstimatedAccuracy>',
+            b'<base:unreviewedCoordinates>459100 5074600</base:unreviewedCoordinates>',
+            b'<bu:horizontalGeometryEstimatedAccuracy>2</bu:horizontalGeometryEstimatedAccuracy>',
+            b'<base:horizontalGeometryEstimatedAccuracy>'
+            b'<gml:Polygon/></base:horizontalGeometryEstimatedAccuracy>',
+        )
+        for extra in candidates:
+            raw = base.replace(
+                b"</base:BuildingGeometry2D>",
+                extra + b"</base:BuildingGeometry2D>",
+                1,
+            )
+            with self.subTest(extra=extra[:42]), self.assertRaisesRegex(
+                BuildingGmlError, "unreviewed or duplicated"
+            ):
+                inspect_semantic_label(raw)
+
     def test_semantic_audit_fail_closed_on_unreviewed_inputs(self):
         clean = sample()
         for raw in (
@@ -193,16 +247,16 @@ class CroatianGmlWindowTest(unittest.TestCase):
         # Diagnose provider schema drift without disclosing data or attributes.
         bad = sample().replace(
             b"</base:BuildingGeometry2D>",
-            b'<base:horizontalGeometryEstimatedAccuracy secret="PRIVATE-DO-NOT-PRINT">'
+            b'<base:nonINSPIREExtraProperty secret="PRIVATE-DO-NOT-PRINT">'
             b'459100 5074600 PRIVATE-DO-NOT-PRINT'
-            b'</base:horizontalGeometryEstimatedAccuracy>'
+            b'</base:nonINSPIREExtraProperty>'
             b"</base:BuildingGeometry2D>",
             1,
         )
         with self.assertRaises(BuildingGmlError) as caught:
             inspect_semantic_label(bad)
         message = str(caught.exception)
-        self.assertIn("horizontalGeometryEstimatedAccuracy", message)
+        self.assertIn("nonINSPIREExtraProperty", message)
         self.assertIn("count=4", message)
         self.assertNotIn("PRIVATE-DO-NOT-PRINT", message)
         self.assertNotIn("459100", message)
