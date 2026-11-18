@@ -19,7 +19,6 @@ concurrency:
 jobs:
   check:
     name: Python ${{ matrix.python-version }}
-    needs: [eu-flood-spatial]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
@@ -238,13 +237,14 @@ jobs:
   required:
     name: Required
     if: always()
-    needs: [check, glofas-acquisition, luxembourg-lidar-inset-spatial, cems-geotiff-profile, reuse, dependency-review]
+    needs: [check, eu-flood-spatial, glofas-acquisition, luxembourg-lidar-inset-spatial, cems-geotiff-profile, reuse, dependency-review]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Verify required jobs
         env:
           CHECK_RESULT: ${{ needs.check.result }}
+          EU_FLOOD_SPATIAL_RESULT: ${{ needs.eu-flood-spatial.result }}
           GLOFAS_ACQUISITION_RESULT: ${{ needs.glofas-acquisition.result }}
           CEMS_GEOTIFF_PROFILE_RESULT: ${{ needs.cems-geotiff-profile.result }}
           LUX_LIDAR_INSET_RESULT: ${{ needs.luxembourg-lidar-inset-spatial.result }}
@@ -252,6 +252,7 @@ jobs:
           DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
         run: |
           test "$CHECK_RESULT" = "success"
+          test "$EU_FLOOD_SPATIAL_RESULT" = "success"
           test "$GLOFAS_ACQUISITION_RESULT" = "success"
           test "$CEMS_GEOTIFF_PROFILE_RESULT" = "success"
           test "$LUX_LIDAR_INSET_RESULT" = "success"
