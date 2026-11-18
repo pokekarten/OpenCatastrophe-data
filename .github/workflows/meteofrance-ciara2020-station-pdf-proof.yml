@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Ciara France original station-sheet PDF byte provenance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-pdf:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        department: ['02', '62', '76', '80']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline synthetic station sheet source security tests
+        run: python -m unittest tests.test_meteofrance_ciara2020_station_pdf_proof_v0 -v
+      - name: Confirm source SHA and verify official station PDFs without publishing originals
+        env:
+          DEPARTMENT: ${{ matrix.department }}
+        run: python -m research_runners.meteofrance_ciara2020_station_pdf_proof_v0 --department "$DEPARTMENT" --live

@@ -75,6 +75,25 @@ class FloodExposureSemanticTests(unittest.TestCase):
             with self.assertRaises(mod.SemanticError):
                 mod.aggregate_cells([cell])
 
+    def test_non_boolean_quality_flags_fail_closed(self):
+        for flag in ('nodata', 'permanent_water', 'spurious_depth'):
+            for value in ('false', 'true', '0', 0, 1, None, [], {}):
+                with self.subTest(flag=flag, value=value):
+                    cell = self.c('A', '10', '1', self.s('s', '1', '2', **{flag: value}))
+                    with self.assertRaisesRegex(mod.SemanticError, f'{flag} must be a boolean'):
+                        mod.aggregate_cells([cell])
+
+    def test_false_flags_do_not_suppress_wet_exposure(self):
+        result = mod.aggregate_cells([
+            self.c('A', '10', '1', self.s('wet', '1', '2', nodata=False,
+                                      permanent_water=False, spurious_depth=False))
+        ])
+        row = result['cells'][0]
+        self.assertEqual(row['depth_gt_1_le_3m'], '10')
+        self.assertEqual(row['nodata_unclassified'], '0')
+        self.assertEqual(row['permanent_water_context'], '0')
+        self.assertEqual(row['spurious_depth_context'], '0')
+
     def test_order_invariant_and_fixture_labelled(self):
         a = self.c("B", "20", "1", self.s("b2", "0.5", "4"), self.s("b1", "0.5", "0"))
         b = self.c("A", "10", "1", self.s("a1", "1", "11"))

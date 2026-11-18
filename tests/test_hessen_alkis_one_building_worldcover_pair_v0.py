@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import unittest
 
 from research_runners import hessen_alkis_one_building_worldcover_pair_v0 as pair
@@ -92,6 +93,34 @@ class PairSourceTests(unittest.TestCase):
         self.assertTrue(evidence["wfs_count_discrepancy_still_blocked"])
         self.assertEqual(evidence["source_wfs_reported_number_returned"],3)
         self.assertFalse(evidence["model_input_approved"])
+
+
+
+class HessenWfsTransportFramingTests(unittest.TestCase):
+    def test_original_wfs_transport_rejects_declared_size_mismatches(self):
+        # This check runs without spatial dependencies or provider networking.
+        raw=invented_small_building()
+
+        class Response(io.BytesIO):
+            status=200
+            def __init__(self, declared):
+                super().__init__(raw)
+                self.headers={"Content-Type":"application/gml+xml"}
+                if declared is not None:
+                    self.headers["Content-Length"]=str(declared)
+            def geturl(self):
+                return pair.wfs.URL
+
+        for declared in (len(raw)-1,len(raw)+1):
+            with self.subTest(declared=declared),self.assertRaisesRegex(
+                pair.PairBlocked,"Content-Length"
+            ):
+                pair._one_wfs_bytes(opener=lambda req,timeout:Response(declared))
+
+        complete=pair._one_wfs_bytes(opener=lambda req,timeout:Response(len(raw)))
+        self.assertEqual(complete,raw)
+        without_length=pair._one_wfs_bytes(opener=lambda req,timeout:Response(None))
+        self.assertEqual(without_length,raw)
 
 
 if __name__=="__main__":

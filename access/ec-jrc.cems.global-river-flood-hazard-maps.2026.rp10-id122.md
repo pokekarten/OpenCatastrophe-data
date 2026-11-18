@@ -88,11 +88,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Rate limit notes:** JRC exposes the fixed flood-hazard directories anonymously. This documented-only contract authorizes no network request, retry loop, directory crawl, tile-index traversal or batch acquisition. No repository-specific numeric request budget or separate automated-download entitlement for the JEODPP host was established. The current provider index reports the raw ID122 RP10 depth tile at about 15 MiB, the reclassified tile at about 2.2 MiB, the permanent-water tile at about 810 KiB and the spurious-depth tile at about 185 KiB; each fits the current 25 MiB per-sample ceiling individually.
 
-**Mutability notes:** Scientific identity is pinned to CEMS-GLOFAS Global river flood hazard maps dataset version 2.1.2, README update 2026-01-12, return period RP10, tile ID122 / N50_E10 and the exact four filenames. The v2.1.2 README itself records DOI/PID as NA, while the current JRC Data Catalogue cites the broader dataset as DOI 10.2905/JRC.VD32YWG / PID jrc-floods-floodmapgl_rp50y-tif; this contract preserves that distinction and does not invent a version-specific DOI. Any future acquisition must bind requested/final URL, retrieval UTC, byte count, SHA-256, GeoTIFF CRS/grid/nodata/dtype and companion-mask identities. Do not silently mix older v2.x tiles or substitute a later release.
+**Mutability notes:** Scientific identity is pinned to CEMS-GLOFAS Global river flood hazard maps dataset version 2.1.2, README update 2026-01-12, return period RP10, tile ID122 / N50_E10 and the exact four filenames. The v2.1.2 README itself records DOI/PID as NA, while the current JRC Data Catalogue cites the broader dataset as DOI 10.2905/JRC.VD32YWG / PID jrc-floods-floodmapgl_rp50y-tif; this contract preserves that distinction and does not invent a version-specific DOI. Any future acquisition must bind requested/final URL, retrieval UTC, byte count, SHA-256, GeoTIFF CRS/grid/nodata/dtype and companion-mask identities. Do not silently mix older v2.x tiles or substitute a later release. The current provider-hosted README (last-update field 2026-01-12; published directory listing modified 2026-10-21) declares ODbL 1.0 while the separately hosted 2026 copyright notice declares CC BY 4.0; resolving their applicability to exact April/2026 versioned original assets is a prerequisite for new data/sample storage or commercial CAT modelling.
 
 ## Rights and policy
 
-**Dataset rights status:** verified
+**Dataset rights status:** conflicting
 
 **Api terms status:** unknown
 
@@ -100,9 +100,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Commercial automation status:** unknown
 
-**Redistribution status:** allowed
+**Redistribution status:** unknown
 
-**Notes:** The v2.1.2 README describes the source as a free and open Copernicus product with no restrictions. The current CEMS-GLOFAS copyright notice states that European Union copyright and/or sui-generis rights on the dataset are licensed under CC BY 4.0, requiring appropriate credit and indication of changes. This verifies dataset reuse/redistribution rights for the provider assets under that notice. A separate automated-service/commercial policy or numeric request budget for the static JEODPP delivery host was not established, so commercial automation remains unknown and execution stays disabled. Any persisted sample still requires exact asset hashes, attribution and repository publication review.
+**Notes:** OFFICIAL TERMS CONFLICT, fail closed as of 2026-11-15: the v2.1.2 product README at https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/README.txt (A02) explicitly names Open Data Commons Open Database License v1.0 (ODbL 1.0); the current publisher JRC Data Catalogue also lists ODbL 1.0 as use conditions. In contrast, both the flood_hazard/copyright.txt and parent CEMS-GLOFAS/copyright.txt identify CC BY 4.0 for EU dataset/database rights. Those authoritative same-product notices are not reconciled to an exact asset, version or derived database scope. ODbL and CC BY 4.0 can carry materially different attribution/share-alike/database obligations, particularly for redistribution of a transformed commercial CAT dataset. Do not select whichever notice is more convenient or treat the earlier CC BY statement as overriding the product-specific ODbL; request publisher clarification and source-specific legal review. Dataset commercial rights, raw/derived redistribution, retention and share-alike obligations remain unresolved. Static documented-only route: no automated download, probe, persisted original bytes or model admission; independent API/service terms and request cadence remain unknown.
 
 ## Probe contract
 
@@ -118,7 +118,7 @@ _Empty array._
 
 **Implementation decision:** document_only
 
-**Reviewed at:** 2026-08-12
+**Reviewed at:** 2026-11-15
 
 ## Evidence urls
 
@@ -130,5 +130,6 @@ _Empty array._
 - <https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP10/>
 - <https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/Permanent_WaterBodies/>
 - <https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/Spurious_Depths/>
+- <https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/copyright.txt>
 
-**Notes:** Bounded EU-relevant global-flood access documentation for Issue \#265 / \#173 and future pilot \#270. The exact ID122/N50_E10 RP10 raw/reclass/permanent-water/spurious-depth quartet is intended to exercise hazard-intensity plus quality-mask semantics before any broader tile adapter exists. No provider request, GeoTIFF byte, parser, spatial transform, workflow, admission promotion or publication decision is introduced.
+**Notes:** Current T0 review 2026-11-15 found directly conflicting official source-level licence notices: v2.1.2 README and JRC catalogue say ODbL 1.0, while same service copyright files say CC BY 4.0. Previously recorded dataset-rights verification and permitted redistribution are withdrawn pending authoritative reconciliation and legal review. The exact ID122/N50_E10 RP10 raw/reclass/permanent-water/spurious-depth quartet remains an identity-only prospective hazard/QA pilot. No source-byte request, GeoTIFF, adapter execution, Neon import or scientific admission in this review. Do not assume any specific output database/share-alike treatment without legal resolution.

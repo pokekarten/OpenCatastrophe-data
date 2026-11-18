@@ -79,6 +79,12 @@ class GDWOriginalSpatialAuditTests(unittest.TestCase):
         self.assertEqual(r["paired_gdw_ids"], 1)
         self.assertEqual(r["paired_barrier_within_polygon_interior"], 1)
         self.assertEqual(r["paired_barrier_outside_valid_polygon"], 0)
+        self.assertEqual(r["native_reservoir_geometry_overlay_candidate_count"], 1)
+        self.assertEqual(r["native_reservoir_geometry_overlay_excluded_count"], 0)
+        self.assertTrue(r["native_reservoir_geometry_overlay_mask_is_scoped_to_verified_original_archive"])
+        self.assertTrue(r["native_reservoir_geometry_overlay_decision_is_geometry_only"])
+        self.assertFalse(r["native_reservoir_geometry_overlay_is_model_admitted"])
+        self.assertFalse(r["source_reservoir_ordinal_ids_or_coordinates_emitted"])
         self.assertTrue(r["all_assessable_id_pairs_geometrically_covered"])
         self.assertEqual(r["invalid_geometry_reason_family_counts"], {})
         self.assertTrue(r["source_original_structure_verified"])
@@ -90,6 +96,8 @@ class GDWOriginalSpatialAuditTests(unittest.TestCase):
     def test_outside_polygon_diagnosed_not_approved(self):
         r = self.inspect(fixture(point=(13.4, 52.2)))
         self.assertEqual(r["paired_barrier_outside_valid_polygon"], 1)
+        self.assertEqual(r["native_reservoir_geometry_overlay_candidate_count"], 0)
+        self.assertEqual(r["native_reservoir_geometry_overlay_excluded_count"], 1)
         self.assertFalse(r["all_assessable_id_pairs_geometrically_covered"])
         self.assertFalse(r["CAT_model_source_admitted"])
 
@@ -97,6 +105,8 @@ class GDWOriginalSpatialAuditTests(unittest.TestCase):
         r = self.inspect(fixture(point=(13.0, 52.05)))
         self.assertEqual(r["paired_barrier_on_polygon_boundary"], 1)
         self.assertEqual(r["paired_barrier_within_polygon_interior"], 0)
+        self.assertEqual(r["native_reservoir_geometry_overlay_candidate_count"], 0)
+        self.assertEqual(r["native_reservoir_geometry_overlay_excluded_count"], 1)
 
     def test_invalid_topology_is_counted_without_auto_repair(self):
         bowtie = ((13.0, 52.0), (13.1, 52.1), (13.0, 52.1),
@@ -106,9 +116,46 @@ class GDWOriginalSpatialAuditTests(unittest.TestCase):
                          r["unparseable_or_error_reservoir_polygons"], 1)
         self.assertEqual(r["unassessable_pair_invalid_or_unparseable_polygon"], 1)
         self.assertFalse(r["all_original_geometries_topologically_valid"])
+        self.assertEqual(r["native_reservoir_geometry_overlay_candidate_count"], 0)
+        self.assertEqual(r["native_reservoir_geometry_overlay_excluded_count"], 1)
         self.assertEqual(sum(r["invalid_geometry_reason_family_counts"].values()), 1)
         self.assertNotIn("[", str(r["invalid_geometry_reason_family_counts"]))
         self.assertFalse(r["polygon_repairs_or_snapping_performed"])
+
+    def test_native_overlay_gate_excludes_bowtie_boundary_outside_and_wrap(self):
+        from shapely.geometry import Point, Polygon
+        gate = subject.is_native_reservoir_overlay_geometry_candidate
+        square = Polygon([(13, 52), (14, 52), (14, 53), (13, 53), (13, 52)])
+        self.assertTrue(gate(square, Point(13.5, 52.5)))
+        self.assertFalse(gate(square, Point(13, 52.5)))
+        self.assertFalse(gate(square, Point(14.1, 52.5)))
+        self.assertFalse(gate(square, Point(-181, 52.5)))
+        bowtie = Polygon([(0, 0), (2, 2), (0, 2), (2, 0), (0, 0)])
+        self.assertFalse(gate(bowtie, Point(1, 1)))
+        self.assertFalse(gate(Polygon(), Point(1, 1)))
+        self.assertFalse(gate(Point(13, 52), Point(13, 52)))
+        self.assertFalse(gate(None, Point(13, 52)))
+        self.assertFalse(gate(square, None))
+        wrap = Polygon([(-179, 0), (179, 0), (179, 2),
+                        (-179, 2), (-179, 0)])
+        self.assertTrue(wrap.is_valid)
+        self.assertFalse(gate(wrap, Point(0, 1)))
+
+    def test_valid_hole_and_multipolygon_require_strict_paired_point(self):
+        from shapely.geometry import Point, Polygon, MultiPolygon
+        gate = subject.is_native_reservoir_overlay_geometry_candidate
+        with_hole = Polygon(
+            [(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)],
+            holes=[[(4, 4), (6, 4), (6, 6), (4, 6), (4, 4)]],
+        )
+        self.assertTrue(with_hole.is_valid)
+        self.assertTrue(gate(with_hole, Point(2, 2)))
+        self.assertFalse(gate(with_hole, Point(5, 5)))
+        self.assertFalse(gate(with_hole, Point(4, 5)))
+        distant = Polygon([(20, 0), (21, 0), (21, 1), (20, 1), (20, 0)])
+        multi = MultiPolygon([with_hole, distant])
+        self.assertTrue(gate(multi, Point(20.5, 0.5)))
+        self.assertFalse(gate(multi, Point(19, 0.5)))
 
     def test_bad_archive_preflight_blocks_before_geom(self):
         for case in ("open_ring", "bad_coordinate", "wrong_gdw_id",

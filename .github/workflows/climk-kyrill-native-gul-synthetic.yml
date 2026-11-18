@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Synthetic CLIMK Kyrill native Oasis GUL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/climk-kyrill-native-gul-synthetic.yml"
+      - "research_runners/climk_kyrill_native_gul_synthetic_v0.py"
+      - "tests/test_climk_kyrill_native_gul_synthetic_v0.py"
+      - "docs/research/climk-kyrill-native-gul-synthetic-v0.md"
+  pull_request:
+    paths:
+      - ".github/workflows/climk-kyrill-native-gul-synthetic.yml"
+      - "research_runners/climk_kyrill_native_gul_synthetic_v0.py"
+      - "tests/test_climk_kyrill_native_gul_synthetic_v0.py"
+      - "docs/research/climk-kyrill-native-gul-synthetic-v0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: climk-kyrill-native-gul-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-gul:
+    name: One-event synthetic native GUL (OasisLMF 2.5.8)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout research repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Verify runner contract
+        run: python -m unittest tests.test_climk_kyrill_native_gul_synthetic_v0 -v
+
+      - name: Install native Oasis dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends -y libspatialindex-dev
+          python -m pip install --disable-pip-version-check --no-input 'oasislmf[extra]==2.5.8' 'netCDF4==1.7.3'
+          python -m pip check
+
+      - name: Clone and pin public PiWind lookup scaffold
+        run: |
+          git clone --filter=blob:none https://github.com/OasisLMF/OasisPiWind.git "$RUNNER_TEMP/OasisPiWind"
+          git -C "$RUNNER_TEMP/OasisPiWind" checkout --detach 94820c59f169b222d4c1a72256ff0a8f86a9e5bf
+          test "$(git -C "$RUNNER_TEMP/OasisPiWind" rev-parse HEAD)" = "94820c59f169b222d4c1a72256ff0a8f86a9e5bf"
+
+      - name: Run original-source conditional GUL twice
+        run: |
+          python research_runners/climk_kyrill_native_gul_synthetic_v0.py \
+            --piwind-dir "$RUNNER_TEMP/OasisPiWind" \
+            --work-dir "$RUNNER_TEMP/climk-kyrill-gul" \
+            --receipt "$RUNNER_TEMP/climk-kyrill-gul-receipt.json"
+
+      - name: Publish bounded scenario receipt
+        if: success()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          receipt = json.loads((Path(os.environ["RUNNER_TEMP"]) / "climk-kyrill-gul-receipt.json").read_text())
+          lines = [
+              "## Original CLIMK Kyrill → synthetic native Oasis GUL",
+              "",
+              f"- Result: `{receipt['status']}`",
+              f"- Original source SHA-256: `{receipt['source_sha256']}`",
+              f"- Scenario GUL: EUR {receipt['runs'][0]['gul_eur']:,.2f}",
+              f"- Repeat output SHA-256: `{receipt['runs'][0]['output_sha256']}`",
+              f"- Fictional exposure: {receipt['synthetic_asset_count']} locations; EUR {receipt['synthetic_tiv_eur']:,.0f} TIV",
+              "- Conditional single-event GUL only; authored uncalibrated vulnerability; no annual AAL/OEP/AEP, IL/RI, insurer exposure or policy terms.",
+              "",
+          ]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write("\n".join(lines))
+          PY
