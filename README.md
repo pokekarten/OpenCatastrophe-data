@@ -122,7 +122,7 @@ Development is intended to happen through the public repository. Current public 
 For contributors and coding agents:
 
 1. start with `AGENTS.md` and `ARCHITECTURE.md`;
-2. use the most specific Issue Form when Issues are enabled; otherwise use a draft PR as the visible implementation claim once a non-trivial change has enough public evidence to review;
+2. check current `main` and overlapping PRs; use an Issue or draft PR when coordination, scientific/source review or an unfinished high-risk change needs a durable claim, not as a prerequisite for a bounded routine fix;
 3. keep data-rights review and scientific validation separate;
 4. treat declared canonical machine contracts as the only editable authority for facts repeated in generated views;
 5. use `schemas/agent-task-v1.schema.json` when a formal machine-readable task is useful; use `schemas/run-evidence-v2.schema.json` for new scientific/model run evidence, while `schemas/run-evidence-v1.schema.json` remains a compatibility profile for existing/simple receipts;
