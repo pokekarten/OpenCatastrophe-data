@@ -110,6 +110,30 @@ def _validate_support(support: HazardSupport) -> tuple[Decimal, str]:
     return fraction, classify_depth(support.depth_m)
 
 
+
+def validate_support_metadata(
+    *,
+    support_id: str,
+    depth_m: Decimal | str | int | float | None,
+    nodata: bool = False,
+    permanent_water: bool = False,
+    spurious_depth: bool = False,
+) -> None:
+    """Validate A0 quality and depth semantics before any spatial clipping.
+
+    Spatial allocation determines the fraction later. A nominal unit fraction
+    lets us reuse the exact A0 semantics without inventing an observed area.
+    """
+    _validate_support(
+        HazardSupport(
+            support_id, Decimal("1"), depth_m,
+            nodata=nodata,
+            permanent_water=permanent_water,
+            spurious_depth=spurious_depth,
+        )
+    )
+
+
 def aggregate_cells(cells: Iterable[CensusCell]) -> dict[str, object]:
     rows: list[dict[str, object]] = []
     seen_cells: set[str] = set()
