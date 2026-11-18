@@ -94,6 +94,41 @@ class FloodExposureSemanticTests(unittest.TestCase):
         self.assertEqual(row['permanent_water_context'], '0')
         self.assertEqual(row['spurious_depth_context'], '0')
 
+    def test_tolerated_overshoot_does_not_create_population(self):
+        cell = self.c("A", "1", "0.5", self.s("wet", "0.5000000005", "2"))
+        row = mod.aggregate_cells([cell])["cells"][0]
+        self.assertEqual(row["depth_gt_1_le_3m"], "0.5")
+        self.assertEqual(row["excluded_by_aoi"], "0.5")
+        fields = (
+            "excluded_by_aoi", "dry_unexposed", "depth_gt_0_le_1m",
+            "depth_gt_1_le_3m", "depth_gt_3_le_10m", "depth_gt_10m",
+            "permanent_water_context", "spurious_depth_context",
+            "nodata_unclassified", "hazard_support_missing",
+        )
+        self.assertEqual(sum(Decimal(row[key]) for key in fields), Decimal("1"))
+
+    def test_tolerated_overshoot_is_order_invariant_across_depth_buckets(self):
+        supports = (self.s("a", "0.5000000004", "0.5"), self.s("b", "0.5", "2"))
+        first = mod.aggregate_cells([self.c("A", "1", "1", *supports)])
+        second = mod.aggregate_cells([self.c("A", "1", "1", *reversed(supports))])
+        self.assertEqual(mod.canonical_json(first), mod.canonical_json(second))
+        row = first["cells"][0]
+        self.assertEqual(row["depth_gt_0_le_1m"], "0.5")
+        self.assertEqual(row["depth_gt_1_le_3m"], "0.5")
+        self.assertEqual(row["hazard_support_missing"], "0")
+
+    def test_tolerated_overshoot_to_zero_aoi_does_not_allocate_exposure(self):
+        result = mod.aggregate_cells([
+            self.c("A", "1", "0", self.s("noise", "0.0000000005", "2"))
+        ])
+        row = result["cells"][0]
+        self.assertEqual(row["depth_gt_1_le_3m"], "0")
+        self.assertEqual(row["excluded_by_aoi"], "1")
+        with self.assertRaisesRegex(mod.SemanticError, "overlaps/exceeds"):
+            mod.aggregate_cells([
+                self.c("A", "1", "0.5", self.s("wet", "0.5000000011", "2"))
+            ])
+
     def test_order_invariant_and_fixture_labelled(self):
         a = self.c("B", "20", "1", self.s("b2", "0.5", "4"), self.s("b1", "0.5", "0"))
         b = self.c("A", "10", "1", self.s("a1", "1", "11"))

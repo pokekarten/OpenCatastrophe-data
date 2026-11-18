@@ -180,9 +180,26 @@ def aggregate_cells(cells: Iterable[CensusCell]) -> dict[str, object]:
                 )
             bucket_fractions[bucket] += fraction
 
+        # Small projection/overlay roundoff may put supported area above AOI
+        # by at most TOLERANCE. Merely zeroing the negative *missing* fraction
+        # silently creates exposed population (wet + excluded > source).
+        # Reconcile that tiny positive excess against actual support buckets in
+        # a canonical order, independent of the input support ordering.
+        excess = support_fraction - aoi_fraction
+        if excess > 0:
+            if excess > TOLERANCE:
+                raise SemanticError(f"hazard support overlaps/exceeds AOI in cell {cell.cell_id}")
+            for name in sorted(bucket_fractions, key=lambda key: (-bucket_fractions[key], key)):
+                if excess == 0:
+                    break
+                adjustment = min(bucket_fractions[name], excess)
+                bucket_fractions[name] -= adjustment
+                excess -= adjustment
+            if excess != 0:
+                raise SemanticError(f"cannot reconcile hazard support in cell {cell.cell_id}")
+            support_fraction = aoi_fraction
+
         uncovered_aoi_fraction = aoi_fraction - support_fraction
-        if uncovered_aoi_fraction < 0 and abs(uncovered_aoi_fraction) <= TOLERANCE:
-            uncovered_aoi_fraction = Decimal("0")
         if uncovered_aoi_fraction < 0:
             raise SemanticError(f"hazard support overlaps/exceeds AOI in cell {cell.cell_id}")
         bucket_fractions["hazard_support_missing"] += uncovered_aoi_fraction
