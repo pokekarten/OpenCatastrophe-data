@@ -231,7 +231,7 @@ class PublicSurfaceTests(unittest.TestCase):
         parsed = yaml.load(workflow, Loader=StrictWorkflowLoader)
         jobs = parsed["jobs"]
         expected = {
-            "check", "glofas-acquisition", "luxembourg-lidar-inset-spatial",
+            "check", "eu-flood-spatial", "glofas-acquisition", "luxembourg-lidar-inset-spatial",
             "cems-geotiff-profile", "reuse", "dependency-review",
         }
         self.assertEqual(set(jobs["required"]["needs"]), expected)
@@ -242,6 +242,12 @@ class PublicSurfaceTests(unittest.TestCase):
             required_step["env"]["LUX_LIDAR_INSET_RESULT"],
             "${{ needs.luxembourg-lidar-inset-spatial.result }}",
         )
+        self.assertEqual(
+            required_step["env"]["EU_FLOOD_SPATIAL_RESULT"],
+            "${{ needs.eu-flood-spatial.result }}",
+        )
+        self.assertIn('test "$EU_FLOOD_SPATIAL_RESULT" = "success"', required_step["run"])
+        self.assertNotIn("eu-flood-spatial", jobs["check"].get("needs", []))
         self.assertIn('test "$LUX_LIDAR_INSET_RESULT" = "success"', required_step["run"])
         self.assertIn("GLOFAS_ACQUISITION_RESULT", workflow)
         self.assertIn("CEMS_GEOTIFF_PROFILE_RESULT", workflow)
