@@ -49,6 +49,55 @@ class EuFloodSpatialTransformTests(unittest.TestCase):
         self.assertAlmostEqual(projected_xy[0], expected[0], places=6)
         self.assertAlmostEqual(projected_xy[1], expected[1], places=6)
 
+    def test_outside_aoi_support_still_rejects_invalid_quality_and_depth(self) -> None:
+        near = self.source_box(11.50, 48.10, 11.51, 48.11)
+        far = self.source_box(12.50, 48.10, 12.51, 48.11)
+        census = self.target(near)
+        cases = (
+            mod.SpatialHazardSupport("remote", far, depth_m="2", nodata="false"),
+            mod.SpatialHazardSupport("remote", far, depth_m=None),
+            mod.SpatialHazardSupport("remote", far, depth_m="NaN"),
+            mod.SpatialHazardSupport("remote", far, depth_m="-1"),
+            mod.SpatialHazardSupport("remote", far, depth_m="2", nodata=True,
+                                     permanent_water=True),
+        )
+        for support in cases:
+            with self.subTest(support=support), self.assertRaisesRegex(
+                mod.SpatialTransformError, "invalid quality/depth metadata"
+            ):
+                mod.build_spatial_census_cell(
+                    cell_id="A", population="10",
+                    census_geometry_epsg3035=census,
+                    aoi_geometry_epsg3035=census,
+                    supports=(support,),
+                )
+
+    def test_no_clipped_aoi_does_not_bypass_support_metadata_checks(self) -> None:
+        near = self.source_box(11.50, 48.10, 11.51, 48.11)
+        far = self.source_box(12.50, 48.10, 12.51, 48.11)
+        with self.assertRaisesRegex(mod.SpatialTransformError, "invalid quality/depth metadata"):
+            mod.build_spatial_census_cell(
+                cell_id="A", population="10",
+                census_geometry_epsg3035=self.target(near),
+                aoi_geometry_epsg3035=self.target(far),
+                supports=(mod.SpatialHazardSupport("remote", far, depth_m="NaN"),),
+            )
+
+    def test_valid_outside_aoi_support_remains_unallocated(self) -> None:
+        near = self.source_box(11.50, 48.10, 11.51, 48.11)
+        far = self.source_box(12.50, 48.10, 12.51, 48.11)
+        census = self.target(near)
+        cell = mod.build_spatial_census_cell(
+            cell_id="A", population="10",
+            census_geometry_epsg3035=census,
+            aoi_geometry_epsg3035=census,
+            supports=(mod.SpatialHazardSupport("remote", far, depth_m="2"),),
+        )
+        self.assertEqual(cell.supports, ())
+        row = aggregate_cells([cell])["cells"][0]
+        self.assertEqual(row["hazard_support_missing"], "10")
+        self.assertEqual(row["depth_gt_1_le_3m"], "0")
+
     def test_full_overlap_reuses_a0_accounting(self) -> None:
         source = self.source_box(11.50, 48.10, 11.51, 48.11)
         census = self.target(source)
