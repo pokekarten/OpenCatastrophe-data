@@ -16,7 +16,9 @@ from pyproj import Transformer
 from pyproj.exceptions import ProjError
 from shapely.geometry.base import BaseGeometry
 
-from scripts.eu_flood_exposure_semantic import CensusCell, HazardSupport
+from scripts.eu_flood_exposure_semantic import (
+    CensusCell, HazardSupport, SemanticError, validate_support_metadata,
+)
 
 SOURCE_CRS = "EPSG:4326"
 TARGET_CRS = "EPSG:3035"
@@ -216,6 +218,21 @@ def build_spatial_census_cell(
         if support.support_id in seen_support_ids:
             raise SpatialTransformError(f"duplicate spatial support id: {support.support_id}")
         seen_support_ids.add(support.support_id)
+
+        # A support outside this AOI must not evade the same scientific
+        # quality/depth contract enforced for intersecting A0 supports.
+        try:
+            validate_support_metadata(
+                support_id=support.support_id,
+                depth_m=support.depth_m,
+                nodata=support.nodata,
+                permanent_water=support.permanent_water,
+                spurious_depth=support.spurious_depth,
+            )
+        except SemanticError as exc:
+            raise SpatialTransformError(
+                f"support {support.support_id} has invalid quality/depth metadata: {exc}"
+            ) from exc
 
         projected = transform_wgs84_geometry(support.geometry_wgs84)
         if clipped_aoi_area == 0:
