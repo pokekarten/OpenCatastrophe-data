@@ -526,6 +526,37 @@ the original-product CAT-exposure gate **NO-GO**; seek an authoritative
 independent footprint representation/lineage rather than relabel the
 polygon or silently construct building parts.
 
+## Closed boundary touch versus positive clipped footprint area — 2026-11-19
+
+The existing `footPrint`-only strict preflight checks *topological*
+intersection with the 600 m × 600 m research window. A building polygon
+can touch that window only at a corner or along an edge: topologically
+the polygons intersect, but there is **zero area inside the window**.
+Counting that as positive-area exposure would be a scientific error.
+
+The new receipt field `positive_area_overlap_with_fixed_window` is
+computed separately by deterministic four-edge polygon/rectangle clipping
+and the existing compensated EPSG:3765 projected shoelace area. It
+reports `true` only when the clipped area exceeds the **existing**
+0.0005 m² numerical tolerance; smaller slivers cannot be certified.
+Neither clipped polygons nor coordinates nor measured area are returned.
+Edge/corner touches remain topological intersections but yield a false
+positive-area flag. Synthetic regression cases cover a crossing strip,
+full-window containment, a concave footprint and reversed winding.
+
+This boolean exists only on the **strict `inspect_gml()` footPrint
+path**, after complete original-format, reference-semantics and geometry
+checks. The observed Croatian WFS `combined` value is **still
+rejected** there; the separate non-admitting `inspect_semantic_label()`
+makes no area claim. An area overlap alone does not establish building
+identity, surveyed ground footprint, actual insured exposure or rights.
+The scientific/source NO-GO remains unchanged.
+
+The clipping predicate was challenged offline against nine targeted
+synthetic cases and **1,412 independent Shapely-valid synthetic random
+polygons**; area-overlap decisions matched the Shapely reference.
+These are *offline algorithm checks*, not original-source evidence.
+
 ## Next causal evidence
 
 1. Re-run the explicit `--live` command in a network-capable, provider-permitted environment; check original byte count, SHA-256 and the precise GML geometry type. If the original uses GML MultiSurface/Surface rather than Polygon, **retain failure** and add a separately tested exact shape profile; do not weaken the classifier generically.
