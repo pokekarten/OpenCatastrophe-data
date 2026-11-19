@@ -405,6 +405,69 @@ ID never licenses, verifies or admits the separate ATOM product, its
 archive, a building footprint, or an insured exposure. No canonical
 landscape or admitted source manifest was changed.
 
+## Reproducible bounded intermediary HTTP receipts — 2026-11-19
+
+An independent follow-up using a **zero-retention external HTTP retrieval
+intermediary** successfully acquired one response from the existing fixed
+**cadastral WFS** `GetFeature` URL (`bu:Building`, WFS 2.0,
+`COUNT=1`, `STARTINDEX=0`, `SRSNAME=EPSG:3765`, fixed Zagreb
+600 m × 600 m window). This is an independently repeatable intermediary
+response, **not** a direct trusted-`main` GitHub runner `--live`
+receipt. Both current HTTP retrievals in this research run had the same
+3,489-byte response length and showed the same bounded GML structure.
+No full provider body, original feature ID, building geometry, coordinates,
+addresses or identifiers were committed.
+
+| Receipt | Observed bounded evidence |
+| --- | --- |
+| Provider request | `https://api.uredjenazemlja.hr/services/inspire/bu/wfs` with exactly the pinned `fixed_url()` WFS parameters |
+| Response media type | `application/gml+xml; version=3.2` |
+| XML response bytes | **3,489** |
+| SHA-256 of intermediary-returned WFS body | `ad301a5f6e9374d16a6b62f64578a34c5d404620a092b4a33610916d23d5fd07` |
+| WFS records | `numberReturned=1`; one `wfs:member`, one inline `gml:Polygon` |
+| INSPIRE nested profile | `bu-core2d:geometry2D / bu-base:BuildingGeometry2D` |
+| Named base properties | `geometry`, `referenceGeometry`, `horizontalGeometryReference`, **`horizontalGeometryEstimatedAccuracy`** |
+| `referenceGeometry` | `true` |
+| `horizontalGeometryReference` | **`combined`**, not `footPrint` |
+| GML polygon-level CRS declaration | `http://www.opengis.net/gml/srs/epsg.xml#3765` |
+
+The additional `horizontalGeometryEstimatedAccuracy` name is already
+covered by the *metadata-only* `inspect_semantic_label()` allowlist;
+it is **not** permission to interpret or trust its numerical value. The
+strict `inspect_gml()` source-science gate **must still reject**
+`combined`: it cannot be silently relabelled as an insurer-ready
+ground footprint. The presence of one polygon and an official
+EPSG:3765 declaration is not independently verified ground-footprint
+semantics, positional accuracy, completeness, source rights or CAT
+admission.
+
+The separate official **topographic ATOM metadata** feed was re-fetched
+without downloading its advertised bulk ZIP: its response remained
+**1,958 bytes**, SHA-256
+`ef9b09a02579fd101b8015466f069482ff24ea7781850773a5795b324aabcd8f`,
+matching the pinned 2026-11-15 feed metadata identity. The ATOM
+IP-rights access warning remains separate from the cadastral WFS.
+
+**Official usage evidence (re-checked 2026-11-19):** the
+[DGU open-data page](https://dgu.gov.hr/proizvodi-i-usluge/otvoreni-podaci/6596)
+lists the cadastral Buildings WFS and topographic ATOM as separate
+high-value network products and describes covered data reuse under the
+Croatian Open Licence. The [NIPP cadastral WFS service record
+1545](https://registri.nipp.hr/izvori/1711) explicitly links **that
+cadastral service** to an open licence. This strengthens the product-
+specific legal provenance for the WFS but does **not** prove provider
+API rate/automation permissions, justify joining the restricted ATOM
+archive, certify original footprints, establish insurance use fitness
+or authorize bulk source-byte redistribution by inference.
+
+**Conservative decision:** retain Draft / science-source NO-GO;
+`model_input_admitted=false`. The exact WFS body was observed through an
+external intermediary rather than a trusted main-runner receipt, and
+its sole sampled geometry is explicitly **`combined`**, outside the
+reviewed `footPrint` acceptance profile. Any expanded science
+interpretation needs an independent validated physical ground-footprint
+reference and legal/API use review.
+
 ## Next causal evidence
 
 1. Re-run the explicit `--live` command in a network-capable, provider-permitted environment; check original byte count, SHA-256 and the precise GML geometry type. If the original uses GML MultiSurface/Surface rather than Polygon, **retain failure** and add a separately tested exact shape profile; do not weaken the classifier generically.
