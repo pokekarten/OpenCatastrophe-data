@@ -66,15 +66,36 @@ def _reject_number(value: str) -> None:
     raise WfsSampleError("non-finite numeric value is invalid")
 
 
-def _positions(coordinates: object):
-    if isinstance(coordinates, list):
-        if len(coordinates) >= 2 and all(isinstance(v, (float, int)) and
-                                         not isinstance(v, bool) and math.isfinite(v)
-                                         for v in coordinates[:2]):
-            yield float(coordinates[0]), float(coordinates[1])
-        else:
-            for child in coordinates:
-                yield from _positions(child)
+def _position(value: object) -> tuple[float, float]:
+    """Reject incomplete, nonnumeric and hidden-extra-coordinate positions."""
+    if (not isinstance(value, list) or len(value) not in (2, 3)
+            or any(type(v) not in (float, int) or not math.isfinite(v)
+                   for v in value)):
+        raise WfsSampleError("invalid GeoJSON position")
+    return float(value[0]), float(value[1])
+
+
+def _positions(coordinates: object, geometry_type: str):
+    """Fail closed on malformed Point/MultiPolygon nesting and open rings.
+
+    Recursively picking only valid numeric pairs would accept a partially
+    corrupted official polygon and falsely report successful source metadata.
+    """
+    if geometry_type == "Point":
+        yield _position(coordinates)
+        return
+    if geometry_type != "MultiPolygon" or not isinstance(coordinates, list) or not coordinates:
+        raise WfsSampleError("invalid GeoJSON geometry structure")
+    for polygon in coordinates:
+        if not isinstance(polygon, list) or not polygon:
+            raise WfsSampleError("invalid GeoJSON polygon")
+        for ring in polygon:
+            if not isinstance(ring, list) or len(ring) < 4:
+                raise WfsSampleError("invalid GeoJSON polygon ring")
+            vertices = [_position(position) for position in ring]
+            if vertices[0] != vertices[-1]:
+                raise WfsSampleError("unclosed GeoJSON polygon ring")
+            yield from vertices
 
 
 def inspect_geojson(payload: bytes, source: str) -> dict[str, object]:
@@ -103,7 +124,7 @@ def inspect_geojson(payload: bytes, source: str) -> dict[str, object]:
     properties = feature.get("properties")
     if not isinstance(properties, dict) or not properties:
         raise WfsSampleError("missing property schema")
-    positions = tuple(_positions(geom.get("coordinates")))
+    positions = tuple(_positions(geom.get("coordinates"), geom["type"]))
     if not positions or len(positions) > 60_000:
         raise WfsSampleError("missing or excessive coordinates")
     crs = doc.get("crs")
