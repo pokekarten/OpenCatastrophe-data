@@ -1,0 +1,102 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DWD Kyrill 2007 Original Munich Two-Station Gust Holdout
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dwd-kyrill-2007-original-munich-holdout.yml'
+      - 'scripts/dwd_kyrill_2007_munich_original_v0.py'
+      - 'scripts/dwd_kyrill_2007_berlin_original_v0.py'
+      - 'tests/test_dwd_kyrill_2007_munich_original_v0.py'
+      - 'docs/research/evidence/dwd-kyrill-2007-munich-two-stations-original-fx10-20261106.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dwd-kyrill-munich-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  historical-munich-two-station-gusts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact PR source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Synthetic-only source audit and negative checks
+        run: python -B -m unittest tests.test_dwd_kyrill_2007_munich_original_v0 -v
+      - name: Download and inspect two ORIGINAL DWD Munich 2000-2009 FX_10 ZIPs
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          airport="$RUNNER_TEMP/10minutenwerte_extrema_wind_01262_20000101_20091231_hist.zip"
+          city="$RUNNER_TEMP/10minutenwerte_extrema_wind_03379_20000101_20091231_hist.zip"
+          receipt="$RUNNER_TEMP/dwd-munich-jan-2007-original-preflight.json"
+          trap 'rm -f "$airport" "$city" "$receipt"' EXIT
+          base='https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical'
+          for pair in "01262:$airport" "03379:$city"; do
+            station="${pair%%:*}"
+            dest="${pair#*:}"
+            curl --fail --silent --show-error --noproxy '*' \
+              --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+              --max-time 150 --retry 0 --max-filesize 4000000 \
+              --output "$dest" \
+              "$base/10minutenwerte_extrema_wind_${station}_20000101_20091231_hist.zip"
+          done
+          python -B -m scripts.dwd_kyrill_2007_munich_original_v0 \
+            --airport "$airport" --city "$city" --output "$receipt"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])/'dwd-munich-jan-2007-original-preflight.json'
+          r=json.loads(p.read_text(encoding='utf-8'))
+          assert r['contract']=='OC_DWD_KYRILL_2007_TWO_MUNICH_STATION_GUST_HOLDOUT_V0'
+          assert [s['dwd_station_id'] for s in r['stations']]==['01262','03379']
+          assert all(len(s['four_day_window_utc'])==4 for s in r['stations'])
+          assert all(s['full_product_rows']>0 and len(s['original_archive_sha256'])==64 for s in r['stations'])
+          assert all(sum(d['observed_10minute_records'] for d in s['four_day_window_utc'])>0 for s in r['stations'])
+          assert not r['all_original_sources_independently_prior_pinned']
+          assert not r['same_measurement_height_verified']
+          assert not r['same_historical_storm_attribution_proven']
+          assert r['annual_AAL'] is None and r['annual_AEP'] is None and r['annual_OEP'] is None
+          # Reproduce both original archives against the immutable research
+          # source observation receipt. No provider rows or ZIP bytes are committed.
+          evidence_path=Path('docs/research/evidence/dwd-kyrill-2007-munich-two-stations-original-fx10-20261106.md')
+          proof=evidence_path.read_text(encoding='utf-8')
+          nl=chr(10)
+          assert proof.count('```json'+nl)==1
+          assert proof.count(nl+'```'+nl)==1
+          pinned=json.loads(proof.split('```json'+nl,1)[1].split(nl+'```'+nl,1)[0])
+          assert r==pinned, 'DWD original 2007 station FX10 source/QN/day aggregates differ from pinned receipt'
+          expected={
+              '01262':('ca273211d92b48449c1e92e140a3b6c5b4c99999307aa1ef2fad4fcb6c486fca',2293243,523154,'33.0',{'1':144}),
+              '03379':('4a5abf0fdfbf073cee91179f018863e871a496e23199d8c9476d96ff934f0ff7',2643542,525519,'29.0',{'3':144}),
+          }
+          for station in r['stations']:
+              ident=station['dwd_station_id']
+              digest,size,rows,gust,qn=expected[ident]
+              assert station['original_archive_sha256']==digest
+              assert station['original_archive_bytes']==size
+              assert station['full_product_rows']==rows
+              assert station['pre_2000_local_clock_prelude_excluded']==6
+              day=station['four_day_window_utc'][1]
+              assert day['day_utc']=='2007-01-18'
+              assert day['max_3second_gust_mps_all_quality']==gust
+              assert day['quality_flag_record_counts']==qn
+              assert all(d['observed_10minute_records']==144 and
+                         d['missing_value_records']==0 and
+                         d['unobserved_10minute_slots']==0
+                         for d in station['four_day_window_utc'])
+          print('ORIGINAL DWD MUNICH STATION RESEARCH AGGREGATES ONLY (NOT CALIBRATED):')
+          print(json.dumps(r,indent=2,sort_keys=True,allow_nan=False))
+          PY

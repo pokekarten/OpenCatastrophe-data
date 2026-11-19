@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: CLIMK Kyrill Two Native ERA5 Cells Synthetic Spatial Research
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/climk-kyrill-two-native-cell-research.yml'
+      - 'scripts/climk_kyrill_two_cell_spatial_preview_v0.py'
+      - 'tests/test_climk_kyrill_two_cell_spatial_preview_v0.py'
+      - 'scripts/climk_era5_synthetic_native_sample_v0.py'
+      - 'scripts/climk_era5_synthetic_damage_preview_v0.py'
+      - 'scripts/inspect_climk_winds_era5_v0.py'
+      - 'requirements-glofas-acquisition.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: climk-two-cell-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-spatial-conditional-hazard:
+    name: Original SHA-pinned Kyrill two native cells and fictional building losses
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout PR exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Install existing NetCDF dependency
+        run: |
+          python -m pip install --no-input --disable-pip-version-check -r requirements-glofas-acquisition.txt
+          python -m pip check
+      - name: Verify offline source identities and failure modes
+        run: |
+          python -m unittest tests.test_climk_kyrill_two_cell_spatial_preview_v0 -v
+      - name: Re-read original Zenodo 6.79MB ERA5 storm and compare different grid cells
+        run: |
+          python scripts/climk_kyrill_two_cell_spatial_preview_v0.py --out "$RUNNER_TEMP/two-cell-source-conditional-preview.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ['RUNNER_TEMP']) / 'two-cell-source-conditional-preview.json'
+          evidence=json.loads(path.read_text(encoding='utf-8'))
+          assert evidence['contract'] == 'OC_CLIMK_KYRILL_TWO_DISTINCT_ERA5_CELLS_SYNTHETIC_PREVIEW_V0'
+          assert evidence['original_source_bytes_verified_in_this_pure_function'] is True
+          assert evidence['source_sha256'] == '92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102'
+          assert evidence['source_storm_name'] == 'KYRILL'
+          assert evidence['number_of_distinct_native_ERA5_cells'] == 2
+          assert len({(x['native_cell_x'],x['native_cell_y']) for x in evidence['per_site']}) == 2
+          assert sum(x['invented_assets'] for x in evidence['per_site']) == 24
+          assert evidence['invented_replacement_eur'] == 240000000
+          assert evidence['annual_AAL'] is None and evidence['annual_AEP'] is None and evidence['annual_OEP'] is None
+          assert evidence['insurer_original_gross'] is None and evidence['insurer_retained_net'] is None
+          assert evidence['fitted_spatial_damage_dependence'] is False
+          print('Genuine source-native TWO-cell (not calibrated; no annual EP):')
+          print(json.dumps(evidence,sort_keys=True,indent=2,allow_nan=False))
+          PY
