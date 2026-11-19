@@ -11,27 +11,22 @@ Start with `README.md`, `AGENTS.md` and `ARCHITECTURE.md`. Source/admission chan
 
 ## Workflow
 
-1. Re-check current `main`, active Pull Requests and public Issues before starting non-trivial work.
-2. When Issues are enabled, open or reference the most specific Issue Form **before material edits**. For bounded AI-agent work, use the Agent Task form. One non-trivial task should have one primary Issue that declares its outcome, exact write/shared surfaces, non-goals, dependencies, acceptance criteria and hard stop.
-3. Check the declared and actual surfaces of active Issues and Pull Requests for overlap. If another writer owns the same file, canonical/generated pair, schema, manifest/admission rule, CI policy or semantic contract, coordinate on that task or choose independent work rather than creating a competing branch.
-4. Create a short-lived branch from current `main`; for agent work prefer `agent/<issue-number>-<slug>`. `main` is the only persistent development branch; do not maintain long-lived agent, development, release or patch branches.
-5. Open a draft Pull Request once there is a coherent first change. The draft PR is the visible write claim. Give it one primary Issue (`Closes #N` when merge completes the task, otherwise `Refs #N`) and repeat the exact write/shared surfaces in the PR body.
-6. Keep the PR inside the primary Issue's declared scope. If the work reveals an independent improvement, bug, research question or cleanup task, create a new linked Agent Task Issue with `Follow-up to #N`, record any dependency and smallest `next_action`, and continue the current PR without silently absorbing that work.
-7. A subsequent agent may claim a ready follow-up by assignment when available and/or by opening its own issue-scoped draft PR after re-checking current `main`, open Issues and open PRs. Chat messages, local notes and comments alone are not durable write claims.
-8. Add deterministic offline tests for durable behavior. Use the machine-readable agent-task/run-evidence contracts when formal execution or handoff evidence is useful rather than creating a second task tracker.
-9. If a canonical machine-readable source has a committed generated view, change the canonical source first and run `python scripts/render_public_views.py --write`. Commit both together; never hand-edit files marked `GENERATED FILE — DO NOT EDIT DIRECTLY`.
-10. Run `python scripts/check_all.py` on the exact candidate and inspect the complete diff.
-11. Address CI/review findings without weakening safety, rights, provenance or scientific gates.
-12. Before requesting review or stopping, hand off with exact head commit, checks, evidence, assumptions, blockers, external-byte state, changed/shared surfaces and all linked follow-up Issues. If incomplete, make the next independent action explicit in the primary Issue.
-13. Delete the head branch after its Pull Request is merged or closed unless it is still the active head of another open Pull Request.
+The proportional-risk and source-safety rules in `AGENTS.md` are authoritative. **A routine, bounded, reversible fix does not need a new Issue, Draft PR, separate agent roles or a handoff artifact merely to satisfy a process checklist.**
 
-When repository Issues are temporarily disabled, do not create a substitute task database: use a draft Pull Request as the durable public work claim once the change has enough public evidence and a coherent first diff. Record `Issues unavailable` in the PR's primary-task field. The normal issue-first multi-agent protocol is only active after Issues are enabled.
+1. Check the current `main`, relevant open Issues and Pull Requests, and changed-file/semantic overlap before starting. If another PR owns the same source contract or file, collaborate or take an independent task.
+2. For small non-colliding fixes, work directly on a short-lived topic branch with a clear PR description and executable evidence. Create/reference an Issue for material scientific, rights, security or shared-contract decisions, long-running collaboration, or a genuine multi-writer collision. Use the Agent Task Issue form **when it helps coordinate such a task**, not by default.
+3. Keep implementation changes bounded. A Draft PR is useful for unfinished scientific/source work or coordination, but is **not** obligatory for a reversible, fully tested routine change. Only claim work that is actually done; no reviewer/agent identity may be invented.
+4. Update the **canonical** JSON/manifest source first, regenerate paired Markdown views with `python scripts/render_public_views.py --write`, and never edit generated projections as a second authority.
+5. Add synthetic, offline and negative tests for durable behavior. Check the exact diff, run focused tests and `python scripts/check_all.py` where repository-wide contracts or scientific guards are affected. Retain exact-head CI evidence when it runs.
+6. For source/admission/scientific work, keep the exact provider/product/version, current rights, source-byte state, scientific assumptions, uncertainty and remaining blockers explicit. Incomplete original-source verification never becomes model admission merely because synthetic CI passes.
+7. Request independent review/challenge **when the risk warrants it** (scientific conclusions, rights, security, data admission, high-impact architecture). Document pending or unavailable reviews truthfully; do not treat self-review as independent. Maintain explicit blocking decisions for unresolved material risk.
+8. Squash-merge completed, reviewed changes and retire their disposable branches. Keep unfinished work on the relevant PR/Issue with the smallest concrete next action rather than creating extra tracking systems.
 
-Accepted work is squash-merged so one accepted PR maps to one mainline commit. Topic branches are disposable collaboration state, not durable project records; accepted history lives on `main` and review history lives in Pull Requests plus public Issues when enabled.
+When Issues are disabled, use an ordinary PR; do not create a substitute task database. Existing Issues and historical source receipts remain valuable records even when a newer, smaller PR replaces implementation code.
 
 ## Review quality
 
-`AGENTS.md` is the single detailed authority for the risk-tiered Builder/Reviewer/Challenger protocol. Contributors should choose the smallest justified tier and record the required review evidence in the Pull Request template. Independent roles are quality-control roles rather than competing writers, and shared GitHub accounts use distinct agent/run IDs. If an independent role is unavailable, record that truthfully and follow the exception/maintainer-decision rule in `AGENTS.md`; never fabricate independence to satisfy a checkbox.
+Use the smallest justified review tier from `AGENTS.md`: routine fixes rely on transparent diff and real CI/test evidence; high-impact rights, science, security and admission decisions require independently challenged claims where material. **No role, approval or exception may be represented as completed unless it really occurred.** A GitHub-green synthetic test does not establish real original-source truth, licence permission or scientific model admission.
 
 ## Canonical and generated representations
 

@@ -39,6 +39,18 @@ class TestNRWOriginalSourcePilot(unittest.TestCase):
         self.assertTrue(all(0<=n<=c['count'] for c,n in zip(self.cells,base)))
         self.assertTrue(all(0<=n<=c['count'] for c,n in zip(self.cells,pv)))
 
+    def test_tiny_conditional_sample_allows_empty_counties(self):
+        # A genuine size-one fictional experiment cannot allocate one policy
+        # to every NRW county. Empty county splits must not be treated as an error.
+        for case in ('no_pv_reweight','hypothetical_pv_density_affinity_0_5'):
+            with self.subTest(case=case):
+                allocation=allocate_nrw_sample(self.cells,self.county,case,1)
+                self.assertEqual(len(allocation),530)
+                self.assertEqual(sum(allocation),1)
+                self.assertEqual(sum(x>0 for x in allocation),1)
+                self.assertTrue(all(0<=x<=c['count'] for x,c in zip(allocation,self.cells)))
+                self.assertEqual(allocation,allocate_nrw_sample(self.cells,self.county,case,1))
+
     def test_hamilton_negative_and_tie_break(self):
         self.assertEqual(_hamilton(5,[Decimal('1'),Decimal('1'),Decimal('1')]),[2,2,1])
         self.assertEqual(sum(_hamilton(7,[Decimal('1'),Decimal('2'),Decimal('6')])),7)

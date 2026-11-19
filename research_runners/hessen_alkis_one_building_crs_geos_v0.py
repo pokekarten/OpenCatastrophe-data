@@ -210,6 +210,8 @@ def probe(*, open_request=wfs._open) -> dict:
             if size is not None and (not size.isdigit() or int(size)>MAX_BYTES):
                 raise CRSBlocked("unbounded original source Content-Length")
             raw=response.read(MAX_BYTES+1)
+            if size is not None and len(raw)!=int(size):
+                raise CRSBlocked("original WFS body length differs from Content-Length")
     except (CRSBlocked,wfs.CapabilityBlocked):
         raise
     except (error.URLError,error.HTTPError,TimeoutError,OSError) as exc:

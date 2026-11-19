@@ -34,7 +34,7 @@ def sample() -> dict:
                 "type": "Building",
                 "attributes": {
                     "measuredHeight": 9.5,
-                    "roofType": "synthetic-roof",
+                    "roofType": "1000",
                     "creationDate": "2025-01-01",
                 },
                 "geometry": [{"type": "Solid", "boundaries": [[[[0, 1, 2, 3]]]]}],
@@ -43,7 +43,7 @@ def sample() -> dict:
             "fictional-part": {
                 "type": "BuildingPart",
                 "parents": ["fictional-building"],
-                "attributes": {"roofType": "synthetic-part-roof"},
+                "attributes": {"roofType": "3100"},
                 "geometry": [{"type": "Solid", "boundaries": [[[[1, 2, 4]]]]}],
             },
         },
@@ -86,6 +86,11 @@ class FiveAreaCityJSONTests(unittest.TestCase):
         self.assertEqual(output["root_attribute_present"]["roofType"], 5)
         self.assertEqual(output["part_attribute_present"]["roofType"], 5)
         self.assertEqual(output["root_missing_with_part_attribute"]["roofType"], 0)
+        self.assertEqual(output["root_roof_code_counts"], {"1000": 5})
+        self.assertEqual(output["part_roof_code_counts"], {"3100": 5})
+        self.assertEqual(output["root_specific_roof_form"], 5)
+        self.assertEqual(output["root_mixed_or_other_roof_form"], 0)
+        self.assertEqual(output["roots_with_multiple_part_roof_codes"], 0)
         self.assertFalse(output["model_ready"])
         self.assertFalse(output["independent_insurer_exposure"])
         self.assertNotIn("fictional-building", json.dumps(output))

@@ -34,7 +34,7 @@ def csv_bytes(rows,fields):
     return s.getvalue().encode("utf-8")
 
 
-def make_input(path:Path,*,tamper_gfk=False,admit=False):
+def make_input(path:Path,*,tamper_gfk=False,admit=False,source_sha=None,missing_hash=False):
     original=[
         {"PortNumber":"FICT","AccNumber":"FICT-1","LocNumber":"FICT-1","LocGroup":"KREIS-05111",
          "CountryCode":"DE","Latitude":"51.200001","Longitude":"6.900000",
@@ -64,7 +64,7 @@ def make_input(path:Path,*,tamper_gfk=False,admit=False):
         "schema":"RVA_NRW_2022_HU_STRATIFIED_PHYSICAL_CANDIDATES_GEO_OED_V0",
         "status":"GEOCODED_FICTIONAL_INSURANCE_NOT_MODEL_ADMITTED",
         "source_original_2022_HU_full_CRCs_verified":True,
-        "source_original_2022_HU_complete_archive_SHA256":"a"*64,
+        "source_original_2022_HU_complete_archive_SHA256":source_sha or m.EXPECTED_ORIGINAL_SHA256,
         "physical_building_candidates_selected":3,
         "real_source_counties_represented":2,
         "fictional_policy_count":3,
@@ -73,6 +73,8 @@ def make_input(path:Path,*,tamper_gfk=False,admit=False):
         "physical_building_footprints_are_actual_RV_insured_sites":False,
         "output_file_SHA256":{name:hashlib.sha256(b).hexdigest() for name,b in assets.items()},
     }
+    if missing_hash:
+        del receipt["output_file_SHA256"]["location.csv"]
     with zipfile.ZipFile(path,"w",compression=zipfile.ZIP_DEFLATED) as z:
         for name,content in assets.items():
             z.writestr(name,content)
@@ -127,6 +129,38 @@ class TestFootprintRebuildSensitivities(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     m.build(source,out)
                 self.assertFalse(out.exists())
+
+    def test_well_formed_but_unpinned_original_archive_is_rejected(self):
+        # A self-consistent fake ZIP and hashes cannot replace the actual
+        # pinned public HU2022 whole-archive identity.
+        with tempfile.TemporaryDirectory() as t,patch.object(m,"EXPECTED_N",3),patch.object(m,"EXPECTED_KREISE",2):
+            source=Path(t)/"other-source.zip"
+            make_input(source,source_sha="a"*64)
+            output=Path(t)/"must_not_exist.zip"
+            with self.assertRaisesRegex(ValueError,"source original full SHA/CRC"):
+                m.build(source,output)
+            self.assertFalse(output.exists())
+
+    def test_missing_csv_hash_is_rejected_even_when_others_match(self):
+        with tempfile.TemporaryDirectory() as t,patch.object(m,"EXPECTED_N",3),patch.object(m,"EXPECTED_KREISE",2):
+            source=Path(t)/"incomplete-receipt.zip"
+            make_input(source,missing_hash=True)
+            output=Path(t)/"must_not_exist.zip"
+            with self.assertRaisesRegex(ValueError,"all three source OED CSV"):
+                m.build(source,output)
+            self.assertFalse(output.exists())
+
+    def test_symlink_source_zip_is_rejected(self):
+        with tempfile.TemporaryDirectory() as t,patch.object(m,"EXPECTED_N",3),patch.object(m,"EXPECTED_KREISE",2):
+            root=Path(t)
+            source=root/"real.zip"
+            make_input(source)
+            link=root/"alias.zip"
+            link.symlink_to(source)
+            output=root/"must_not_exist.zip"
+            with self.assertRaisesRegex(ValueError,"bounded existing file"):
+                m.build(link,output)
+            self.assertFalse(output.exists())
 
     def test_no_overwrite(self):
         with tempfile.TemporaryDirectory() as t,patch.object(m,"EXPECTED_N",3),patch.object(m,"EXPECTED_KREISE",2):

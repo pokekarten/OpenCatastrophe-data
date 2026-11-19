@@ -9,6 +9,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
+from urllib.request import Request
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "check_pr_file_collisions.py"
@@ -48,6 +50,45 @@ class PaginationTests(unittest.TestCase):
                 max_pages=1,
                 label="fixture",
             )
+
+
+class GithubRedirectTests(unittest.TestCase):
+    def test_bearer_token_cannot_follow_external_redirect(self) -> None:
+        request = Request(
+            "https://api.github.com/repos/pokekarten/OpenCatastrophe-data/pulls",
+            headers={"Authorization": "Bearer synthetic-token"},
+        )
+        with self.assertRaisesRegex(collisions.CollisionCheckError, "redirect refused"):
+            collisions._RejectAuthenticatedRedirects().redirect_request(
+                request, None, 302, "found", {}, "https://untrusted.example.invalid/receive"
+            )
+
+    def test_api_fetch_installs_reject_redirect_handler(self) -> None:
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return b'[{"number": 42}]'
+
+        # Verify the production fetch *uses* the no-redirect opener without network access.
+        class RecordingOpener:
+            def open(self, request, *, timeout):
+                self_request = request
+                if timeout != 30 or self_request.get_header("Authorization") != "Bearer synthetic-token":
+                    raise AssertionError("unexpected request/timeout")
+                return FakeResponse()
+
+        with mock.patch.object(collisions, "build_opener", return_value=RecordingOpener()) as factory:
+            result = collisions._api_get_json(
+                "https://api.github.com/repos/pokekarten/OpenCatastrophe-data/pulls",
+                token="synthetic-token",
+            )
+        self.assertEqual(result, [{"number": 42}])
+        self.assertIsInstance(factory.call_args.args[0], collisions._RejectAuthenticatedRedirects)
 
 
 class GithubShapeTests(unittest.TestCase):
@@ -183,6 +224,21 @@ class CollisionDetectionTests(unittest.TestCase):
                 (20, 21, 21),
                 lambda _number: frozenset(),
             )
+
+    def test_missing_current_pr_in_open_snapshot_fails_closed(self) -> None:
+        called: list[int] = []
+
+        def load(number: int) -> frozenset[str]:
+            called.append(number)
+            return frozenset({"scripts/a.py"})
+
+        with self.assertRaisesRegex(collisions.CollisionCheckError, "missing from open PR snapshot"):
+            collisions.find_collisions(50, (51, 52), load)
+        self.assertEqual(called, [])  # Do not load/claim a nonexistent current PR.
+
+    def test_empty_open_snapshot_cannot_pass(self) -> None:
+        with self.assertRaisesRegex(collisions.CollisionCheckError, "missing from open PR snapshot"):
+            collisions.find_collisions(50, (), lambda _number: frozenset())
 
     def test_surface_loader_contract_fails_closed(self) -> None:
         with self.assertRaisesRegex(collisions.CollisionCheckError, "frozenset"):

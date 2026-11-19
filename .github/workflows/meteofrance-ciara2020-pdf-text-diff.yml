@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Ciara Météo-France ambiguous original PDF content comparison
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-pdf-text:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Bounded offline text-diff and non-admission gate tests
+        run: python -m unittest tests.test_meteofrance_ciara2020_pdf_text_diff_v0 -v
+      - name: Isolated pinned PDF text dependency
+        run: python -m pip install --disable-pip-version-check 'pypdf==5.9.0'
+      - name: Read only the original pair and compare normalized extracted content
+        run: python -m research_runners.meteofrance_ciara2020_pdf_text_diff_v0 --live

@@ -22,6 +22,7 @@ import sys
 import zipfile
 
 from rva_nrw_hu_gfk_residential_candidate_v0 import classify_gfk
+from rva_nrw_hu_full_zip_stratified_reservoir_v0 import EXPECTED_ORIGINAL_SHA256
 
 SCENARIOS={
     "low_single_storey_1800_eur_per_m2":(1,1800),
@@ -54,16 +55,22 @@ def _read(z:zipfile.ZipFile,name:str)->tuple[list[dict],list[str]]:
 def build(source_zip:Path,output_zip:Path)->dict:
     if output_zip.exists() or not output_zip.parent.is_dir():
         raise ValueError("output ZIP must not exist; parent must exist")
-    if not source_zip.is_file() or source_zip.stat().st_size>50_000_000:
+    if source_zip.is_symlink() or not source_zip.is_file() or source_zip.stat().st_size>50_000_000:
         raise ValueError("input original-derived OED artifact must be a bounded existing file")
     with zipfile.ZipFile(source_zip) as z:
-        if set(z.namelist())!=set(SOURCE_FILES) or z.testzip() is not None:
-            raise ValueError("unrecognized or corrupt full-original source OED artifact")
+        # Bound uncompressed members before ZIP integrity checks or CSV decoding.
+        members=z.infolist()
+        if (len(members)!=len(SOURCE_FILES)
+            or {part.filename for part in members}!=set(SOURCE_FILES)
+            or any(part.file_size>12_000_000 or part.flag_bits&1 for part in members)
+            or sum(part.file_size for part in members)>30_000_000
+            or z.testzip() is not None):
+            raise ValueError("unrecognized, oversized or corrupt full-original source OED artifact")
         manifest=json.loads(z.read("manifest.json"))
         if (manifest.get("schema")!="RVA_NRW_2022_HU_STRATIFIED_PHYSICAL_CANDIDATES_GEO_OED_V0"
             or manifest.get("status")!="GEOCODED_FICTIONAL_INSURANCE_NOT_MODEL_ADMITTED"
             or manifest.get("source_original_2022_HU_full_CRCs_verified") is not True
-            or not re.fullmatch(r"[0-9a-f]{64}",str(manifest.get("source_original_2022_HU_complete_archive_SHA256")))
+            or manifest.get("source_original_2022_HU_complete_archive_SHA256")!=EXPECTED_ORIGINAL_SHA256
             or manifest.get("physical_building_candidates_selected")!=EXPECTED_N
             or manifest.get("real_source_counties_represented")!=EXPECTED_KREISE
             or manifest.get("fictional_policy_count")!=EXPECTED_N
@@ -71,8 +78,14 @@ def build(source_zip:Path,output_zip:Path)->dict:
             or manifest.get("insurer_building_TIV_observed") is not False
             or manifest.get("physical_building_footprints_are_actual_RV_insured_sites") is not False):
             raise ValueError("source original full SHA/CRC/NRW-company nonadmission gate failed")
-        for name,sha in manifest["output_file_SHA256"].items():
-            if name not in SOURCE_FILES or hashlib.sha256(z.read(name)).hexdigest()!=sha:
+        hashes=manifest.get("output_file_SHA256")
+        required=set(SOURCE_FILES)-{"manifest.json"}
+        if not isinstance(hashes,dict) or set(hashes)!=required:
+            raise ValueError("all three source OED CSV SHA256 receipts required")
+        for name in sorted(required):
+            sha=hashes[name]
+            if (not isinstance(sha,str) or not re.fullmatch(r"[0-9a-f]{64}",sha)
+                or hashlib.sha256(z.read(name)).hexdigest()!=sha):
                 raise ValueError("source OED CSV SHA256 mismatch "+name)
         loc,lf=_read(z,"location.csv")
         account,af=_read(z,"account.csv")

@@ -34,6 +34,45 @@ class GDWSpatialError(ValueError):
     """Original source, feature record or geospatial reader mismatch."""
 
 
+def is_native_reservoir_overlay_geometry_candidate(geometry, dam_point) -> bool:
+    """Fail-closed *geometry-only* gate for one original GDW reservoir footprint.
+
+    Intended for a trusted in-memory consumer holding a separately validated
+    source archive. This helper never repairs source features, derives hazard
+    intensity, approves insurance exposure joins, or emits GDW_ID/coordinates.
+
+    A valid polygon with its paired barrier in the strict interior is only a
+    *candidate for further geospatial review*, not a scientific model input.
+    Boundary-only/outside pairs, dateline-spanning bboxes, invalid rings and
+    malformed objects are deliberately excluded.
+    """
+    try:
+        from shapely.geometry import Point
+        from shapely.geometry.base import BaseGeometry
+        from shapely.errors import GEOSException
+    except ImportError:
+        return False
+    if not isinstance(geometry, BaseGeometry) or not isinstance(dam_point, Point):
+        return False
+    try:
+        if (geometry.geom_type not in ("Polygon", "MultiPolygon")
+                or geometry.is_empty or not geometry.is_valid
+                or not math.isfinite(geometry.area) or geometry.area <= 0):
+            return False
+        west, south, east, north = geometry.bounds
+        if (not all(math.isfinite(value) for value in (west, south, east, north))
+                or west < -180 or east > 180
+                or south < -90 or north > 90 or east - west > 180):
+            return False
+        if (not math.isfinite(dam_point.x) or not math.isfinite(dam_point.y)
+                or not (-180 <= dam_point.x <= 180)
+                or not (-90 <= dam_point.y <= 90)):
+            return False
+        return bool(geometry.contains(dam_point))
+    except (ValueError, TypeError, OverflowError, GEOSException):
+        return False
+
+
 def _validity_reason_family(raw_reason: str) -> str:
     """Return only a fixed coarse label, never GEOS' original coordinate detail."""
     family = raw_reason.partition("[")[0].strip().lower()
@@ -102,6 +141,7 @@ def audit(path: Path, *, expected_sha256: str = PINNED_SHA256,
     points: dict[int, object] = {}
     count, invalid, conversion_error = 0, 0, 0
     inside, boundary, outside = 0, 0, 0
+    overlay_geometry_candidates = 0
     invalid_reason_families: Counter[str] = Counter()
     with zipfile.ZipFile(path) as z:
         members = pre._members(z)
@@ -148,6 +188,8 @@ def audit(path: Path, *, expected_sha256: str = PINNED_SHA256,
                     point = points[ident]
                     if geom.contains(point):
                         inside += 1
+                        if is_native_reservoir_overlay_geometry_candidate(geom, point):
+                            overlay_geometry_candidates += 1
                     elif geom.covers(point):
                         boundary += 1
                     else:
@@ -165,6 +207,13 @@ def audit(path: Path, *, expected_sha256: str = PINNED_SHA256,
         raise GDWSpatialError("original spatial point-only count drift")
     if sum(invalid_reason_families.values()) != invalid + conversion_error:
         raise GDWSpatialError("aggregate original invalidity family counts drift")
+    if not 0 <= overlay_geometry_candidates <= inside:
+        raise GDWSpatialError("native overlay candidate count drift")
+    # Every non-candidate is excluded, including source-invalid, unparseable,
+    # boundary/outside points and valid dateline-ambiguous reservoir polygons.
+    overlay_excluded = count - overlay_geometry_candidates
+    if overlay_excluded < invalid + conversion_error + boundary + outside:
+        raise GDWSpatialError("native overlay exclusions undercounted")
     return {
         "schema_version": PROFILE,
         "source_id": "globaldamwatch.gdw.v1.0",
@@ -186,6 +235,12 @@ def audit(path: Path, *, expected_sha256: str = PINNED_SHA256,
         "paired_barrier_on_polygon_boundary": boundary,
         "paired_barrier_outside_valid_polygon": outside,
         "unassessable_pair_invalid_or_unparseable_polygon": invalid + conversion_error,
+        "native_reservoir_geometry_overlay_candidate_count": overlay_geometry_candidates,
+        "native_reservoir_geometry_overlay_excluded_count": overlay_excluded,
+        "native_reservoir_geometry_overlay_mask_is_scoped_to_verified_original_archive": True,
+        "native_reservoir_geometry_overlay_decision_is_geometry_only": True,
+        "native_reservoir_geometry_overlay_is_model_admitted": False,
+        "source_reservoir_ordinal_ids_or_coordinates_emitted": False,
         "all_original_geometries_topologically_valid": invalid + conversion_error == 0,
         "all_assessable_id_pairs_geometrically_covered": outside == 0,
         "source_coordinates_ids_attributes_exported": False,

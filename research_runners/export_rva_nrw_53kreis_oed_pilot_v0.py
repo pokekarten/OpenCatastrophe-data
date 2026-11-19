@@ -153,7 +153,10 @@ def allocate_nrw_sample(cells:list[dict],county:dict[str,dict],pv_case:str,
     for ags,number in zip(keys,picked):
         indexes=bycounty[ags]
         if number>counts[ags]:raise StagingError('county oversampled')
-        splits=_hamilton(number,[Decimal(cells[i]['count']) for i in indexes])
+        # Some small conditional samples assign zero policies to a county.
+        # A zero allocation is valid and must not invoke the positive-only Hamilton helper.
+        splits=(_hamilton(number,[Decimal(cells[i]['count']) for i in indexes])
+                if number else [0]*len(indexes))
         for i,n in zip(indexes,splits):
             if n>cells[i]['count']:raise StagingError('age sampled beyond fictional population')
             result[i]=n
