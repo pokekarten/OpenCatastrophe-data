@@ -189,6 +189,7 @@ class CroatianGmlWindowTest(unittest.TestCase):
         self.assertFalse(report["actual_polygon_geometry_verified"])
         self.assertFalse(report["ground_footprint_verified"])
         self.assertFalse(report["model_input_admitted"])
+        self.assertNotIn("positive_area_overlap_with_fixed_window", report)
         self.assertNotIn("SYNTHETIC-ACCURACY-DO-NOT-PRINT", json.dumps(report))
         with self.assertRaisesRegex(BuildingGmlError, "footPrint"):
             inspect_gml(raw)
@@ -416,11 +417,53 @@ class CroatianGmlWindowTest(unittest.TestCase):
             "458900 5074600 459000 5074600 459000 5074650 "
             "458900 5074650 458900 5074600"
         )
-        for points in (crossing, touching):
+        for points, expected_area in ((crossing, True), (touching, False)):
             with self.subTest(points=points):
                 result = inspect_gml(sample(points=points))
                 self.assertTrue(result["actual_polygon_intersects_fixed_window"])
-                self.assertNotIn("positive_area_inside_window", result)
+                self.assertIs(
+                    result["positive_area_overlap_with_fixed_window"], expected_area
+                )
+                self.assertFalse(result["model_input_admitted"])
+
+    def test_corner_only_window_touch_is_not_positive_area(self):
+        touching = (
+            "458900 5074400 459000 5074400 459000 5074500 "
+            "458900 5074500 458900 5074400"
+        )
+        receipt = inspect_gml(sample(points=touching))
+        self.assertTrue(receipt["actual_polygon_intersects_fixed_window"])
+        self.assertFalse(receipt["positive_area_overlap_with_fixed_window"])
+
+    def test_enclosing_window_has_positive_clipped_area(self):
+        enclosing = (
+            "458900 5074400 459700 5074400 459700 5075200 "
+            "458900 5075200 458900 5074400"
+        )
+        receipt = inspect_gml(sample(points=enclosing))
+        self.assertTrue(receipt["positive_area_overlap_with_fixed_window"])
+
+    def test_concave_simple_polygon_positive_window_overlap(self):
+        concave = (
+            "459050 5074550 459180 5074550 459180 5074580 "
+            "459070 5074580 459070 5074750 459050 5074750 "
+            "459050 5074550"
+        )
+        receipt = inspect_gml(sample(points=concave))
+        self.assertTrue(receipt["positive_area_overlap_with_fixed_window"])
+        self.assertFalse(receipt["model_input_admitted"])
+
+    def test_positive_area_clipping_is_winding_independent(self):
+        coords = [
+            (459100, 5074600), (459140, 5074600),
+            (459140, 5074640), (459100, 5074640)
+        ]
+        for order in (coords, list(reversed(coords))):
+            ring = order + [order[0]]
+            points = " ".join(str(n) for point in ring for n in point)
+            with self.subTest(points=points):
+                receipt = inspect_gml(sample(points=points))
+                self.assertTrue(receipt["positive_area_overlap_with_fixed_window"])
 
     def test_reject_crossing_exterior_with_nonzero_signed_area(self):
         # The shoelace sum is nonzero, so an area-only test would pass.
