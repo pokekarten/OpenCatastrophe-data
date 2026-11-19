@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.ncei.swdi.v2",
+  "source_ids": [
+    "noaa.ncei.swdi.v2"
+  ],
+  "provider": "NOAA National Centers for Environmental Information (NCEI), Severe Weather Data Inventory (SWDI)",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://www.ncei.noaa.gov/products/severe-weather-data-inventory",
+  "service_root": "https://www.ncei.noaa.gov",
+  "api_version": "SWDI v2.0 interface (January 2022); one mutable October 2026 NEXRAD hail CSV.gz object, directory revision observed 2026-11-14",
+  "access_scope": [
+    "catalogue",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_official_v2_directory_metadata",
+      "retrieve_exact_nexrad_hail_202610_gzip"
+    ],
+    "path_templates": [
+      "/pub/data/swdi/database-csv/v2/",
+      "/pub/data/swdi/database-csv/v2/hail-202610.csv.gz"
+    ],
+    "parameter_rules": "This is a nonexecutable documentation-only contract. The proposed future sample is exactly the already listed historical NEXRAD hail-signature October 2026 gzip CSV hail-202610.csv.gz, not hail-tiles, tornado, NWS preliminary reports or Vaisala NLDN lightning. No caller-controlled URL, host, dataset, date, path, filename, query, headers, pagination or range is permitted. Before any single GET, independently approve dataset/service rights and freeze an allowlisted no-redirect request with strict compressed and decompressed size limits, gzip magic/footer CRC, CSV header/row semantics and SHA-256 original-byte receipt. The directory HTML is catalogue evidence only; a 200 HTML error is not data. No operation is currently executable."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/gzip",
+      "application/octet-stream",
+      "text/html"
+    ],
+    "format": "NOAA NCEI SWDI v2 HTTPS file directory listing (HTML) or exact hail-202610.csv.gz compressed NEXRAD hail radar-signature CSV (gzip). A future parser must validate the downloaded payload as gzip, never accept HTML as sample bytes, enforce both compressed and decompressed limits, and verify real CSV field identity against official layer documentation.",
+    "scientific_semantics": "United States NEXRAD Level III algorithm-derived hail signatures as indexed by SWDI. Radar signatures describe probable hail conditions, not confirmed stone sizes at insured premises, measured ground impact, independently observed claims or a stochastic event catalogue. NCEI expressly warns of incomplete temporal/geographic records and no extra SWDI quality control. Lightning data from Vaisala NLDN have a separate third-party provenance and are excluded from this product-scoped future retrieval. Correlation with NOAA Storm Events/NWS reports must not be interpreted as independent scientific holdout without lineage challenge."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 8000000,
+    "retry_policy": "none",
+    "rate_limit_notes": "No exact automated-service quota or licence is verified in this documentary review. Only one explicitly reviewed retrieval of the fixed 202610 file could be proposed, with no polling, retries, pagination, monthly-directory scanning or bulk mirroring.",
+    "mutability_notes": "Official directory listing checked 2026-11-14 showed hail-202610.csv.gz last modified 2026-11-05 11:48 and declared size 4,750,539 bytes. These are unverified directory declarations, NOT an independently retrieved source file, content-length validation or SHA-256. A 2026-11 hail file is still in the current incomplete month and intentionally excluded. Monthly historical archives may be replaced or corrected. Require exact UTC request, origin/redirect trace, parser version, original SHA-256, file size, gzip integrity, unit/CRS/time semantics, source identity and revision date on a future sample."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "NOAA NCEI makes SWDI public HTTP bulk archives and query services available, but this review does not establish exact current raw hail signature commercial modelling/automated retrieval rights or interface-specific service rate terms for the chosen 202610 object. SWDI is a multi-source inventory; separate Vaisala NLDN lightning rights are expressly excluded, and public data availability must never be used to infer a licence for the whole inventory. Internal repo data-rights review, source-ownership scope and public redistribution remain open; no live probe, database write, model-use approval or raw-data publication is authorized."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-14",
+  "evidence_urls": [
+    "https://www.ncei.noaa.gov/products/severe-weather-data-inventory",
+    "https://www.ncei.noaa.gov/maps/swdi/",
+    "https://www.ncei.noaa.gov/pub/data/swdi/database-csv/v2/",
+    "https://www.ncei.noaa.gov/pub/data/swdi/database-csv/v2/hail-202610.csv.gz"
+  ],
+  "notes": "Only T0 official product/directory and candidate byte-size evidence. This does not represent a completed original gzip fetch, HTTP data probe, calculated SHA-256, CRC check, parsed scientific sample or CAT admission. Existing discovery authority: landscape/sources-global-atlas-swdi-tsunami-20261103.json; prior study: docs/research/ngi-ptha-noaa-swdi-source-boundaries-20261103.md. Next step is exact NEXRAD hail dataset and HTTP-service rights review; once cleared, build one bounded original-byte integrity plus negative-case offline preflight and separately authorize a single fixed GET outside public Git. Do not use the unrelated NLDN lightning layer or reinterpret 2026-10 radar signatures as final observations or insured losses."
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry for the newly separated, commercially reusable Copernicus E-OBS_EU product and its strict difference from research-only E-OBS.",
+  "review_date": "2026-11-12",
+  "entries": [
+    {
+      "candidate_id": "copernicus.c3s.e-obs-eu.open-20261104",
+      "name": "E-OBS_EU daily gridded European observations (open-licence product)",
+      "provider": "Copernicus Climate Change Service / ECMWF / ECA&D",
+      "categories": [
+        "climate_observations",
+        "precipitation",
+        "temperature",
+        "wind",
+        "validation",
+        "commercial_use_candidate"
+      ],
+      "spatial_scope": "European Union member states plus Norway, Switzerland, Iceland and the United Kingdom; do not treat as the broader Europe-wide E-OBS product",
+      "temporal_scope": "New separately licensed product announced 2026-11-04; exact requested field, temporal extent and version must be frozen per retrieved CDS product",
+      "resolution_or_granularity": "Station-derived, spatially interpolated daily gridded observations on 0.1 and 0.25 degree latitude-longitude grids; product-dependent versions and uncertainty fields",
+      "potential_roles": [
+        "commercially_licensed_climate_observation_candidate",
+        "extreme_precipitation_validation",
+        "temperature_extremes_validation",
+        "wind_context_validation"
+      ],
+      "authoritative_url": "https://cds.climate.copernicus.eu/datasets/insitu-gridded-observations-europe",
+      "access_class_hint": "cds_account_and_licence_acceptance_required_for_data_download_cc_by_4_0_product_only",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official product-specific licence https://cds.climate.copernicus.eu/licences/licence-to-use-E-OBS-and-E-OBS-EU-products (reviewed 2026-11-12) declares E-OBS_EU CC BY 4.0, including commercial reuse subject to attribution. Whole-Europe E-OBS is separate and strictly non-commercial research/education only. ECMWF announced the revised CDS implementation on 2026-11-04; old API request syntax must not be assumed valid. Station-network lineage is shared with E-OBS and weather fields are not independent raw station truths. This candidate is not dataset admission, not verified API execution, not permission to copy station input bytes, and not yet an authorized source sample."
+    }
+  ]
+}

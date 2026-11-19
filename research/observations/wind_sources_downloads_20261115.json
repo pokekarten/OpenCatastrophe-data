@@ -1,0 +1,226 @@
+[
+  {
+    "file": "CCLM_ERA5_EUR-11_StormFootprint_Database_Europe_Winter_1995-2015.nc",
+    "url": "https://zenodo.org/api/records/15305753/files/CCLM_ERA5_EUR-11_StormFootprint_Database_Europe_Winter_1995-2015.nc/content",
+    "bytes": 13898709,
+    "sha256": "4bd28d8bd4f2fd820ea7f844e243b1234a2e4c8fa81ea420ef558917729ba94e",
+    "provider_md5_verified": true,
+    "status": "downloaded"
+  },
+  {
+    "file": "CCLM_ERA5_CEU-3_StormFootprint_Database_Europe_Winter_1995-2015.nc",
+    "url": "https://zenodo.org/api/records/15305753/files/CCLM_ERA5_CEU-3_StormFootprint_Database_Europe_Winter_1995-2015.nc/content",
+    "bytes": 80330992,
+    "sha256": "2a8cd17e582280fece757b233d08cb580787172322c7bfd98f9d224c757c7077",
+    "provider_md5_verified": true,
+    "status": "downloaded"
+  },
+  {
+    "file": "COSMO-REA6_StormFootprint_Database_Europe_Winter_1995-2015.nc",
+    "url": "https://zenodo.org/api/records/15305753/files/COSMO-REA6_StormFootprint_Database_Europe_Winter_1995-2015.nc/content",
+    "bytes": 83807744,
+    "sha256": "e0cb9fc238fd326a65b2ae31d093499d39b4cd8d707ce1b99798ca5c6cb09843",
+    "provider_md5_verified": true,
+    "status": "downloaded"
+  },
+  {
+    "file": "ERA5_StormFootprint_Database_Europe_Winter_1995-2015.nc",
+    "url": "https://zenodo.org/api/records/15305753/files/ERA5_StormFootprint_Database_Europe_Winter_1995-2015.nc/content",
+    "bytes": 6792278,
+    "sha256": "92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102",
+    "provider_md5_verified": true,
+    "status": "downloaded"
+  },
+  {
+    "file": "README",
+    "url": "https://zenodo.org/api/records/15305753/files/README/content",
+    "bytes": 1940,
+    "sha256": "59a30cd365321933147e792dd2cb9157fc46bb2fbbb5d1d83add4f730df56881",
+    "provider_md5_verified": true,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_235_1981-1990.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_235_1981-1990.zip",
+    "bytes": 1830966,
+    "sha256": "73091a2ed8b8be558e839b3bb4f61761868dc00ac27cf26d99d1e831dabe0fd4",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_235_1991-2000.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_235_1991-2000.zip",
+    "bytes": 1788343,
+    "sha256": "44a62e3501fbd5834fa6ad426e93996391386785eb04bb7022316bab3b82f52b",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_235_2001-2010.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_235_2001-2010.zip",
+    "bytes": 1748163,
+    "sha256": "d5b0bf4fe2fca2db28eb9a1c032fa90b9a253869e79821caaf4cb11e9890216a",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_235_2011-2020.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_235_2011-2020.zip",
+    "bytes": 1740085,
+    "sha256": "30a5a68a8f4e93083f006539e55da1e1fe967516ad846d17f82e3932d221c48e",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_260_1981-1990.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_260_1981-1990.zip",
+    "bytes": 1821110,
+    "sha256": "10e9903990becc9027444037efd227bcc9fe777fdd4aaca899ced19afe8cca44",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_260_1991-2000.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_260_1991-2000.zip",
+    "bytes": 1792731,
+    "sha256": "9317a58826e4e74fc9456abc07cad7439b478621cfc851e6e6269ce227ecdc27",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_260_2001-2010.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_260_2001-2010.zip",
+    "bytes": 1765648,
+    "sha256": "80df74621a857ddba646732a49932daffc0bbeb5f482419c334109311d381261",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_260_2011-2020.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_260_2011-2020.zip",
+    "bytes": 1758375,
+    "sha256": "3e343fbe8d8964ab2273981747701e2d21beec5cfa2e2e5535c881710c6ac94b",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_280_1981-1990.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_280_1981-1990.zip",
+    "bytes": 1819971,
+    "sha256": "69fd8f35731c40ae3207b362e28889eec62dd78876ea4d45746e76a9adf2c888",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_280_1991-2000.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_280_1991-2000.zip",
+    "bytes": 1795215,
+    "sha256": "67d8b93a490e4a2be93060e85bc5554965784bea0a42542c382d1e2c198ceae0",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_280_2001-2010.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_280_2001-2010.zip",
+    "bytes": 1767899,
+    "sha256": "499e3807e98125b17e6e6a62ec61bfb7167bc656fc21e9db89b67e354c45bc73",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_280_2011-2020.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_280_2011-2020.zip",
+    "bytes": 1755516,
+    "sha256": "6c6dc1166a681e5e15c81f5cb22a2c877b23161ba12a2fb1e8ac7cef5b672c8b",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_310_1981-1990.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_310_1981-1990.zip",
+    "bytes": 1825741,
+    "sha256": "e212fc5de2cf29de5eb0d74cb111e0d6049ea905a789fffeee8a6591d213b50b",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_310_1991-2000.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_310_1991-2000.zip",
+    "bytes": 1788041,
+    "sha256": "df2ac29ee47fbf48e98398bf809c5f34cf156ca692e6c908b3d7a2a28e8d390d",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_310_2001-2010.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_310_2001-2010.zip",
+    "bytes": 1751899,
+    "sha256": "79e2e425fcf42201baeb6daddab875470d2841e5285793a2e08d69eed513fa18",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_310_2011-2020.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_310_2011-2020.zip",
+    "bytes": 1754723,
+    "sha256": "c6b7d0c6ed43df40796121b9b895738eac6a57f0963e6fd46431bef48636342d",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_330_1981-1990.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_330_1981-1990.zip",
+    "bytes": 1100194,
+    "sha256": "ef44e6a3882b443cc0aa08375d3ae0a1ead02d9ca744df9a0bc024c484eeaca9",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_330_1991-2000.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_330_1991-2000.zip",
+    "bytes": 1553443,
+    "sha256": "b1ba9f766cb898341031cf270a9298357143b963f17814e4fedcbfa8a8d74c86",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_330_2001-2010.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_330_2001-2010.zip",
+    "bytes": 1608428,
+    "sha256": "e43b5988c16f0e65276be530464a15b223905c2df3a38342faa1a0f99c64feb2",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "uurgeg_330_2011-2020.zip",
+    "url": "https://cdn.knmi.nl/knmi/map/page/klimatologie/gegevens/uurgegevens/uurgeg_330_2011-2020.zip",
+    "bytes": 1590080,
+    "sha256": "52a9a5858dafabeef54c97ab311e8ee1b3085740b13001679c48967f87560d07",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "H_descriptif_champs.csv",
+    "url": "https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/HOR/H_descriptif_champs.csv",
+    "bytes": 11252,
+    "sha256": "1ff2c0febb4a040bf8b400e422bc2bf3e9b8c3e48bdda73a67b1790c532021da",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "H_75_2000-2009.csv.gz",
+    "url": "https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/HOR/H_75_2000-2009.csv.gz",
+    "bytes": 10964790,
+    "sha256": "e42541c21153eb171733e040e1f19dbd0f3f17ea27f8e9a54496ddcfe0b99ef3",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  },
+  {
+    "file": "H_75_2010-2019.csv.gz",
+    "url": "https://meteofrance.s3.sbg.io.cloud.ovh.net/data/synchro_ftp/BASE/HOR/H_75_2010-2019.csv.gz",
+    "bytes": 14837087,
+    "sha256": "09ab7d2b92d413ad481b0b11730ab84a1caca10eaa2dd60e6124184efbd8b511",
+    "provider_md5_verified": false,
+    "status": "downloaded"
+  }
+]

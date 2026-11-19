@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlparse
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 API_VERSION = "2026-03-10"
 PUBLIC_GITHUB_API_ORIGIN = "https://api.github.com"
@@ -100,8 +100,16 @@ def read_event_pull_request_number(path: Path) -> int:
     return _positive_int(payload["pull_request"].get("number"), "pull_request.number")
 
 
+class _RejectAuthenticatedRedirects(HTTPRedirectHandler):
+    """Never forward a GitHub bearer token to a redirect destination."""
+
+    def redirect_request(self, req: Request, fp: Any, code: int, msg: str,
+                         headers: Any, newurl: str) -> None:
+        raise CollisionCheckError("authenticated GitHub API redirect refused")
+
+
 def _api_get_json(url: str, *, token: str, timeout_seconds: int = 30) -> Any:
-    """Fetch one GitHub REST response without exposing the authentication token."""
+    """Fetch one GitHub REST response without following authenticated redirects."""
 
     if type(token) is not str or not token:
         raise CollisionCheckError("GITHUB_TOKEN is required for the collision check")
@@ -115,7 +123,10 @@ def _api_get_json(url: str, *, token: str, timeout_seconds: int = 30) -> Any:
         },
     )
     try:
-        with urlopen(request, timeout=timeout_seconds) as response:  # noqa: S310 - URL is validated GitHub API input.
+        # urllib's default redirect handler forwards Authorization headers.
+        # A trusted initial host does NOT make the redirect target trusted.
+        opener = build_opener(_RejectAuthenticatedRedirects())
+        with opener.open(request, timeout=timeout_seconds) as response:
             body = response.read()
     except HTTPError as exc:
         raise CollisionCheckError(f"GitHub API request failed with HTTP {exc.code}") from exc
@@ -246,6 +257,8 @@ def find_collisions(
         normalized.append(_positive_int(number, f"open_pull_requests[{index}]"))
     if len(normalized) != len(set(normalized)):
         raise CollisionCheckError("open_pull_requests must not contain duplicates")
+    if current not in normalized:
+        raise CollisionCheckError("current PR is missing from open PR snapshot")
 
     current_surfaces = load_surfaces(current)
     if not isinstance(current_surfaces, frozenset) or any(type(path) is not str for path in current_surfaces):

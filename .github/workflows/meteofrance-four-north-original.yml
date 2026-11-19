@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Meteo-France four north original source preflight
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        department: ['02', '62', '76', '80']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Synthetic negative/positive original source gates
+        run: python -m unittest tests.test_meteofrance_four_north_original_v0 -v
+      - name: One official 2020-2024 source in ephemeral memory; only hashes and aggregates
+        env:
+          DEPARTMENT: ${{ matrix.department }}
+        run: python -m research_runners.meteofrance_four_north_original_v0 --department "$DEPARTMENT" --live

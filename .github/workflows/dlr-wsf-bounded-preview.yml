@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DLR WSF bounded WMS visual preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/probe_dlr_wsf_wms_preview_v0.py"
+      - "tests/test_probe_dlr_wsf_wms_preview_v0.py"
+      - ".github/workflows/dlr-wsf-bounded-preview.yml"
+  pull_request:
+    paths:
+      - "scripts/probe_dlr_wsf_wms_preview_v0.py"
+      - "tests/test_probe_dlr_wsf_wms_preview_v0.py"
+      - ".github/workflows/dlr-wsf-bounded-preview.yml"
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Offline fail-closed PNG / fixed URL tests
+        run: python3 -m unittest tests.test_probe_dlr_wsf_wms_preview_v0 -v
+      - name: Exactly seven anonymous 32x32 provider previews
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for source in \
+            "dlr.wsf.2019" \
+            "dlr.eoc.wsf-tracker.2016-2026" \
+            "dlr.wsf.evolution.1985-2015" \
+            "dlr.wsf.3d.v02.building-area" \
+            "dlr.wsf.3d.v02.building-volume" \
+            "dlr.wsf.3d.v02.building-fraction" \
+            "dlr.wsf.3d.v02.building-height"; do
+            python3 scripts/probe_dlr_wsf_wms_preview_v0.py --source "$source"
+          done
