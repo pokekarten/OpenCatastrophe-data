@@ -164,6 +164,35 @@ class CroatianGmlWindowTest(unittest.TestCase):
             ):
                 inspect_gml(raw)
 
+    def test_provider_profile_combined_optional_accuracy_does_not_admit_footprint(self):
+        # The observed 2026-11-19 provider profile uses the legacy OGC
+        # EPSG:3765 identifier, combined geometry and optional XY accuracy.
+        # Synthetic bytes only: no original coordinates or feature IDs.
+        raw = sample(
+            crs="http://www.opengis.net/gml/srs/epsg.xml#3765",
+            href=COMBINED_URI,
+        ).replace(
+            b"</base:BuildingGeometry2D>",
+            b'<base:horizontalGeometryEstimatedAccuracy uom="m">'
+            b'SYNTHETIC-ACCURACY-DO-NOT-PRINT'
+            b'</base:horizontalGeometryEstimatedAccuracy>'
+            b"</base:BuildingGeometry2D>",
+            1,
+        )
+        report = inspect_semantic_label(raw)
+        self.assertEqual(report["inspire_horizontal_geometry_reference"], "combined")
+        self.assertEqual(
+            report["recognized_optional_geometry2d_fields"],
+            ["horizontalGeometryEstimatedAccuracy"],
+        )
+        self.assertFalse(report["optional_geometry2d_values_interpreted"])
+        self.assertFalse(report["actual_polygon_geometry_verified"])
+        self.assertFalse(report["ground_footprint_verified"])
+        self.assertFalse(report["model_input_admitted"])
+        self.assertNotIn("SYNTHETIC-ACCURACY-DO-NOT-PRINT", json.dumps(report))
+        with self.assertRaisesRegex(BuildingGmlError, "footPrint"):
+            inspect_gml(raw)
+
     def test_native_combined_semantics_audited_but_footprint_rejected(self):
         # Source-observed combination: old OGC EPSG URI + combined reference.
         native_crs = "http://www.opengis.net/gml/srs/epsg.xml#3765"
