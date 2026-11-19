@@ -122,6 +122,7 @@ def literal_path_reference(tree: ast.AST, source: PurePosixPath) -> bool:
             continue
         parent = node.left
         if (isinstance(parent, ast.BinOp) and isinstance(parent.op, ast.Div)
+                and isinstance(parent.left, ast.Name) and parent.left.id == "ROOT"
                 and isinstance(parent.right, ast.Constant)
                 and parent.right.value == source.parts[0]):
             return True
