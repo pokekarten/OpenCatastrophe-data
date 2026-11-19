@@ -76,6 +76,27 @@ class _ScriptCollector(HTMLParser):
         return self.blocks
 
 
+def _reject_noncanonical_script_end_tags(page: str) -> None:
+    """Reject ambiguous HTML5 closing syntax before HTMLParser tokenization.
+
+    Python's HTMLParser and browsers differ about '</script ...>' and
+    '</script/foo>' handling, including across Python runtime versions.
+    This is a conservative literal lexical guard, not a regex HTML parser:
+    an accepted publisher script must use '</script>' with optional
+    whitespace only before '>'. The original publisher uses canonical tags.
+    """
+    lower = page.lower()
+    position = 0
+    while True:
+        start = lower.find("</script", position)
+        if start < 0:
+            return
+        end = page.find(">", start)
+        if end < 0 or page[start + len("</script"):end].strip():
+            raise JSRouteBlocked("noncanonical publisher script closing tag")
+        position = end + 1
+
+
 def inspect_inline_tile_routes(raw: bytes) -> dict[str, object]:
     if type(raw) is not bytes or not (0 < len(raw) <= MAX_HTML_BYTES):
         raise JSRouteBlocked("source HTML is absent or exceeds documented cap")
@@ -85,6 +106,7 @@ def inspect_inline_tile_routes(raw: bytes) -> dict[str, object]:
         raise JSRouteBlocked("publisher HTML not strict UTF-8") from exc
     if "\x00" in page:
         raise JSRouteBlocked("binary content in publisher HTML")
+    _reject_noncanonical_script_end_tags(page)
     blocks = []
     for code, has_external_src in _ScriptCollector().extract(page):
         if _FUNCTION.search(code):
