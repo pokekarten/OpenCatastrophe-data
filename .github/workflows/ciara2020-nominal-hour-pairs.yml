@@ -2,17 +2,17 @@
 # SPDX-License-Identifier: Apache-2.0
 name: Ciara 2020 DWD ERA5 nominal hourly pairs
 
+# Historical PR-specific source replay. The original head branch no longer
+# exists; keep explicit, reviewed manual execution on trusted main rather
+# than creating a skipped run on every unrelated pull request.
 on:
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   original-hourly-pairs:
-    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-nominal-hour-pairs-v0'
     name: Original DWD and ERA5 nominal UTC hourly aggregate
     runs-on: ubuntu-24.04
     timeout-minutes: 20
