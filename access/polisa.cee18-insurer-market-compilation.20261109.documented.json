@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "polisa.cee18-insurer-market-compilation.20261109.documented",
+  "source_ids": [
+    "polisa.cee18-insurer-market-compilation.20261109"
+  ],
+  "provider": "Polisa independent public insurance market compilation",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://polisapro.com/data/README.txt",
+  "service_root": "https://polisapro.com",
+  "api_version": "README snapshot 2026-11-09.d5ad62",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "review_public_readme_only"
+    ],
+    "path_templates": [
+      "/data/README.txt"
+    ],
+    "parameter_rules": "Documentation-only publisher README path. README names polisa-all-markets.csv and per-market exports; on 2026-11-15 the publisher /data page advertised CSV/Excel links for 18 markets and an all-markets CSV (1,772 rows, 727 KB as advertised). The original CSV response, row count and checksum have not been independently verified here. Do not construct dataset file requests, scrape insurer pages, enumerate endpoints, follow unreviewed export links or import provider rows. Before any executable contract, resolve current live export identity, exact file URL, source-level permissions, commercial automation rules and original response-size/hash bounds."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/plain"
+    ],
+    "format": "Polisa README and /data page describe advertised CSV downloads with original-source caveats, not an independently authenticated CSV response or parsed insurer record.",
+    "scientific_semantics": "Market-level named insurer and line-of-business premiums/claims/solvency statistics reconstructed from heterogeneous regulators, associations and insurer SFCRs. Account for entity-group rollups, currencies, conversion date, year, coverage and original-source lineage; not property location, actual insured TIV or model-ready CAT loss."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 262144,
+    "max_sample_bytes": 262144,
+    "retry_policy": "none",
+    "rate_limit_notes": "Documentation-only; no live provider request, bulk download or automated enumeration is authorized by this contract.",
+    "mutability_notes": "README identifies 2026-11-09.d5ad62, while /data advertises files updated on 2026-11-15. A listed download link or provider-advertised row count is not an authenticated downloaded dataset, source checksum or validated schema."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": "https://polisapro.com/terms",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Polisa-generated ratios/shares are stated CC BY 4.0 but rights from original sources remain in force; restrictions include Serbia NBS for commercial use, other national associations and Estonia share-alike. Polisa terms permit reasonable-rate automated downloading of published CSVs, but original-source reuse restrictions still apply; commercial use remains unknown pending exact market/row/source rights review. The documentation-only contract does not authorize a live dataset fetch."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-15",
+  "evidence_urls": [
+    "https://polisapro.com/data/README.txt",
+    "https://polisapro.com/data",
+    "https://polisapro.com/terms",
+    "https://polisapro.com/methodology"
+  ],
+  "notes": "Documented-only readiness contract; zero supplier CSV bytes collected or uploaded. Exact source-level licences and mixed provenance preclude blanket commercial reuse and automatic insurer exposure calibration."
+}

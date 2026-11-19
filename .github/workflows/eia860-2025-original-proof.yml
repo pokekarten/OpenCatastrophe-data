@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: EIA-860 2025 official original ZIP plant receipt
+
+on:
+  pull_request:
+    paths:
+      - "research_runners/eia860_annual_2025_original_zip_v0.py"
+      - "tests/test_eia860_annual_2025_original_zip_v0.py"
+      - "docs/research/eia860-annual-2025-original-plant-proof-20261104.md"
+      - ".github/workflows/eia860-2025-original-proof.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-source:
+    name: EIA 2025 original official ZIP and annual plant coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact event ref without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Run deterministic synthetic source-integrity regressions
+        run: python -m unittest tests.test_eia860_annual_2025_original_zip_v0 -v
+      - name: Read once from fixed official EIA endpoint; do not persist original bytes
+        run: python research_runners/eia860_annual_2025_original_zip_v0.py --live

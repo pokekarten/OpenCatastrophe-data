@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+schema_version = "WBM_2026_TED_OFFICIAL_SEARCH_BT04_LINEAGE_OBSERVATION_V0"
+retrieval_date = "2026-11-05"
+official_search_api = "https://api.ted.europa.eu/v3/notices/search"
+source_github_actions_run_id = 42104879468
+source_query_type = "exact_publication_number_search"
+api_payload_is_original_eforms_xml = false
+exact_original_xml_pair_rechecked_this_run = false
+indexed_procedure_ids_identical = false
+award_index_has_explicit_reference_to_competition_286307 = false
+missing_search_reference_proves_absence_in_original_xml = false
+title_or_buyer_matching_proves_same_procurement = false
+april_tender_requirements_govern_september_award_proved = false
+company_specific_signed_coinsurance_shares_or_risk_properties_proved = false
+CAT_model_insured_portfolio_admitted = false
+classification = "INDEXED_DIFFERENT_BT04_REQUIRES_ORIGINAL_REPLAY"
+
+[competition]
+publication_number = "286307-2026"
+indexed_BT04_procedure_uuid = "7df98c35-4cae-41ff-8385-141125426a4a"
+official_api_response_bytes = 7127
+official_api_response_sha256 = "1998036c56be615eeba7a7b2c518a428fb544b802b5d079076319af4f27aa844"
+original_xml_source_bytes_pinned_separately = 41307
+original_xml_source_sha256_pinned_separately = "54c0c84b379a9629f3e5774245ca763f66159e2cf45704ba985589202adcf9a1"
+
+[award]
+publication_number = "668506-2026"
+indexed_BT04_procedure_uuid = "0988b2e4-9489-4b3b-9487-cd3a2a624cf5"
+official_api_response_bytes = 7127
+official_api_response_sha256 = "565057622b9d69bbd48aef73ec74a17f35e80500bf86dc35ca99427c1d2e1829"
+original_xml_source_bytes_pinned_separately = 21837
+original_xml_source_sha256_pinned_separately = "7650720183d0c26430e0433858bf2e8b854ea68bb93fbf679e96ee696ee8fc78"

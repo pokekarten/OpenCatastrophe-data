@@ -1,0 +1,213 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission peer-project upstream source discovery from original GitHub README/config files and publisher pages. These candidate sources do not confer asset rights, insurance input approval, scientific validity, or permission to redistribute bytes.",
+  "review_date": "2026-11-04",
+  "entries": [
+    {
+      "candidate_id": "can.nrcan.nhsl.physical-exposure.2016-2020",
+      "name": "Natural Resources Canada National Human Settlement Layers Physical Exposure",
+      "provider": "Natural Resources Canada Geological Survey of Canada",
+      "categories": [
+        "exposure",
+        "buildings",
+        "replacement_value",
+        "census"
+      ],
+      "spatial_scope": "Canada national and provincial releases",
+      "temporal_scope": "Inputs predominantly 2016 to 2020; monetary baseline 2019 CAD",
+      "resolution_or_granularity": "Aggregated building and population exposure, occupancy and construction typology, structure/nonstructure/contents replacement values; downloadable GeoPackage and web map layers",
+      "potential_roles": [
+        "building_stock_calibration",
+        "replacement_cost_prior",
+        "occupancy_and_construction_taxonomy"
+      ],
+      "authoritative_url": "https://opendrr.github.io/national-human-settlement/en/",
+      "access_class_hint": "public_dataset_download_government_licence_canada_product_revision_check",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "OpenDRR/national-human-settlement physical-exposure README attributes inventory to Statistics Canada 2016 dissemination-block housing census, georeferenced business listings and regional industry replacement-cost estimates. The official NRCan portal identifies Open Government Licence - Canada. Model approximates 9.7 million buildings over 390000 grouped locations, not per-building survey records or insured TIV. Freeze dataset vintage, data dictionary, region, cost year, occupancy rules and original terms before use. Primary technical method DOI 10.4095/330012."
+    },
+    {
+      "candidate_id": "can.nrcan.nhsl.social-fabric",
+      "name": "Natural Resources Canada National Human Settlement Layers Social Fabric",
+      "provider": "Natural Resources Canada Geological Survey of Canada",
+      "categories": [
+        "social_vulnerability",
+        "demography",
+        "resilience",
+        "exposure"
+      ],
+      "spatial_scope": "Canada national and provincial layers",
+      "temporal_scope": "Published NHSL product; original census and survey vintages differ by indicator",
+      "resolution_or_granularity": "Social vulnerability indices and community capacity thresholds; GeoPackage, ArcGIS REST and published dictionaries",
+      "potential_roles": [
+        "community_vulnerability_context",
+        "resilience_scenario_prior",
+        "geographic_aggregation_validation"
+      ],
+      "authoritative_url": "https://opendrr.github.io/national-human-settlement/en/",
+      "access_class_hint": "public_dataset_download_government_licence_canada_indicator_method_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinct from NHSL physical building values, and NOT a physical vulnerability/damage curve. Official portal describes Social Fabric and Capacity Threshold layers and Open Government Licence - Canada. Verify indicator weights, underlying census denominators, publication date, area geometry, demographic privacy and allowable use before scientific calibration."
+    },
+    {
+      "candidate_id": "rug.wiod2016.world-input-output-tables",
+      "name": "World Input-Output Database 2016 Release WIOT and socioeconomic accounts",
+      "provider": "University of Groningen Groningen Growth and Development Centre",
+      "categories": [
+        "economy",
+        "supply_chain",
+        "business_interruption",
+        "input_output"
+      ],
+      "spatial_scope": "43 economies plus a modeled rest-of-world sector; not global granular firms",
+      "temporal_scope": "Historical annual tables 2000-2014; 2016 release",
+      "resolution_or_granularity": "World Input-Output Tables 56 sectors, international trade flows, socio-economic accounts and satellite tables; millions of USD for current-price WIOTs",
+      "potential_roles": [
+        "sector_network_prior",
+        "indirect_business_interruption",
+        "economic_exposure_consistency"
+      ],
+      "authoritative_url": "https://www.rug.nl/ggdc/valuechain/wiod/wiod-2016-release",
+      "access_class_hint": "public_download_cc_by_4_publisher_statement_exact_asset_check",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NCCS global-impacts-modelling README explicitly fixes WIOD16 MRIOT year 2011 and indirect Leontief/Ghosh pathways. Groningen publisher describes 43 economies, 56 ISIC rev 4 sectors, 2000-2014, rest-of-world approximation and CC BY 4.0. Table-year, prices, sectors, exchange rates, national-versus-global denominators and licensing of selected archive require reproducible preflight. Not insurer-specific supply chains."
+    },
+    {
+      "candidate_id": "compass.paprotny.global-exposure.2025.17572467",
+      "name": "COMPASS Paprotny global gridded population GDP and net fixed assets 1850-2100",
+      "provider": "HORIZON COMPASS / Potsdam Institute for Climate Impact Research",
+      "categories": [
+        "exposure",
+        "economic_assets",
+        "population",
+        "scenario"
+      ],
+      "spatial_scope": "Global gridded country/scenario products",
+      "temporal_scope": "Annual historical 1850-2020 and projections through 2100 under five SSP trajectories; precise intervals differ by released files",
+      "resolution_or_granularity": "30 arc-second and 30 arc-minute global exposure products, with Python reconstruction code and source inputs; 2025 Zenodo record 17572467",
+      "potential_roles": [
+        "economic_value_surface",
+        "future_synthetic_exposure",
+        "historical_exposure_benchmark"
+      ],
+      "authoritative_url": "https://zenodo.org/records/17572467",
+      "access_class_hint": "public_zenodo_metadata_and_selected_archives_15gb_rights_unreviewed",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Original Zenodo release explicitly lists dependency on JRC GHSL 1975-2030, Utrecht HYDE 3.2 population 1850-1980, WorldPop and FuturePop projections; individual sources are NOT independent empirical validation of this derivative. Dataset page does not establish a usable rights decision for all external inputs here. The project GitHub README inconsistently equates 30 arc-sec to 1.85 km; use Zenodo stated approx 0.93 km at equator and verify geospatial metadata. Never infer insured value from net fixed assets."
+    },
+    {
+      "candidate_id": "worldpop.futurepop.ssp.1km.v0.2",
+      "name": "WorldPop FuturePop SSP population projections v0.2",
+      "provider": "WorldPop University of Southampton",
+      "categories": [
+        "population",
+        "scenario",
+        "demography",
+        "exposure"
+      ],
+      "spatial_scope": "Global land grid with country-specific masks",
+      "temporal_scope": "2025 to 2100, five SSP pathways, five-year intervals",
+      "resolution_or_granularity": "Global 30 arc-second approximately 1 km gridded projected population rasters; exact product DOI 10.5258/SOTON/WP00849",
+      "potential_roles": [
+        "future_population_prior",
+        "scenario_exposure_allocation",
+        "demographic_denominator"
+      ],
+      "authoritative_url": "https://hub.worldpop.org/geodata/summary?id=110984",
+      "access_class_hint": "public_download_cc_by_4_per_original_product_check_lineage",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Listed by COMPASS global exposure model as original dependency. Original WorldPop publisher labels v0.2 release and CC BY 4.0; provider warns some other WorldPop products derived from OSM or Microsoft may be ODbL, so do not generalise licences across families. Country and scenario totals are not independent building or insurance observations."
+    },
+    {
+      "candidate_id": "uu.hyde3.2.historical-population",
+      "name": "HYDE 3.2 historical gridded population baseline",
+      "provider": "Utrecht University HYDE research dataset",
+      "categories": [
+        "population",
+        "historical_exposure",
+        "land_use"
+      ],
+      "spatial_scope": "Global historical gridded product",
+      "temporal_scope": "Historical model with a specific subset 1850-1980 used by COMPASS; full publisher coverage differs",
+      "resolution_or_granularity": "Gridded historical population count popc baseline decennial subset, not observed asset valuation",
+      "potential_roles": [
+        "historical_population_prior",
+        "historical_exposure_reconstruction"
+      ],
+      "authoritative_url": "https://geo.public.data.uu.nl/vault-hyde/",
+      "access_class_hint": "public_historical_archive_exact_revision_and_rights_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "COMPASS Zenodo 17572467 cites the original Utrecht HYDE 3.2 archive, baseline popc selected decennial timesteps from 1850 to 1980. Must fix exact archive snapshot, layer version, units, masks, and reuse terms; derivative uncertainty and interpolation mean these are modeled population grids, not contemporaneous census observations at each grid cell."
+    },
+    {
+      "candidate_id": "spacenet.spacenet7.multitemporal-urban-development",
+      "name": "SpaceNet 7 Multi-Temporal Urban Development satellite building labels",
+      "provider": "SpaceNet / SpaceNet Challenge",
+      "categories": [
+        "buildings",
+        "remote_sensing",
+        "validation",
+        "change_detection"
+      ],
+      "spatial_scope": "Selected global urban areas, not representative worldwide",
+      "temporal_scope": "Multi-date optical observations; dataset and train/test scene vintages differ",
+      "resolution_or_granularity": "High-resolution multispectral imagery and building footprint tracking labels for benchmark AOIs",
+      "potential_roles": [
+        "building_extraction_holdout",
+        "building_vintage_validation",
+        "segmentation_quality_assessment"
+      ],
+      "authoritative_url": "https://spacenet.ai/sn7-challenge/",
+      "access_class_hint": "public_challenge_dataset_individual_asset_licences_and_ground_truth_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "GFDRR urban_validation original README names SpaceNet 7 as AOI-specific reference footprints. License, image source restrictions, training/test independence, annotation quality, scene acquisition times and spatial sampling bias must be checked at the exact release. Do not use benchmark labels as countrywide building stock or insured loss."
+    },
+    {
+      "candidate_id": "eth.nccs.global-impacts-data-collection.2025",
+      "name": "ETH NCCS Global Impacts climate and economic sector input collection",
+      "provider": "ETH Zurich / Swiss National Centre for Climate Services",
+      "categories": [
+        "exposure",
+        "multi_hazard",
+        "economy",
+        "impact_model"
+      ],
+      "spatial_scope": "Multiple countries and economic sectors; product- and scenario-dependent",
+      "temporal_scope": "Historical and climate scenarios, as distributed in the project collection",
+      "resolution_or_granularity": "Project-associated archive for direct hazards/exposure inputs and impact outputs, linked to CLIMADA v6.1 and WIOD 2016 2011 MRIOT",
+      "potential_roles": [
+        "sector_exposure_methods",
+        "indirect_business_interruption_benchmark",
+        "model_input_lineage"
+      ],
+      "authoritative_url": "https://hdl.handle.net/20.500.11850/785985",
+      "access_class_hint": "research_collection_public_metadata_asset_level_licence_and_version_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NCCS GitHub README identifies ETH research collection as required pipeline data input. Code sectors include forestry, manufacturing, mining, utilities; hazards tropical cyclone, river flood, Europe windstorm, relative crop yield. Its WIOD16/2011 matrices, World Bank GDP and mineral rents, and CLIMADA hazards/impact functions require distinct original-provider lineage; the bundled outputs are not independent loss truth. Archive contents and per-file rights not downloaded or audited."
+    }
+  ]
+}

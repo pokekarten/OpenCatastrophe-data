@@ -1,0 +1,49 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: landscape/sources-nl-es-flood-defence-20261114.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Source landscape: `sources-nl-es-flood-defence-20261114.json`
+
+> This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
+
+**Schema version:** `1.0.0`  
+**Review date:** `2026-11-14`  
+**Purpose:** Non-admission discovery of official Netherlands primary flood-protection trajectories and Spain longitudinal flood-defence works; source rights and hydraulic modelling remain separately gated.
+
+**Entries:** 2
+
+## Netherlands NBPW national primary flood-defence trajectories and standards
+
+**Candidate ID:** `nl.ihw.nbpw.primary-flood-defence-trajectories.2026`  
+**Provider:** Informatiehuis Water / Rijkswaterstaat (Nationaal Georegister)  
+**Categories:** `flood`, `flood_defence`, `levees`, `dike_trajectories`, `netherlands`, `geo_api`, `hazard_protection`  
+**Spatial scope:** Netherlands, national primary flood protection systems (dikes, dunes, dams and flood-control structures); regional/secondary barriers not necessarily included  
+**Temporal scope:** National georegister describes ongoing product originally published 2017-03-22; 2026-11-14 live-access observation, individual feature vintage/version not yet verified  
+**Resolution / granularity:** OGC WFS 2.0 layer nbpw:nbpw_dijktrajecten_formeel; line features with standards and corresponding trajectories, service/source coordinates observed in RD New EPSG:28992; exact release and data-quality fields pending  
+**Potential roles:** `primary_dike_trajectory_geometry`, `dike_norm_prior`, `flood_protection_sensitivity`, `flood_hazard_defence_overlap_check`  
+**Access hint:** `official_wfs_public_single_feature_intermediary_observation_original_rights_no_restrictions_but_admission_unreviewed`  
+**Authoritative source:** <https://www.nationaalgeoregister.nl/geonetwork/srv/api/records/fa4cc54e-26b3-4f25-b643-59458622901c>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** The official Nationaal Georegister metadata states no use restrictions and no public access conditions. Official WFS https://geo.rijkswaterstaat.nl/services/ogc/wvp/nbpw/ows/wfs supports layer nbpw:nbpw_dijktrajecten_formeel. An external intermediary returned a FeatureCollection with exactly one MultiLineString feature for count=1 on 2026-11-14; coordinates were metre-scale (e.g. x near 200000), consistent with EPSG:28992, and are NOT longitude/latitude despite application/json GeoJSON representation. This observation is neither a trusted GitHub runner receipt nor original geometry quality acceptance. Verify CRS axis/version, field schema, per-trajectory legal standard, legal scope, server response bytes and limits. Do not infer that an asset is effective, connected to a floodplain, or prevents loss. No source data saved or model admitted.
+
+## Spain SNCZI Inventario de Obras Longitudinales
+
+**Candidate ID:** `es.miteco.snczi.longitudinal-defence-works.2026`  
+**Provider:** Spanish Ministry for Ecological Transition (MITECO) / official INSPIRE services registry  
+**Categories:** `flood`, `flood_defence`, `river_banks`, `levees`, `spain`, `infrastructure`, `inspire`  
+**Spatial scope:** Spain river basin districts managed across intercommunity watersheds; national portal coverage is not necessarily complete for every basin and island  
+**Temporal scope:** Official dataset catalogue lists distribution creation 2021-04-21 and periodic updates; exact current geographic layer vintage and download release not independently verified  
+**Resolution / granularity:** INSPIRE catalogue describes longitudinal construction geometries, type, technical attributes and protected land-use; WMS and ATOM/ZIP original service links; service/native CRS and schema pending validation  
+**Potential roles:** `flood_defence_line_geometries`, `river_bank_works_characterisation`, `spanish_hazard_protection_overlay`, `protection_design_metadata_context`  
+**Access hint:** `official_central_catalogue_cc_by_4_0_claim_wms_atom_download_documented_no_original_data_sample`  
+**Authoritative source:** <https://datos.gob.es/es/catalogo/e0dat0002-inventario-de-obras-longitudinales>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official datos.gob.es INSPIRE record links MITECO original IOL.zip, WMS GetCapabilities, ATOM download and OGC service metadata and gives CC BY 4.0 terms for catalogue resources. An external research fetch of the published WMS capabilities URL was not parsed as a response (unexpected XML content type), so DO NOT call it a successful live API test, nor claim the ZIP bytes were acquired. Product includes BOTH flood protection assets and bank-stabilisation works: separate types before any protective-status inference. Check exact resource-specific rights/attribution, download bytes/digest/version, per-feature type/CRS, segmentation and hydraulic/science consistency. Unknown or unverified properties remain blocked; no original source data or model input admitted.

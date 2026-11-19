@@ -1,0 +1,188 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+"""Read-only source-pinned QA for the historical original NOAA IBTrACS ALL CSV.
+
+This does not download anything. Identity/aggregate expectations are sourced
+from docs/research/executed-source-findings-20261103.md (acquired 2026-11-02).
+The approved access/noaa.ncei.ibtracs.v04r01.json describes a DIFFERENT NetCDF
+distribution: it cannot authorize this CSV acquisition or commercial model use.
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import json
+import math
+from datetime import datetime
+from pathlib import Path
+import re
+
+SOURCE_ID = "noaa.ncei.ibtracs.v04r01"
+ORIGINAL_CSV = "ibtracs.ALL.list.v04r01.csv"
+ORIGINAL_URL = (
+    "https://www.ncei.noaa.gov/data/"
+    "international-best-track-archive-for-climate-stewardship-ibtracs/"
+    "v04r01/access/csv/ibtracs.ALL.list.v04r01.csv"
+)
+PINNED_BYTES = 333_183_438
+PINNED_SHA256 = "7a11978ceba2953754b75bcc99bf1cfc8f00046aa5054054573edc904240d820"
+PINNED_DATA_ROWS = 730_416
+PINNED_STORM_IDS = 13_631
+PINNED_LON_GT_180 = 10_658
+PINNED_COLUMNS = 174
+MAX_RECORDS = 1_000_000
+REQUIRED = ("SID", "SEASON", "BASIN", "ISO_TIME", "LAT", "LON", "WMO_WIND", "USA_WIND", "TRACK_TYPE")
+ISO_TIME = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
+# NOAA v04r01 column documentation uses "deg north" / "deg_east".
+# CF spellings are also accepted by this source-format gate, but radians,
+# metres and the opposite axes must never pass as valid geographic degrees.
+COORD_UNITS = {
+    "LAT": frozenset(("degnorth", "degreesnorth")),
+    "LON": frozenset(("degeast", "degreeseast")),
+}
+# v04r01 reports WMO_WIND and USA_WIND in knots, but DOES NOT
+# harmonize the WMO reporting agencies' wind averaging intervals.
+WIND_FIELDS = ("WMO_WIND", "USA_WIND")
+WIND_NUMERIC = re.compile(r"[0-9]+(?:\.[0-9]+)?\Z")
+
+
+def _coord_unit(text: str) -> str:
+    """Normalize harmless formatting, never the direction or angle unit."""
+    return re.sub(r"[\s_-]+", "", text.casefold())
+
+
+class IBTrACSAuditError(ValueError):
+    """Original identity or native science-shape gate is blocked."""
+
+
+def audit_rows(reader: object, *, expected_columns: int = PINNED_COLUMNS,
+               max_records: int = MAX_RECORDS) -> dict[str, int]:
+    """Parse a local CSV stream, returning only safe aggregate diagnostics."""
+    rows = csv.reader(reader, strict=True)
+    try:
+        header = next(rows)
+        units = next(rows)
+    except (StopIteration, csv.Error) as exc:
+        raise IBTrACSAuditError("missing complete two-line CSV header/units") from exc
+    if len(header) != expected_columns or len(set(header)) != len(header):
+        raise IBTrACSAuditError("wrong number of columns or duplicate headers")
+    if any(name not in header for name in REQUIRED):
+        raise IBTrACSAuditError("required original NOAA columns missing")
+    if len(units) != expected_columns or units[0].strip():
+        raise IBTrACSAuditError("original column-units row missing or malformed")
+    index = {key: header.index(key) for key in REQUIRED}
+    for field, accepted in COORD_UNITS.items():
+        if _coord_unit(units[index[field]].strip()) not in accepted:
+            raise IBTrACSAuditError(
+                "missing, swapped or unsupported native coordinate units"
+            )
+    # These are explicitly knots in the provider's 2025 v04r01 column
+    # documentation. Unit checks DO NOT equalize 1-, 3- or 10-minute winds.
+    wind_index = {name: header.index(name) for name in WIND_FIELDS}
+    if any(units[wind_index[name]].strip().casefold() != "knots"
+           for name in WIND_FIELDS):
+        raise IBTrACSAuditError("native IBTrACS wind unit must be knots")
+    storm_ids: set[str] = set()
+    count = over_180 = 0
+    for row in rows:
+        count += 1
+        if count > max_records:
+            raise IBTrACSAuditError("bounded CSV record limit exceeded")
+        if len(row) != expected_columns:
+            raise IBTrACSAuditError("ragged original CSV observation")
+        sid = row[index["SID"]].strip()
+        iso_time = row[index["ISO_TIME"]].strip()
+        if not sid or not ISO_TIME.fullmatch(iso_time):
+            raise IBTrACSAuditError("missing SID or malformed ISO_TIME")
+        try:
+            datetime.strptime(iso_time, "%Y-%m-%d %H:%M:%S")
+        except ValueError as exc:
+            raise IBTrACSAuditError("invalid native ISO_TIME calendar date/time") from exc
+        storm_ids.add(sid)
+        try:
+            lat, lon = float(row[index["LAT"]]), float(row[index["LON"]])
+        except ValueError as exc:
+            raise IBTrACSAuditError("missing or nonnumeric native coordinates") from exc
+        if not all(map(math.isfinite, (lat, lon))) or not (-90 <= lat <= 90) or not (-180 <= lon <= 360):
+            raise IBTrACSAuditError("out-of-domain original coordinate")
+        if lon > 180:
+            over_180 += 1
+        # Blank native values are documented missingness, not zero wind.
+        # USA_WIND has a provider-defined 0..300 knots domain. A WMO
+        # upper bound is deliberately not inferred across reporting agencies.
+        for name, column in wind_index.items():
+            native = row[column].strip()
+            if not native:
+                continue
+            if not WIND_NUMERIC.fullmatch(native):
+                raise IBTrACSAuditError("non-numeric or invalid native wind speed")
+            try:
+                speed = float(native)
+            except (ValueError, OverflowError) as exc:
+                raise IBTrACSAuditError("invalid native wind speed") from exc
+            if not math.isfinite(speed) or speed < 0 or (
+                name == "USA_WIND" and speed > 300
+            ):
+                raise IBTrACSAuditError("out-of-domain native wind speed")
+    if not count:
+        raise IBTrACSAuditError("no source observation rows")
+    return {"data_rows": count, "distinct_storm_ids": len(storm_ids),
+            "longitude_gt_180_rows": over_180, "column_count": len(header)}
+
+
+def audit_original_file(path: Path, *, expected_bytes: int = PINNED_BYTES,
+                        expected_sha256: str = PINNED_SHA256,
+                        expected_metrics: tuple[int, int, int] = (
+                            PINNED_DATA_ROWS, PINNED_STORM_IDS, PINNED_LON_GT_180),
+                        expected_columns: int = PINNED_COLUMNS) -> dict[str, object]:
+    """Compare original bytes to independent SHA before parsing, no network."""
+    try:
+        before = path.stat()
+        if not path.is_file() or before.st_size != expected_bytes:
+            raise IBTrACSAuditError("original CSV byte count does not match receipt")
+        digest = hashlib.sha256()
+        with path.open("rb") as source:
+            for chunk in iter(lambda: source.read(1 << 20), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != expected_sha256:
+            raise IBTrACSAuditError("original CSV SHA-256 does not match receipt")
+        with path.open("r", encoding="utf-8-sig", newline="") as source:
+            metrics = audit_rows(source, expected_columns=expected_columns)
+        after = path.stat()
+        if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
+            raise IBTrACSAuditError("source changed during read-only audit")
+    except (OSError, UnicodeError, csv.Error) as exc:
+        raise IBTrACSAuditError("cannot read complete original CSV") from exc
+    observed = (metrics["data_rows"], metrics["distinct_storm_ids"],
+                metrics["longitude_gt_180_rows"])
+    if observed != expected_metrics:
+        raise IBTrACSAuditError("source aggregate metrics do not match pinned receipt")
+    return {
+        "source_id": SOURCE_ID, "source_distribution": ORIGINAL_CSV,
+        "original_url": ORIGINAL_URL, "original_bytes": before.st_size,
+        "original_sha256": digest.hexdigest(), **metrics,
+        "rights_approved_for_commercial_model": False,
+        "source_admitted": False, "model_input_approved": False,
+        "native_longitude_gt_180_is_not_invalid": True,
+        "agency_wind_averaging_harmonized": False,
+        "track_type_provisional_and_spur_review_pending": True,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--original-csv", required=True, type=Path)
+    args = parser.parse_args()
+    try:
+        result = audit_original_file(args.original_csv)
+    except IBTrACSAuditError as exc:
+        parser.exit(2, f"BLOCKED: {exc}\n")
+    print(json.dumps(result, sort_keys=True, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

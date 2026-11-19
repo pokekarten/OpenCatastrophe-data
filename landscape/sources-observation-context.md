@@ -57,11 +57,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Temporal scope:** 2001-01-01 to 2025-12-31, dataset version v2026.01  
 **Resolution / granularity:** CSV event identifiers and dates; ESRI File Geodatabase precipitation-maxima points and event-zone polygons, derived from 1 km hourly RADKLIM-RW across 11 durations  
 **Potential roles:** `pluvial_flood_event_validation`, `extreme_rainfall_catalogue`, `source_lineage_link_with_radklim`  
-**Access hint:** `public_official_download_csv_and_geodatabase_exact_rights_and_bytes_pending`  
+**Access hint:** `public_dwd_cdc_cc_by_4_fixed_4096_byte_range_probe_full_csv_not_admitted`  
 **Authoritative source:** <https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_CatRaRE_W3_Eta_v2026.01-de.html>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Latest independently observed official v2026.01 product: same RADKLIM-RW V2017.002 parent as earlier v2025.01, extended to 2025. NOT an independent validation of that radar product. Keep W3 selection threshold, version, KEY_FIELD/Event_ID, UTC event times, RADKLIM-native projection, publication corrections and event-zone geometry exact; verify source bytes/SHA256 and terms before admission. Do not add W3 and T5 event counts as distinct weather events.
+**Note:** Latest independently observed official v2026.01 product: same RADKLIM-RW V2017.002 parent as earlier v2025.01, extended to 2025. NOT an independent validation of that radar product. Keep W3 selection threshold, version, KEY_FIELD/Event_ID, UTC event times, RADKLIM-native projection, publication corrections and event-zone geometry exact; verify source bytes/SHA256 and terms before admission. Do not add W3 and T5 event counts as distinct weather events. Fixed 2026.01 official CSV at https://opendata.dwd.de/climate_environment/CDC/event_catalogues/germany/precipitation/CatRaRE_v2026.01/data/CatRaRE_2001_2025_W3_Eta_v2026_01.csv (directory size 12,410,601 bytes); 2026.01 DOI landing-page CSV hyperlink incorrectly targets 2025 version and returns 404. Original DWD CDC Terms_of_use.pdf confirms CC BY 4.0 with DWD attribution. A bounded HTTP Range bytes=0-4095 was retrieved live and 67 header fields / first 3 W3_Eta event records verified: prefix SHA-256 a3e02cb676b855390c0a9b69f41352c7c3dff74c7c25e2578727e8397f9d9b12. This is only the prefix digest, NOT a complete 12.4 MB file hash; source remains not admitted until full-file identity, coordinates, time zone, event semantics and dependency consistency are validated.
 
 ## CatRaRE T5 Eta five-year-threshold heavy-rainfall catalogue v2026.01
 
@@ -72,11 +72,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Temporal scope:** 2001-01-01 to 2025-12-31, dataset version v2026.01  
 **Resolution / granularity:** CSV events and geodatabase point/polygon records derived from 1 km RADKLIM-RW, threshold based on five-year return period, across 11 accumulation durations  
 **Potential roles:** `extreme_rainfall_catalogue`, `event_definition_sensitivity_check`, `source_lineage_link_with_radklim`  
-**Access hint:** `public_official_download_csv_and_geodatabase_exact_rights_and_bytes_pending`  
+**Access hint:** `public_dwd_cdc_cc_by_4_fixed_4096_byte_range_probe_full_csv_not_admitted`  
 **Authoritative source:** <https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_CatRaRE_T5_Eta_v2026.01-de.html>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** T5 and W3 are distinct detection thresholds based on the same radar precipitation source, NOT independent event catalogues. Preserve exact threshold and Eta selection, original event ids qualified by catalogue variant/release, UTC time, event-zone polygon and projection. Require source bytes checksum, licences and threshold-specific event alignment before quantitative comparison or flood-model use.
+**Note:** T5 and W3 are distinct detection thresholds based on the same radar precipitation source, NOT independent event catalogues. Preserve exact threshold and Eta selection, original event ids qualified by catalogue variant/release, UTC time, event-zone polygon and projection. Require source bytes checksum, licences and threshold-specific event alignment before quantitative comparison or flood-model use. Official v2026.01 T5 CSV: https://opendata.dwd.de/climate_environment/CDC/event_catalogues/germany/precipitation/CatRaRE_v2026.01/data/CatRaRE_2001_2025_T5_Eta_v2026_01.csv (17,208,653 bytes in DWD directory). Original DWD CDC Terms_of_use.pdf confirms CC BY 4.0 requiring DWD attribution. One real HTTP Range bytes=0-4095 (4096 bytes, 67 columns, first three T5_Eta records) has SHA-256 5dc4b6f0dac14f0a442103b78c16f647556bd870898aabff6d9f62aa4534f542. This is only a partial-response digest: no full 17.2-MB file hash, event geometry/CRS/time-zone scientific validation or CAT-model admission. T5 and W3 are derived from the SAME RADKLIM parent, and must NOT be added as independent meteorological events.
 
 ## HYRAS-DE hydrometeorological gridded data
 

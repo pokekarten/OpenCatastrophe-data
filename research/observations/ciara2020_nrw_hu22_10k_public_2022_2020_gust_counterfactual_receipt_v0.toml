@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Actual original Google Research public ERA5 10fg 96h weather over PUBLIC
+# 2022 NRW 10k residential-building candidates, with FICTIONAL policy TIV.
+# Wind threshold TIV is exposure, not weather damage / gross insured loss.
+
+schema = "CIARA2020_NRW_HU22_10K_PUBLIC_SITE_ERA5_GUST_COUNTERFACTUAL_V0"
+status = "2020_ORIGINAL_GOOGLE_ERA5_WIND_ON_2022_PUBLIC_BUILDINGS_10K_COUNTERFACTUAL_NO_LOSS"
+as_of_date_utc = "2026-11-13"
+first_successful_original_live_github_run = 43489088388
+first_successful_original_live_github_job = 132105176207
+source_original_2022_HU_derived_10k_archive_sha256 = "5b0055ce71314f7d7baf4f67008cd4abba3df28a4bce0690bbe9521a3cc35757"
+source_original_2022_HU_10k_93cell_csv_sha256 = "fe012f9e0a42b67ad7b73b49bb7ca24edd1be7c785db2321b3997ebc466315e7"
+source_10k_93cell_occupancy_signature_sha256 = "de10099a9b79febb1a254bc765dc477a47589cb1f49ba75415bfe6b9723c2ebd"
+2020_google_arco_original_96h_160cell_decoded_sha256 = "5fb7c41963a94f88ee3651b51bfa84cc2f4bf379e1ee6f4eb4a4fb597d37f932"
+public_2022_building_candidate_count = 10000
+source_2022_NRW_counties = 53
+source_2022_occupied_0p25deg_grid_cells = 93
+fictional_building_tiv_eur = 4826029500
+historical_2020_google_era5_hourly_gust_frames = 96
+candidate_weighted_2020_ciara_96h_peak_wind_mps = 31.673449949645995
+fictional_tiv_weighted_2020_ciara_96h_peak_wind_mps = 31.67299538469392
+source_occupied_cell_96h_peak_gust_mps_min = 30.28105926513672
+source_occupied_cell_96h_peak_gust_mps_max = 34.43796157836914
+public_2022_building_occupancy_as_of_2020_verified = false
+real_RV_2020_insured_site_universe_observed = false
+2020_insurer_coverage_or_claims_observed = false
+original_GCS_compressed_chunk_SHA_or_CDS_GRIB_parity_verified = false
+German_wind_vulnerability_native_GUL_IL_RI_OEP_AEP_admitted = false
+annual_stochastic_EP_or_capital_model_admitted = false
+
+[threshold_mps."25"]
+public_2022_building_candidate_count = 10000
+fictional_building_tiv_eur = 4826029500
+occupied_grid_cells = 93
+
+[threshold_mps."30"]
+public_2022_building_candidate_count = 10000
+fictional_building_tiv_eur = 4826029500
+occupied_grid_cells = 93
+
+[threshold_mps."35"]
+public_2022_building_candidate_count = 0
+fictional_building_tiv_eur = 0
+occupied_grid_cells = 0
+
+[threshold_mps."40"]
+public_2022_building_candidate_count = 0
+fictional_building_tiv_eur = 0
+occupied_grid_cells = 0

@@ -18,35 +18,30 @@ SOURCE_ID = "de.berlin.alkis-gebaeude.wfs"
 
 
 class BerlinAlkisSourceContractTests(unittest.TestCase):
-    def test_reviewed_interface_and_source_identity_are_frozen_but_nonexecuting(self) -> None:
+    def test_reviewed_interface_is_frozen_to_metadata_without_features(self) -> None:
         source = validate_path(CONTRACT)
         self.assertEqual(source["access_id"], SOURCE_ID)
         self.assertEqual(source["source_ids"], [SOURCE_ID])
         self.assertEqual(source["interface_type"], "wfs")
         self.assertEqual(source["service_root"], "https://gdi.berlin.de")
         self.assertEqual(source["request_contract"]["path_templates"], ["/services/wfs/alkis_gebaeude"])
-        self.assertEqual(source["status"], "documented_only")
-        self.assertEqual(source["implementation_decision"], "document_only")
-        self.assertEqual(source["probe_contract"]["mode"], "none")
-        self.assertEqual(source["rights_and_policy"]["api_terms_status"], "unknown")
-        self.assertEqual(source["rights_and_policy"]["commercial_automation_status"], "unknown")
+        self.assertEqual(source["request_contract"]["allowed_operations"], ["get_capabilities"])
+        self.assertEqual(source["access_scope"], ["metadata"])
+        self.assertEqual(source["status"], "probe_ready")
+        self.assertEqual(source["implementation_decision"], "build_later")
+        self.assertEqual(source["probe_contract"]["mode"], "metadata_get")
+        self.assertEqual(source["probe_contract"]["operation"], "get_capabilities")
+        self.assertFalse(source["probe_contract"]["requires_credentials"])
+        self.assertEqual(source["rights_and_policy"]["api_terms_status"], "separate_reviewed")
+        self.assertEqual(source["rights_and_policy"]["commercial_automation_status"], "allowed")
 
-    def test_adapter_promotion_and_probe_enablement_fail_without_terms_review(self) -> None:
+    def test_rights_downgrade_prevents_live_metadata_access(self) -> None:
         source = validate_path(CONTRACT)
-        enabled = copy.deepcopy(source)
-        enabled["implementation_decision"] = "build_adapter_now"
+        revoked = copy.deepcopy(source)
+        revoked["rights_and_policy"]["api_terms_status"] = "unknown"
+        revoked["rights_and_policy"]["commercial_automation_status"] = "unknown"
         with self.assertRaises(SourceAccessError):
-            validate_contract(enabled)
-        enabled = copy.deepcopy(source)
-        enabled["status"] = "probe_ready"
-        enabled["probe_contract"] = {
-            "mode": "metadata_get",
-            "operation": "get_capabilities",
-            "requires_credentials": False,
-            "expected_evidence": ["response digest"],
-        }
-        with self.assertRaises(SourceAccessError):
-            validate_contract(enabled)
+            validate_contract(revoked)
 
     def test_derived_inventory_preserves_discovery_nonadmission_and_one_contract(self) -> None:
         rows = [
@@ -56,8 +51,9 @@ class BerlinAlkisSourceContractTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         row = rows[0]
         self.assertEqual(row["contract_ids"], [SOURCE_ID])
-        self.assertEqual(row["operational_readiness"], "contract_documentation_only")
+        self.assertEqual(row["operational_readiness"], "bounded_probe_defined_not_executed")
         self.assertEqual(row["automation_decision"], "document_only")
+        self.assertFalse(row["live_data_availability_proven"])
 
 
 if __name__ == "__main__":

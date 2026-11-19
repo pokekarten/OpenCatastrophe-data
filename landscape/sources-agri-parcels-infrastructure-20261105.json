@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission source discovery of original agricultural parcel and physical infrastructure inventories surfaced by Exa research on 2026-11-05. Candidate records only; no original assets, insurer locations, rights approvals, or model admission.",
+  "review_date": "2026-11-05",
+  "entries": [
+    {
+      "candidate_id": "eu.jrc.eurocropsv2.gsa-parcels",
+      "name": "JRC EuroCropsV2 harmonised EU agricultural parcel crop declarations",
+      "provider": "European Commission Joint Research Centre / EUROSTAT / national agricultural paying agencies",
+      "categories": [
+        "agriculture",
+        "crop_exposure",
+        "parcel_geometry",
+        "geospatial",
+        "historical_land_use"
+      ],
+      "spatial_scope": "Available regional coverage across participating European countries; not uniformly complete at country/region/year level",
+      "temporal_scope": "National source vintages from 2008 through 2023 where available; JRC EuroCropsV2 published 2025 and corrected in 2026",
+      "resolution_or_granularity": "Harmonised parcel-level GeoParquet geometries (EPSG:3035), crop identifiers and harmonised HCAT4 mapping; nearly 47 million parcels reported in project documentation, across multiple non-uniform vintages",
+      "potential_roles": [
+        "synthetic_agricultural_insurance_parcel_allocation",
+        "regional_crop_class_prior_for_hail_flood_drought",
+        "crop_exposure_independent_remote_sensing_challenge"
+      ],
+      "authoritative_url": "https://data.jrc.ec.europa.eu/dataset/b9fb9e67-78a9-4327-9d59-39a928d812d3",
+      "access_class_hint": "public_jrc_gpq_and_original_cc_by4_notice_exact_release_and_member_state_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Original JRC distribution https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/DRLL/EuroCropsV2/ and 2026-03-05 copyright.txt declare EU CC BY 4.0 with attribution/change indication. Original repo https://github.com/Martincccc/EuroCropsV2 documents corrected gpqtv201 (stack) and gpqtv202 (overlapping polygons) versions; pin exact selected file, version, SHA256, geometry validity, CRS, codebook and source national usage rights before admission. National farmer declarations are self-reported, not observed plant cover, insured crop values, policy holdings or loss observations. EuroCropsV2 includes national paying-agency inputs (including Netherlands); never treat it as independent of Dutch BRP when the underlying parcel/source vintage overlaps."
+    },
+    {
+      "candidate_id": "nl.rvo.brp-gewaspercelen.2025",
+      "name": "Netherlands RVO/PDOK Basisregistratie Gewaspercelen (BRP) agricultural parcels",
+      "provider": "Rijksdienst voor Ondernemend Nederland (RVO) / PDOK",
+      "categories": [
+        "agriculture",
+        "crop_exposure",
+        "parcel_geometry",
+        "land_use",
+        "national_register"
+      ],
+      "spatial_scope": "Netherlands, annual agricultural/landscape parcels as filed by participating land users; not every insured farm or field",
+      "temporal_scope": "Annual observed declaration reference date 15 May; 2025 final dataset supplied 2026-03-17, historical exports exist for earlier years",
+      "resolution_or_granularity": "Per-parcel geometry with crop category and crop codes, OGC API Features/WFS/WMS/ATOM dataset distribution; current OGC API returns most recent dataset",
+      "potential_roles": [
+        "high_resolution_dutch_agricultural_exposure_prior",
+        "crop_rotation_and_geographic_concentration",
+        "crosscheck_eurocropsv2_2025_comparability_and_lineage"
+      ],
+      "authoritative_url": "https://api.pdok.nl/rvo/gewaspercelen/ogc/v1",
+      "access_class_hint": "public_pdok_ogc_no_key_no_fee_public_domain_mark_listing_exact_extract_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official PDOK dated 2026-03-17 confirms 2025 final release https://www.pdok.nl/-/brp-gewaspercelen-2025-definitief and native OGC/WFS/ATOM endpoints. Official API advertises Public Domain Mark 1.0, zero charge and no authentication; Public Domain Mark is a copyright status marker, not by itself an independent rights grant or blanket privacy/contract approval. Declaration fields refer to crop filed on reference day 15 May, not confirmed actual growing season or policy-level crop/TIV. Parcel counts include landscape elements; do not equate parcel count with insurable fields. National source can underlie EuroCropsV2; maintain original ID, vintage, downstream provenance and avoid counting correlated evidence twice."
+    },
+    {
+      "candidate_id": "global.geomermaids.gmwid.infrastructure",
+      "name": "GeoMermaids World Infrastructures Dataset (GMWID) global GeoParquet",
+      "provider": "GeoMermaids / OpenStreetMap contributors / stated authoritative national infrastructure registers",
+      "categories": [
+        "infrastructure",
+        "power_grid",
+        "telecommunications",
+        "energy",
+        "business_interruption",
+        "geospatial"
+      ],
+      "spatial_scope": "Worldwide OSM-derived infrastructure plus separately attributed official source enrichments; coverage differs greatly by region and asset class",
+      "temporal_scope": "Provider advertises weekly rebuilt latest layers; historical snapshot preservation is not guaranteed, source vintages vary by upstream",
+      "resolution_or_granularity": "27 infrastructure layers described by provider as per-asset GeoParquet 2.0, including power plants, substations, power lines, telecom masts, pipelines, wells and water infrastructure; origin/source attributes",
+      "potential_roles": [
+        "critical_infrastructure_synthetic_exposure_locations",
+        "power_network_business_interruption_dependency_priors",
+        "official_vs_osm_spatial_completeness_challenge"
+      ],
+      "authoritative_url": "https://gmwid.geomermaids.com/",
+      "access_class_hint": "public_http_geoparquet_osm_odbl_1_sharealike_nsta_separate_noncommercial_do_not_bulk_admit",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Original provider documents global `gmwid/latest/` GeoParquet under ODbL 1.0, lineage `origin` and coverage receipts, plus per-build https://parquetry.geomermaids.com/gmwid/ATTRIBUTION.txt. National additions include EIA, FCC, Agence ORE and others, which are not statistically independent from matching originals already in OpenCatastrophe. UK NSTA data are in a separate explicitly noncommercial `gmwid/nsta/` scope and must never be silently merged into a commercially reusable file. ODbL attribution/share-alike, third-party restrictions, source family matching, weekly volatility and topology/attribute uncertainties need explicit legal/scientific review. Infrastructure presence is not insured replacement cost or modeled outage/loss."
+    },
+    {
+      "candidate_id": "us.fcc.asr.tower-registration",
+      "name": "US FCC Antenna Structure Registration (ASR) public database downloads",
+      "provider": "United States Federal Communications Commission (FCC)",
+      "categories": [
+        "telecommunications",
+        "critical_infrastructure",
+        "asset_register",
+        "geospatial",
+        "physical_exposure"
+      ],
+      "spatial_scope": "United States registered antenna structures, restricted to FCC ASR regulated structures; not all telecom towers or rooftop antennas",
+      "temporal_scope": "FCC publishes periodic complete and daily transaction download products; state, deletions and historical validity require original schema checks",
+      "resolution_or_granularity": "Individual ASR registration and application records provided as tabular ZIP extracts, with separate FAA determination records; structure location and attributes may be present and require schema review",
+      "potential_roles": [
+        "us_telecom_tower_location_prior",
+        "critical_infrastructure_wind_exposure_context",
+        "gMWID_fcc_origin_independence_and_coverage_audit"
+      ],
+      "authoritative_url": "https://www.fcc.gov/wireless/data/public-access-files-database-downloads",
+      "access_class_hint": "public_fcc_asr_bulk_zip_metadata_original_schema_and_current_download_receipt_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Original FCC public database pages list ASR application, registration and FAA determination downloads with complete/daily transaction products. Verify a precise FCC-hosted ZIP path, latest source timestamps, registered/deleted flags, coordinate datum and any controlled/personally identifying fields before fetching or storing rows. GMWID explicitly cites FCC ASR for its added US telecom masts, therefore FCC and GMWID assets are not two independent tower observations; do not double count, and do not treat an FCC registration as insured owner, full asset replacement value or measured wind vulnerability."
+    }
+  ]
+}

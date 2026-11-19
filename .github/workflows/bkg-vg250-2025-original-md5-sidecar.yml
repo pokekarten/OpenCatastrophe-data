@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: BKG VG250 2025 original publisher MD5 sidecar metadata proof
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/bkg_vg250_2025_original_md5_sidecar_v0.py
+      - tests/test_bkg_vg250_2025_original_md5_sidecar_v0.py
+      - access/de.bkg.vg250.3112.2025.md5.json
+      - landscape/sources-bkg-vg250-2025.json
+      - .github/workflows/bkg-vg250-2025-original-md5-sidecar.yml
+  # Only a *workflow-file* merge to trusted main retrieves original bytes.
+  # Routine main commits do not refetch and no schedule exists.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/bkg-vg250-2025-original-md5-sidecar.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bkg-vg250-2025-sidecar-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-sidecar:
+    name: Strict BKG 2025 original 69-byte checksum metadata (NOT ZIP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact audited revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Exercise synthetic negative original-source and ZIP identity tests
+        run: python -m unittest tests.test_bkg_vg250_2025_original_md5_sidecar_v0 -v
+      - name: One bounded official publisher sidecar GET only on trusted main
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          sidecar="$RUNNER_TEMP/bkg-vg250-2025-utm32s-gpkg-original.md5"
+          trap 'rm -f "$sidecar"' EXIT
+          # BKG advertises free direct download with DL-DE-BY-2.0 attribution.
+          # This is only its tiny (~69-byte) MD5 metadata sidecar, NOT ZIP.
+          # No redirects, auth, unrestricted URLs, retries or arbitrary ranges.
+          curl --fail --silent --show-error \
+            --proto '=https' --connect-timeout 12 --max-time 25 \
+            --retry 0 --max-filesize 128 --output "$sidecar" \
+            'https://daten.gdz.bkg.bund.de/produkte/vg/vg250_ebenen_1231/aktuell/vg250_12-31.utm32s.gpkg.ebenen.zip.md5'
+          python -m research_runners.bkg_vg250_2025_original_md5_sidecar_v0 \
+            --original-sidecar "$sidecar"
+          echo 'Provider sidecar removed on exit; full original VG250 ZIP NOT fetched.'

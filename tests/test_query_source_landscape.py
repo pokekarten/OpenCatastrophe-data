@@ -138,6 +138,26 @@ class SourceLandscapeQueryTests(unittest.TestCase):
             with self.assertRaisesRegex(LandscapeQueryError, "non-public IP address"):
                 load_landscape(directory)
 
+    def test_legacy_numeric_host_spellings_fail_closed(self) -> None:
+        # Legacy socket resolvers can interpret these as loopback even though
+        # ipaddress.ip_address() does not recognize them as canonical IPv4.
+        for host in ("2130706433", "0x7f000001", "127.1", "0177.0.0.1"):
+            with self.subTest(host=host), tempfile.TemporaryDirectory() as tmp:
+                directory = Path(tmp)
+                entry = self._entry("example.source")
+                entry["authoritative_url"] = f"https://{host}/source"
+                self._write_shard(directory / "sources-a.json", [entry])
+                with self.assertRaisesRegex(LandscapeQueryError, "ambiguous numeric host"):
+                    load_landscape(directory)
+
+    def test_canonical_public_ipv4_remains_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            entry = self._entry("example.source")
+            entry["authoritative_url"] = "https://8.8.8.8/source"
+            self._write_shard(directory / "sources-a.json", [entry])
+            self.assertEqual(load_landscape(directory)[0]["candidate_id"], "example.source")
+
     def test_malformed_url_port_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)

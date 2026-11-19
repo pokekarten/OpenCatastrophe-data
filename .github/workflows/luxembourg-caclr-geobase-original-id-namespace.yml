@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg CACLR address to GeoBase building original ID namespace
+
+on:
+  pull_request:
+    paths:
+      - "research_runners/lu_caclr_geobase_original_id_namespace_v0.py"
+      - "tests/test_lu_caclr_geobase_original_id_namespace_v0.py"
+      - "docs/research/lu-caclr-geobase-original-id-namespace-20261104.md"
+      - ".github/workflows/luxembourg-caclr-geobase-original-id-namespace.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lu-caclr-geobase-id-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-original-ids:
+    name: Original pinned ACT CACLR vs GeoBase IDs aggregate only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Exercise synthetic namespace/false-join privacy tests
+        run: python -m unittest tests.test_lu_caclr_geobase_original_id_namespace_v0 -v
+      - name: Read only exactly two verified official ACT originals and report counts
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          addresses="$RUNNER_TEMP/act-address-20261102.csv"
+          buildings="$RUNNER_TEMP/geobase-buildings-20261001.zip"
+          trap 'rm -f "$addresses" "$buildings"' EXIT
+          curl --fail --location --silent --show-error --retry 0 \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --max-filesize 32000000 \
+            -o "$addresses" \
+            'https://download.data.public.lu/resources/adresses-georeferencees-bd-adresses/20261102-033122/addresses.csv'
+          curl --fail --location --silent --show-error --retry 0 \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --max-filesize 83886080 \
+            -o "$buildings" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
+          python -m research_runners.lu_caclr_geobase_original_id_namespace_v0 \
+            --address-csv "$addresses" --geobase-zip "$buildings"
+          # No original CSV, GeoPackage, raw IDs or crosswalk published.

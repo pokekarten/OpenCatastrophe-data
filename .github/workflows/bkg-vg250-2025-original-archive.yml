@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: BKG VG250 2025 exact original ZIP and native GeoPackage identity QA
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/bkg_vg250_2025_original_archive_preflight_v0.py
+      - tests/test_bkg_vg250_2025_original_archive_preflight_v0.py
+      - .github/workflows/bkg-vg250-2025-original-archive.yml
+  # One bounded original ZIP only after a trusted reviewed workflow merge.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/bkg-vg250-2025-original-archive.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bkg-vg250-2025-original-archive-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-archive:
+    name: Original 2025 BKG GPKG source MD5/SHA256 and national layer research
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact audited code without cached credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: All deterministic synthetic ZIP/GPKG attack tests
+        run: |
+          python -m unittest \
+            tests.test_bkg_vg250_2025_original_md5_sidecar_v0 \
+            tests.test_bkg_vg250_2025_original_archive_preflight_v0 -v
+      - name: One original full ZIP with publisher-MD5 check and no artifacts
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          zipfile="$RUNNER_TEMP/bkg-vg250-2025-utm32s-gpkg-original.zip"
+          trap 'rm -f "$zipfile"' EXIT
+          # Download exactly one official 31.12.2025 BKG public GPKG ZIP:
+          # < 100 MiB; no arbitrary URLs, headers, redirect, retries or upload.
+          # Before ZIP parsing, the offline gate demands the MD5 from the
+          # independently observed 69-byte official original provider sidecar.
+          curl --fail --silent --show-error \
+            --proto '=https' --connect-timeout 20 --max-time 240 \
+            --max-filesize 104857600 --retry 0 \
+            --output "$zipfile" \
+            'https://daten.gdz.bkg.bund.de/produkte/vg/vg250_ebenen_1231/aktuell/vg250_12-31.utm32s.gpkg.ebenen.zip'
+          # The checked-in preflight prints only an author-controlled
+          # failure category (never original source paths/values) when blocked.
+          # No bypass or data selection occurs on a scientific mismatch.
+          python -m research_runners.bkg_vg250_2025_original_archive_preflight_v0 \
+            --original-zip "$zipfile"
+          echo "Source original ZIP and derived temporary GPKG deleted at job exit; NOT admitted."
