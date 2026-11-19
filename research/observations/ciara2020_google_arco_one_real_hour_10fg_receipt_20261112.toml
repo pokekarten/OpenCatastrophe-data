@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Exact output of first successful one-hour ORIGINAL Google public ARCO
+# 10fg (modelled ERA5) live GitHub source read; not an insured loss/peak.
+schema = "CIARA2020_GOOGLE_ARCO_ONE_REAL_HOUR_ONE_GRIDPOINT_GUST_V0"
+as_of_date_utc = "2026-11-12"
+source = "Google Research public ARCO ERA5; underlying ECMWF/C3S"
+source_public_url = "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3"
+copernicus_licence_with_c3s_attribution = true
+github_pr = 1510
+github_workflow_run_id = 43307934303
+github_workflow_job_id = 131496043770
+utc_hour = "2020-02-09T12:00:00Z"
+original_variable = "10m_wind_gust_since_previous_post_processing"
+grid_latitude = 51.0
+grid_longitude = 7.0
+gust_mps_float32_as_python_string = "20.320262908935547"
+gust_float32_le_sha256_not_original_compressed_chunk_sha256 = "12d34d73cece12a90220ddbbb5b092e388a6b1e0d9b0c9dcf5004a01a7c3119c"
+prior_four_publisher_metadata_SHA256s_verified = true
+source_original_GCS_full_chunk_sha256_verified = false
+original_one_hour_10fg_sample_obtained = true
+full_96hour_160node_ciara_original_data_replayed = false
+reanalysis_not_observed_insurer_loss_or_DWD_station = true
+physical_public_building_candidate_not_observed_RV_insured_site = true
+independent_German_wind_vulnerability_fit_done = false
+native_Oasis_NextGen_GUL_IL_RI_OEP_AEP_admitted = false

@@ -36,7 +36,7 @@ The predeclared P0 source object is:
 - trusted source receipt comment: `5300981864`;
 - source receipt execution SHA: `46d054930025553ad19d8b05fff9018dc2a49b5f`.
 
-Those facts identify the source used to derive the approved taxonomy artifact. They do **not** approve the 316789 source bytes for Git publication. `raw_artifact` remains null in the manifest.
+Those facts identify the source used to derive the approved taxonomy artifact. The manifest records the 316789-byte original under `raw_artifact` as a pinned external byte identity (size, SHA-256 and logical `external://` reference), **not** as a raw-publication approval. Its `review.status` remains `approved_derived`: the original CSV bytes stay outside Git and outside the approved publication and model-input scopes.
 
 ## Exact derived-artifact admission — Kosovo residential taxonomy set
 
@@ -162,7 +162,7 @@ This candidate admission should not be integrated merely because the source lice
 - trusted #363 result comment `5303346187` and its exact 2666-byte/SHA identity;
 - source receipt identity, exact canonicalization implementation and no-normalization transformation lineage;
 - CC BY 4.0 attribution binding to this derivative scope;
-- `raw_artifact=null` and continued raw-publication failure;
+- recorded `raw_artifact` identity does not imply `approved_raw`, and raw-publication remains blocked;
 - successful `assert_public_asset_allowed(..., "derived")` for the candidate manifest;
 - absence of taxonomy literals/provider bytes/private paths in the patch;
 - no implication of mapping, vulnerability, model-input or loss authority.

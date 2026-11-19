@@ -196,7 +196,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://www.europeanwindstorms.org/>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** A selected-extremes catalogue cannot establish annual storm frequency. Preserve overlap with C3S and CLIMK, footprint resolution and source calibration; avoid double counting.
+**Note:** Public-provider file test on 2026-11-07: Kyrill_rawFoot.nc and Kyrill_rawFootUncon.nc (2007-01-18) were downloaded, metadata/time/units/missingness parsed and both representations passed a native Oasis challenge on one 7,998-interest synthetic German building book. Provider methodology confirms rawFootUncon is decontaminated/uncontaminated; it is lower than raw at 7,281 of 14,472 jointly valid cells. Expected insured footprint contributions under the same transferred vulnerability are EUR 5.81 for each representation, versus EUR 104,373.43 from ERA5 and EUR 21,844.27 from CCLM EUR-11; these are source-confounded scenarios, not actual losses or validation. The 72-hour maximum 3-second gust and 1,000-km decontamination window differ from CLIMK's daily-max selected footprints. Selected storms do not establish annual frequency. Rights/scientific review and admission remain not_reviewed/not_admitted. Public follow-up: docs/research/public-wind-source-followup-2026-11-07.md
 
 ## European Tsunami Risk Service data products
 

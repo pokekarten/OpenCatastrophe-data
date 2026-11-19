@@ -106,7 +106,11 @@ def _finite(text: Any, *, field: str) -> float:
 
 
 def inspect_json_bytes(raw: bytes) -> dict[str, Any]:
-    """Check station identity, UTC time, flags and measurement shape only."""
+    """Check station identity, UTC time, sigma and provider QC format only.
+
+    The provider's field s is 1-second-sample standard deviation, not a
+    calibrated measurement uncertainty or CAT-model secondary uncertainty.
+    """
     if type(raw) is not bytes or not 0 < len(raw) <= MAX_BYTES:
         raise COOPSProbeError("empty or oversized provider response")
     try:
@@ -132,6 +136,9 @@ def inspect_json_bytes(raw: bytes) -> dict[str, Any]:
     if type(observations) is not list or not 1 <= len(observations) <= 240:
         raise COOPSProbeError("expected at most one day of 6-minute observations")
     previous: datetime | None = None
+    first: datetime | None = None
+    reported_quality_counts = {"p": 0, "v": 0}
+    observations_with_nonzero_provider_flags = 0
     for item in observations:
         if type(item) is not dict:
             raise COOPSProbeError("observation must be an object")
@@ -146,19 +153,73 @@ def inspect_json_bytes(raw: bytes) -> dict[str, Any]:
                 or instant.minute % 6 != 0
                 or (previous is not None and instant <= previous)):
             raise COOPSProbeError("observation outside frozen UTC day or time ordering")
+        if first is None:
+            first = instant
         previous = instant
         _finite(item.get("v"), field="water-level height")
-        if type(item.get("f")) is not str or not item["f"].strip():
+        # NOAA CO-OPS responseHelp: s is the standard deviation of the
+        # underlying one-second sensor samples, NOT a calibrated observation
+        # uncertainty, storm-surge uncertainty or CAT secondary uncertainty.
+        sigma_1s = _finite(item.get("s"), field="one-second water-level sigma")
+        if sigma_1s < 0:
+            raise COOPSProbeError("one-second water-level sigma must be nonnegative")
+        quality = item.get("q")
+        if type(quality) is not str or quality not in {"p", "v"}:
+            raise COOPSProbeError("NOAA quality flag must be preliminary p or verified v")
+        flags = item.get("f")
+        if type(flags) is not str:
             raise COOPSProbeError("provider data flags missing")
-        if type(item.get("q")) is not str or not item["q"].strip():
-            raise COOPSProbeError("provider quality flag missing")
+        parts = flags.split(",")
+        if len(parts) != 4:
+            raise COOPSProbeError("NOAA water-level flags must have four fields")
+        # In verified water_level, I/F/R/T are binary. In preliminary
+        # water_level, O counts one-second outliers; F/R/L remain binary.
+        if any(part not in {"0", "1"} for part in parts[1:]):
+            raise COOPSProbeError("invalid NOAA F/R/limit water-level flags")
+        if quality == "v":
+            if parts[0] not in {"0", "1"}:
+                raise COOPSProbeError("invalid inferred-value flag")
+        elif (not parts[0].isascii() or not parts[0].isdecimal()
+              or len(parts[0]) > 3 or int(parts[0]) > 360):
+            raise COOPSProbeError("invalid preliminary outlier-count flag")
+        reported_quality_counts[quality] += 1
+        observations_with_nonzero_provider_flags += int(
+            any(part != "0" for part in parts)
+        )
+    # A valid six-minute timestamp is not evidence that all 240 expected
+    # UTC slots were observed. Count leading, interior and trailing gaps;
+    # never silently interpret absent measurements as zero water level.
+    assert first is not None and previous is not None  # non-empty series checked above
+    first_slot = first.hour * 10 + first.minute // 6
+    last_slot = previous.hour * 10 + previous.minute // 6
+    missing_before = first_slot
+    missing_between = last_slot - first_slot + 1 - len(observations)
+    missing_after = 239 - last_slot
+    missing_total = 240 - len(observations)
+    if min(missing_before, missing_between, missing_after) < 0 or (
+        missing_before + missing_between + missing_after != missing_total
+    ):
+        raise COOPSProbeError("inconsistent six-minute source coverage")
     return {
         "station_id": "9414290",
         "utc_day": "2026-01-01",
         "datum": "MLLW",
         "unit": "m",
         "observation_rows": len(observations),
+        "expected_six_minute_slots": 240,
+        "missing_six_minute_slots": missing_total,
+        "missing_before_first_observation": missing_before,
+        "missing_between_observations": missing_between,
+        "missing_after_last_observation": missing_after,
+        "full_utc_day_covered": missing_total == 0,
+        "missing_measurements_inferred_as_zero": False,
         "provider_quality_flags_present": True,
+        "provider_quality_codes_structurally_validated": True,
+        "reported_preliminary_observation_rows": reported_quality_counts["p"],
+        "reported_verified_observation_rows": reported_quality_counts["v"],
+        "observations_with_nonzero_provider_flags": observations_with_nonzero_provider_flags,
+        "sigma_is_one_second_sample_standard_deviation": True,
+        "sigma_is_calibrated_cat_uncertainty": False,
         "quality_scientifically_assessed": False,
     }
 

@@ -1,0 +1,1620 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Verified 400 public Zensus 2022 Kreis source owner codes; individual semantic labels NOT independently validated.
+schema_version = "ZENSUS2022_400_KREIS_ORIGINAL_OWNER_CODE_AGGREGATES_V0"
+source_original_url = "https://www.destatis.de/static/DE/zensus/gitterdaten/Regionaltabelle_Gebaeude_Wohnungen.xlsx"
+source_original_sha256 = "82da8578a4657e20752b436a756ed27846c77f96e3f7333bdea7f4fe29a8b551"
+canonical_owner_records_sha256 = "47d572d216e603bc5643997f7d1ed7f593c50ec88b6a63d82730a3be3f4c380a"
+original_audit_workflow = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41929664598"
+source_sheet = "CSV-Gebäude"
+source_date = "2022-05-15"
+source_ags_level = "Stadtkreis/kreisfreie Stadt/Landkreis"
+source_columns_original_order = ["EIGENTUM__1","EIGENTUM__2","EIGENTUM__3","EIGENTUM__4","EIGENTUM__5","EIGENTUM__6","EIGENTUM__7","EIGENTUM__8"]
+source_column_numeric_totals_available_only = [1771256,16944010,295192,353229,359057,140065,25345,68980]
+source_column_numeric_kreise = [400,400,390,400,400,400,394,400]
+original_all_eight_numeric_kreise = 385
+source_county_building_total = 19957288
+observed_owner_type_is_not_observed_insurer_policyholder = true
+individual_owner_code_name_mapping_confirmed = false
+note = "Exact published 2022 ownership counts in the eight unlabelled original-code columns. EIGENTUM__2 is approximately national private-person total and __1 approximates WEG total but individual source mappings have not yet been independently proven. Non-numeric source cells are the string missing, not zero. Do not infer company-owned insured sites, geographic market share, risk values, loss, or treaty."
+
+[[kreise]]
+ags = "01001"
+original_owner_codes = [1106, 13913, 1631, 19, 891, 287, 6, 131]
+
+[[kreise]]
+ags = "01002"
+original_owner_codes = [4039, 28612, 895, 102, 3987, 366, 52, 191]
+
+[[kreise]]
+ags = "01003"
+original_owner_codes = [3015, 36834, 1507, 960, 2635, 440, 42, 232]
+
+[[kreise]]
+ags = "01004"
+original_owner_codes = [1052, 16418, 488, 736, 731, 164, 29, 93]
+
+[[kreise]]
+ags = "01051"
+original_owner_codes = [1378, 49400, 796, 94, 352, 322, 19, 127]
+
+[[kreise]]
+ags = "01053"
+original_owner_codes = [2824, 55060, 652, 258, 1527, 404, 51, 160]
+
+[[kreise]]
+ags = "01054"
+original_owner_codes = [3952, 62095, 1484, 537, 434, 580, 117, 219]
+
+[[kreise]]
+ags = "01055"
+original_owner_codes = [4769, 61911, 1477, 236, 689, 579, 33, 185]
+
+[[kreise]]
+ags = "01056"
+original_owner_codes = [5550, 75981, 1386, 289, 1946, 600, 71, 195]
+
+[[kreise]]
+ags = "01057"
+original_owner_codes = [2194, 40690, 777, 134, 218, 329, 12, 137]
+
+[[kreise]]
+ags = "01058"
+original_owner_codes = [3945, 85028, 973, 312, 1573, 610, 66, 264]
+
+[[kreise]]
+ags = "01059"
+original_owner_codes = [2513, 68791, 803, 380, 531, 532, 33, 313]
+
+[[kreise]]
+ags = "01060"
+original_owner_codes = [3767, 72815, 1232, 243, 1427, 497, 19, 171]
+
+[[kreise]]
+ags = "01061"
+original_owner_codes = [1836, 40567, 499, 270, 759, 366, 21, 162]
+
+[[kreise]]
+ags = "01062"
+original_owner_codes = [4245, 63806, 979, 186, 819, 488, 45, 119]
+
+[[kreise]]
+ags = "02000"
+original_owner_codes = [26830, 174346, 20572, 19544, 12891, 3345, 1387, 1712]
+
+[[kreise]]
+ags = "03101"
+original_owner_codes = [4951, 33339, 2131, 1276, 2151, 355, 100, 181]
+
+[[kreise]]
+ags = "03102"
+original_owner_codes = [2022, 17977, 131, 672, 2839, 94, 11, 73]
+
+[[kreise]]
+ags = "03103"
+original_owner_codes = [2384, 22174, 202, 1652, 1761, 200, 10, 78]
+
+[[kreise]]
+ags = "03151"
+original_owner_codes = [3199, 54991, 582, 120, 116, 204, 21, 131]
+
+[[kreise]]
+ags = "03153"
+original_owner_codes = [3375, 34196, 308, 793, 524, 302, 60, 134]
+
+[[kreise]]
+ags = "03154"
+original_owner_codes = [1889, 27675, 58, 539, 224, 184, 3, 78]
+
+[[kreise]]
+ags = "03155"
+original_owner_codes = [3623, 36162, 45, 444, 630, 190, 58, 135]
+
+[[kreise]]
+ags = "03157"
+original_owner_codes = [2816, 39209, 18, 551, 224, 166, 17, 57]
+
+[[kreise]]
+ags = "03158"
+original_owner_codes = [2596, 32356, 355, 500, 317, 138, 57, 96]
+
+[[kreise]]
+ags = "03159"
+original_owner_codes = [7857, 72716, 1307, 1073, 1148, 620, 227, 383]
+
+[[kreise]]
+ags = "03241"
+original_owner_codes = [22810, 196516, 5309, 4137, 5878, 1759, 355, 914]
+
+[[kreise]]
+ags = "03251"
+original_owner_codes = [4916, 66279, 72, 229, 745, 358, 5, 256]
+
+[[kreise]]
+ags = "03252"
+original_owner_codes = [3907, 37781, 272, 795, 219, 326, 14, 107]
+
+[[kreise]]
+ags = "03254"
+original_owner_codes = [5753, 66984, 775, 1296, 477, 402, 11, 276]
+
+[[kreise]]
+ags = "03255"
+original_owner_codes = [1924, 20257, 53, 112, 281, 134, 9, 80]
+
+[[kreise]]
+ags = "03256"
+original_owner_codes = [2570, 35257, 47, 713, 199, 229, 28, 145]
+
+[[kreise]]
+ags = "03257"
+original_owner_codes = [4596, 41434, 38, 354, 288, 263, 16, 110]
+
+[[kreise]]
+ags = "03351"
+original_owner_codes = [2747, 54801, 488, 563, 713, 266, 152, 229]
+
+[[kreise]]
+ags = "03352"
+original_owner_codes = [3508, 64653, 510, 688, 587, 254, 42, 145]
+
+[[kreise]]
+ags = "03353"
+original_owner_codes = [4772, 77517, 67, 272, 584, 426, 32, 133]
+
+[[kreise]]
+ags = "03354"
+original_owner_codes = [819, 17860, 93, 60, 58, 168, 4, 87]
+
+[[kreise]]
+ags = "03355"
+original_owner_codes = [3221, 47716, 252, 545, 479, 296, 225, 224]
+
+[[kreise]]
+ags = "03356"
+original_owner_codes = [2352, 36722, 4, 170, 170, 122, 26, 113]
+
+[[kreise]]
+ags = "03357"
+original_owner_codes = [2687, 54157, 123, 166, 494, 391, 22, 164]
+
+[[kreise]]
+ags = "03358"
+original_owner_codes = [2544, 41975, 253, 79, 468, 367, 257, 386]
+
+[[kreise]]
+ags = "03359"
+original_owner_codes = [3350, 60205, 761, 137, 541, 383, 94, 213]
+
+[[kreise]]
+ags = "03360"
+original_owner_codes = [1740, 28615, 238, 314, 226, 190, 18, 142]
+
+[[kreise]]
+ags = "03361"
+original_owner_codes = [2935, 40403, 52, 402, 242, 170, 94, 132]
+
+[[kreise]]
+ags = "03401"
+original_owner_codes = [1374, 19276, 137, 621, 526, 93, 3, 84]
+
+[[kreise]]
+ags = "03402"
+original_owner_codes = [789, 13223, 736, 355, 314, 155, 9, 106]
+
+[[kreise]]
+ags = "03403"
+original_owner_codes = [3858, 38541, 144, 94, 2271, 519, 280, 266]
+
+[[kreise]]
+ags = "03404"
+original_owner_codes = [3846, 26942, 701, 39, 1152, 385, 7, 288]
+
+[[kreise]]
+ags = "03405"
+original_owner_codes = [1080, 13055, 1266, 38, 1931, 305, 137, 65]
+
+[[kreise]]
+ags = "03451"
+original_owner_codes = [1852, 42268, 3, 653, 234, 266, 9, 124]
+
+[[kreise]]
+ags = "03452"
+original_owner_codes = [2748, 74432, 255, 483, 515, 355, 35, 294]
+
+[[kreise]]
+ags = "03453"
+original_owner_codes = [2523, 49874, 5, 248, 329, 286, 7, 154]
+
+[[kreise]]
+ags = "03454"
+original_owner_codes = [5655, 100305, 729, 220, 638, 468, 21, 265]
+
+[[kreise]]
+ags = "03455"
+original_owner_codes = [1636, 36666, "missing", 818, 240, 200, 29, 133]
+
+[[kreise]]
+ags = "03456"
+original_owner_codes = [2669, 43339, 154, 481, 143, 192, 3, 199]
+
+[[kreise]]
+ags = "03457"
+original_owner_codes = [1776, 62405, 541, 300, 636, 319, 60, 194]
+
+[[kreise]]
+ags = "03458"
+original_owner_codes = [2138, 42836, 20, 83, 337, 257, 14, 121]
+
+[[kreise]]
+ags = "03459"
+original_owner_codes = [9069, 91641, 123, 353, 628, 589, "missing", 313]
+
+[[kreise]]
+ags = "03460"
+original_owner_codes = [2403, 40817, 3, 258, 294, 327, 5, 97]
+
+[[kreise]]
+ags = "03461"
+original_owner_codes = [1183, 29142, 24, 1016, 361, 157, 22, 86]
+
+[[kreise]]
+ags = "03462"
+original_owner_codes = [1142, 21618, "missing", 185, 202, 156, 25, 76]
+
+[[kreise]]
+ags = "04011"
+original_owner_codes = [13177, 98277, 1470, 4510, 3016, 946, 65, 805]
+
+[[kreise]]
+ags = "04012"
+original_owner_codes = [1832, 16898, 493, 1463, 762, 173, 45, 103]
+
+[[kreise]]
+ags = "05111"
+original_owner_codes = [14299, 47728, 2069, 2197, 6179, 1494, 300, 662]
+
+[[kreise]]
+ags = "05112"
+original_owner_codes = [9559, 55765, 3612, 3008, 9898, 515, 42, 388]
+
+[[kreise]]
+ags = "05113"
+original_owner_codes = [14188, 61237, 2734, 2968, 8917, 733, 55, 454]
+
+[[kreise]]
+ags = "05114"
+original_owner_codes = [5292, 38173, 124, 1646, 1324, 366, 7, 204]
+
+[[kreise]]
+ags = "05116"
+original_owner_codes = [6820, 46656, 322, 1240, 1677, 509, 3, 119]
+
+[[kreise]]
+ags = "05117"
+original_owner_codes = [4665, 23282, 900, 1225, 1380, 166, 13, 208]
+
+[[kreise]]
+ags = "05119"
+original_owner_codes = [5883, 28051, 2246, 207, 2454, 236, 48, 140]
+
+[[kreise]]
+ags = "05120"
+original_owner_codes = [2979, 15992, 338, 1013, 495, 163, 3, 92]
+
+[[kreise]]
+ags = "05122"
+original_owner_codes = [4706, 25436, 2600, 41, 525, 271, 5, 133]
+
+[[kreise]]
+ags = "05124"
+original_owner_codes = [9209, 40634, 1439, 24, 3063, 728, 125, 418]
+
+[[kreise]]
+ags = "05154"
+original_owner_codes = [6003, 89169, 713, 119, 736, 481, 55, 249]
+
+[[kreise]]
+ags = "05158"
+original_owner_codes = [13008, 80338, 2216, 576, 2961, 760, 135, 345]
+
+[[kreise]]
+ags = "05162"
+original_owner_codes = [11206, 95032, 1908, 1203, 1286, 478, 16, 208]
+
+[[kreise]]
+ags = "05166"
+original_owner_codes = [6851, 77518, 1309, 1015, 373, 515, 14, 157]
+
+[[kreise]]
+ags = "05170"
+original_owner_codes = [12042, 97996, 330, 1978, 5177, 759, 28, 246]
+
+[[kreise]]
+ags = "05314"
+original_owner_codes = [8459, 44046, 235, 1058, 2847, 691, 287, 356]
+
+[[kreise]]
+ags = "05315"
+original_owner_codes = [20934, 101275, 4724, 6787, 6142, 1680, 550, 637]
+
+[[kreise]]
+ags = "05316"
+original_owner_codes = [3579, 22352, 823, 1124, 2472, 536, 3, 254]
+
+[[kreise]]
+ags = "05334"
+original_owner_codes = [12407, 107160, 299, 941, 3926, 1158, 129, 338]
+
+[[kreise]]
+ags = "05358"
+original_owner_codes = [5474, 71841, 453, 109, 1099, 377, 124, 341]
+
+[[kreise]]
+ags = "05362"
+original_owner_codes = [10560, 109690, 105, 1454, 1588, 601, 39, 112]
+
+[[kreise]]
+ags = "05366"
+original_owner_codes = [3851, 60371, 3, 436, 212, 303, 104, 137]
+
+[[kreise]]
+ags = "05370"
+original_owner_codes = [4323, 79375, 147, 78, 1475, 376, 207, 99]
+
+[[kreise]]
+ags = "05374"
+original_owner_codes = [7969, 67292, 660, 325, 595, 383, 16, 210]
+
+[[kreise]]
+ags = "05378"
+original_owner_codes = [7991, 65414, 444, 570, 539, 412, 25, 149]
+
+[[kreise]]
+ags = "05382"
+original_owner_codes = [13421, 153937, 967, 954, 1374, 513, 89, 273]
+
+[[kreise]]
+ags = "05512"
+original_owner_codes = [3524, 17569, 264, 382, 2597, 89, 21, 72]
+
+[[kreise]]
+ags = "05513"
+original_owner_codes = [4807, 26714, 778, 1249, 5582, 454, 36, 272]
+
+[[kreise]]
+ags = "05515"
+original_owner_codes = [7557, 44042, 651, 1387, 2484, 690, 122, 519]
+
+[[kreise]]
+ags = "05554"
+original_owner_codes = [11370, 93817, 858, 138, 1382, 658, 19, 133]
+
+[[kreise]]
+ags = "05558"
+original_owner_codes = [6625, 56369, 339, 80, 491, 234, 12, 87]
+
+[[kreise]]
+ags = "05562"
+original_owner_codes = [16248, 110214, 850, 1622, 10617, 789, 63, 358]
+
+[[kreise]]
+ags = "05566"
+original_owner_codes = [12624, 113672, 1056, 264, 1335, 803, 38, 234]
+
+[[kreise]]
+ags = "05570"
+original_owner_codes = [8441, 66325, 251, 139, 2025, 356, 20, 114]
+
+[[kreise]]
+ags = "05711"
+original_owner_codes = [8138, 48107, 1654, 2789, 2319, 484, 196, 175]
+
+[[kreise]]
+ags = "05754"
+original_owner_codes = [12320, 78590, 574, 519, 858, 518, 168, 183]
+
+[[kreise]]
+ags = "05758"
+original_owner_codes = [8037, 58243, 418, 822, 456, 445, 18, 130]
+
+[[kreise]]
+ags = "05762"
+original_owner_codes = [3924, 38396, 7, 39, 294, 154, 10, 35]
+
+[[kreise]]
+ags = "05766"
+original_owner_codes = [10780, 81316, 828, 201, 996, 469, 213, 300]
+
+[[kreise]]
+ags = "05770"
+original_owner_codes = [9578, 74527, 541, 492, 944, 519, 673, 180]
+
+[[kreise]]
+ags = "05774"
+original_owner_codes = [9066, 64773, 506, 141, 665, 305, 342, 184]
+
+[[kreise]]
+ags = "05911"
+original_owner_codes = [8038, 44251, 1442, 1968, 3072, 446, 16, 255]
+
+[[kreise]]
+ags = "05913"
+original_owner_codes = [12242, 69577, 2821, 2822, 8948, 652, 44, 334]
+
+[[kreise]]
+ags = "05914"
+original_owner_codes = [4251, 22016, 2015, 910, 977, 281, 14, 152]
+
+[[kreise]]
+ags = "05915"
+original_owner_codes = [3782, 32542, 139, 728, 2304, 260, 18, 142]
+
+[[kreise]]
+ags = "05916"
+original_owner_codes = [3664, 17085, 942, 52, 2596, 244, 28, 78]
+
+[[kreise]]
+ags = "05954"
+original_owner_codes = [9214, 50191, 3534, 925, 1332, 584, 11, 315]
+
+[[kreise]]
+ags = "05958"
+original_owner_codes = [9297, 63311, 780, 83, 473, 509, 7, 129]
+
+[[kreise]]
+ags = "05962"
+original_owner_codes = [12099, 75670, 2199, 1301, 2827, 1108, 127, 270]
+
+[[kreise]]
+ags = "05966"
+original_owner_codes = [5260, 31232, 437, 133, 92, 191, 10, 72]
+
+[[kreise]]
+ags = "05970"
+original_owner_codes = [8952, 65010, 1056, 902, 682, 500, 49, 186]
+
+[[kreise]]
+ags = "05974"
+original_owner_codes = [9129, 72222, 874, 437, 679, 513, 242, 173]
+
+[[kreise]]
+ags = "05978"
+original_owner_codes = [9673, 75629, 2145, 508, 6793, 404, 145, 220]
+
+[[kreise]]
+ags = "06411"
+original_owner_codes = [3483, 18192, 42, 1811, 486, 233, 76, 197]
+
+[[kreise]]
+ags = "06412"
+original_owner_codes = [12146, 50138, 1795, 8508, 5173, 1623, 577, 721]
+
+[[kreise]]
+ags = "06413"
+original_owner_codes = [1916, 10640, 391, 860, 397, 253, 11, 67]
+
+[[kreise]]
+ags = "06414"
+original_owner_codes = [5390, 29511, 400, 2461, 1452, 617, 67, 218]
+
+[[kreise]]
+ags = "06431"
+original_owner_codes = [5472, 64105, 419, 344, 254, 282, 22, 206]
+
+[[kreise]]
+ags = "06432"
+original_owner_codes = [5850, 71301, 149, 673, 203, 278, 12, 195]
+
+[[kreise]]
+ags = "06433"
+original_owner_codes = [5049, 50098, 662, 1359, 541, 257, 19, 82]
+
+[[kreise]]
+ags = "06434"
+original_owner_codes = [4913, 48567, 742, 471, 457, 377, 144, 209]
+
+[[kreise]]
+ags = "06435"
+original_owner_codes = [7621, 94019, 333, 991, 756, 330, 55, 187]
+
+[[kreise]]
+ags = "06436"
+original_owner_codes = [5340, 45525, 48, 898, 565, 270, 25, 153]
+
+[[kreise]]
+ags = "06437"
+original_owner_codes = [1573, 26415, "missing", 180, 38, 93, 9, 70]
+
+[[kreise]]
+ags = "06438"
+original_owner_codes = [7763, 62393, 374, 1314, 574, 417, 68, 143]
+
+[[kreise]]
+ags = "06439"
+original_owner_codes = [3711, 45256, 79, 528, 150, 235, 13, 116]
+
+[[kreise]]
+ags = "06440"
+original_owner_codes = [5620, 74565, 153, 613, 380, 300, 58, 188]
+
+[[kreise]]
+ags = "06531"
+original_owner_codes = [4074, 58673, 320, 1167, 473, 309, 38, 216]
+
+[[kreise]]
+ags = "06532"
+original_owner_codes = [3253, 69823, 295, 789, 636, 259, 36, 173]
+
+[[kreise]]
+ags = "06533"
+original_owner_codes = [2141, 49224, 220, 136, 231, 246, 13, 117]
+
+[[kreise]]
+ags = "06534"
+original_owner_codes = [3365, 58472, 278, 984, 482, 280, 61, 299]
+
+[[kreise]]
+ags = "06535"
+original_owner_codes = [1175, 33111, 114, 141, 93, 136, 42, 102]
+
+[[kreise]]
+ags = "06611"
+original_owner_codes = [3600, 23760, 1037, 2137, 1394, 231, 80, 240]
+
+[[kreise]]
+ags = "06631"
+original_owner_codes = [3467, 52328, 343, 452, 379, 313, 59, 205]
+
+[[kreise]]
+ags = "06632"
+original_owner_codes = [1330, 34952, 84, 342, 275, 174, 49, 94]
+
+[[kreise]]
+ags = "06633"
+original_owner_codes = [3169, 66598, 210, 528, 360, 203, 73, 146]
+
+[[kreise]]
+ags = "06634"
+original_owner_codes = [1995, 53812, 104, 371, 185, 193, 80, 118]
+
+[[kreise]]
+ags = "06635"
+original_owner_codes = [2054, 45683, 449, 354, 218, 213, 31, 141]
+
+[[kreise]]
+ags = "06636"
+original_owner_codes = [1058, 30575, 171, 230, 320, 135, 34, 99]
+
+[[kreise]]
+ags = "07111"
+original_owner_codes = [2511, 17532, 202, 591, 434, 172, 228, 163]
+
+[[kreise]]
+ags = "07131"
+original_owner_codes = [1939, 39593, 11, 119, 179, 168, 10, 44]
+
+[[kreise]]
+ags = "07132"
+original_owner_codes = [1140, 43399, 3, 121, 147, 133, 6, 88]
+
+[[kreise]]
+ags = "07133"
+original_owner_codes = [2141, 47352, 292, 175, 193, 199, 21, 122]
+
+[[kreise]]
+ags = "07134"
+original_owner_codes = [824, 26949, 348, 399, 168, 213, 18, 72]
+
+[[kreise]]
+ags = "07135"
+original_owner_codes = [585, 23172, "missing", 57, 77, 86, 3, 56]
+
+[[kreise]]
+ags = "07137"
+original_owner_codes = [3136, 63849, 192, 346, 380, 318, 26, 108]
+
+[[kreise]]
+ags = "07138"
+original_owner_codes = [2198, 54606, 50, 632, 223, 231, 8, 155]
+
+[[kreise]]
+ags = "07140"
+original_owner_codes = [1137, 34814, 26, 85, 67, 149, 14, 93]
+
+[[kreise]]
+ags = "07141"
+original_owner_codes = [1855, 36485, 287, 154, 116, 165, 55, 108]
+
+[[kreise]]
+ags = "07143"
+original_owner_codes = [2171, 65899, 6, 174, 275, 280, 17, 93]
+
+[[kreise]]
+ags = "07211"
+original_owner_codes = [2366, 16665, 582, 259, 932, 235, 86, 158]
+
+[[kreise]]
+ags = "07231"
+original_owner_codes = [1301, 39576, 193, 68, 112, 239, 40, 71]
+
+[[kreise]]
+ags = "07232"
+original_owner_codes = [941, 35908, "missing", 101, 171, 280, 9, 52]
+
+[[kreise]]
+ags = "07233"
+original_owner_codes = [502, 23648, 3, 26, 37, 72, 5, 40]
+
+[[kreise]]
+ags = "07235"
+original_owner_codes = [1963, 48490, 25, 88, 183, 160, 12, 48]
+
+[[kreise]]
+ags = "07311"
+original_owner_codes = [904, 7696, "missing", 9, 425, 44, "missing", 28]
+
+[[kreise]]
+ags = "07312"
+original_owner_codes = [1731, 17497, 177, 944, 399, 133, 5, 126]
+
+[[kreise]]
+ags = "07313"
+original_owner_codes = [1328, 9244, 7, 82, 224, 166, 9, 55]
+
+[[kreise]]
+ags = "07314"
+original_owner_codes = [2944, 22029, 179, 1705, 1088, 150, 11, 119]
+
+[[kreise]]
+ags = "07315"
+original_owner_codes = [4063, 26459, 150, 1232, 709, 331, 144, 276]
+
+[[kreise]]
+ags = "07316"
+original_owner_codes = [1175, 12455, 14, 332, 104, 100, 7, 47]
+
+[[kreise]]
+ags = "07317"
+original_owner_codes = [675, 9287, 64, 289, 75, 76, 3, 33]
+
+[[kreise]]
+ags = "07318"
+original_owner_codes = [1226, 7978, 619, 392, 78, 62, 4, 50]
+
+[[kreise]]
+ags = "07319"
+original_owner_codes = [1603, 16932, "missing", 37, 831, 88, 4, 159]
+
+[[kreise]]
+ags = "07320"
+original_owner_codes = [483, 8491, 21, 433, 26, 58, 3, 46]
+
+[[kreise]]
+ags = "07331"
+original_owner_codes = [1633, 40950, 8, 214, 64, 118, "missing", 91]
+
+[[kreise]]
+ags = "07332"
+original_owner_codes = [2301, 42101, 28, 263, 189, 168, 5, 110]
+
+[[kreise]]
+ags = "07333"
+original_owner_codes = [934, 24846, 3, 130, 36, 71, 3, 81]
+
+[[kreise]]
+ags = "07334"
+original_owner_codes = [2246, 34172, 6, 273, 161, 90, 7, 35]
+
+[[kreise]]
+ags = "07335"
+original_owner_codes = [1364, 39094, 17, 112, 119, 111, 14, 93]
+
+[[kreise]]
+ags = "07336"
+original_owner_codes = [708, 26513, "missing", 64, 69, 85, 4, 89]
+
+[[kreise]]
+ags = "07337"
+original_owner_codes = [1755, 36155, 41, 156, 107, 130, 16, 93]
+
+[[kreise]]
+ags = "07338"
+original_owner_codes = [2894, 44596, 6, 514, 177, 76, 3, 68]
+
+[[kreise]]
+ags = "07339"
+original_owner_codes = [4035, 58343, 53, 368, 326, 348, 10, 123]
+
+[[kreise]]
+ags = "07340"
+original_owner_codes = [983, 34440, 3, 48, 29, 54, 3, 59]
+
+[[kreise]]
+ags = "08111"
+original_owner_codes = [21401, 46490, 2167, 3035, 2461, 964, 238, 1105]
+
+[[kreise]]
+ags = "08115"
+original_owner_codes = [15496, 67472, 348, 920, 345, 384, 52, 263]
+
+[[kreise]]
+ags = "08116"
+original_owner_codes = [22434, 90925, 1083, 723, 1093, 651, 59, 477]
+
+[[kreise]]
+ags = "08117"
+original_owner_codes = [10904, 50955, 318, 968, 151, 338, 13, 285]
+
+[[kreise]]
+ags = "08118"
+original_owner_codes = [21845, 91243, 588, 1169, 638, 578, 43, 453]
+
+[[kreise]]
+ags = "08119"
+original_owner_codes = [19627, 75458, 372, 834, 349, 463, 46, 414]
+
+[[kreise]]
+ags = "08121"
+original_owner_codes = [4808, 16329, 140, 672, 325, 205, 15, 104]
+
+[[kreise]]
+ags = "08125"
+original_owner_codes = [13082, 80393, 286, 515, 305, 386, 42, 240]
+
+[[kreise]]
+ags = "08126"
+original_owner_codes = [4149, 26221, 175, 148, 33, 131, 23, 104]
+
+[[kreise]]
+ags = "08127"
+original_owner_codes = [7463, 45857, 130, 477, 93, 257, 33, 202]
+
+[[kreise]]
+ags = "08128"
+original_owner_codes = [5054, 33468, 211, 210, 154, 168, 20, 124]
+
+[[kreise]]
+ags = "08135"
+original_owner_codes = [4129, 31000, 20, 455, 807, 158, 18, 96]
+
+[[kreise]]
+ags = "08136"
+original_owner_codes = [12226, 71248, 395, 615, 186, 361, 37, 270]
+
+[[kreise]]
+ags = "08211"
+original_owner_codes = [2442, 8545, 310, 145, 133, 134, 5, 39]
+
+[[kreise]]
+ags = "08212"
+original_owner_codes = [8329, 28849, 3078, 1560, 581, 300, 97, 352]
+
+[[kreise]]
+ags = "08215"
+original_owner_codes = [17386, 100565, 633, 676, 388, 339, 56, 295]
+
+[[kreise]]
+ags = "08216"
+original_owner_codes = [9925, 46527, 290, 401, 252, 265, 33, 111]
+
+[[kreise]]
+ags = "08221"
+original_owner_codes = [4274, 13488, 1104, 39, 1208, 282, 159, 280]
+
+[[kreise]]
+ags = "08222"
+original_owner_codes = [7876, 29093, 1761, 2528, 971, 488, 76, 295]
+
+[[kreise]]
+ags = "08225"
+original_owner_codes = [5411, 38108, 211, 140, 63, 116, 11, 116]
+
+[[kreise]]
+ags = "08226"
+original_owner_codes = [20506, 116309, 962, 1163, 617, 605, 38, 327]
+
+[[kreise]]
+ags = "08231"
+original_owner_codes = [3691, 13727, 730, 418, 480, 225, 12, 101]
+
+[[kreise]]
+ags = "08235"
+original_owner_codes = [6896, 34421, 101, 228, 111, 183, 53, 200]
+
+[[kreise]]
+ags = "08236"
+original_owner_codes = [7297, 49614, 235, 311, 87, 212, 46, 177]
+
+[[kreise]]
+ags = "08237"
+original_owner_codes = [5066, 26776, 69, 158, 93, 209, 51, 115]
+
+[[kreise]]
+ags = "08311"
+original_owner_codes = [6909, 16749, 1096, 1471, 525, 327, 153, 465]
+
+[[kreise]]
+ags = "08315"
+original_owner_codes = [10454, 51333, 407, 347, 198, 305, 70, 246]
+
+[[kreise]]
+ags = "08316"
+original_owner_codes = [7358, 30808, 105, 381, 99, 146, 8, 114]
+
+[[kreise]]
+ags = "08317"
+original_owner_codes = [17944, 85129, 982, 1141, 652, 514, 24, 263]
+
+[[kreise]]
+ags = "08325"
+original_owner_codes = [5443, 35225, 82, 295, 135, 173, 41, 137]
+
+[[kreise]]
+ags = "08326"
+original_owner_codes = [8260, 39521, 640, 400, 347, 276, 34, 175]
+
+[[kreise]]
+ags = "08327"
+original_owner_codes = [5464, 32421, 70, 461, 108, 187, 14, 106]
+
+[[kreise]]
+ags = "08335"
+original_owner_codes = [11631, 45400, 988, 746, 367, 397, 190, 297]
+
+[[kreise]]
+ags = "08336"
+original_owner_codes = [8900, 40272, 564, 967, 387, 276, 123, 168]
+
+[[kreise]]
+ags = "08337"
+original_owner_codes = [7096, 34464, 449, 200, 113, 283, 24, 113]
+
+[[kreise]]
+ags = "08415"
+original_owner_codes = [10064, 61153, 87, 1565, 241, 335, 81, 228]
+
+[[kreise]]
+ags = "08416"
+original_owner_codes = [8049, 42360, 70, 968, 352, 270, 149, 237]
+
+[[kreise]]
+ags = "08417"
+original_owner_codes = [5397, 54696, 231, 270, 136, 231, 26, 153]
+
+[[kreise]]
+ags = "08421"
+original_owner_codes = [3581, 15752, 553, 1257, 305, 168, 71, 145]
+
+[[kreise]]
+ags = "08425"
+original_owner_codes = [6493, 49956, 221, 297, 93, 221, 52, 161]
+
+[[kreise]]
+ags = "08426"
+original_owner_codes = [6039, 52838, 255, 359, 187, 251, 28, 160]
+
+[[kreise]]
+ags = "08435"
+original_owner_codes = [9408, 39462, 398, 322, 540, 266, 47, 270]
+
+[[kreise]]
+ags = "08436"
+original_owner_codes = [10351, 59300, 291, 412, 440, 419, 47, 344]
+
+[[kreise]]
+ags = "08437"
+original_owner_codes = [4102, 34679, 75, 163, 171, 127, 43, 167]
+
+[[kreise]]
+ags = "09161"
+original_owner_codes = [3496, 23078, 157, 902, 286, 315, 17, 112]
+
+[[kreise]]
+ags = "09162"
+original_owner_codes = [30830, 90706, 3547, 7808, 8268, 3488, 1217, 1338]
+
+[[kreise]]
+ags = "09163"
+original_owner_codes = [1723, 8279, 143, 316, 142, 187, 8, 78]
+
+[[kreise]]
+ags = "09171"
+original_owner_codes = [1873, 28800, 42, 188, 145, 126, 7, 73]
+
+[[kreise]]
+ags = "09172"
+original_owner_codes = [2688, 19885, 236, 461, 188, 301, 50, 104]
+
+[[kreise]]
+ags = "09173"
+original_owner_codes = [3018, 25994, 537, 252, 119, 214, 53, 149]
+
+[[kreise]]
+ags = "09174"
+original_owner_codes = [3826, 31538, 83, 372, 291, 240, 16, 104]
+
+[[kreise]]
+ags = "09175"
+original_owner_codes = [2878, 31316, 171, 153, 295, 385, 34, 108]
+
+[[kreise]]
+ags = "09176"
+original_owner_codes = [1769, 38913, 35, 185, 89, 135, 13, 117]
+
+[[kreise]]
+ags = "09177"
+original_owner_codes = [2218, 32867, 75, 298, 185, 211, 48, 74]
+
+[[kreise]]
+ags = "09178"
+original_owner_codes = [3782, 37345, 29, 269, 310, 407, 89, 177]
+
+[[kreise]]
+ags = "09179"
+original_owner_codes = [5016, 44282, 139, 327, 536, 207, 58, 147]
+
+[[kreise]]
+ags = "09180"
+original_owner_codes = [3267, 17490, 56, 194, 169, 247, 78, 103]
+
+[[kreise]]
+ags = "09181"
+original_owner_codes = [2008, 32371, 87, 191, 206, 223, 70, 168]
+
+[[kreise]]
+ags = "09182"
+original_owner_codes = [2734, 22102, 128, 231, 251, 278, 22, 82]
+
+[[kreise]]
+ags = "09183"
+original_owner_codes = [1858, 29821, 98, 275, 155, 198, 9, 101]
+
+[[kreise]]
+ags = "09184"
+original_owner_codes = [7672, 61011, 257, 1329, 916, 779, 121, 319]
+
+[[kreise]]
+ags = "09185"
+original_owner_codes = [1489, 27066, 48, 150, 41, 147, 22, 70]
+
+[[kreise]]
+ags = "09186"
+original_owner_codes = [2165, 35074, 5, 128, 187, 187, 11, 70]
+
+[[kreise]]
+ags = "09187"
+original_owner_codes = [6052, 61767, 213, 521, 234, 538, 41, 210]
+
+[[kreise]]
+ags = "09188"
+original_owner_codes = [3033, 31186, 147, 487, 316, 337, 21, 200]
+
+[[kreise]]
+ags = "09189"
+original_owner_codes = [4069, 43309, 332, 214, 292, 374, 27, 181]
+
+[[kreise]]
+ags = "09190"
+original_owner_codes = [2747, 33618, 169, 249, 198, 454, 23, 152]
+
+[[kreise]]
+ags = "09261"
+original_owner_codes = [1615, 11275, 357, 78, 318, 106, 42, 55]
+
+[[kreise]]
+ags = "09262"
+original_owner_codes = [1305, 8876, 154, 349, 247, 89, 9, 76]
+
+[[kreise]]
+ags = "09263"
+original_owner_codes = [870, 9113, 230, 368, 68, 97, 21, 44]
+
+[[kreise]]
+ags = "09271"
+original_owner_codes = [1559, 34016, 170, 292, 111, 196, 37, 82]
+
+[[kreise]]
+ags = "09272"
+original_owner_codes = [897, 24996, 22, 61, 40, 108, 16, 66]
+
+[[kreise]]
+ags = "09273"
+original_owner_codes = [1625, 34612, 142, 70, 76, 107, 11, 71]
+
+[[kreise]]
+ags = "09274"
+original_owner_codes = [1659, 47739, 153, 123, 218, 188, 8, 92]
+
+[[kreise]]
+ags = "09275"
+original_owner_codes = [2606, 58053, 194, 148, 132, 257, 6, 124]
+
+[[kreise]]
+ags = "09276"
+original_owner_codes = [1174, 23243, 122, 53, 83, 84, 16, 59]
+
+[[kreise]]
+ags = "09277"
+original_owner_codes = [1189, 37830, 53, 295, 76, 129, 5, 83]
+
+[[kreise]]
+ags = "09278"
+original_owner_codes = [574, 33860, "missing", 157, 76, 122, 10, 45]
+
+[[kreise]]
+ags = "09279"
+original_owner_codes = [779, 30562, 131, 174, 155, 104, 5, 50]
+
+[[kreise]]
+ags = "09361"
+original_owner_codes = [963, 7932, 393, 226, 124, 104, 10, 37]
+
+[[kreise]]
+ags = "09362"
+original_owner_codes = [3769, 16316, 721, 934, 764, 275, 32, 471]
+
+[[kreise]]
+ags = "09363"
+original_owner_codes = [975, 7971, 259, 303, 56, 103, 16, 45]
+
+[[kreise]]
+ags = "09371"
+original_owner_codes = [1564, 30384, 68, 163, 78, 72, 8, 91]
+
+[[kreise]]
+ags = "09372"
+original_owner_codes = [1359, 40034, 112, 119, 53, 136, 9, 86]
+
+[[kreise]]
+ags = "09373"
+original_owner_codes = [1905, 38116, 125, 144, 41, 130, 15, 87]
+
+[[kreise]]
+ags = "09374"
+original_owner_codes = [1157, 28435, 244, 223, 65, 92, 5, 98]
+
+[[kreise]]
+ags = "09375"
+original_owner_codes = [2637, 55201, 86, 119, 213, 211, 5, 119]
+
+[[kreise]]
+ags = "09376"
+original_owner_codes = [2069, 42668, 77, 138, 126, 170, 20, 87]
+
+[[kreise]]
+ags = "09377"
+original_owner_codes = [1039, 21320, 80, 214, 67, 131, 8, 83]
+
+[[kreise]]
+ags = "09461"
+original_owner_codes = [2099, 9787, 489, 664, 128, 149, 21, 246]
+
+[[kreise]]
+ags = "09462"
+original_owner_codes = [1522, 10439, 677, 673, 189, 121, 95, 103]
+
+[[kreise]]
+ags = "09463"
+original_owner_codes = [962, 7961, 114, 544, 55, 133, 16, 53]
+
+[[kreise]]
+ags = "09464"
+original_owner_codes = [904, 8055, 628, 14, 201, 139, 9, 55]
+
+[[kreise]]
+ags = "09471"
+original_owner_codes = [2630, 40230, 131, 131, 44, 116, 15, 129]
+
+[[kreise]]
+ags = "09472"
+original_owner_codes = [1589, 31606, 214, 83, 53, 100, 11, 115]
+
+[[kreise]]
+ags = "09473"
+original_owner_codes = [1210, 24226, 445, 368, 53, 124, 6, 61]
+
+[[kreise]]
+ags = "09474"
+original_owner_codes = [2003, 31858, 175, 210, 29, 108, 5, 127]
+
+[[kreise]]
+ags = "09475"
+original_owner_codes = [1418, 30058, 420, 343, 40, 223, 14, 134]
+
+[[kreise]]
+ags = "09476"
+original_owner_codes = [842, 21186, 166, 254, 16, 153, 10, 71]
+
+[[kreise]]
+ags = "09477"
+original_owner_codes = [1220, 21088, 239, 181, 60, 165, 15, 116]
+
+[[kreise]]
+ags = "09478"
+original_owner_codes = [1050, 19559, 54, 141, 51, 123, 18, 66]
+
+[[kreise]]
+ags = "09479"
+original_owner_codes = [1334, 20677, 428, 343, 178, 151, 16, 122]
+
+[[kreise]]
+ags = "09561"
+original_owner_codes = [1104, 7974, 426, 13, 146, 33, "missing", 123]
+
+[[kreise]]
+ags = "09562"
+original_owner_codes = [2475, 15052, 268, 1171, 686, 126, 28, 282]
+
+[[kreise]]
+ags = "09563"
+original_owner_codes = [3055, 14747, 1061, 384, 717, 102, 3, 144]
+
+[[kreise]]
+ags = "09564"
+original_owner_codes = [11292, 52026, 3830, 2459, 2584, 849, 161, 597]
+
+[[kreise]]
+ags = "09565"
+original_owner_codes = [1048, 8592, 82, 175, 48, 91, "missing", 33]
+
+[[kreise]]
+ags = "09571"
+original_owner_codes = [2619, 53742, 163, 236, 78, 228, 15, 283]
+
+[[kreise]]
+ags = "09572"
+original_owner_codes = [2568, 37955, 191, 98, 131, 121, 5, 103]
+
+[[kreise]]
+ags = "09573"
+original_owner_codes = [2454, 29546, 112, 311, 86, 103, 5, 84]
+
+[[kreise]]
+ags = "09574"
+original_owner_codes = [3662, 44451, 367, 189, 214, 248, 15, 247]
+
+[[kreise]]
+ags = "09575"
+original_owner_codes = [1420, 29615, 188, 122, 30, 140, 6, 133]
+
+[[kreise]]
+ags = "09576"
+original_owner_codes = [2184, 35800, 95, 96, 77, 210, 36, 109]
+
+[[kreise]]
+ags = "09577"
+original_owner_codes = [1607, 25900, 269, 190, 37, 124, 14, 129]
+
+[[kreise]]
+ags = "09661"
+original_owner_codes = [2039, 10312, 143, 516, 240, 128, 25, 72]
+
+[[kreise]]
+ags = "09662"
+original_owner_codes = [1126, 6689, 386, 806, 126, 91, 10, 61]
+
+[[kreise]]
+ags = "09663"
+original_owner_codes = [2987, 15556, 679, 658, 349, 251, 170, 206]
+
+[[kreise]]
+ags = "09671"
+original_owner_codes = [3706, 46240, 37, 233, 146, 168, 14, 93]
+
+[[kreise]]
+ags = "09672"
+original_owner_codes = [1538, 29148, 186, 198, 51, 120, 51, 105]
+
+[[kreise]]
+ags = "09673"
+original_owner_codes = [1114, 24382, 57, 108, 116, 97, 8, 81]
+
+[[kreise]]
+ags = "09674"
+original_owner_codes = [1149, 25557, 98, 87, 20, 106, 11, 69]
+
+[[kreise]]
+ags = "09675"
+original_owner_codes = [1258, 25694, 76, 224, 140, 145, 20, 79]
+
+[[kreise]]
+ags = "09676"
+original_owner_codes = [2557, 34533, 84, 151, 256, 175, 12, 73]
+
+[[kreise]]
+ags = "09677"
+original_owner_codes = [2172, 37636, 163, 168, 94, 147, 37, 118]
+
+[[kreise]]
+ags = "09678"
+original_owner_codes = [1818, 33206, 40, 170, 33, 86, 8, 101]
+
+[[kreise]]
+ags = "09679"
+original_owner_codes = [2636, 45180, 70, 209, 108, 134, 91, 112]
+
+[[kreise]]
+ags = "09761"
+original_owner_codes = [7552, 27023, 835, 1806, 1278, 321, 36, 585]
+
+[[kreise]]
+ags = "09762"
+original_owner_codes = [1025, 7646, 448, 94, 192, 58, 7, 59]
+
+[[kreise]]
+ags = "09763"
+original_owner_codes = [1652, 7932, 459, 483, 220, 119, 55, 65]
+
+[[kreise]]
+ags = "09764"
+original_owner_codes = [840, 7778, 485, 183, 145, 71, 12, 64]
+
+[[kreise]]
+ags = "09771"
+original_owner_codes = [2252, 36571, 93, 183, 125, 147, "missing", 93]
+
+[[kreise]]
+ags = "09772"
+original_owner_codes = [4881, 64736, 20, 736, 149, 245, 11, 217]
+
+[[kreise]]
+ags = "09773"
+original_owner_codes = [1223, 29174, 142, 78, 56, 102, 3, 104]
+
+[[kreise]]
+ags = "09774"
+original_owner_codes = [1611, 36091, 215, 252, 212, 209, 12, 117]
+
+[[kreise]]
+ags = "09775"
+original_owner_codes = [4006, 39780, 118, 172, 655, 182, 29, 107]
+
+[[kreise]]
+ags = "09776"
+original_owner_codes = [2803, 16023, 69, 486, 74, 155, 44, 119]
+
+[[kreise]]
+ags = "09777"
+original_owner_codes = [3062, 37987, 276, 178, 134, 251, 32, 136]
+
+[[kreise]]
+ags = "09778"
+original_owner_codes = [2206, 43384, 177, 279, 58, 202, 15, 130]
+
+[[kreise]]
+ags = "09779"
+original_owner_codes = [1624, 38966, 393, 228, 79, 139, 11, 119]
+
+[[kreise]]
+ags = "09780"
+original_owner_codes = [5592, 32254, 99, 749, 202, 294, 46, 142]
+
+[[kreise]]
+ags = "10041"
+original_owner_codes = [9107, 72328, 224, 1124, 1679, 490, 92, 197]
+
+[[kreise]]
+ags = "10042"
+original_owner_codes = [2274, 35615, 3, 80, 93, 114, 26, 40]
+
+[[kreise]]
+ags = "10043"
+original_owner_codes = [3888, 38521, 3, 112, 559, 95, 6, 45]
+
+[[kreise]]
+ags = "10044"
+original_owner_codes = [5270, 61471, 48, 332, 192, 214, 57, 93]
+
+[[kreise]]
+ags = "10045"
+original_owner_codes = [4016, 43705, 3, 211, 247, 129, 28, 54]
+
+[[kreise]]
+ags = "10046"
+original_owner_codes = [2547, 28960, "missing", 101, 76, 84, 15, 33]
+
+[[kreise]]
+ags = "11000"
+original_owner_codes = [35461, 211256, 19002, 27192, 32672, 7852, 3030, 2197]
+
+[[kreise]]
+ags = "12051"
+original_owner_codes = [378, 10515, 1693, 474, 815, 100, 77, 39]
+
+[[kreise]]
+ags = "12052"
+original_owner_codes = [763, 12224, 991, 1530, 354, 98, 37, 75]
+
+[[kreise]]
+ags = "12053"
+original_owner_codes = [322, 6691, 815, 592, 166, 121, 14, 69]
+
+[[kreise]]
+ags = "12054"
+original_owner_codes = [2064, 15058, 1858, 1798, 2015, 595, 247, 116]
+
+[[kreise]]
+ags = "12060"
+original_owner_codes = [1426, 50287, 379, 2166, 829, 420, 156, 106]
+
+[[kreise]]
+ags = "12061"
+original_owner_codes = [996, 50711, 429, 1439, 735, 703, 106, 90]
+
+[[kreise]]
+ags = "12062"
+original_owner_codes = [487, 31177, 906, 980, 154, 186, 41, 62]
+
+[[kreise]]
+ags = "12063"
+original_owner_codes = [943, 46168, 712, 1367, 1129, 472, 98, 95]
+
+[[kreise]]
+ags = "12064"
+original_owner_codes = [1006, 57847, 312, 2226, 1050, 548, 49, 111]
+
+[[kreise]]
+ags = "12065"
+original_owner_codes = [1852, 57731, 1392, 1555, 515, 583, 142, 132]
+
+[[kreise]]
+ags = "12066"
+original_owner_codes = [551, 25766, 1223, 1828, 493, 226, 16, 94]
+
+[[kreise]]
+ags = "12067"
+original_owner_codes = [1226, 48733, 991, 2182, 299, 349, 50, 115]
+
+[[kreise]]
+ags = "12068"
+original_owner_codes = [595, 27091, 393, 1296, 280, 272, 59, 111]
+
+[[kreise]]
+ags = "12069"
+original_owner_codes = [1454, 63401, 563, 1520, 964, 824, 55, 153]
+
+[[kreise]]
+ags = "12070"
+original_owner_codes = [318, 23243, 633, 924, 107, 184, 12, 96]
+
+[[kreise]]
+ags = "12071"
+original_owner_codes = [652, 31122, 903, 1511, 359, 380, 33, 105]
+
+[[kreise]]
+ags = "12072"
+original_owner_codes = [1069, 45456, 818, 1288, 687, 572, 73, 104]
+
+[[kreise]]
+ags = "12073"
+original_owner_codes = [532, 28542, 896, 2288, 309, 408, 34, 136]
+
+[[kreise]]
+ags = "13003"
+original_owner_codes = [2281, 14104, 2472, 2623, 834, 354, 201, 80]
+
+[[kreise]]
+ags = "13004"
+original_owner_codes = [1239, 10171, 1212, 1093, 650, 191, 47, 57]
+
+[[kreise]]
+ags = "13071"
+original_owner_codes = [2470, 60451, 1509, 3925, 618, 440, 54, 191]
+
+[[kreise]]
+ags = "13072"
+original_owner_codes = [2339, 60968, 792, 1906, 353, 433, 49, 196]
+
+[[kreise]]
+ags = "13073"
+original_owner_codes = [3032, 56524, 1333, 2674, 686, 693, 112, 206]
+
+[[kreise]]
+ags = "13074"
+original_owner_codes = [1382, 41629, 1220, 1500, 544, 306, 45, 105]
+
+[[kreise]]
+ags = "13075"
+original_owner_codes = [2678, 56474, 1551, 3346, 631, 542, 65, 239]
+
+[[kreise]]
+ags = "13076"
+original_owner_codes = [1464, 62145, 809, 1875, 567, 538, 46, 121]
+
+[[kreise]]
+ags = "14511"
+original_owner_codes = [3485, 22704, 3410, 2152, 1495, 549, 19, 113]
+
+[[kreise]]
+ags = "14521"
+original_owner_codes = [4253, 73399, 2286, 2871, 811, 678, 68, 361]
+
+[[kreise]]
+ags = "14522"
+original_owner_codes = [3194, 70132, 2637, 2188, 873, 879, 96, 237]
+
+[[kreise]]
+ags = "14523"
+original_owner_codes = [3285, 51848, 1692, 1870, 540, 532, 16, 235]
+
+[[kreise]]
+ags = "14524"
+original_owner_codes = [5047, 62820, 2389, 2152, 1241, 584, 27, 264]
+
+[[kreise]]
+ags = "14612"
+original_owner_codes = [9869, 39432, 5708, 183, 5499, 1112, 111, 280]
+
+[[kreise]]
+ags = "14625"
+original_owner_codes = [2415, 72964, 2294, 2456, 776, 532, 47, 269]
+
+[[kreise]]
+ags = "14626"
+original_owner_codes = [2169, 60001, 2461, 2182, 517, 643, 47, 345]
+
+[[kreise]]
+ags = "14627"
+original_owner_codes = [2997, 52931, 2021, 1807, 401, 563, 70, 190]
+
+[[kreise]]
+ags = "14628"
+original_owner_codes = [3222, 52326, 2162, 1914, 442, 513, 19, 239]
+
+[[kreise]]
+ags = "14713"
+original_owner_codes = [9523, 40820, 4816, 3074, 4821, 1431, 100, 236]
+
+[[kreise]]
+ags = "14729"
+original_owner_codes = [3385, 64878, 1501, 1582, 854, 599, 11, 174]
+
+[[kreise]]
+ags = "14730"
+original_owner_codes = [2184, 49632, 947, 1682, 483, 584, 84, 131]
+
+[[kreise]]
+ags = "15001"
+original_owner_codes = [1193, 15064, 843, 853, 462, 196, 20, 31]
+
+[[kreise]]
+ags = "15002"
+original_owner_codes = [2831, 19020, 3261, 2411, 2127, 554, 71, 111]
+
+[[kreise]]
+ags = "15003"
+original_owner_codes = [2972, 24236, 4089, 2000, 1821, 678, 6, 97]
+
+[[kreise]]
+ags = "15081"
+original_owner_codes = [1302, 24693, 788, 624, 134, 146, 5, 58]
+
+[[kreise]]
+ags = "15082"
+original_owner_codes = [2768, 41726, 1298, 1766, 316, 474, 27, 77]
+
+[[kreise]]
+ags = "15083"
+original_owner_codes = [2916, 50598, 763, 1158, 269, 305, 18, 122]
+
+[[kreise]]
+ags = "15084"
+original_owner_codes = [4019, 40999, 1100, 1403, 671, 522, 23, 102]
+
+[[kreise]]
+ags = "15085"
+original_owner_codes = [4028, 54272, 1507, 1912, 548, 441, 133, 111]
+
+[[kreise]]
+ags = "15086"
+original_owner_codes = [1258, 27016, 559, 540, 339, 172, 15, 116]
+
+[[kreise]]
+ags = "15087"
+original_owner_codes = [1989, 40093, 898, 1289, 398, 256, 8, 77]
+
+[[kreise]]
+ags = "15088"
+original_owner_codes = [3409, 49473, 654, 1200, 1203, 551, 19, 81]
+
+[[kreise]]
+ags = "15089"
+original_owner_codes = [2685, 48780, 1565, 2094, 960, 412, 14, 94]
+
+[[kreise]]
+ags = "15090"
+original_owner_codes = [1542, 31116, 909, 1087, 223, 259, 11, 134]
+
+[[kreise]]
+ags = "15091"
+original_owner_codes = [2221, 35659, 684, 1353, 671, 479, 10, 71]
+
+[[kreise]]
+ags = "16051"
+original_owner_codes = [4179, 22431, 2096, 844, 984, 455, 108, 179]
+
+[[kreise]]
+ags = "16052"
+original_owner_codes = [1876, 10931, 1375, 482, 588, 306, 20, 40]
+
+[[kreise]]
+ags = "16053"
+original_owner_codes = [1893, 11035, 1310, 26, 1342, 169, 12, 117]
+
+[[kreise]]
+ags = "16054"
+original_owner_codes = [712, 6699, 360, 460, 71, 91, 12, 13]
+
+[[kreise]]
+ags = "16055"
+original_owner_codes = [1318, 8490, 555, 748, 215, 146, 12, 64]
+
+[[kreise]]
+ags = "16061"
+original_owner_codes = [2638, 24840, 501, 724, 31, 110, 6, 99]
+
+[[kreise]]
+ags = "16062"
+original_owner_codes = [1637, 19456, 949, 717, 160, 175, 5, 96]
+
+[[kreise]]
+ags = "16063"
+original_owner_codes = [4781, 38316, 993, 986, 410, 254, 29, 96]
+
+[[kreise]]
+ags = "16064"
+original_owner_codes = [2349, 26789, 569, 613, 442, 221, 10, 137]
+
+[[kreise]]
+ags = "16065"
+original_owner_codes = [1370, 23531, 508, 580, 67, 128, 23, 56]
+
+[[kreise]]
+ags = "16066"
+original_owner_codes = [3818, 34646, 494, 511, 335, 215, 46, 80]
+
+[[kreise]]
+ags = "16067"
+original_owner_codes = [3197, 31829, 889, 919, 310, 293, 10, 76]
+
+[[kreise]]
+ags = "16068"
+original_owner_codes = [1290, 20202, 364, 538, 34, 163, 14, 46]
+
+[[kreise]]
+ags = "16069"
+original_owner_codes = [1935, 17842, 142, 493, 32, 129, 11, 27]
+
+[[kreise]]
+ags = "16070"
+original_owner_codes = [2363, 25066, 486, 835, 221, 275, 14, 100]
+
+[[kreise]]
+ags = "16071"
+original_owner_codes = [1720, 22923, 319, 639, 133, 174, 12, 35]
+
+[[kreise]]
+ags = "16072"
+original_owner_codes = [2096, 14618, 268, 317, 123, 65, 18, 26]
+
+[[kreise]]
+ags = "16073"
+original_owner_codes = [2746, 24898, 869, 964, 150, 165, 27, 111]
+
+[[kreise]]
+ags = "16074"
+original_owner_codes = [1807, 21699, 387, 577, 187, 124, 19, 67]
+
+[[kreise]]
+ags = "16075"
+original_owner_codes = [2049, 22335, 243, 907, 99, 177, 15, 127]
+
+[[kreise]]
+ags = "16076"
+original_owner_codes = [2358, 26339, 569, 631, 184, 197, 4, 65]
+
+[[kreise]]
+ags = "16077"
+original_owner_codes = [1852, 19931, 622, 1115, 410, 294, 76, 59]
+

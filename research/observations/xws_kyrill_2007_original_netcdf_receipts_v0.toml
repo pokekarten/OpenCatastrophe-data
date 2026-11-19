@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Distinct from the canonical landscape XWS source index: one ORIGINAL file proof.
+schema_version = "XWS_KYRILL_2007_ORIGINAL_NETCDF_BYTES_SOURCE_ONLY_V0"
+canonical_existing_candidate_id = "xws.european-extreme-windstorms"
+publisher_index = "https://www.europeanwindstorms.org/repository/Kyrill/"
+publisher_method = "https://www.europeanwindstorms.org/method/footprint/"
+historical_event_name = "Kyrill"
+historical_event_date = "2007-01-18"
+publisher_attribution = "Met Office, University of Reading and University of Exeter"
+publisher_data_rights = "Creative Commons Attribution 4.0 International (CC BY 4.0)"
+publisher_reports_commercial_use_permitted_with_attribution = true
+original_byte_receipt_github_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42106677697"
+original_file_count = 4
+physical_storm_count = 1
+annual_event_probability_established = false
+event_set_selection_is_biased_extremes = true
+original_coordinate_reference = "CF-1.0 rotated_latitude_longitude, pole lon 177.5 lat 37.5"
+original_latitude_longitude_are_WGS84 = false
+original_gust_measure = "wind_speed_of_gust: maximum 3-second gust over 72h"
+original_gust_units = "metres per second"
+grid_nlat = 158
+grid_nlon = 178
+raw_files_stored_in_repository = false
+raw_files_stored_in_Neon = false
+publisher_file_byte_sha256_pinned = true
+independent_second_environment_original_sha_reproduction_verified = false
+geocoded_NRW_10000_locations_reconciled_to_this_source = false
+german_wind_vulnerability_curve_verified = false
+oasis_gul_il_ri_verified_for_this_source = false
+annual_gross_net_OEP_AEP_calibrated = false
+
+[[product]]
+key = "uncontaminated_raw"
+original_publisher_url = "https://www.europeanwindstorms.org/repository/Kyrill/Kyrill_rawFootUncon.nc"
+original_sha256 = "bf18bd37b0fa441bd02a00860c0fa74474c77691efe316efd46bde0ca8b483f5"
+original_bytes = 122304
+usable_gust_cells_within_zero_to_150_ms = 14472
+source_invalid_masked_or_outside_physical_validation_count = 13652
+
+[[product]]
+key = "recalibrated_lower_95"
+original_publisher_url = "https://www.europeanwindstorms.org/repository/Kyrill/Kyrill_biasL95.nc"
+original_sha256 = "5ac73f78239ef62bb177c210dbefaf7608e0dbac7cccc53cf10819bf3cbb64e0"
+original_bytes = 122304
+usable_gust_cells_within_zero_to_150_ms = 28124
+source_invalid_masked_or_outside_physical_validation_count = 0
+
+[[product]]
+key = "recalibrated_mean"
+original_publisher_url = "https://www.europeanwindstorms.org/repository/Kyrill/Kyrill_biasMean.nc"
+original_sha256 = "aef5c8cd7ed2cf475c190e08f5dc0148231fd91dd47bdb541a6360552ccd28bb"
+original_bytes = 122304
+usable_gust_cells_within_zero_to_150_ms = 28124
+source_invalid_masked_or_outside_physical_validation_count = 0
+
+[[product]]
+key = "recalibrated_upper_95"
+original_publisher_url = "https://www.europeanwindstorms.org/repository/Kyrill/Kyrill_biasU95.nc"
+original_sha256 = "ab4bc78cc1b330f5c3a4a5ab9e67422865a0fbd44c0c6585dd127a0e95826f82"
+original_bytes = 122304
+usable_gust_cells_within_zero_to_150_ms = 28111
+source_invalid_masked_or_outside_physical_validation_count = 13

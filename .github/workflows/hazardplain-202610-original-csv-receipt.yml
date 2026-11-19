@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hazard Plain original 2026-10 CSV byte receipt
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/hazardplain-202610-original-csv-receipt.yml"
+      - "research_runners/hazardplain_202610_original_csv_receipt_v0.py"
+      - "tests/test_hazardplain_202610_original_csv_receipt_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hazardplain-original-csv-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-csv-bytes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout source without persistent Git credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Run synthetic-only byte, schema and security tests
+        run: python -m unittest tests.test_hazardplain_202610_original_csv_receipt_v0 -v
+      - name: Retrieve and hash three pinned publisher original CSV files in bounded RAM
+        id: original
+        continue-on-error: true
+        run: python -m research_runners.hazardplain_202610_original_csv_receipt_v0 --official-live
+      - name: Record exact status separately from workflow success
+        if: always()
+        env:
+          ORIGINAL_STATUS: ${{ steps.original.outcome }}
+        run: |
+          if [ "$ORIGINAL_STATUS" = "success" ]; then
+            echo "EXACT_ORIGINAL_CSV_BYTES_VERIFIED: three original file SHA-256, byte sizes, CSV headers and row counts match pinned original 2026-10 manifest. Research-only; no rights/model admission." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "BLOCKED_ORIGINAL_CSV_VERIFICATION: do not interpret green synthetic tests or this nonblocking source canary as independent original data verification." >> "$GITHUB_STEP_SUMMARY"
+          fi

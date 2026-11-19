@@ -25,7 +25,7 @@ Current accepted reviews:
 
 - `dwd-extreme-wind-v24.03.md` — supports the metadata-only DWD extreme-wind admission.
 - `copernicus-c3s-european-windstorm-reanalysis-v1.0.md` — supports the metadata-only C3S Enhanced Windstorm Service admission.
-- `efehr-esrm20-european-exposure-model-v1.0.md` — supports the metadata-only EFEHR ESRM20 European Exposure Model admission.
+- `efehr-esrm20-european-exposure-model-v1.0.md` — supports the approved-derived EFEHR ESRM20 European Exposure Model admission, limited to the exact canonical 2,666-byte Kosovo-residential `TAXONOMY` set; the original exposure CSV has a recorded byte identity but is not approved for repository publication or model input.
 - `efehr-eshm20.md` — supports the metadata-only EFEHR ESHM20 earthquake-hazard admission.
 - `efehr-esrm20-vulnerability-v1.1.md` — supports the metadata-only EFEHR ESRM20 European Building Vulnerability Database v1.1 admission.
 - `efehr-esrm20-risk-inputs-v1.0.md` — supports the metadata-only EFEHR ESRM20 v1.0 OpenQuake-engine risk-input/configuration admission.

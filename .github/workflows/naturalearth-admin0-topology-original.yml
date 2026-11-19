@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Natural Earth 110m v5.1.1 original topology research
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/naturalearth_admin0_topology_v0.py
+      - tests/test_naturalearth_admin0_topology_v0.py
+      - .github/workflows/naturalearth-admin0-topology-original.yml
+  # One bounded original read only when this exact trusted workflow is merged.
+  # Ordinary commits or scheduled checks never fetch the external geometry.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/naturalearth-admin0-topology-original.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: naturalearth-admin0-topology-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-geometry:
+    name: Synthetic negative tests and single exact source topology receipt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout audited code without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install reviewed offline topology dependency
+        run: |
+          python -m pip install --disable-pip-version-check --no-input --only-binary=:all: "shapely==2.1.2"
+          python -m pip check
+      - name: Synthetic-only topology and source-byte-identity regressions
+        run: |
+          python -m unittest tests.test_naturalearth_admin0_geojson_preflight tests.test_naturalearth_admin0_topology_v0 -v
+      - name: Read one exact original Natural Earth public-domain GeoJSON only on trusted main
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          file="$RUNNER_TEMP/naturalearth-v5.1.1-admin0-110m-original.geojson"
+          trap 'rm -f "$file"' EXIT
+          curl --fail --silent --show-error \
+            --proto '=https' --connect-timeout 15 --max-time 90 --retry 0 \
+            --max-filesize 1048576 --output "$file" \
+            'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_110m_admin_0_countries.geojson'
+          # The Python preflight rejects size/SHA drift BEFORE interpreting
+          # potentially mutable source polygons, and emits aggregates only.
+          python -m research_runners.naturalearth_admin0_topology_v0 \
+            --original-geojson "$file"
+          echo "Natural Earth source file ephemeral: no raw dataset, coordinates or IDs published."

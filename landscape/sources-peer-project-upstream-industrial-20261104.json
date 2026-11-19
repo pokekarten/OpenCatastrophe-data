@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of original industrial and built-environment providers found by inspecting NCCS mining and GFDRR Urban Validation configuration sources; no asset bytes, approved rights or scientific admission.",
+  "review_date": "2026-11-04",
+  "entries": [
+    {
+      "candidate_id": "pangaea.maus.global-mining-polygons.v2.2022",
+      "name": "PANGAEA Maus Global-scale Mining Polygons Version 2",
+      "provider": "Maus et al. / PANGAEA repository",
+      "categories": [
+        "industrial_exposure",
+        "mining",
+        "land_use",
+        "infrastructure"
+      ],
+      "spatial_scope": "Global locations within sampled mining areas; not complete mines or ownership",
+      "temporal_scope": "2019 satellite background, published 2022-03-14",
+      "resolution_or_granularity": "44,929 polygons, 101,583 square km; GPKG, CSV and grids at 30 arc seconds / 5 arc minutes / 30 arc minutes; area in square kilometres",
+      "potential_roles": [
+        "synthetic_industrial_footprint_prior",
+        "mining_area_validation",
+        "sector_spatial_allocation"
+      ],
+      "authoritative_url": "https://doi.org/10.1594/PANGAEA.942325",
+      "access_class_hint": "public_repository_original_cc_by_sa4_secondary_catalog_conflict_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NCCS original mining README cites the PANGAEA v2 DOI and 30 arc-second global_miningarea_v2_30arcsecond.tif as its industry allocation grid. Original PANGAEA page specifies CC BY-SA 4.0, whereas secondary EC Africa Knowledge Platform catalog shows CC BY 4.0: original provider terms are authoritative, but exact selected asset and third-party source imagery rights require review. Derived from visual interpretation of 2019 Sentinel-2, with 34,820 S&P mining location sample/10-km buffer and supplementary Google/Bing viewing; spatial selection and human judgement bias apply. Validation reported 88.3% accuracy and 0.87 F1. Mining polygons/area are not unique facility owners, production or insured TIV."
+    },
+    {
+      "candidate_id": "microsoft.aiforgood.building-density-height.temporal-v1",
+      "name": "Microsoft AI for Good global temporal building density and height COGs",
+      "provider": "Microsoft AI for Good / Microsoft Buildings",
+      "categories": [
+        "exposure",
+        "buildings",
+        "height",
+        "change_detection",
+        "remote_sensing"
+      ],
+      "spatial_scope": "Global ~100 m public raster for two snapshots; 40 m quarterly tiles cover five named regions only",
+      "temporal_scope": "Global 2020 Q4 and 2023 Q4; selected-site quarters 2020 Q2 through 2025 Q2",
+      "resolution_or_granularity": "GeoPackage tile index at https://opendata.aiforgood.ai/building-density/tile_index.gpkg, COG two bands: density 0..1 and height_norm 0..1 (multiply by 100 metres), nodata -1; 100 m global grids",
+      "potential_roles": [
+        "built_volume_proxy",
+        "urban_growth_prior",
+        "geospatial_footprint_validation"
+      ],
+      "authoritative_url": "https://github.com/microsoft/buildings",
+      "access_class_hint": "public_tile_index_and_cog_data_software_mit_data_and_planet_imagery_terms_unreviewed",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "GFDRR urban_validation uses original Microsoft TEMPO tile_index.gpkg; original microsoft/buildings README pins v1 (2020q4 and 2023q4) and spatial/temporal band semantics. Derived from PlanetScope quarterly imagery via machine learning; not observed roof polygons, floor area or insured TIV. MIT repository LICENSE is software permission and does not automatically grant redistribution/commercial rights to third-party Planet imagery or all generated data layers. Record selected quarter, tile coordinates, EPSG:3857 index, COG geotransform and exact URL before model work."
+    },
+    {
+      "candidate_id": "austria.bmf.world-mining-data.2026",
+      "name": "Austrian World Mining Data 2026 mineral commodity production statistical tables",
+      "provider": "Republic of Austria Federal Ministry of Finance",
+      "categories": [
+        "mining",
+        "economic_production",
+        "commodities",
+        "sector_exposure"
+      ],
+      "spatial_scope": "168 producing countries, 65 mineral commodities; reporting completeness country dependent",
+      "temporal_scope": "Edition 2026: production years 2020-2024; historical editions separate",
+      "resolution_or_granularity": "Annual official report PDF and Excel chapters 6.1-6.6 with national production by commodity and comparison tables",
+      "potential_roles": [
+        "national_mining_production_prior",
+        "sector_value_allocation",
+        "industrial_exposure_crosscheck"
+      ],
+      "authoritative_url": "https://www.bmf.gv.at/en/topics/mining/mineral-resources-policy/wmd.html",
+      "access_class_hint": "public_pdf_and_excel_official_statistical_publication_commercial_reuse_terms_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Original Austrian ministry page identifies World Mining Data 2026 as current edition and associated Excel tables, based on national surveys, BGS/USGS crosschecks and some explicitly estimated production. NCCS mining code cites WorldMiningData 2021 for ROW value allocation, not the 2026 edition: later 2020-2024 figures cannot silently replace WIOD 2011 production values or retrospective original 2021 model inputs. Production tonnage or economic activity is not replacement cost/insured value; datafile licence, units and prices require original review."
+    }
+  ]
+}

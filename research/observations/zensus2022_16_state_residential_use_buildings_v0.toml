@@ -1,0 +1,190 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Original statistical-office publication figure 5, printed page 29; short numeric research transcription only.
+schema_version = "ZENSUS2022_GERMANY_16_LAENDER_BUILDINGS_WITH_RESIDENTIAL_USE_V0"
+publisher = "Thueringer Landesamt fuer Statistik"
+source_title = "Ergebnisse der Gebaeude- und Wohnungszaehlung des Zensus 2022 zu Gebaeuden mit Wohnraum in Thueringen"
+source_url = "https://www.statistischebibliothek.de/mir/servlets/MCRFileNodeServlet/THMonografie_derivate_00000684/Aufsatz-05a-2025.pdf"
+original_figure = "Abbildung 5: Gebaeude mit Wohnraum nach Eigentumsform; Bundeslaender/Deutschland"
+printed_document_page = 29
+published_year = 2025
+census_date = "2022-05-15"
+statistical_universe = "Gebaeude_mit_Wohnraum_including_other_buildings_with_dwellings_NOT_only_residential_buildings"
+geographical_grain = "16_laender_AGS_2digit_as_of_2022"
+numbers_are_original_public_statistical_office_aggregates = true
+original_pdf_byte_sha256_verified_in_this_research = false
+source_district_level_data_extracted = false
+source_rights_status = "manual_bounded_public_numeric_facts_with_attribution_no_pdf_republication"
+company_insured_buildings_observed = false
+company_policyholder_by_ownership_observed = false
+company_state_market_shares_observed = false
+geocoded_risk_sites_observed = false
+year_2025_building_stock_observed = false
+insurer_tiv_or_natural_perils_coverage_observed = false
+caveat = "National published total differs by 2 from sum of 16 printed state counts; ownership subtotals also are not fully additive (state residual <=6); record all differences rather than fabricate a correction. Building with residential use is NOT equal to RVA connected-building insurance contracts."
+[national_publisher_printed]
+buildings_with_residential_use_2022 = 19957268
+owned_by_private_persons = 16944013
+owned_by_apartment_owner_associations = 1771291
+owned_by_housing_companies = 1147587
+owned_by_other = 94375
+
+[[states]]
+state_ags = "01"
+state_label = "Schleswig-Holstein"
+buildings_with_residential_use_2022 = 866852
+owned_by_private_persons = 771929
+owned_by_apartment_owner_associations = 46183
+owned_by_housing_companies = 45429
+owned_by_other = 3314
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "02"
+state_label = "Hamburg"
+buildings_with_residential_use_2022 = 260630
+owned_by_private_persons = 174346
+owned_by_apartment_owner_associations = 26830
+owned_by_housing_companies = 56353
+owned_by_other = 3102
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "03"
+state_label = "Niedersachsen"
+buildings_with_residential_use_2022 = 2366185
+owned_by_private_persons = 2106295
+owned_by_apartment_owner_associations = 157604
+owned_by_housing_companies = 91603
+owned_by_other = 10680
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "04"
+state_label = "Bremen"
+buildings_with_residential_use_2022 = 144040
+owned_by_private_persons = 115172
+owned_by_apartment_owner_associations = 15012
+owned_by_housing_companies = 12837
+owned_by_other = 1021
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "05"
+state_label = "Nordrhein-Westfalen"
+buildings_with_residential_use_2022 = 4042229
+owned_by_private_persons = 3297162
+owned_by_apartment_owner_associations = 454315
+owned_by_housing_companies = 273422
+owned_by_other = 17327
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "06"
+state_label = "Hessen"
+buildings_with_residential_use_2022 = 1443324
+owned_by_private_persons = 1267753
+owned_by_apartment_owner_associations = 106541
+owned_by_housing_companies = 62591
+owned_by_other = 6445
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "07"
+state_label = "Rheinland-Pfalz"
+buildings_with_residential_use_2022 = 1232101
+owned_by_private_persons = 1137226
+owned_by_apartment_owner_associations = 61707
+owned_by_housing_companies = 29099
+owned_by_other = 4070
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "08"
+state_label = "Baden-Wuerttemberg"
+buildings_with_residential_use_2022 = 2566980
+owned_by_private_persons = 2054600
+owned_by_apartment_owner_associations = 414663
+owned_by_housing_companies = 84707
+owned_by_other = 13012
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "09"
+state_label = "Bayern"
+buildings_with_residential_use_2022 = 3227324
+owned_by_private_persons = 2841960
+owned_by_apartment_owner_associations = 252218
+owned_by_housing_companies = 116260
+owned_by_other = 16888
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "10"
+state_label = "Saarland"
+buildings_with_residential_use_2022 = 314613
+owned_by_private_persons = 280598
+owned_by_apartment_owner_associations = 27100
+owned_by_housing_companies = 6225
+owned_by_other = 689
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "11"
+state_label = "Berlin"
+buildings_with_residential_use_2022 = 338663
+owned_by_private_persons = 211256
+owned_by_apartment_owner_associations = 35461
+owned_by_housing_companies = 86718
+owned_by_other = 5230
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "12"
+state_label = "Brandenburg"
+buildings_with_residential_use_2022 = 712675
+owned_by_private_persons = 631762
+owned_by_apartment_owner_associations = 16631
+owned_by_housing_companies = 61165
+owned_by_other = 3116
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "13"
+state_label = "Mecklenburg-Vorpommern"
+buildings_with_residential_use_2022 = 419400
+owned_by_private_persons = 362470
+owned_by_apartment_owner_associations = 16882
+owned_by_housing_companies = 38231
+owned_by_other = 1818
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "14"
+state_label = "Sachsen"
+buildings_with_residential_use_2022 = 861100
+owned_by_private_persons = 713893
+owned_by_apartment_owner_associations = 55028
+owned_by_housing_companies = 88395
+owned_by_other = 3786
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "15"
+state_label = "Sachsen-Anhalt"
+buildings_with_residential_use_2022 = 593737
+owned_by_private_persons = 502743
+owned_by_apartment_owner_associations = 35140
+owned_by_housing_companies = 54200
+owned_by_other = 1656
+insurance_company_observed_in_this_row = false
+
+[[states]]
+state_ags = "16"
+state_label = "Thueringen"
+buildings_with_residential_use_2022 = 567413
+owned_by_private_persons = 474845
+owned_by_apartment_owner_associations = 49984
+owned_by_housing_companies = 40359
+owned_by_other = 2225
+insurance_company_observed_in_this_row = false

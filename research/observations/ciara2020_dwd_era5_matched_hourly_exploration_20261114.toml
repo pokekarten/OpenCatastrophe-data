@@ -1,0 +1,126 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Aggregate source-verified exploratory comparison. Raw time series omitted.
+schema = "CIARA2020_DWD_ERA5_MATCHED_HOURLY_EXPLORATION_V0"
+status = "ONE_EVENT_PAIRED_HOURLY_EXPLORATION_NO_SKILL_OR_CALIBRATION"
+as_of_date_utc = "2026-11-14"
+DWD_original_zip_SHA256_02667 = "e88536b7eebb6c7f94de63de56b1af85a0981fdd769e727f45f6d7db7c93ae78"
+DWD_original_zip_SHA256_15200 = "748ffdbc8f6ebf04a014ebf3d8fdc177e9a903349cc5b36e19f4c425998bfaa0"
+DWD_original_zip_SHA256_00603 = "4a61a6394344bba05a06553794ac1a2d5edb4c4e3ac39ae1f26407e5f4e2f62b"
+Google_ARCO_ERA5_96x160_normalized_float32_decoded_SHA256 = "5fb7c41963a94f88ee3651b51bfa84cc2f4bf379e1ee6f4eb4a4fb597d37f932"
+DWD_hour_labels_documented_UTC = true
+DWD_FX911_description = "highest wind gust of the last hour"
+DWD_and_ERA5_exact_interval_boundaries_proven_equal = false
+historical_2020_station_geometry_and_instrument_metadata_verified = true
+stations = 3
+unique_ERA5_grid_nodes = 2
+hourly_valid_pairs_at_zero_offset_per_station = 96
+station_height_adjustment_applied = false
+lag_offsets_reported_hours = [-1, 0, 1]
+best_lag_selected = false
+bias_or_model_skill_admitted = false
+multi_storm_or_annual_validation = false
+wind_vulnerability_or_insured_loss_calibrated = false
+raw_hourly_source_values_in_receipt = false
+source_lineage = [
+  "DWD original CDC hourly FX_911 historical archives, CC BY 4.0; DWD attribution required",
+  "DWD original station metadata inventory: research/observations/ciara2020_dwd_original_historical_station_metadata_attestation_20261114.toml",
+  "Google Research ARCO ERA5 10fg original source; Copernicus Licence; C3S and Google Research attribution",
+  "Previously accepted decoded 2020 96x160 ERA5 source replay receipt in ciara2020_google_arco_real_96h_160node_nrw_gust_20261113.toml",
+]
+
+[[station_results]]
+station_id = "02667"
+historical_2020_latitude = 50.8645
+historical_2020_longitude = 7.1575
+sensor_height_m = 10.0
+era5_grid_latitude = 50.75
+era5_grid_longitude = 7.25
+distance_km = 14.295
+dwd_peak_mps = 26.4
+era5_peak_mps = 31.169416427612305
+
+[station_results.lag_minus_1]
+paired_hour_count = 95
+mean_error_mps = 2.7310726908633582
+mae_mps = 2.944213917380885
+rmse_mps = 3.817856837672426
+pearson_correlation = 0.9318683400174799
+
+[station_results.lag_zero]
+paired_hour_count = 96
+mean_error_mps = 2.7874523262182875
+mae_mps = 2.952277916669846
+rmse_mps = 3.8045914645003474
+pearson_correlation = 0.9352013113718077
+
+[station_results.lag_plus_1]
+paired_hour_count = 95
+mean_error_mps = 2.8888229771664267
+mae_mps = 3.1711767979672083
+rmse_mps = 4.155364854687655
+pearson_correlation = 0.9081031903112998
+
+[[station_results]]
+station_id = "15200"
+historical_2020_latitude = 51.2531
+historical_2020_longitude = 7.2157
+sensor_height_m = 12.0
+era5_grid_latitude = 51.25
+era5_grid_longitude = 7.25
+distance_km = 2.412
+dwd_peak_mps = 31.1
+era5_peak_mps = 32.13789749145508
+
+[station_results.lag_minus_1]
+paired_hour_count = 95
+mean_error_mps = 1.2467613983154295
+mae_mps = 2.428999501278526
+rmse_mps = 3.4001301703242577
+pearson_correlation = 0.8825953147807437
+
+[station_results.lag_zero]
+paired_hour_count = 96
+mean_error_mps = 1.2581068754196167
+mae_mps = 2.39555291334788
+rmse_mps = 3.3162696322259277
+pearson_correlation = 0.8893631968199118
+
+[station_results.lag_plus_1]
+paired_hour_count = 95
+mean_error_mps = 1.3207696693821958
+mae_mps = 2.481647611919202
+rmse_mps = 3.303976407348236
+pearson_correlation = 0.8920773244452863
+
+[[station_results]]
+station_id = "00603"
+historical_2020_latitude = 50.735
+historical_2020_longitude = 7.1931
+sensor_height_m = 10.0
+era5_grid_latitude = 50.75
+era5_grid_longitude = 7.25
+distance_km = 4.337
+dwd_peak_mps = 25.5
+era5_peak_mps = 31.169416427612305
+
+[station_results.lag_minus_1]
+paired_hour_count = 95
+mean_error_mps = 2.201599006652832
+mae_mps = 2.6540615101864464
+rmse_mps = 3.3311253550689277
+pearson_correlation = 0.9375252306852496
+
+[station_results.lag_zero]
+paired_hour_count = 96
+mean_error_mps = 2.269743992884954
+mae_mps = 2.717815989255905
+rmse_mps = 3.425683952348239
+pearson_correlation = 0.9340233719268811
+
+[station_results.lag_plus_1]
+paired_hour_count = 95
+mean_error_mps = 2.3688229771664266
+mae_mps = 2.9991185760498045
+rmse_mps = 3.666756244773704
+pearson_correlation = 0.9217221062522194

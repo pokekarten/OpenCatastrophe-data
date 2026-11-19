@@ -281,9 +281,18 @@ CREATE INDEX idx_endpoint_candidate ON recipe_endpoint(candidate_id);
                     for link in r["candidate_join_hypotheses"]:
                         con.execute("INSERT OR IGNORE INTO recipe_endpoint VALUES (?,?)",
                                     (link["recipe_id"], ident))
-                    for peer in r["same_authoritative_page_candidate_ids"]:
+                    # shared_provider_page stores one row per source, not one
+                    # row per peer relationship. Three candidates sharing a
+                    # provider URL each have two peers but remain three sources.
+                    peers = r["same_authoritative_page_candidate_ids"]
+                    if (type(peers) is not list
+                            or len(peers) != len(set(peers))
+                            or ident in peers):
+                        raise CAT4Error("invalid shared provider page peer roster")
+                    for peer in peers:
                         if peer not in by_id or by_id[peer]["authoritative_url"] != r["authoritative_url"]:
                             raise CAT4Error("invalid shared provider page peer")
+                    if peers:
                         con.execute("INSERT INTO shared_provider_page VALUES (?,?,0)",
                                     (r["authoritative_url"], ident))
             if con.execute("PRAGMA foreign_key_check").fetchall():
