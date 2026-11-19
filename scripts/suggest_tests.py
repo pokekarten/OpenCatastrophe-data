@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import re
 import shlex
 import subprocess
 import sys
@@ -36,26 +37,54 @@ def safe_path(raw: str) -> PurePosixPath:
     return path
 
 
+def _nul_fields(data: bytes) -> list[str]:
+    """Parse complete Git -z output; never silently accept truncated records."""
+    if not data:
+        return []
+    if not data.endswith(b"\x00"):
+        raise ValueError("unterminated Git -z output")
+    return data[:-1].decode("utf-8", errors="strict").split("\x00")
+
+
+def _diff_name_status_paths(data: bytes) -> set[str]:
+    """Keep both original and destination paths for Git renames/copies."""
+    fields = _nul_fields(data)
+    paths: set[str] = set()
+    index = 0
+    while index < len(fields):
+        status = fields[index]
+        index += 1
+        if not re.fullmatch(r"(?:[RC][0-9]{1,3}|[AMDTUXB])", status):
+            raise ValueError(f"unknown Git diff status: {status!r}")
+        count = 2 if status[0] in "RC" else 1
+        if len(fields) - index < count:
+            raise ValueError("incomplete Git diff name-status record")
+        paths.update(safe_path(name).as_posix() for name in fields[index:index + count])
+        index += count
+    return paths
+
+
 def git_changed_paths(root: Path, base: str) -> list[str]:
-    """Include committed, index, worktree and untracked changes; never use a shell."""
+    """Include both sides of renames plus staged, unstaged and untracked paths."""
     if not base or base.startswith("-"):
         raise ValueError("--base must name a non-option Git ref")
     commands = (
-        ["git", "diff", "--name-only", "-z", f"{base}...HEAD", "--"],
-        ["git", "diff", "--name-only", "-z", "HEAD", "--"],
+        ["git", "diff", "--name-status", "--find-renames", "-z", f"{base}...HEAD", "--"],
+        ["git", "diff", "--name-status", "--find-renames", "-z", "HEAD", "--"],
         ["git", "ls-files", "--others", "--exclude-standard", "-z"],
     )
     names: set[str] = set()
-    for cmd in commands:
+    for index, cmd in enumerate(commands):
         outcome = subprocess.run(cmd, cwd=root, capture_output=True, check=False)
         if outcome.returncode:
             raise ValueError(
                 f"unable to read Git changes ({cmd[1]}): "
                 "check that --base exists locally and the checkout is complete"
             )
-        for name in outcome.stdout.decode("utf-8", errors="strict").split("\x00"):
-            if name:
-                names.add(safe_path(name).as_posix())
+        if index < 2:
+            names.update(_diff_name_status_paths(outcome.stdout))
+        else:
+            names.update(safe_path(name).as_posix() for name in _nul_fields(outcome.stdout))
     return sorted(names)
 
 
