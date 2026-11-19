@@ -157,6 +157,49 @@ def _polygon_intersects_window(xy: list[tuple[float, float]],
     return any(contains(corner) for corner in corners)
 
 
+def _positive_area_overlap_window(xy: list[tuple[float, float]],
+                                  bbox: tuple[int, int, int, int]) -> bool:
+    """Distinguish true area overlap from boundary-only contact.
+
+    Clip a reviewed finite simple ring against the fixed projected rectangle.
+    The clipped geometry never leaves this process; only a boolean is returned.
+    The area threshold is the same 0.0005 m² tolerance as the existing gate.
+    This is neither a surveyed-footprint nor an insured-exposure admission.
+    """
+    x0, y0, x1, y1 = bbox
+    polygon = xy[:-1]  # The strict GML profile already required a closed ring.
+    for axis, boundary, lower in (
+        (0, x0, True), (0, x1, False), (1, y0, True), (1, y1, False)
+    ):
+        if not polygon:
+            return False
+
+        def inside(point: tuple[float, float]) -> bool:
+            return point[axis] >= boundary if lower else point[axis] <= boundary
+
+        output: list[tuple[float, float]] = []
+        previous = polygon[-1]
+        previous_inside = inside(previous)
+        for current in polygon:
+            current_inside = inside(current)
+            if current_inside != previous_inside:
+                # A true boundary crossing cannot have a zero denominator.
+                fraction = ((boundary - previous[axis])
+                            / (current[axis] - previous[axis]))
+                output.append((
+                    previous[0] + fraction * (current[0] - previous[0]),
+                    previous[1] + fraction * (current[1] - previous[1]),
+                ))
+            if current_inside:
+                output.append(current)
+            previous, previous_inside = current, current_inside
+        polygon = output
+    return (
+        len(polygon) >= 3
+        and abs(_signed_twice_area(polygon + [polygon[0]])) > 0.001
+    )
+
+
 def inspect_semantic_label(raw: bytes) -> dict:
     """Report one source-labelled INSPIRE reference, without validating a footprint.
 
@@ -396,6 +439,7 @@ def inspect_gml(raw: bytes) -> dict:
         "projected_xy_plausible": True,
         "polygon_envelope_overlaps_fixed_window": True,
         "actual_polygon_intersects_fixed_window": True,
+        "positive_area_overlap_with_fixed_window": _positive_area_overlap_window(xy, BBOX),
         "topology_and_inner_rings_verified": False,
         "nationwide_completeness_verified": False,
         "reusable_source_rights_fully_reviewed": False,
