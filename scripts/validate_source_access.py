@@ -173,7 +173,8 @@ def _https_url(value: Any, where: str, *, nullable: bool = False, root: bool = F
         _ = parsed.port
     except ValueError as exc:
         raise SourceAccessError(f"{where} has an invalid host or port") from exc
-    if parsed.scheme != "https" or not parsed.netloc or not hostname or parsed.username or parsed.password:
+    if (parsed.scheme != "https" or not parsed.netloc or not hostname
+            or parsed.username is not None or parsed.password is not None):
         raise SourceAccessError(f"{where} must be a public https URL without embedded credentials")
 
     try:
@@ -182,7 +183,7 @@ def _https_url(value: Any, where: str, *, nullable: bool = False, root: bool = F
         raise SourceAccessError(f"{where} host must use ASCII/IDNA-canonical form in source-access v1") from exc
 
     host = hostname.rstrip(".").casefold()
-    if host == "localhost" or host.endswith(".localhost") or host.endswith(".local"):
+    if host == "localhost" or host.endswith((".localhost", ".local", ".internal")):
         raise SourceAccessError(f"{where} must not target a local host")
     if _ambiguous_numeric_host(host):
         raise SourceAccessError(f"{where} must not use an ambiguous numeric host")
