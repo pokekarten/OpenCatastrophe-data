@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -118,6 +119,56 @@ class SuggestTestsTests(unittest.TestCase):
         report = suggest_tests.suggest(["scripts/alpha.py", "scripts/alpha.py"], root=self.root)
         self.assertEqual(report["changed_paths"], ["scripts/alpha.py"])
         self.assertEqual(report["suggested_tests"], ["tests/test_alpha.py", "tests/test_beta.py"])
+
+    def test_git_name_status_parser_handles_renames_and_copies(self) -> None:
+        data = (b"R100\\x00scripts/old.py\\x00scripts/new.py\\x00"
+                b"C75\\x00scripts/a.py\\x00scripts/b.py\\x00"
+                b"M\\x00tests/test_old.py\\x00")
+        # Real bytes use NUL separators, not escaped textual representations.
+        paths = suggest_tests._diff_name_status_paths(data.replace(b"\\\\x00", b"\\x00"))
+        self.assertEqual(paths, {
+            "scripts/old.py", "scripts/new.py", "scripts/a.py", "scripts/b.py",
+            "tests/test_old.py",
+        })
+
+    def test_git_name_status_parser_rejects_incomplete_or_unsafe_data(self) -> None:
+        for malformed in (
+            b"R100\\x00scripts/old.py\\x00",  # missing destination
+            b"M\\x00scripts/a.py",  # missing terminating NUL
+            b"UNKNOWN\\x00scripts/a.py\\x00",
+            b"A\\x00../private.py\\x00",
+        ):
+            with self.subTest(malformed=malformed), self.assertRaises(ValueError):
+                suggest_tests._diff_name_status_paths(malformed)
+
+    def test_git_renames_keep_old_and_new_paths_for_test_selection(self) -> None:
+        def git(*args: str) -> None:
+            subprocess.run(["git", *args], cwd=self.root, check=True,
+                           capture_output=True)
+
+        git("init", "-q")
+        git("config", "user.email", "agent-tests@example.invalid")
+        git("config", "user.name", "Synthetic Agent Test")
+        (self.root / "scripts").mkdir()
+        (self.root / "scripts/old.py").write_text("def sample(): return 1\\n", encoding="utf-8")
+        (self.root / "tests/test_old.py").write_text("from scripts import old\\n", encoding="utf-8")
+        git("add", ".")
+        git("commit", "-qm", "baseline")
+        git("branch", "baseline")
+        (self.root / "scripts/old.py").rename(self.root / "scripts/new.py")
+        git("add", "-A")
+        git("commit", "-qm", "rename")
+        paths = suggest_tests.git_changed_paths(self.root, "baseline")
+        self.assertEqual(paths, ["scripts/new.py", "scripts/old.py"])
+        report = suggest_tests.suggest(paths, root=self.root)
+        self.assertIn("tests/test_old.py", report["suggested_tests"])
+        (self.root / "scripts/new.py").rename(self.root / "scripts/final.py")
+        git("add", "-A")
+        (self.root / "scripts/untracked.py").write_text("# untracked\\n", encoding="utf-8")
+        self.assertEqual(
+            suggest_tests.git_changed_paths(self.root, "baseline"),
+            ["scripts/final.py", "scripts/new.py", "scripts/old.py", "scripts/untracked.py"],
+        )
 
     def test_git_errors_are_not_silent(self) -> None:
         with self.assertRaisesRegex(ValueError, "Git changes"):
