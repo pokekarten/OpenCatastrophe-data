@@ -67,7 +67,7 @@ Before substantive work:
 2. choose the smallest causal step that improves acquisition, admission, transformation, hazard/exposure/vulnerability/loss readiness, validation or reproducibility;
 3. read only the task-specific source/licensing/scientific material needed;
 4. implement or execute in the cheapest capable environment;
-5. run focused checks, then `python scripts/check_all.py` when the change affects repository-wide contracts;
+5. use `python scripts/check_all.py --fast` for quick safety/contract feedback, run affected tests, then `python scripts/check_all.py` for the full definition of done;
 6. record only evidence that helps another contributor understand the result or remaining blocker.
 
 A longer task queue, governance document or status report alone is not progress.
