@@ -76,6 +76,21 @@ class SuggestTestsTests(unittest.TestCase):
         report = suggest_tests.suggest(["scripts/validate_manifest.py"], root=self.root)
         self.assertEqual(report["suggested_tests"], [])
 
+    def test_split_root_join_does_not_match_unrelated_base(self) -> None:
+        (self.root / "tests/test_decoy.py").write_text(
+            'SCRIPT = OTHER / "scripts" / "alpha.py"\n', encoding="utf-8"
+        )
+        report = suggest_tests.suggest(["scripts/alpha.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], [])
+        self.assertEqual(report["unmatched_paths"], ["scripts/alpha.py"])
+
+    def test_split_root_join_does_not_match_nested_unrelated_base(self) -> None:
+        (self.root / "tests/test_decoy.py").write_text(
+            'SCRIPT = (ROOT / "private") / "scripts" / "alpha.py"\n', encoding="utf-8"
+        )
+        report = suggest_tests.suggest(["scripts/alpha.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], [])
+
     def test_string_mentions_of_script_in_fixture_do_not_count_as_coverage(self) -> None:
         (self.root / "tests/test_reader.py").write_text(
             'assert "scripts/alpha.py" == "scripts/alpha.py"\n', encoding="utf-8"
