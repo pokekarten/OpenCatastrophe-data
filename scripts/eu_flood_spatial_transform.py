@@ -194,6 +194,9 @@ def build_spatial_census_cell(
 ) -> CensusCell:
     """Convert synthetic spatial overlays into one existing A0 ``CensusCell``."""
 
+    if not isinstance(cell_id, str) or not cell_id or cell_id != cell_id.strip():
+        raise SpatialTransformError("cell_id must be a non-empty trimmed string")
+
     census = _validate_polygonal_geometry(
         census_geometry_epsg3035, label="census_geometry_epsg3035"
     )
@@ -205,6 +208,17 @@ def build_spatial_census_cell(
     aoi_fraction = _bounded_fraction(
         clipped_aoi_area, census_area, label="aoi_fraction"
     )
+
+    # Reject mixed/noncanonical identities before sorting: Python cannot
+    # sort mixed string/integer IDs, and numeric source IDs must never be
+    # silently reinterpreted as distinct census/hazard identities.
+    for support in supports:
+        if (
+            not isinstance(support.support_id, str)
+            or not support.support_id
+            or support.support_id != support.support_id.strip()
+        ):
+            raise SpatialTransformError("support_id must be a non-empty trimmed string")
 
     seen_support_ids: set[str] = set()
     clipped_supports: list[tuple[SpatialHazardSupport, BaseGeometry, float]] = []

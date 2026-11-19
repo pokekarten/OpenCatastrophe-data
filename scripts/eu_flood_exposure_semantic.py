@@ -71,9 +71,15 @@ def _serialize_decimal(value: Decimal) -> str:
     return format(value.normalize(), "f")
 
 
+def _validate_identifier(value: object, *, field: str) -> str:
+    """Reject ambiguous/noncanonical cell and support identities before counting."""
+    if not isinstance(value, str) or not value or value != value.strip():
+        raise SemanticError(f"{field} must be a non-empty trimmed string")
+    return value
+
+
 def _validate_support(support: HazardSupport) -> tuple[Decimal, str]:
-    if not support.support_id:
-        raise SemanticError("support_id must be non-empty")
+    _validate_identifier(support.support_id, field="support_id")
     fraction = _decimal(support.fraction, field="support fraction")
     if fraction <= 0 or fraction > 1:
         raise SemanticError("support fraction must be in (0, 1]")
@@ -139,8 +145,7 @@ def aggregate_cells(cells: Iterable[CensusCell]) -> dict[str, object]:
     seen_cells: set[str] = set()
 
     for cell in cells:
-        if not cell.cell_id:
-            raise SemanticError("cell_id must be non-empty")
+        _validate_identifier(cell.cell_id, field="cell_id")
         if cell.cell_id in seen_cells:
             raise SemanticError(f"duplicate census cell id: {cell.cell_id}")
         seen_cells.add(cell.cell_id)
@@ -167,6 +172,7 @@ def aggregate_cells(cells: Iterable[CensusCell]) -> dict[str, object]:
         }
 
         for support in cell.supports:
+            _validate_identifier(support.support_id, field="support_id")
             if support.support_id in support_ids:
                 raise SemanticError(
                     f"duplicate hazard support in cell {cell.cell_id}: {support.support_id}"
