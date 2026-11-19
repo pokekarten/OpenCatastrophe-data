@@ -59,6 +59,61 @@ class SuggestTestsTests(unittest.TestCase):
         report = suggest_tests.suggest(["research_runners/probe.py"], root=self.root)
         self.assertEqual(report["suggested_tests"], ["tests/test_runner.py"])
 
+    def test_unique_module_root_directory_alias_for_real_loader(self) -> None:
+        (self.root / "tests/test_sample_candidates.py").write_text(
+            'SCRIPTS = ROOT / "scripts"\n'
+            'SPEC = importlib.util.spec_from_file_location('
+            '"audit_sample_candidates", SCRIPTS / "audit_sample_candidates.py")\n',
+            encoding="utf-8",
+        )
+        result = suggest_tests.suggest(["scripts/audit_sample_candidates.py"], root=self.root)
+        self.assertEqual(result["suggested_tests"], ["tests/test_sample_candidates.py"])
+
+    def test_root_directory_alias_works_for_research_runners(self) -> None:
+        (self.root / "tests/test_reader.py").write_text(
+            'RUNNERS = ROOT / "research_runners"\n'
+            'SCRIPT = RUNNERS / "probe_source.py"\n', encoding="utf-8"
+        )
+        result = suggest_tests.suggest(["research_runners/probe_source.py"], root=self.root)
+        self.assertEqual(result["suggested_tests"], ["tests/test_reader.py"])
+
+    def test_root_directory_alias_must_not_be_reassigned(self) -> None:
+        (self.root / "tests/test_decoy.py").write_text(
+            'SCRIPTS = ROOT / "scripts"\n'
+            'SCRIPTS = OTHER / "scripts"\n'
+            'SCRIPT = SCRIPTS / "audit_sample_candidates.py"\n', encoding="utf-8"
+        )
+        result = suggest_tests.suggest(["scripts/audit_sample_candidates.py"], root=self.root)
+        self.assertEqual(result["suggested_tests"], [])
+
+    def test_non_root_or_different_directory_alias_does_not_match(self) -> None:
+        (self.root / "tests/test_decoy.py").write_text(
+            'OTHER_SCRIPTS = OTHER / "scripts"\n'
+            'RUNNERS = ROOT / "research_runners"\n'
+            'SCRIPT = OTHER_SCRIPTS / "audit_sample_candidates.py"\n'
+            'ANOTHER = RUNNERS / "audit_sample_candidates.py"\n', encoding="utf-8"
+        )
+        result = suggest_tests.suggest(["scripts/audit_sample_candidates.py"], root=self.root)
+        self.assertEqual(result["suggested_tests"], [])
+
+    def test_function_local_alias_does_not_infer_module_provenance(self) -> None:
+        (self.root / "tests/test_decoy.py").write_text(
+            'def local():\n'
+            '    SCRIPTS = ROOT / "scripts"\n'
+            '    return SCRIPTS / "audit_sample_candidates.py"\n', encoding="utf-8"
+        )
+        result = suggest_tests.suggest(["scripts/audit_sample_candidates.py"], root=self.root)
+        self.assertEqual(result["suggested_tests"], [])
+
+    def test_function_parameter_shadow_does_not_count_as_root_alias(self) -> None:
+        (self.root / "tests/test_decoy.py").write_text(
+            'SCRIPTS = ROOT / "scripts"\n'
+            'def local(SCRIPTS):\n'
+            '    return SCRIPTS / "audit_sample_candidates.py"\n', encoding="utf-8"
+        )
+        result = suggest_tests.suggest(["scripts/audit_sample_candidates.py"], root=self.root)
+        self.assertEqual(result["suggested_tests"], [])
+
     def test_arbitrary_parent_is_not_a_root_join(self) -> None:
         (self.root / "tests/test_random.py").write_text(
             'SCRIPT = OTHER / "scripts/validate_manifest.py"\n',
