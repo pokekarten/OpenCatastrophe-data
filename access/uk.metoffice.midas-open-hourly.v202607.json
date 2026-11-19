@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "uk.metoffice.midas-open-hourly.v202607",
+  "source_ids": [
+    "uk.metoffice.midas-open-hourly.v202607"
+  ],
+  "provider": "UK Met Office / Centre for Environmental Data Analysis (CEDA)",
+  "interface_type": "web_portal",
+  "status": "blocked_registration",
+  "documentation_url": "https://catalogue.ceda.ac.uk/uuid/d04207b551674c07801b7d4e6d883e50/",
+  "service_root": "https://catalogue.ceda.ac.uk",
+  "api_version": "MIDAS Open UK hourly v202607 published 2026-07-23, DOI 10.5285/d04207b551674c07801b7d4e6d883e50",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "provider_account",
+    "credential_reference": null,
+    "registration_url": "https://data.ceda.ac.uk/",
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_midas_open_v202607_catalogue"
+    ],
+    "path_templates": [
+      "/uuid/d04207b551674c07801b7d4e6d883e50/"
+    ],
+    "parameter_rules": "Documentation-only, no automatic source request or caller-selected path, unbounded domain, secrets, crawler, bulk extraction or retries. Metadata path(s) are only candidate exact origins; actual provider GET requires independently reviewed provider machine-use terms, exact URL, byte cap, body hash and source-specific approved workflow."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html"
+    ],
+    "format": "Official immutable DOI catalogue metadata only; original CEDA BADC-CSV station files require provider registration and specific file identity.",
+    "scientific_semantics": "Hourly data span 1875-2025 and report wind speed/direction; that does not imply any gust-variable or wind averaging-period availability for event/station. Dataset excludes METAR messages and restricted MIDAS records; record site moves, QC, missingness and independent storm holdout."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "Registration is required for dataset download. No password or authenticated GET was attempted; source access speed, session constraints and account authorization must be reviewed separately.",
+    "mutability_notes": "Pin exact DOI release, file, station, timestamp and versioned changelog; archive includes replaced/removed station content."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "CEDA official record labels this exact MIDAS Open v202607 product UK Open Government Licence 3.0 and Permitted Use Any, with licence/citation/attribution duties; it excludes restricted MIDAS and METAR. This does not grant CEDA automated scraping or an accepted insurer risk model."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": true,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-14",
+  "evidence_urls": [
+    "https://catalogue.ceda.ac.uk/uuid/d04207b551674c07801b7d4e6d883e50/",
+    "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+    "https://data.ceda.ac.uk/"
+  ],
+  "notes": "No authorized CEDA registration session, original BADC-CSV station file, provider source SHA, model exposure or wind gust validation. Citable public catalogue only."
+}

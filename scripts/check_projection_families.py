@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -37,7 +38,32 @@ class ProjectionFamily:
                 and parts[0] == "schemas"
                 and relative.name.endswith(".schema.json")
             )
+        if self.name == "research_receipts":
+            return (
+                len(parts) == 3
+                and parts[0] == "docs"
+                and parts[1] == "research"
+                and relative.name == "insurer-directory-original-page-receipt-20261101.json"
+            )
         raise RuntimeError(f"unknown projection-family implementation: {self.name}")
+
+
+# Explicitly scoped non-canonical research snapshots already on main.
+# These are NOT generated source projections; unknown research JSON stays rejected.
+RESEARCH_ONLY_STANDALONE_JSON_SCHEMAS = {
+    PurePosixPath("research/observations/knmi_historical_downloads.json"):
+        "KNMI_HISTORICAL_ACQUISITION_V1",
+    PurePosixPath("research/observations/knmi_wind_metadata_review.json"):
+        "KNMI_WIND_METADATA_REVIEW_V1",
+    PurePosixPath("research/source_screening/windstorm_whole_chain.json"):
+        "WINDSTORM_WHOLE_CHAIN_SCREEN_V1",
+    PurePosixPath("research/observations/climk_gunter_date_resolution_reference.json"):
+        "CLIMK_GUNTER_DATE_RESOLUTION_REFERENCE_V1",
+    PurePosixPath("research/observations/wind_sources_downloads_20261115.json"):
+        "__SOURCE_DOWNLOAD_RECEIPT_ROWS__",
+    PurePosixPath("research/observations/xws_downloads_20261115.json"):
+        "__SOURCE_DOWNLOAD_RECEIPT_ROWS__",
+}
 
 
 FAMILIES = (
@@ -45,6 +71,7 @@ FAMILIES = (
     ProjectionFamily("manifests", ("scripts/render_public_views.py", "--check")),
     ProjectionFamily("landscape", ("scripts/render_public_views.py", "--check")),
     ProjectionFamily("schemas", ("scripts/schema_reference.py", "--check")),
+    ProjectionFamily("research_receipts", ("scripts/insurer_directory_receipt_projection.py", "--check")),
 )
 
 
@@ -70,6 +97,42 @@ def check_inventory(root: Path = ROOT) -> tuple[list[str], int]:
 
     for path in json_files:
         relative = PurePosixPath(path.relative_to(root).as_posix())
+        required_research_schema = RESEARCH_ONLY_STANDALONE_JSON_SCHEMAS.get(relative)
+        if required_research_schema is not None:
+            try:
+                research_record = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeError, json.JSONDecodeError):
+                errors.append(f"invalid standalone research JSON: {relative}")
+                continue
+            if required_research_schema == "__SOURCE_DOWNLOAD_RECEIPT_ROWS__":
+                # These two older receipts are JSON arrays, not canonical JSON/MD
+                # projection families. Demand exact nonempty receipt row shape.
+                if not (
+                    isinstance(research_record, list)
+                    and research_record
+                    and all(
+                        isinstance(row, dict)
+                        and isinstance(row.get("file"), str)
+                        and bool(row["file"])
+                        and isinstance(row.get("url"), str)
+                        and row["url"].startswith("https://")
+                        and isinstance(row.get("sha256"), str)
+                        and len(row["sha256"]) == 64
+                        and all(c in "0123456789abcdef" for c in row["sha256"])
+                        and type(row.get("bytes")) is int
+                        and row["bytes"] > 0
+                        and row.get("status") == "downloaded"
+                        for row in research_record
+                    )
+                ):
+                    errors.append(f"standalone research download receipt mismatch: {relative}")
+                continue
+            if (
+                not isinstance(research_record, dict)
+                or research_record.get("schema") != required_research_schema
+            ):
+                errors.append(f"standalone research JSON schema mismatch: {relative}")
+            continue
         matches = [family for family in FAMILIES if family.matches(relative)]
         if len(matches) != 1:
             if not matches:

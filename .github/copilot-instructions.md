@@ -15,4 +15,4 @@ Keep rights/admission separate from scientific fitness. Do not infer permission,
 
 Files marked `GENERATED FILE — DO NOT EDIT DIRECTLY` are verified projections, not authority. Change their declared canonical source and run `python scripts/render_public_views.py --write`; never hand-edit the generated file or create a second independently maintained representation of the same facts.
 
-Before handoff run `python scripts/check_all.py` and inspect the full diff.
+For early feedback run `python scripts/check_all.py --fast` (partial, not a full suite); run affected tests. Before handoff run `python scripts/check_all.py` without `--fast` and inspect the full diff.

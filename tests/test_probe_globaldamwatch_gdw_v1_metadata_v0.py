@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import hashlib
 from pathlib import Path
 import unittest
 
@@ -17,6 +18,9 @@ def example() -> dict:
     return {
         "id": 25988293,
         "version": 1,
+        "title": "Global Dam Watch database version 1.0",
+        "is_public": True,
+        "status": "public",
         "doi": DOI,
         "license": {"name": "CC BY 4.0", "url": "https://creativecommons.org/licenses/by/4.0/"},
         "size": EXPECTED_TOTAL_BYTES,
@@ -38,10 +42,13 @@ def encoded(item=None) -> bytes:
 class Reply:
     status = 200
 
-    def __init__(self, body=None, url=URL, media="application/json; charset=utf-8", status=200):
+    def __init__(self, body=None, url=URL, media="application/json; charset=utf-8",
+                 status=200, extra_headers=None):
         self.body = encoded() if body is None else body
         self.url = url
         self.headers = {"Content-Type": media}
+        if extra_headers:
+            self.headers.update(extra_headers)
         self.status = status
 
     def geturl(self):
@@ -93,7 +100,9 @@ class GDWMetadataProbeTests(unittest.TestCase):
 
     def test_wrong_identity_version_license_doi_fails_closed(self):
         for key, newval in (
-            ("id", 25988294), ("id", True), ("version", 2), ("version", True),
+            ("id", 25988294), ("id", True), ("version", 2), ("version", True), ("title", "Global Dam Watch database version 2.0"),
+            ("is_public", False), ("is_public", 1), ("status", "private"),
+            ("status", None),
             ("doi", "10.6084/m9.figshare.25988293.v2"),
             ("license", {"name": "CC BY-NC 4.0"}),
             ("license", {"name": "CC BY 4.0", "url": "https://bad.invalid/license"}),
@@ -150,6 +159,26 @@ class GDWMetadataProbeTests(unittest.TestCase):
             with self.subTest(reply=reply.headers, reply_url=reply.url):
                 with self.assertRaises(ProbeBlocked):
                     probe(open_request=lambda req, timeout: reply)
+
+    def test_http_content_encoding_and_length_fail_closed(self):
+        for reply in (
+            Reply(extra_headers={"Content-Encoding": "gzip"}),
+            Reply(extra_headers={"Content-Length": "unbounded"}),
+            Reply(extra_headers={"Content-Length": str(MAX_BYTES + 1)}),
+            Reply(extra_headers={"Content-Length": str(len(encoded()) + 1)}),
+            Reply(extra_headers={"Content-Length": str(len(encoded()) - 1)}),
+        ):
+            with self.subTest(headers=reply.headers), self.assertRaises(ProbeBlocked):
+                probe(open_request=lambda req, timeout: reply)
+
+    def test_correct_original_length_and_identity_encoding_are_accepted(self):
+        body = encoded()
+        reply = Reply(body=body, extra_headers={
+            "Content-Length": str(len(body)), "Content-Encoding": "identity",
+        })
+        receipt = probe(open_request=lambda req, timeout: reply)
+        self.assertEqual(receipt["response_bytes"], len(body))
+        self.assertEqual(receipt["response_sha256"], hashlib.sha256(body).hexdigest())
 
     def test_receipt_clock_must_be_timezone_aware(self):
         with self.assertRaises(ProbeBlocked):

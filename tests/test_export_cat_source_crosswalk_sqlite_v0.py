@@ -18,7 +18,7 @@ from scripts.export_cat_source_crosswalk_sqlite_v0 import (
 )
 
 
-def synthetic_report():
+def synthetic_report(*, three_peers: bool = False):
     source_rows = []
     access_rows = []
     for name in ("synthetic.a", "synthetic.b"):
@@ -42,8 +42,29 @@ def synthetic_report():
             "license_or_terms_flags": ["synthetic_no_authority"],
             "next_action": "Review independently",
         })
+    if three_peers:
+        source_rows.append({
+            "candidate_id": "synthetic.c", "landscape_shard": "sources-test.json",
+            "provider": "Synthetic", "authoritative_url": "https://example.org/catalog",
+            "spatial_scope": "no real geography", "temporal_scope": "synthetic only",
+            "categories": ["building"], "potential_roles": ["test"],
+            "admission_status": "not_admitted",
+            "automated_model_import_allowed_by_this_audit": False,
+        })
+        access_rows.append({
+            "source_id": "synthetic.c", "record_type": "landscape_candidate",
+            "provider": "Synthetic", "authoritative_url": "https://example.org/catalog",
+            "source_registry_path": "landscape/sources-test.json",
+            "contract_ids": [], "contract_statuses": [],
+            "operational_readiness": "no_concrete_access_contract",
+            "rights_posture": "license_review_required",
+            "automation_decision": "document_only",
+            "license_or_terms_flags": ["synthetic_no_authority"],
+            "next_action": "Review independently",
+        })
     accesses = {
-        "entry_count": 3, "landscape_entry_count": 2, "manifest_entry_count": 1,
+        "entry_count": len(access_rows) + 1,
+        "landscape_entry_count": len(access_rows), "manifest_entry_count": 1,
         "entries": access_rows + [{
             "source_id": "synthetic.a", "record_type": "admitted_manifest",
             "source_registry_path": "manifests/synthetic.a.json",
@@ -52,7 +73,7 @@ def synthetic_report():
         }],
     }
     audits = {
-        "source_count": 2, "source_inventory": source_rows,
+        "source_count": len(source_rows), "source_inventory": source_rows,
         "this_report_is_a_model_input_allowlist": False,
         "linkage_recipe_count": 1,
         "linkage_hypotheses": [{
@@ -117,6 +138,37 @@ class CAT4ExportTests(unittest.TestCase):
                 self.assertEqual(con.execute("SELECT count(*) FROM candidate WHERE model_admitted<>0 OR join_proven<>0").fetchone()[0], 0)
                 self.assertEqual(con.execute("SELECT count(*) FROM source_link_recipe WHERE auto_join_allowed<>0").fetchone()[0], 0)
                 self.assertEqual(con.execute("SELECT count(*) FROM existing_manifest_separate WHERE new_authority_granted<>0").fetchone()[0], 0)
+
+    def test_three_sources_sharing_one_provider_page_have_three_unique_rows(self):
+        # Regression for real source shards that share a catalogue URL:
+        # candidate x peer is NOT the relation stored by shared_provider_page.
+        report = synthetic_report(three_peers=True)
+        self.assertEqual(report["candidate_count"], 3)
+        for row in report["candidates"]:
+            self.assertEqual(len(row["same_authoritative_page_candidate_ids"]), 2)
+        with tempfile.TemporaryDirectory() as td:
+            db = Path(td) / "three-peers.cat.sqlite"
+            receipt = export_crosswalk_sqlite(db, report)
+            self.assertEqual(receipt["candidates"], 3)
+            with sqlite3.connect(db) as con:
+                observed = con.execute(
+                    "SELECT candidate_id, identical_bytes_proven FROM shared_provider_page "
+                    "ORDER BY candidate_id"
+                ).fetchall()
+                self.assertEqual(observed, [
+                    ("synthetic.a", 0), ("synthetic.b", 0), ("synthetic.c", 0)
+                ])
+                self.assertEqual(con.execute("PRAGMA integrity_check").fetchone()[0], "ok")
+
+    def test_duplicate_shared_provider_peers_fail_closed(self):
+        report = synthetic_report(three_peers=True)
+        original = report["candidates"][0]["same_authoritative_page_candidate_ids"]
+        report["candidates"][0]["same_authoritative_page_candidate_ids"] = [original[0], original[0]]
+        with tempfile.TemporaryDirectory() as td:
+            db = Path(td) / "duplicated-peers.cat.sqlite"
+            with self.assertRaisesRegex(CAT4Error, "invalid shared provider page"):
+                export_crosswalk_sqlite(db, report)
+            self.assertFalse(db.exists())
 
     def test_no_overwrite_and_no_mutation_of_other_cat_db(self):
         report = synthetic_report()

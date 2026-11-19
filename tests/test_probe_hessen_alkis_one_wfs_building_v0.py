@@ -166,6 +166,25 @@ class HessenOneBuildingWfsTests(TestCase):
         self.assertFalse(evidence["feature_identifiers_addresses_or_coordinates_emitted"])
         self.assertNotIn("50.516",str(evidence))
 
+    def test_http_incomplete_or_overstated_body_length_rejected(self):
+        # Even syntactically complete GML is not proof of a complete HTTP body.
+        raw=fixture()
+        for declared in (len(raw)-1,len(raw)+1):
+            with self.subTest(declared=declared),self.assertRaisesRegex(
+                wfs.BuildingFeatureBlocked, "Content-Length"
+            ):
+                wfs.probe(open_request=lambda req,timeout:Reply(
+                    data=raw, headers={
+                        "Content-Type":"application/gml+xml",
+                        "Content-Length":str(declared),
+                    }
+                ))
+        # A bounded chunked response can legitimately omit Content-Length.
+        evidence=wfs.probe(open_request=lambda req,timeout:Reply(
+            data=raw,headers={"Content-Type":"application/gml+xml"}
+        ))
+        self.assertEqual(evidence["original_response_bytes"],len(raw))
+
     def test_http_redirect_html_encoding_and_oversize_reject(self):
         default={"Content-Type":"application/gml+xml","Content-Length":str(len(fixture()))}
         replies=[

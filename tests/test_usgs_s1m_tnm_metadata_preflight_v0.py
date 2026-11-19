@@ -51,6 +51,39 @@ class TNMS1MTests(unittest.TestCase):
         with self.assertRaises(Blocked):
             check_products(self.product(host="example.org"))
 
+    def test_s1m_label_cannot_launder_other_product_paths(self):
+        # The collection label is necessary but not sufficient: keep source family exact.
+        paths = (
+            "/StagedProducts/Elevation/1m/legacy.tif",
+            "/StagedProducts/Elevation/legacy.tif",
+            "/StagedProducts/Elevation/S1M/../1m/legacy.tif",
+            "/StagedProducts/Elevation/S1M/%2e%2e/legacy.tif",
+            "/StagedProducts/Elevation/S1M/%2flegacy.tif",
+            "/StagedProducts/Elevation/S1M//test.tif",
+            "/StagedProducts/Elevation/S1M/file.tif.bak",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                product = self.product()
+                product["items"][0]["downloadURL"] = "https://prd-tnm.s3.amazonaws.com" + path
+                with self.assertRaises(Blocked):
+                    check_products(product)
+
+    def test_s1m_product_url_forbids_userinfo_port_and_fragments(self):
+        urls = (
+            "https://user@prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/S1M/test.tif",
+            "https://prd-tnm.s3.amazonaws.com:443/StagedProducts/Elevation/S1M/test.tif",
+            "https://prd-tnm.s3.amazonaws.com:bad/StagedProducts/Elevation/S1M/test.tif",
+            "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/S1M/test.tif?key=x",
+            "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/S1M/test.tif#fragment",
+        )
+        for url in urls:
+            with self.subTest(url=url):
+                product = self.product()
+                product["items"][0]["downloadURL"] = url
+                with self.assertRaises(Blocked):
+                    check_products(product)
+
     def test_false_zero_result(self):
         with self.assertRaises(Blocked):
             check_products({"total": 0, "items": []})
@@ -99,6 +132,34 @@ class TNMS1MTests(unittest.TestCase):
         record["items"][0]["sourceId"] = "b" * 24
         with self.assertRaises(Blocked):
             check_products(record)
+
+    def test_frozen_florida_expanded_but_aoi_containing_bbox_blocked(self):
+        # Wide bbox contains the AOI but no longer identifies the original tile.
+        record = self.product()
+        record["items"][0].update({
+            "datasets": [], "title": PILOT_TITLE,
+            "sourceId": PILOT_SOURCE_ID, "downloadURL": PILOT_DOWNLOAD_URL,
+            "boundingBox": {
+                "minX": -81.05, "minY": 25.85,
+                "maxX": -80.85, "maxY": 26.10,
+            },
+        })
+        with self.assertRaisesRegex(Blocked, "original product bbox drift"):
+            check_products(record)
+
+    def test_frozen_florida_bbox_tiny_serialization_shift_allowed(self):
+        record = self.product()
+        record["items"][0].update({
+            "datasets": [], "title": PILOT_TITLE,
+            "sourceId": PILOT_SOURCE_ID, "downloadURL": PILOT_DOWNLOAD_URL,
+            "boundingBox": {
+                "minX": -81.0028601420002 + 1e-8,
+                "minY": 25.92070859857935 - 1e-8,
+                "maxX": -80.8895404313893 + 1e-8,
+                "maxY": 26.025030076412904 - 1e-8,
+            },
+        })
+        self.assertEqual(check_products(record)["identity_evidence"], "frozen_florida_s1m_record")
 
     def test_frozen_florida_outside_aoi_rejected(self):
         record = self.product()

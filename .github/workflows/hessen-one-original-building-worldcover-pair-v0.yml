@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: '3.14'
       - name: Install already pinned GIS dependencies, no source data downloads
-        run: python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-hessen-alkis-geos.txt
       - name: Confirm pinned offline PyProj and GEOS dependencies
         run: |
           python -m pip check
@@ -42,4 +42,5 @@ jobs:
       - name: Recheck original TIFF compression and ALKIS one-GML validators
         run: python -m unittest tests.test_probe_esa_worldcover_classified_block185_v0 tests.test_probe_hessen_alkis_one_gml_ring_v0 -v
       - name: One approved WFS source and exactly three original ESA ranges research-only
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         run: python -m research_runners.hessen_alkis_one_building_worldcover_pair_v0 --live

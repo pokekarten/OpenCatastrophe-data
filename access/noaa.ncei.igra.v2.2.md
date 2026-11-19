@@ -97,7 +97,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** unknown
 
-**Notes:** Anonymous public NCEI file access is connectivity evidence only and is not represented as redistribution, derivative-use or commercial-automation permission. Exact dataset/use constraints and any attribution requirements require independent asset-specific review before repository persistence or publication.
+**Notes:** 2026-11-15 T0 rights evidence, not licence clearance: NOAA/NCEI general archive policy states US-federal-origin material is public-domain in the US but distinguishes third-party contributed and legacy holdings, which may have other licences. The US data.gov IGRA Version 2 catalogue lists CC0, but its record also carries otherRestrictions and non-public access metadata; the Copernicus CDS IGRA policy identifies WMO data policy rather than an IGRA 2.2 station/ZIP-specific grant. These statements do not resolve the exact station/source lineage, automation terms for the NCEI archive, commercial insurer-model reuse or redistribution scope. Verify authoritative product-specific rights, WMO policy applicability, attribution and terms before allowing any provider GET, persisted sample, source-byte publication or commercial CAT use. Rights remain not_reviewed/unknown; no live probe is authorized.
 
 ## Probe contract
 
@@ -113,7 +113,7 @@ _Empty array._
 
 **Implementation decision:** document_only
 
-**Reviewed at:** 2026-08-12
+**Reviewed at:** 2026-11-15
 
 ## Evidence urls
 
@@ -121,5 +121,9 @@ _Empty array._
 - <https://www.ncei.noaa.gov/data/integrated-global-radiosonde-archive/access/>
 - <https://www.ncei.noaa.gov/data/integrated-global-radiosonde-archive/doc/igra2-data-format.txt>
 - <https://doi.org/10.7289/V5X63K0Q>
+- <https://www.ncei.noaa.gov/archive>
+- <https://catalog.data.gov/dataset/integrated-global-radiosonde-archive-igra-version-2>
+- <https://cds.climate.copernicus.eu/licences/igra-data-policy>
+- <https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ncdc%3AC00975>
 
 **Notes:** Static IGRA v2.2 sounding-access boundary only. No provider request, station sample, external byte, parser execution, admission promotion, hazard-model claim or publication decision is introduced. A future bounded sample must preselect station and POR/Y2D scope before inspecting target values and must retain provider flags and vertical-profile semantics.
