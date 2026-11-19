@@ -114,6 +114,43 @@ class OfficialJRCJavascriptRouteTests(unittest.TestCase):
             with self.subTest(extra=extra), self.assertRaises(jrc.JSRouteBlocked):
                 jrc.inspect_inline_tile_routes(page(extra=extra))
 
+    def test_valid_script_tags_with_attributes_case_and_whitespace(self):
+        raw = page().replace(
+            b"<script>", b"<ScRiPt type='text/javascript' data-source='official'>", 1
+        ).replace(b"</script>", b"</ScRiPt >", 1)
+        self.assertEqual(
+            jrc.inspect_inline_tile_routes(raw)["effective_click_generated_tile_base_url"],
+            jrc.CLOUDFERRO_ACTIVE,
+        )
+
+    def test_malformed_html_script_end_tags_fail_closed(self):
+        # The old regexp ignored browser-recognized tag variants.
+        for ending in (
+            b"</script\t\n bar>",
+            b"</script/foo>",
+            b"</script onload=x>",
+        ):
+            with self.subTest(ending=ending), self.assertRaises(jrc.JSRouteBlocked):
+                jrc.inspect_inline_tile_routes(page().replace(b"</script>", ending, 1))
+
+    def test_script_markup_inside_attribute_is_not_a_script(self):
+        raw = page().replace(
+            b"<body>", b'<body title="<script>function set_paths()</script>">', 1
+        )
+        self.assertEqual(
+            jrc.inspect_inline_tile_routes(raw)["effective_download_host"],
+            "s3.waw4-1.cloudferro.com",
+        )
+
+    def test_unclosed_extra_closing_and_external_script_fail_closed(self):
+        for raw in (
+            page().replace(b"</script>", b"", 1),
+            page().replace(b"<script>", b"<SCRIPT SRC='https://evil.example/'>", 1),
+            page() + b"</script>",
+        ):
+            with self.subTest(length=len(raw)), self.assertRaises(jrc.JSRouteBlocked):
+                jrc.inspect_inline_tile_routes(raw)
+
     def test_no_script_or_duplicate_set_paths_code(self):
         raw = page()
         for changed in (
