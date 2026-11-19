@@ -33,12 +33,27 @@ The audit counts **per return period (1,2,5,10,25,50,75,100 years)** × **four v
 
 **No** source return-level value, source station row/ID, coordinate, source matrix, original author catalogue entry, per-station outlier or individual original bootstrap draw is logged, persisted to Git or copied into Neon. Only small, aggregate quality-category counts are emitted. The original files remain ephemeral and are deleted after the job.
 
+### Original-source severity result, verified on the exact workflow head (2026-11-19)
+
+The [GTSM original-source workflow run #44592441440](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/44592441440), [job #135801719651](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/44592441440/job/135801719651), completed **successfully** on PR commit `9b6a9a093d840bae0d571d0ffa6b8bb7b49c19f6`. It executed **41/41 synthetic tests**, then verified the pinned original Zenodo statistical file and author source catalogue before emitting aggregate-only provenance and severity counts. The output confirms the previously observed **26** best-fit-versus-reported-bound crossing *cells*, involving six station rows (five producer `id_coast_`-prefixed and one regular-grid-prefixed row):
+
+| Producer name family / crossing direction | (0, 0.01] m | (0.01, 0.1] m | Greater than 0.1 m | Total |
+| --- | ---: | ---: | ---: | ---: |
+| Coast-prefixed, best-fit above reported upper | 16 | 2 | 0 | 18 |
+| Coast-prefixed, best-fit below reported lower | 3 | 1 | 0 | 4 |
+| Regular-grid-prefixed, best-fit above reported upper | 4 | 0 | 0 | 4 |
+| **All four author name families, both crossing directions** | **23** | **3** | **0** | **26** |
+
+The original aggregate also has **one missing/nonfinite period triplet** for the regular-grid family at 1-year return period, kept separate from the 26 crossing cells. Observation-prefixed and other-prefixed families produced zero crossings. The count is across source cells and repeated return periods, **not 26 independent stations or physical flood events**. No original water levels, station IDs, individual coordinates, source matrices or original bytes are published here.
+
+**Bounded interpretation:** 23/26 crossings exceed the published bound by at most 0.01 m; the remaining three exceed it by more than 0.01 m but no more than 0.1 m. These are *absolute* deviations; without the actual band widths, local datum/vertical uncertainty, original 1950–2024 time series and bootstrap state, they **cannot** be described as small *relative* deviations, valid coverage, negligible physical risk or model calibration. The author naming prefix is not an independent coastal geography classification. Exact-run CI and the separate [full CI run #44592441448](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/44592441448) were successful on that previous head; the present documentation update requires its own new exact-head checks.
+
 ### Interpretation and required gates
 
 - The author station-name family `id_coast_` is **not independent physical evidence** of flood/inundation support at insured buildings.
 - Absolute threshold bins only triage deviation *scale*; they do not reconstruct the original bootstrap statistic, prove 90% or 95% actual coverage, assess physical return-level calibration, or provide an independent gauge holdout.
 - Source original data quality does not imply commercial use permission, vertical datum conversion to local site elevation, storm/surge event generation, ELT/YLT derivation or portfolio insured losses.
-- **The actual original group-period and severity bucket counts remain pending exact-head CI**; report only verified workflow values.
+- Original-source severity *aggregates* are now verified for the pinned workflow head; historical bootstrap draws, statistical calibration, commercial rights and physical flood-loss admission remain unverified.
 - Model rights and scientific admission remain **`commercial_rights_approved=false`**, **`cat_model_admitted=false`**.
 
 ## Next falsifiable steps
