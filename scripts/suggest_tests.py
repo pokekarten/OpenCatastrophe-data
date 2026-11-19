@@ -129,6 +129,35 @@ def literal_path_reference(tree: ast.AST, source: PurePosixPath) -> bool:
     return False
 
 
+
+def subprocess_script_reference(tree: ast.AST, source: PurePosixPath) -> bool:
+    """Match a literal ROOT-relative Python script executed by a subprocess.
+
+    Requiring both sys.executable and cwd=ROOT avoids treating unrelated
+    command strings or different working directories as test coverage.
+    """
+    for node in ast.walk(tree):
+        if (not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute)
+                or not isinstance(node.func.value, ast.Name)
+                or node.func.value.id != "subprocess"
+                or node.func.attr not in ("run", "check_call", "check_output", "Popen")):
+            continue
+        if not any(keyword.arg == "cwd" and isinstance(keyword.value, ast.Name)
+                   and keyword.value.id == "ROOT" for keyword in node.keywords):
+            continue
+        if not node.args or not isinstance(node.args[0], (ast.List, ast.Tuple)):
+            continue
+        command = node.args[0].elts
+        if (len(command) < 2 or not isinstance(command[0], ast.Attribute)
+                or not isinstance(command[0].value, ast.Name)
+                or command[0].value.id != "sys" or command[0].attr != "executable"):
+            continue
+        if (isinstance(command[1], ast.Constant) and type(command[1].value) is str
+                and command[1].value == source.as_posix()):
+            return True
+    return False
+
+
 def suggests_test(source: PurePosixPath, test: PurePosixPath, tree: ast.AST) -> bool:
     """Conservative name/import/literal matches; no claim of completeness."""
     if source.parts[0] not in INPUT_AREAS or source.suffix != ".py":
@@ -137,7 +166,8 @@ def suggests_test(source: PurePosixPath, test: PurePosixPath, tree: ast.AST) -> 
     if test.stem == f"test_{stem}" or test.stem.startswith(f"test_{stem}_"):
         return True
     dotted = ".".join(source.with_suffix("").parts)
-    return imported_module(tree, dotted) or literal_path_reference(tree, source)
+    return (imported_module(tree, dotted) or literal_path_reference(tree, source)
+            or subprocess_script_reference(tree, source))
 
 
 def suggest(paths: list[str], *, root: Path = ROOT) -> dict[str, object]:
