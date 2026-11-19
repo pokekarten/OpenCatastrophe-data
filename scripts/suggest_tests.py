@@ -75,13 +75,21 @@ def imported_module(tree: ast.AST, dotted: str) -> bool:
 
 
 def literal_path_reference(tree: ast.AST, source: PurePosixPath) -> bool:
-    """Recognise explicit ROOT / "scripts" / "file.py" paths, not incidental strings."""
+    """Recognise explicit ROOT / "scripts/file.py" and split-root joins, not text."""
     for node in ast.walk(tree):
         if not isinstance(node, ast.BinOp) or not isinstance(node.op, ast.Div):
             continue
         # Only the path-building expression matters. A fixture asserting that
         # a filename string exists is not evidence of test impact.
-        if not isinstance(node.right, ast.Constant) or node.right.value != source.name:
+        if not isinstance(node.right, ast.Constant) or not isinstance(node.right.value, str):
+            continue
+        # Real tests also use ROOT / "scripts/validate_manifest.py" when
+        # invoking a script by path rather than importing its module.
+        # Require an explicit repository-root join to avoid matching strings.
+        if (node.right.value == source.as_posix()
+                and isinstance(node.left, ast.Name) and node.left.id == "ROOT"):
+            return True
+        if node.right.value != source.name:
             continue
         parent = node.left
         if (isinstance(parent, ast.BinOp) and isinstance(parent.op, ast.Div)
