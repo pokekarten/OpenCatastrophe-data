@@ -21,6 +21,7 @@ import re
 import shlex
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -104,7 +105,31 @@ def imported_module(tree: ast.AST, dotted: str) -> bool:
 
 
 def literal_path_reference(tree: ast.AST, source: PurePosixPath) -> bool:
-    """Recognise explicit ROOT / "scripts/file.py" and split-root joins, not text."""
+    """Recognise rooted literal script paths, including simple directory aliases.
+
+    Only unique module-scope `SCRIPTS = ROOT / "scripts"`-style aliases are
+    inferred. A reassigned/shadowed name or local function alias is not proof.
+    """
+    aliases: set[str] = set()
+    if isinstance(tree, ast.Module):
+        nodes = list(ast.walk(tree))
+        stores = Counter(node.id for node in nodes
+                         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store))
+        parameters = {node.arg for node in nodes if isinstance(node, ast.arg)}
+        for statement in tree.body:
+            if not isinstance(statement, ast.Assign):
+                continue
+            value = statement.value
+            if not (isinstance(value, ast.BinOp) and isinstance(value.op, ast.Div)
+                    and isinstance(value.left, ast.Name) and value.left.id == "ROOT"
+                    and isinstance(value.right, ast.Constant)
+                    and value.right.value == source.parts[0]):
+                continue
+            for target in statement.targets:
+                if (isinstance(target, ast.Name) and stores[target.id] == 1
+                        and target.id not in parameters):
+                    aliases.add(target.id)
+
     for node in ast.walk(tree):
         if not isinstance(node, ast.BinOp) or not isinstance(node.op, ast.Div):
             continue
@@ -120,6 +145,8 @@ def literal_path_reference(tree: ast.AST, source: PurePosixPath) -> bool:
             return True
         if node.right.value != source.name:
             continue
+        if isinstance(node.left, ast.Name) and node.left.id in aliases:
+            return True
         parent = node.left
         if (isinstance(parent, ast.BinOp) and isinstance(parent.op, ast.Div)
                 and isinstance(parent.left, ast.Name) and parent.left.id == "ROOT"
