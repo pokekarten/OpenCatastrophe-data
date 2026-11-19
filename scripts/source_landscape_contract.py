@@ -24,6 +24,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LANDSCAPE_DIR = ROOT / "landscape"
 SCHEMA_VERSION = "1.0.0"
 CANDIDATE_ID_RE = re.compile(r"^[a-z0-9]+(?:[.-][a-z0-9]+)*$")
+# Reject legacy IPv4 spellings (integer, hex, short or octal) that a URL
+# consumer may resolve differently from ipaddress.ip_address().
+LEGACY_NUMERIC_HOST_RE = re.compile(
+    r"^(?:0[xX][0-9A-Fa-f]+|[0-9]+)(?:\.(?:0[xX][0-9A-Fa-f]+|[0-9]+))*$"
+)
 HEADER_KEYS = {"schema_version", "purpose", "review_date", "entries"}
 ENTRY_KEYS = {
     "candidate_id",
@@ -132,6 +137,8 @@ def _validate_authoritative_url(url: str, *, path: Path) -> None:
         address = None
     if address is not None and not address.is_global:
         raise LandscapeContractError(f"{path}: authoritative_url must not reference a non-public IP address")
+    if address is None and LEGACY_NUMERIC_HOST_RE.fullmatch(host):
+        raise LandscapeContractError(f"{path}: authoritative_url must not use an ambiguous numeric host")
 
     for key, _value in parse_qsl(parsed.query, keep_blank_values=True):
         if key.casefold() in SENSITIVE_QUERY_KEYS:
