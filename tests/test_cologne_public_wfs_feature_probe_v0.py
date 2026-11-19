@@ -92,6 +92,44 @@ class CologneFeatureProbeTests(unittest.TestCase):
         with self.assertRaises(probe.WfsSampleError):
             probe.inspect_geojson(as_bytes(wrong), "kgg")
 
+    def test_multipolygon_rejects_corrupted_member_among_valid_coordinates(self):
+        # The earlier recursive pair collector silently skipped a malformed
+        # vertex and counted all the remaining positions as a valid polygon.
+        wrong = json.loads(json.dumps(KGG))
+        wrong["features"][0]["geometry"]["coordinates"][0][0].insert(
+            1, ["not-a-longitude", 50.91]
+        )
+        with self.assertRaisesRegex(probe.WfsSampleError, "position"):
+            probe.inspect_geojson(as_bytes(wrong), "kgg")
+
+    def test_multipolygon_rejects_wrong_nesting_and_unclosed_ring(self):
+        for defect in ("polygon_instead_of_multipolygon", "unclosed_ring",
+                       "empty_inner_polygon", "missing_coordinate"):
+            wrong = json.loads(json.dumps(KGG))
+            geom = wrong["features"][0]["geometry"]
+            if defect == "polygon_instead_of_multipolygon":
+                geom["coordinates"] = geom["coordinates"][0]
+            elif defect == "unclosed_ring":
+                geom["coordinates"][0][0][-1] = [6.9, 51.0]
+            elif defect == "empty_inner_polygon":
+                geom["coordinates"].append([])
+            else:
+                geom["coordinates"][0][0][1] = [7.0]
+            with self.subTest(defect=defect), self.assertRaises(probe.WfsSampleError):
+                probe.inspect_geojson(as_bytes(wrong), "kgg")
+
+    def test_projected_tree_rejects_hidden_extra_or_nonfinite_ordinate(self):
+        for coords in (
+            [350000.5, 5648000.2, {"ignored": "invalid"}],
+            [350000.5, 5648000.2, False],
+            [350000.5, 5648000.2, float("inf")],
+            [350000.5, 5648000.2, 7, 8],
+        ):
+            wrong = json.loads(json.dumps(TREE))
+            wrong["features"][0]["geometry"]["coordinates"] = coords
+            with self.subTest(coords=coords), self.assertRaises(probe.WfsSampleError):
+                probe.inspect_geojson(as_bytes(wrong), "tree")
+
     def test_more_than_one_feature_rejected(self):
         wrong = json.loads(json.dumps(TREE))
         wrong["features"].append(wrong["features"][0])
