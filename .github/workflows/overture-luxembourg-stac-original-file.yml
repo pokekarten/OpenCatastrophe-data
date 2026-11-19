@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Luxembourg Overture STAC original file receipt
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/overture_luxembourg_stac_receipt_v0.py
+      - tests/test_overture_luxembourg_stac_receipt_v0.py
+      - .github/workflows/overture-luxembourg-stac-original-file.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/overture-luxembourg-stac-original-file.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: overture-lu-original-00226-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  exact-original-receipt:
+    name: Only STAC metadata and 8204 bytes of the pinned source object
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout pinned source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Offline exact STAC and original-source boundary tests
+        run: python -m unittest tests.test_overture_luxembourg_stac_receipt_v0 -v
+      - name: Recheck only exact public STAC item and original Parquet metadata
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+        run: python -m research_runners.overture_luxembourg_stac_receipt_v0 --live

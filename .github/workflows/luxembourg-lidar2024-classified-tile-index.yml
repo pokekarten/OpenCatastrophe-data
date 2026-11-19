@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg 2024 classified LiDAR original COPC tile-index receipt
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/luxembourg-lidar2024-classified-tile-index.yml'
+      - 'research_runners/luxembourg_lidar2024_classified_tile_index_v0.py'
+      - 'tests/test_luxembourg_lidar2024_classified_tile_index_v0.py'
+      - 'docs/research/luxembourg-lidar2024-classified-copc-tile-index-v0.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  published-assembly-index:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Fetch pinned repository source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Install pinned spatial metadata runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input pyproj==3.7.2 shapely==2.1.2
+          python -m pip check
+      - name: Verify synthetic source pin and site-window contracts
+        run: python -m unittest -v tests.test_luxembourg_lidar2024_classified_tile_index_v0
+      - name: Download ONLY original 3.4MB ACT tile assembly index, verify published SHA1
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_file="$RUNNER_TEMP/lidar2024-ta-original.gpkg"
+          trap 'rm -f "$source_file"' EXIT
+          umask 077
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 120 --retry 0 \
+            --max-filesize 6291456 --output "$source_file" \
+            'https://download.data.public.lu/resources/lidar-2024-releve-3d-du-territoire-luxembourgeois/20250117-095958/lidar2024-ta.gpkg'
+          python -m research_runners.luxembourg_lidar2024_classified_tile_index_v0 \
+            --index-gpkg "$source_file"
+          # No LAZ/COPC data, classified points or source polygons saved as artifacts.

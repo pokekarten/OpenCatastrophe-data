@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "jp.mlit.plateau.citygml.3d-city-models",
+  "source_ids": [
+    "jp.mlit.plateau.citygml.3d-city-models"
+  ],
+  "provider": "Japan Ministry of Land, Infrastructure, Transport and Tourism (MLIT) / municipal publishers",
+  "interface_type": "rest",
+  "status": "documented_only",
+  "documentation_url": "https://docs.plateauview.mlit.go.jp/datasets/citygml/",
+  "service_root": "https://api.plateauview.mlit.go.jp",
+  "api_version": null,
+  "access_scope": [
+    "catalogue",
+    "metadata"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "list_plateau_datasets_metadata"
+    ],
+    "path_templates": [
+      "/datacatalog/plateau-datasets"
+    ],
+    "parameter_rules": "Only the provider-documented GET /datacatalog/plateau-datasets catalogue operation is recorded. There is NO executable request authorization in this contract. No free-form URL/host, query parameters, city selector, GraphQL mutation, ZIP redirect, large body, source file download, retries or pagination is approved. Future bounded metadata GET must separately validate current API-specific terms, response byte cap, timeout and redirect/DNS policy and freeze one municipality and year before original-asset retrieval."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "JSON catalogue listing CityGML releases, including city/prefecture codes, municipality, source year, registration year, specification, feature types, URLs and file size when available.",
+    "scientific_semantics": "PLATEAU publishes municipal CityGML city-model releases with varying acquisition dates and LoD. Municipality/year is a source release selector, not a certificate of completeness. The API latest field can change as data are updated; exact release year, native identifier, geometry CRS, vertical datum and attribute missingness must be retained. CityGML LOD1 height abstractions, polygon overlap or construction-year fields must not be converted into insured properties or certified vulnerability/valuation data."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 1048576,
+    "retry_policy": "none",
+    "rate_limit_notes": "Provider describes this service as experimental and does not guarantee response schema, lifetime or service level. An unrestricted catalogue may exceed the proposed 64 KiB probe cap; do not execute until scope/response budget and terms can be proven. No request is authorized by this static contract.",
+    "mutability_notes": "Dynamic catalogue entries and 'latest' redirect targets change. A future receipt must record UTC, selected exact city/year, canonical catalogue request, code SHA, full bounded response bytes/SHA-256 and authoritative municipal licence identity; no mutable latest value as a model asset identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://www.mlit.go.jp/plateau/faq/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "MLIT FAQ describes programme data as multi-open-licensed and commercially reusable in principle, but the exact municipality/year CityGML licence/attribution, experimental API service automation and OpenCatastrophe redistribution/publication scope have not yet passed separate reviews. Do not extrapolate general policy to the API or to all city data."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-01",
+  "evidence_urls": [
+    "https://www.mlit.go.jp/plateau/en/",
+    "https://www.mlit.go.jp/plateau/faq/",
+    "https://docs.plateauview.mlit.go.jp/datasets/citygml/"
+  ],
+  "notes": "Exact official host and catalogue route are now recorded as a non-executable T0 access path. No request, byte receipt, API readiness evidence, rights grant, source-data admission, building match, risk exposure import or model execution was performed."
+}

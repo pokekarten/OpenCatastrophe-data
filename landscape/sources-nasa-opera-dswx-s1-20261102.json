@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry for NASA OPERA Sentinel-1 SAR observed surface-water extent and bounded flood-event validation research.",
+  "review_date": "2026-11-02",
+  "entries": [
+    {
+      "candidate_id": "nasa.opera.dswx-s1.v1",
+      "name": "NASA OPERA Dynamic Surface Water Extent from Sentinel-1 (DSWx-S1) Version 1",
+      "provider": "NASA JPL OPERA / PO.DAAC",
+      "categories": [
+        "flood",
+        "satellite_observations",
+        "surface_water_extent",
+        "remote_sensing",
+        "validation"
+      ],
+      "spatial_scope": "Near-global land observations from 84 degrees north to 84 degrees south, conditional on Sentinel-1 acquisition coverage and product validity.",
+      "temporal_scope": "PO.DAAC collection start 2023-12-01 to present; forward operational production began September 2024. Individual sensing time and collection release must be preserved.",
+      "resolution_or_granularity": "30 m MGRS-tiled cloud-optimized GeoTIFF Level-3 surface-water classification with associated confidence products; mapped open water detection is limited for small or narrow water bodies.",
+      "potential_roles": [
+        "independent_surface_water_extent_validation",
+        "flood_event_footprint_comparison",
+        "post_event_hazard_challenge"
+      ],
+      "authoritative_url": "https://podaac.jpl.nasa.gov/dataset/OPERA_L3_DSWX-S1_V1",
+      "access_class_hint": "nasa_earthdata_cmr_granule_discovery_and_podaac_earthdata_authenticated_data_access",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Frozen product name OPERA_L3_DSWX-S1_V1, DOI 10.5067/OPDSWS1-L3V1, NASA CMR collection C2949811996-POCLOUD. Registry of Open Data on AWS states CC BY 4.0, but exact granule permissions, Copernicus Sentinel input attribution, Earthdata credential requirements and commercial redistribution rights need source-specific review. SAR observed surface water is not necessarily an event-specific flood, water depth, recurrence probability or loss. Document baseline-water filtering, acquisition time, confidence flags, pixel geolocation, omissions, processing version and independence from CEMS GFM before any validation use."
+    }
+  ]
+}

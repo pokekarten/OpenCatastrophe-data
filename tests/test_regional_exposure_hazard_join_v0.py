@@ -59,6 +59,46 @@ class JoinTests(unittest.TestCase):
     def test_duplicate_event_region_rejected(self):
         data=example();data['hazards'].append(copy.deepcopy(data['hazards'][0]))
         with self.assertRaises(InputError):join(data)
+    def test_shared_event_across_regions_must_preserve_date_and_nuts_vintage(self):
+        base = example()
+        extra = copy.deepcopy(base['hazards'][0])
+        extra.update(record_id='SYNTH-HZ-2', nuts2='FR10')
+        base['hazards'].append(extra)
+        # Same physical event may genuinely cross national borders.
+        self.assertEqual(len(join(base)['unmatched_hazards']), 1)
+        for change in ({'event_date': '2021-02-02'},
+                       {'nuts_version': '2016'}):
+            with self.subTest(change=change):
+                candidate = copy.deepcopy(base)
+                candidate['hazards'][1].update(change)
+                with self.assertRaisesRegex(InputError, 'physical event date or NUTS'):
+                    join(candidate)
+
+    def test_duplicate_hazard_record_id_under_different_events_is_invalid(self):
+        data = example()
+        duplicate = copy.deepcopy(data['hazards'][0])
+        duplicate['event_id'] = 'SYNTH-2021-002'
+        data['hazards'].append(duplicate)
+        with self.assertRaisesRegex(InputError, 'duplicate hazard record_id'):
+            join(data)
+
+    def test_malformed_occupancy_list_fails_with_contract_error(self):
+        data = example()
+        data['exposures'][0]['occupancy'] = ['residential']
+        with self.assertRaisesRegex(InputError, 'building occupancy'):
+            join(data)
+
+    def test_nonintersecting_crossborder_source_event_does_not_invent_join(self):
+        data = example()
+        data['hazards'].append({**copy.deepcopy(data['hazards'][0]),
+            'record_id': 'SYNTH-HZ-2', 'nuts2': 'FR10'})
+        result = join(data)
+        self.assertEqual(len(result['matched']), 2)
+        self.assertEqual(result['unmatched_hazards'], [
+            {'hazard_record_id': 'SYNTH-HZ-2',
+             'reason': 'no_exact_nuts2_version_and_region'}])
+        self.assertFalse(result['economic_or_insured_losses_calculated'])
+
     def test_bad_numeric_rejected(self):
         for n in (float('nan'),float('inf'),-2,True,'100'):
             data=example();data['exposures'][0]['sum_insured_eur']=n

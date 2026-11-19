@@ -25,13 +25,32 @@ Upstream: `yaml/pyyaml`, release `6.0.3` (2025-09-25), MIT. PyPI declares Python
 
 The direct PyYAML version is exact but wheel/source hashes are not pinned in this bootstrap requirements file. GitHub Dependency Review remains required on pull requests, CI runs `pip check`, and the dependency has no repository write token or project secrets. Re-evaluate hash-locking or a digest-pinned validation image if publication/release assurance later depends on a frozen validation environment.
 
+## Validation-only historical building spatial dependencies
+
+The French 2016 BD TOPO / RNB geometry tests introduced by PR #937 are
+executed in the **dedicated** `.github/workflows/ign-bdtopo-2016-d077-receipt.yml`
+job, with `pyproj==3.7.2` (MIT), `shapely==2.2.0`
+(BSD-3-Clause), and `pyshp==2.3.1` (MIT). The first two are in the
+pinned optional `requirements-eu-flood-spatial.txt`; `pyshp` is
+pinned in that research workflow. Generic CI uses the existing
+`requirements-validation.txt`, including `shapely==2.1.2`,
+and the historic spatial tests explicitly skip when their optional
+dependencies are absent. The dedicated workflow installs the reviewed
+profile before those tests and must report a successful full execution.
+
+This isolation prevents two incompatible Shapely pins being installed in
+the same Python environment and avoids conflicting edits to the shared
+`.github/workflows/ci.yml`, which remains identical to `main`.
+No optional dependency, test receipt or legacy archive grants data rights,
+historical building-identity certainty or production CAT model admission.
+
 ## Acquisition-only scientific I/O dependency
 
-The GloFAS v4 upstream-area reader uses the official Unidata `netCDF4` Python package declared in `requirements-glofas-acquisition.txt` as `netCDF4==1.7.4`. This dependency is **not** imported by the normal landscape, manifest or model-evidence tooling. It is required only when an operator intentionally reads the external `uparea_glofas_v4_0.nc` NetCDF4 ancillary.
+The GloFAS v4 upstream-area reader uses the official Unidata `netCDF4` Python package declared in `requirements-glofas-acquisition.txt` as `netCDF4==1.7.5.1.post1`. This dependency is **not** imported by the normal landscape, manifest or model-evidence tooling. It is required only when an operator intentionally reads the external `uparea_glofas_v4_0.nc` NetCDF4 ancillary.
 
-Upstream: `Unidata/netcdf4-python`, release `1.7.4` (2026-01-05), MIT. The upstream documentation identifies it as the Python interface to the netCDF C library and documents NetCDF4/HDF5 in-memory reads. PyPI declares Python >=3.10 and classifiers through Python 3.14. The repository records the Python package, netCDF-C and HDF5 runtime versions in every GloFAS extraction evidence record instead of pretending that a single Python-package pin freezes the complete native scientific-I/O stack.
+Upstream: `Unidata/netcdf4-python`, selected project acquisition pin `1.7.5.1.post1`, MIT. The upstream documentation identifies it as the Python interface to the netCDF C library and documents NetCDF4/HDF5 in-memory reads. PyPI declares Python >=3.10 and classifiers through Python 3.14. The repository records the Python package, netCDF-C and HDF5 runtime versions in every GloFAS extraction evidence record instead of pretending that a single Python-package pin freezes the complete native scientific-I/O stack.
 
-The direct `netCDF4` version is exact; its transitive Python/native environment is not fully hash-locked. That is an explicit acquisition-stage limitation. The dedicated hosted CI lane installs the exact direct dependency, runs `pip check`, creates a synthetic NetCDF4 file at runtime and exercises the real reader. A later production/release workflow that treats extraction output as publication-grade evidence should additionally freeze the complete acquisition environment or container image and record its immutable identity.
+This GloFAS acquisition requirement is separate from bounded Oasis/CLIMK research workflows that pin `netCDF4==1.7.3` alongside `oasislmf==2.5.8` or `oasislmf[extra]==2.5.8`. These are different execution environments and must not be silently combined. The direct `netCDF4` version is exact; its transitive Python/native environment is not fully hash-locked. That is an explicit acquisition-stage limitation. The dedicated hosted CI lane installs the exact direct dependency, runs `pip check`, creates a synthetic NetCDF4 file at runtime and exercises the real reader. A later production/release workflow that treats extraction output as publication-grade evidence should additionally freeze the complete acquisition environment or container image and record its immutable identity.
 
 ## CI-only compliance dependency
 

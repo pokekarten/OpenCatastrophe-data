@@ -1,0 +1,168 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery and deduplicated research of additional compound-event, tropical-cyclone, storm-surge and flood-screening products from Exa and original provider evidence, checked against current main and open 2026-11-02 CAT source PRs; all rights and scientific admission remain blocked pending explicit review.",
+  "review_date": "2026-11-02",
+  "entries": [
+    {
+      "candidate_id": "nl.vu.european-multihazard-sparse-events.v1",
+      "name": "European Multi-Hazard Dataset in Sparse Array Format v1",
+      "provider": "Vrije Universiteit Amsterdam / University of Oxford (Claassen, Koks)",
+      "categories": [
+        "multi_hazard",
+        "compound_events",
+        "flood",
+        "windstorm",
+        "wildfire",
+        "heatwave"
+      ],
+      "spatial_scope": "Europe, varying by hazard source and observation window",
+      "temporal_scope": "Flood 2015-2024; windstorm 2015-2024; wildfire 2008-2026; heatwave 2008-2025",
+      "resolution_or_granularity": "NetCDF sparse spatial/temporal event arrays and CSV event/pair indexes; about 6.1 GB published, pairs flood-windstorm and heatwave-wildfire",
+      "potential_roles": [
+        "compound_event_copula_validation",
+        "cross_peril_footprint_alignment",
+        "post_event_independent_challenge"
+      ],
+      "authoritative_url": "https://zenodo.org/records/22080546",
+      "access_class_hint": "public_zenodo_metadata_and_download_exact_file_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "New dataset package is a transformation of separately known ERA5-Land, EFFIS, C3S windstorm tracks/footprints and JRC flood depth; not an independent observational source for those hazards. Each event has own id/time and sparse coordinate representation; flood intensity is centimetres, event-info intensity labelled Mean wind speed (m/s), NOT peak gust, wildfire burned-area binary. Preserve event IDs, sparse grid/CRS, original input provenance, overlap algorithm and original source rights. Dataset page lists file hashes as MD5; compute SHA-256 for a bounded rights-cleared artifact. License and use scope require direct provider confirmation. Do not interpret overlap pairs as simultaneous insured losses. Verified read-only original hazardinfows.csv 32,210 bytes, 234 distinct wind-event IDs; computed SHA-256 35f10da966ad8b6f0bc5fd9dba904bb8251ae11a9f52fe7e10f4f6ff9e2bf787 and publisher MD5 e58a511d83da230931b57cb9822d8841 matched. Full sparse data archive not fetched; model/rights review remains blocked."
+    },
+    {
+      "candidate_id": "ihcantabria.ih-storm.enso-synthetic-tracks.v2",
+      "name": "Global 12000-year synthetic tropical cyclone track ensembles by ENSO regime",
+      "provider": "IHCantabria TRANSCLIMA / Odériz and Losada",
+      "categories": [
+        "tropical_cyclone",
+        "stochastic_events",
+        "climate_variability",
+        "windstorm"
+      ],
+      "spatial_scope": "Global tropical-cyclone basins",
+      "temporal_scope": "Climatology 1980-2021; release 2025-03-27 v2; 12000 simulated years per climate regime/basin",
+      "resolution_or_granularity": "ZIP archives by historical baseline, neutral ENSO, El Niño, and La Niña; stochastic track records and city return-period summary",
+      "potential_roles": [
+        "climate_conditioned_stochastic_event_sets",
+        "windstorm_event_frequency_sensitivity",
+        "secondary_uncertainty_research"
+      ],
+      "authoritative_url": "https://zenodo.org/records/15097665",
+      "access_class_hint": "public_zenodo_archives_dataset_specific_license_and_storm_code_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "IH-STORM model code: https://github.com/IHCantabria/IH-STORM and https://zenodo.org/records/23763850 (2026-10-29); original STORM lineage: https://github.com/NBloemendaal/STORM. Synthetic model output, not historical observations or wind-field footprints. Preserve basin, stochastic year, track id, ENSO regime, baseline and exact release; review license of dataset and model separately. Check dependencies with IBTrACS and any previously registered STORM-derived sources to avoid treating the ensemble as independent truth. Original README.txt 3,800 bytes read-only and SHA-256-verified: 80c913ae6d46f58a8ab9c6dc435e552e5743f3a3edca618c59841acaea00280e; specifies 3-hour timestep, maximum 10-min sustained wind in m/s, longitudes 0-360 and 1,000-year shard semantics. No ZIP tracks read."
+    },
+    {
+      "candidate_id": "ihcantabria.transclima.tc-surge-hydrographs.2026",
+      "name": "Global cyclone-attributed storm-surge hydrographs GTSMv3/GESLAv3",
+      "provider": "IHCantabria TRANSCLIMA / Deltares / Vrije Universiteit Amsterdam",
+      "categories": [
+        "coastal_flood",
+        "storm_surge",
+        "tropical_cyclone",
+        "historical_events",
+        "observations"
+      ],
+      "spatial_scope": "Global coastal stations/basins represented by station and storm IDs",
+      "temporal_scope": "Historical tropical cyclones and GTSMv3 1980-2022 reanalysis; source-specific GESLAv3 observations",
+      "resolution_or_granularity": "Storm- and basin-partitioned NetCDF event/full time series and CSV per-station hydrographs; published about 456 MB files",
+      "potential_roles": [
+        "surge_hydrograph_event_validation",
+        "compound_cyclone_coastal_risk",
+        "cyclone_storm_surge_event_id_crosswalk"
+      ],
+      "authoritative_url": "https://zenodo.org/records/18170693",
+      "access_class_hint": "public_zenodo_basin_archives_source_specific_rights_and_gauge_provenance_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Derived via DKM-DBSCAN Hazard Tracker (https://github.com/IHCantabria/TRANSCLIMA.hazard_tracker; https://zenodo.org/records/23765126) and GTSMv3/GESLAv3. Companion method describes 2723 historical cyclones. GTSM modelled and GESLA gauge paths are not independent if collated into one target; preserve original station/SID, time units, vertical reference, gauge quality, and storm-event identity. Hydrograph is water level surge, not inundation depth or damage. Rights on all contributing data and derived outputs require review. Original README.txt 7,005 bytes read-only and SHA-256-verified: c06107caa6aea8de4116b8fbc264547dd2b6696ac1030ae75b4de0d78d867abd; confirms storm SIDs from IBTrACS and surge in metres. No ZIP hydrographs read."
+    },
+    {
+      "candidate_id": "ihcantabria.transclima.tropical-cyclone-data-catalogue.v1",
+      "name": "TRANSCLIMA tropical cyclone and coastal climate risk source catalogue (262 entries)",
+      "provider": "IHCantabria / Odériz (TRANSCLIMA)",
+      "categories": [
+        "data_catalogue",
+        "tropical_cyclone",
+        "coastal_flood",
+        "storm_surge",
+        "exposure",
+        "vulnerability"
+      ],
+      "spatial_scope": "Global with diverse region-specific referenced products",
+      "temporal_scope": "Catalog published 2026-10-28; source vintages vary by entry",
+      "resolution_or_granularity": "Excel workbook with 262 referenced datasets/models/tools over 14 themes including waves, wind, surge, sea level, exposure, losses and vulnerability",
+      "potential_roles": [
+        "source_discovery_crosswalk",
+        "source_rights_gap_detection",
+        "model_component_gap_inventory"
+      ],
+      "authoritative_url": "https://doi.org/10.5281/zenodo.23736379",
+      "access_class_hint": "zenodo_concept_doi_latest_version_restricted_metadata_only",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Catalogue is a discovery aid, NOT 262 unique admitted or rights-cleared datasets. Recorded entries expose provider, original link, spatial/temporal resolution, protocols, access and license hints. CC BY 4.0 applies to the catalogue compilation only; individual data products have their own rights. Deduplicate with existing registry and freeze original provider/product identity before creating new candidates. Never copy source data or assume commercial licensing from catalogue entries. LIVE ACCESS CORRECTION 2026-11-03: Zenodo concept record 23736379 resolved via its API to latest record 23736380, DOI 10.5281/zenodo.23736380, with access_right=restricted and files=[]. The CC BY 4.0 record metadata license is not downloadable workbook permission; mark as restricted access, no live source file."
+    },
+    {
+      "candidate_id": "it.eurac.eo4multihazards.event-crosswalk-api",
+      "name": "EO4MULTIHAZARDS Events Database PostgREST query service",
+      "provider": "Eurac Research / EO4MULTIHAZARDS",
+      "categories": [
+        "multi_hazard",
+        "event_catalogue",
+        "historical_disasters",
+        "event_source_crosswalk"
+      ],
+      "spatial_scope": "Europe and additional countries represented by underlying event provider; portal shows NUTS2 overview",
+      "temporal_scope": "2020-2025 initial overview; live provider records extend beyond according to catalog",
+      "resolution_or_granularity": "PostgREST JSON event query interface /api/events_light; event type, date, country and original provider ID",
+      "potential_roles": [
+        "event_crosswalk",
+        "compound_event_case_selection",
+        "observed_event_provenance_review"
+      ],
+      "authoritative_url": "https://edp-portal.eurac.edu/eo4multihazards_doc/eo4multiha/download/",
+      "access_class_hint": "public_documented_query_api_but_bulk_source_download_restricted_by_upstream_rights",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official docs show public example GET https://eo4multihazards.eurac.edu/api/events_light?e_type=eq.Drought&e_date=gt.2023-01-01. The complete dataset is not downloadable due to source license restrictions; source providers include EM-DAT, EFFIS, and BGS, so their records must not be duplicated as independent events. No live network probe or full API validation performed. Review rights before bulk extraction or redistribution."
+    },
+    {
+      "candidate_id": "waleedgeo.gfsm.global-flood-susceptibility.v1",
+      "name": "GFSM v1 global 30 m flood susceptibility tiles",
+      "provider": "Mirza Waleed / Hong Kong Baptist University / KAUST",
+      "categories": [
+        "flood",
+        "hazard_screening",
+        "flood_susceptibility",
+        "geospatial_raster"
+      ],
+      "spatial_scope": "Global land approximately 80N to 60S with regional gaps",
+      "temporal_scope": "Published 2026; baseline flood susceptibility, not event calendar",
+      "resolution_or_granularity": "GeoTIFF 30 m tiled regional ZIP archives with GeoPackage tile index; regional classes 1 to 5",
+      "potential_roles": [
+        "screening_hazard_hotspots",
+        "cross_model_flood_susceptibility_challenge",
+        "asset_risk_prioritization_context"
+      ],
+      "authoritative_url": "https://zenodo.org/records/20568218",
+      "access_class_hint": "public_zenodo_large_regional_zip_tiles_license_terms_and_training_lineage_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Trained using WRI Aqueduct Flood Hazard Maps as labels plus topographic and other environmental covariates, therefore derived/overlapping with existing Aqueduct candidate; NOT a new independent flood event or a flood depth/annual-probability product. Susceptibility class cut-offs 1-5 must not be read as calibrated loss probabilities. No flood defences or future climate changes represented. Check exact license/attribution, tile index, 30 m grid CRS EPSG:3395 and regional missing coverage before using; avoid large bulk downloads before access approval. Live API lists open CC BY 4.0 numerous large regional ZIPs with original-file MD5 metadata; no raster source archive acquired. The file license and upstream rights still need exact review."
+    }
+  ]
+}

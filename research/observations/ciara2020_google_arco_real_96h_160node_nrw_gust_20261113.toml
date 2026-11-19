@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# PUBLIC Google Research ARCO original reanalysis Zarr (not insured claims).
+# Original publisher metadata pinned independently in 2026-11-12 receipt.
+schema = "CIARA2020_GOOGLE_ARCO_ORIGINAL_96H_160NODE_NRW_10FG_HAZARD_V0"
+as_of_date_utc = "2026-11-13"
+source = "Google Research ARCO ERA5 (underlying C3S/ECMWF)"
+public_source = "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3"
+source_variable = "10m_wind_gust_since_previous_post_processing"
+source_units = "m/s"
+data_licence = "Copernicus Licence with C3S attribution"
+github_pr = 1554
+github_live_ci_run_id = 43482459090
+github_live_job_id = 132082141178
+start_utc = "2020-02-08T00:00:00Z"
+end_utc_inclusive = "2020-02-11T23:00:00Z"
+area_n_w_s_e = [52.5, 5.75, 50.25, 9.5]
+original_0p25_degree_latitude_nodes = 10
+original_0p25_degree_longitude_nodes = 16
+original_hourly_time_steps = 96
+verified_original_10fg_gust_scalar_count = 15360
+event_gridpoint_peak_gust_mps_min = 28.9437313079834
+event_gridpoint_peak_gust_mps_mean = 31.712473654747008
+event_gridpoint_peak_gust_mps_max = 34.43796157836914
+node_count_peak_gust_ge25mps = 160
+node_count_peak_gust_ge30mps = 157
+node_count_peak_gust_ge35mps = 0
+node_count_peak_gust_ge40mps = 0
+canonical_decoded_96h_10x16_float32_le_sha256_not_original_zarr_chunk_sha256 = "5fb7c41963a94f88ee3651b51bfa84cc2f4bf379e1ee6f4eb4a4fb597d37f932"
+earlier_source_2020_02_09_12_51N_7E_float32_sha256 = "12d34d73cece12a90220ddbbb5b092e388a6b1e0d9b0c9dcf5004a01a7c3119c"
+original_compressed_GCS_chunk_shas_verified = false
+underlying_CDS_original_GRIB_byte_equality_verified = false
+public_2022_building_candidates_joined_to_weather_grid = false
+insurer_original_RV_buildings_or_2020_claims_obtained = false
+building_vulnerability_fit_and_native_GUL_IL_RI_OEP_AEP_admitted = false
+annual_stochastic_event_set_or_annual_EP_admitted = false

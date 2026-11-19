@@ -124,6 +124,67 @@ class OQ313RiskByEventProfileTests(unittest.TestCase):
         ):
             self.assertIs(result[field], False)
 
+    def test_canonical_negative_zero_is_counted_as_zero_not_rejected(self) -> None:
+        rows = [
+            {
+                "event_id": 1, "rup_id": 10, "rlz_id": 0,
+                "loss_f32_be_hex": "80000000",
+                "variance_f32_be_hex": "80000000",
+            },
+            {
+                "event_id": 2, "rup_id": 20, "rlz_id": 0,
+                "loss_f32_be_hex": "3f800000",
+                "variance_f32_be_hex": "00000000",
+            },
+        ]
+        receipt, identity = projector.project_oq313_risk_by_event_receipt(
+            rows, portfolio_agg_id=0, structural_loss_id=0, concurrent_tasks=1,
+        )
+        result = profiler.profile_receipt(receipt)
+        self.assertEqual(result["source_receipt"]["identity"]["sha256"], identity["sha256"])
+        self.assertEqual(result["loss"]["zero_row_count"], 1)
+        self.assertEqual(result["variance"]["zero_row_count"], 2)
+        self.assertEqual(result["loss"]["minimum_row"]["event_id"], 1)
+        self.assertEqual(result["loss"]["minimum_row"]["loss_f32_be_hex"], "80000000")
+        self.assertEqual(result["loss"]["minimum_row"]["loss_approx_eur"], "0")
+        self.assertEqual(result["loss"]["exact_sum_binary"]["approx_decimal"], "1")
+        self.assertEqual(result["variance"]["exact_sum_binary"]["approx_decimal"], "0")
+        for flag in ("annualized_metrics_authorized", "aal_authorized", "oep_authorized",
+                     "aep_authorized", "scientific_validity_verified", "model_use_authorized"):
+            self.assertIs(result[flag], False)
+
+    def test_positive_and_negative_zero_have_equal_rank_and_keep_bits(self) -> None:
+        rows = [
+            {
+                "event_id": 3, "rup_id": 10, "rlz_id": 0,
+                "loss_f32_be_hex": "80000000",
+                "variance_f32_be_hex": "00000000",
+            },
+            {
+                "event_id": 1, "rup_id": 10, "rlz_id": 0,
+                "loss_f32_be_hex": "00000000",
+                "variance_f32_be_hex": "80000000",
+            },
+        ]
+        receipt, _ = projector.project_oq313_risk_by_event_receipt(
+            rows, portfolio_agg_id=0, structural_loss_id=0, concurrent_tasks=1,
+        )
+        profile = profiler.profile_receipt(receipt)
+        self.assertEqual(profile["loss"]["zero_row_count"], 2)
+        self.assertEqual(profile["variance"]["zero_row_count"], 2)
+        self.assertEqual(profile["loss"]["minimum_row"]["event_id"], 1)
+        self.assertEqual(profile["loss"]["minimum_row"]["loss_f32_be_hex"], "00000000")
+        self.assertEqual(profile["loss"]["maximum_row"]["event_id"], 1)
+        self.assertEqual(profile["loss"]["exact_sum_binary"]["coefficient"], "0")
+        self.assertEqual(profile["variance"]["exact_sum_binary"]["coefficient"], "0")
+        self.assertEqual(profile["loss"]["top_loss_rows"][-1]["loss_f32_be_hex"], "80000000")
+
+    def test_negative_nonzero_and_nonfinite_values_remain_rejected(self) -> None:
+        for forbidden in ("80000001", "bf800000", "ff7fffff", "7f800000", "ff800000", "7fc00000"):
+            with self.subTest(hex_bits=forbidden):
+                with self.assertRaises(profiler.OQ313RiskByEventProfileError):
+                    profiler._f32_bits(forbidden)
+
     def test_current_eq1_validator_rejects_semantic_receipt_drift(self) -> None:
         document = json.loads(_receipt().decode("utf-8"))
         document["openquake"]["version"] = "9.9.9"

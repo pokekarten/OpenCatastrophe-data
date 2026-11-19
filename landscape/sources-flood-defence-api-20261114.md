@@ -1,0 +1,79 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: landscape/sources-flood-defence-api-20261114.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Source landscape: `sources-flood-defence-api-20261114.json`
+
+> This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
+
+**Schema version:** `1.0.0`  
+**Review date:** `2026-11-15`  
+**Purpose:** Non-admission discovery and source-specific bounded access preflight for public England Environment Agency and USACE flood-defence inventories, with no CAT-model approval or external data redistribution.
+
+**Entries:** 4
+
+## Environment Agency AIMS spatial flood defences (standardised attributes)
+
+**Candidate ID:** `uk.ea.aims.spatial-flood-defences.2026`  
+**Provider:** UK Environment Agency  
+**Categories:** `flood`, `flood_defence`, `infrastructure`, `england`, `geo_api`  
+**Spatial scope:** England; Environment Agency-owned, managed or inspected flood-defence features; not all flood barriers or protected areas  
+**Temporal scope:** Continuously updated service; data.gov.uk catalogue updated 2026-09-18; per-asset effective/inspection dates require separate validation  
+**Resolution / granularity:** ArcGIS REST FeatureServer layer 0; polyline assets with standard of protection, level, condition and maintenance metadata; British National Grid EPSG:27700; one-feature no-geometry canary  
+**Potential roles:** `flood_defence_geometry_prior`, `flood_protection_sensitivity`, `levee_hazard_overlay_validation`  
+**Access hint:** `public_ogl3_ea_layer0_one_record_oid_trusted_original_sha256_nonadmission`  
+**Authoritative source:** <https://www.data.gov.uk/dataset/cc76738e-fc17-49f9-a216-977c61858dda/aims-spatial-flood-defences-inc-standardised-attributes>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official catalogue declares Open Government Licence for this product; full legal, attribution and source snapshot review remains open. Original provider service https://environment.data.gov.uk/arcgis/rest/services/EA/SpatialFloodDefencesIncStandardisedAttributes/FeatureServer/0 exposes query JSON. On 2026-11-14 an intermediary fetched precisely one no-geometry OBJECTID value (HTTP content shaped as FeatureServer JSON, EPSG:27700) using a bounded GET; this earlier intermediary check is not itself the trusted direct runner receipt or original archive SHA. Asset presence and nominal protection standard do not establish actual defended footprint, defence reliability, breach/overtopping probability, modelled flood depth reduction or insurer exposure. No original response bytes committed or model admitted. Trusted-main original-provider single-record no-geometry JSON read succeeded 2026-11-15 in GitHub workflow 43741910265, job 132896765587; exact transient response SHA-256 618384c208e0736cd210b9119edab439d5524a6560c78997843715e7371b2dbd. No source geometry, elevation, full-dataset or frozen-release digest acquired; no model use or source-byte storage.
+
+## Environment Agency linked asset-management records and maintenance activities API
+
+**Candidate ID:** `uk.ea.aims.asset-management-api.2026`  
+**Provider:** UK Environment Agency  
+**Categories:** `flood`, `flood_defence`, `maintenance`, `infrastructure`, `england`, `linked_data_api`  
+**Spatial scope:** England; Environment Agency asset inventory, with maintenance records for a subset of assets  
+**Temporal scope:** Continuously maintained operational register; historical/future maintenance events vary by asset  
+**Resolution / granularity:** Documented Linked Data REST API with asset and maintenance activity/task/plan JSON endpoints, selectable _limit; relationships require asset-level keys and version-aware joins  
+**Potential roles:** `defence_asset_condition_context`, `maintenance_date_sensitivity`, `flood_defence_join_challenge`  
+**Access hint:** `official_documented_ogl3_asset_management_api_no_live_original_value_probe_for_this_identity`  
+**Authoritative source:** <https://environment.data.gov.uk/asset-management/doc/reference>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official developer documentation describes GET endpoints, query limit and a response meta.license identifying UK OGL 3.0. This is not identical to the AIMS spatial feature layer and its join keys, ownership, availability and source-rights scope require separate verification. Documentation was inspected, but no trusted original value read or asset-to-feature link was proven. A maintenance activity record is not a verified breach history, insurance loss or structural performance estimate. Do not ingest complete asset data or infer protection quality.
+
+## USACE National Levee Database public floodwall GIS layer
+
+**Candidate ID:** `us.usace.nld.public-floodwalls.2026`  
+**Provider:** U.S. Army Corps of Engineers, National Levee Database  
+**Categories:** `flood`, `flood_defence`, `levees`, `floodwalls`, `infrastructure`, `united_states`, `geo_api`  
+**Spatial scope:** United States including available territories; coverage and submitted-record completeness vary  
+**Temporal scope:** Continuously maintained database with irregular source updates; check per-record last-updated date  
+**Resolution / granularity:** Public ArcGIS NLD/Public FeatureServer layer 12 (Floodwalls), polyline geometry, NAD83 EPSG:4269; height/depth/width and system fields; one-feature no-geometry canary  
+**Potential roles:** `levee_floodwall_inventory_crosscheck`, `flood_defence_geometry_prior`, `hazard_protection_uncertainty`  
+**Access hint:** `public_usace_nld_layer12_one_record_oid_trusted_original_sha256_nonadmission`  
+**Authoritative source:** <https://nld.sec.usace.army.mil/data-services/services/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** USACE explicitly states that public NLD data may be downloaded/shared/used, but public GIS records and non-public detailed NLD records differ; independently review each API service's conditions and source provenance before publication or commercial modelling. Original https://geospatial.sec.usace.army.mil/dls/rest/services/NLD/Public/FeatureServer/12 responds with public floodwalls schema (OBJECTID, FLOODWALL_ID, WALL_HEIGHT_FEET, SYSTEM_ID). On 2026-11-14 intermediary one-record no-geometry JSON was returned, EPSG:4269. The earlier intermediary observation was not a trusted original runner receipt or source-file hash. Do not assume height is certified protection, complete national coverage, hydraulic connectivity, or actual failure probability. No geometry, TIV or raw payload admitted. Trusted-main original-provider single-record no-geometry JSON read succeeded 2026-11-15 in GitHub workflow 43741910265, job 132896765568; exact transient response SHA-256 e4ae60379a231c7e4bc4e28f96ab00ffa4e34123b59a4c06fd879b2db63f10f8. No source geometry, elevation, full-dataset or frozen-release digest acquired; no model use or source-byte storage.
+
+## USACE National Levee Database public embankment GIS layer
+
+**Candidate ID:** `us.usace.nld.public-embankments.2026`  
+**Provider:** U.S. Army Corps of Engineers, National Levee Database  
+**Categories:** `flood`, `flood_defence`, `levees`, `embankments`, `infrastructure`, `united_states`, `geo_api`  
+**Spatial scope:** United States and available territories; only levee systems represented in public NLD submissions, with variable completeness and update dates  
+**Temporal scope:** Continuously updated public NLD service; individual SURVEY_DATE and system update vintage vary; no immutable 2026 file snapshot verified  
+**Resolution / granularity:** USACE NLD/Public ArcGIS FeatureServer layer 11 Embankments; polyline hasZ=true, horizontal NAD83 EPSG:4269, vertical NAVD88, with EMBANK_ID/SEGMENT_ID/SYSTEM_ID, PRIMARY_MATERIAL and SURVEY_DATE fields; one original OID-and-EMBANK_ID no-geometry response verified, geometry unexamined  
+**Potential roles:** `levee_embankment_source_schema_preflight`, `flood_defence_material_and_vintage_context`, `levee_system_geometry_join_challenge`, `flood_hazard_protection_sensitivity`  
+**Access hint:** `public_usace_nld_layer11_one_record_oid_embank_id_trusted_original_sha256_nonadmission`  
+**Authoritative source:** <https://geospatial.sec.usace.army.mil/dls/rest/services/NLD/Public/FeatureServer/11>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official NLD layer 11 metadata was inspected 2026-11-15. It identifies an independent Embankments polyline feature layer, NOT the previously registered Floodwalls layer 12, and includes Z-enabled geometry and survey/material identifiers; no original geometry or archival source-byte digest was obtained before the bounded canary. Critical vertical-unit discrepancy: layer heightModelInfo labels NAVD88_height_(ftUS) with us-foot, while current official NLD data dictionary says reference units recently moved to international feet. Resolve the exact data-version/unit/vertical datum per geometry and check Z missingness before any height comparison or flood-depth overlay; hasZ=true is not proof of populated or validated crest elevation. USACE notes that public NLD is not a complete inventory and records from partner submitters have uneven quality. Public download/share language is not a completed commercial service-terms, derived-redistribution or source-specific scientific review. Do not infer breach probability, defended footprint, reduced depths, insurer TIV or model approval. Trusted-main original-provider single-record no-geometry JSON read succeeded 2026-11-15 in GitHub workflow 43741910265, job 132896765575; exact transient response SHA-256 44404674d28a78de0dc9bde57919410480447a76a56412a1976d86ce6fbe2d16. No source geometry, elevation, full-dataset or frozen-release digest acquired; no model use or source-byte storage.

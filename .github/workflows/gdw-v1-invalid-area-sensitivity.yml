@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: GDW v1 native invalid polygons area sensitivity (manual, main only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gdw-v1-original-invalid-area-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-gdw-sensitivity:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout trusted main without persistent credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Set up Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned geometry research dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input --only-binary=:all: \
+            "pyshp==2.3.1" "shapely==2.1.2" "pyproj==3.7.2"
+          python -m pip check
+      - name: Run synthetic, offline no-leak scientific regression
+        run: python -m unittest tests.test_gdw_v1_invalid_polygons_area_sensitivity_v0 -v
+      - name: Quantify two methods using exact original publisher ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          shp="$RUNNER_TEMP/GDW_v1_0_shp.zip"
+          trap 'rm -f "$shp"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 240 --retry 0 \
+            --max-filesize 69745749 --output "$shp" \
+            'https://ndownloader.figshare.com/files/47913754'
+          python research_runners/gdw_v1_invalid_polygons_area_sensitivity_v0.py \
+            --original-zip "$shp"
+          echo "GDW two-method aggregate: original source archive ephemeral and removed."

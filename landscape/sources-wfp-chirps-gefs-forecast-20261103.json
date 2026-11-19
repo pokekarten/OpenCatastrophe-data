@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission research of WFP CHIRPS3-GEFS daily and dekadal forecast products, distinct from CHIRPS v3 historical precipitation measurements and WFP delivery mirrors, with unresolved original-issue-vintage and rights gates.",
+  "review_date": "2026-11-03",
+  "entries": [
+    {
+      "candidate_id": "wfp.hdc.chirps3-gefs-daily-forecast.v3",
+      "name": "WFP CHIRPS3-GEFS daily precipitation forecast rolling COG product",
+      "provider": "World Food Programme VAM / Humanitarian Data Cube, derived from CHC CHIRPS3 and NCEP GEFSv12",
+      "categories": [
+        "precipitation",
+        "forecast",
+        "short_range_rainfall",
+        "flood_early_warning",
+        "global"
+      ],
+      "spatial_scope": "Land between 60S and 60N, all longitudes, subject to CHIRPS3 land mask",
+      "temporal_scope": "Published 2001-present; daily latest issue produces issue day plus 15 lead days. Older issues for the same valid days are overwritten and are not a historical issue archive",
+      "resolution_or_granularity": "0.05-degree daily Cloud Optimized GeoTIFFs. A valid date is not sufficient evidence of issue time, forecast lead, or original prediction vintage",
+      "potential_roles": [
+        "precipitation_forecast_context",
+        "prospective_flood_alert_pilot",
+        "as_of_forecast_vintage_research"
+      ],
+      "authoritative_url": "https://source.coop/wfp/chirps-daily-forecast",
+      "access_class_hint": "wfp_source_cooperative_public_cog_rolling_files_no_verified_immutable_issue_archive",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "WFP documents CHIRPS3-bias-corrected NCEP GEFSv12 forecasts, daily-disaggregated using NASA IMERGv7 Late, 16-day issue output and rolling overwrite of forecast files for identical valid dates. Older dates show lead-0 forecasts, NOT historic 1-15-day forecasts. Never use today's file for retrospective forecast-skill analysis without an immutable original issue receipt. This is a forecast, not an observed rain gauge, flood extent, insured loss, or independent product from its GEFS/CHIRPS3/IMERG parents. Provider page advertises CC BY 4.0; rights, source revision and scientific admission still require review. No source bytes or API requests committed."
+    },
+    {
+      "candidate_id": "wfp.hdc.chirps3-gefs-dekad-forecast.v3",
+      "name": "WFP CHIRPS3-GEFS dekadal precipitation forecast COG delivery",
+      "provider": "World Food Programme VAM / Humanitarian Data Cube, CHC and NCEP GEFSv12",
+      "categories": [
+        "precipitation",
+        "forecast",
+        "dekadal",
+        "flood_early_warning",
+        "global"
+      ],
+      "spatial_scope": "Land between 60S and 60N, all longitudes",
+      "temporal_scope": "2001 to near present according to WFP; published roughly at beginning of a dekad; past issue-retention completeness not verified",
+      "resolution_or_granularity": "0.05-degree dekadal forecast Cloud Optimized GeoTIFFs. Not historical observed rainfall and not an independent forecast model relative to WFP daily GEFS",
+      "potential_roles": [
+        "dekadal_rainfall_forecast_context",
+        "hydrological_early_warning_context",
+        "forecast_aggregation_consistency"
+      ],
+      "authoritative_url": "https://source.coop/wfp/chirps-dekad-forecast",
+      "access_class_hint": "wfp_source_cooperative_public_cog_forecast_documentation_only",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "WFP describes CHIRPS3 climatology bias-corrected and downscaled NCEP GEFSv12 predictions. Daily and dekadal distributions share the same parent forecast lineage; never treat them as statistically independent observations or model ensemble members. Exact issue IDs, valid windows, model revision and historical issue retention must be verified before backtesting. CC BY 4.0 is advertised by WFP; provider terms and OpenCatastrophe rights/science reviews remain pending."
+    }
+  ]
+}

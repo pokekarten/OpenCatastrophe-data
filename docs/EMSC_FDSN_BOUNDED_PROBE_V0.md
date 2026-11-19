@@ -39,15 +39,20 @@ script SHA-256. Coordinates, magnitudes and event identifiers are not printed
 or saved; the response bytes remain in memory during this invocation.
 
 An HTTP success proves only that this one response met the expected
-contract. No live probe result has been checked in, no original external
-dataset bytes have been persisted, and there is no CAT modelling admission,
-long-term event coverage, event-vintage freeze or scientific accuracy proof.
+contract. Recorded run receipts below are retained as documentation, but
+original external dataset bytes are not persisted; there is no CAT modelling
+admission, long-term event coverage, event-vintage freeze or scientific
+accuracy proof.
 For scientific usage a separate bounded time/space/event identity, original
 byte receipt, event update/version handling, rights and quality review are
 required. A successful online probe cannot be substituted for these gates.
 
-CI executes **offline synthetic-only** tests. It does not make a provider
-request, change any Neon database or require credentials.
+The *dedicated EMSC one-event workflow* does not run provider requests
+on unrelated CI pushes; its network run requires a reviewed workflow change
+or manual dispatch. As separately documented below, the shared
+`fixed-public-source-probes.yml` matrix now also makes one bounded,
+anonymous EMSC request on relevant pull requests. Neither route changes
+a Neon database or requires credentials.
 
 ## One-shot provider receipt on a reviewed workflow revision
 
@@ -87,3 +92,37 @@ does not establish all-event catalogue coverage, independent scientific
 quality, event stability, or a licensed and reproducible earthquake hazard
 dataset. Follow-on research must freeze a distinct exact event/time-window
 product and independently review the resulting data version and quality.
+
+## Follow-up cross-workflow live verification (2026-11-01)
+
+A second, independently executed one-event response was verified using the
+shared fixed-source capability matrix in
+[GitHub Actions 41316632298](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41316632298)
+on draft PR #962, exact head commit
+`86080791a8c2ba1d8c995c788c046937527a82b1`.
+This reused the independent EMSC FDSN validator and already reviewed
+`latest_event_json` operation, without downloading any event collection.
+
+- Retrieval UTC: `2026-11-01T14:32:02.348650+00:00`
+- HTTP 200, `application/json`, **608 bytes**, exactly one GeoJSON Point feature
+- SHA-256 of this second transient JSON response:
+  `70f81ad58a44de4f273da8c9fcb0c2f97fed1a3f24649347d264e3c6c8708826`
+- API access-contract SHA-256:
+  `cc3f8ab2af7ab6b688d998e6142586a47db3d4a1c918930c5da5ea760c6f6a99`
+- Shared probe code SHA-256:
+  `b5925ab0f574c8c6c4ba615656e4fc9d47ee66b70b724bcc62f852fd6f37821b`
+- `provider_bytes_persisted=false`, `model_input_approved=false`,
+  `scientific_event_parameters_verified=false`
+
+The earlier frozen 13:47 UTC source receipt was 618 bytes and the 14:32
+response was 608 bytes. **These are responses from a moving latest-event
+query, not the same immutable event**; neither the byte difference nor
+record shape establishes an earthquake revision, a new physical event, or
+changes in seismicity. This provides *two independent live connectivity
+receipts* and reinforces why production scientific event usage requires
+exact event-ID, origin/source release and revision/version controls.
+
+The source licence is for data excerpts under service-specific CC BY 4.0
+with proper attribution; it does **not** authorize mirroring the full
+upstream service or publishing an unreviewed production CAT event catalogue.
+

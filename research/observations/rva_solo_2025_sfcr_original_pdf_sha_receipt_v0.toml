@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Public issuer original PDF byte receipt; typed research only, raw PDF not committed.
+schema_version = "RVA_SOLO_2025_ISSUER_FINANCIAL_PDF_SHA_V0"
+source_id = "rva.solo.sfcr.2025.original"
+legal_entity = "R+V Allgemeine Versicherung Aktiengesellschaft"
+issuer_alias = "R+V Allgemeine Versicherung AG"
+source_url = "https://www.ruv.de/dam/jcr:9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf"
+report_year = 2025
+original_pdf_sha256 = "0a941b729dc6b490a5ad285ae1e1f15f4aa8ec183fb00b3d470f780a99ff996a"
+original_pdf_bytes = 2069226
+original_pdf_pages = 86
+original_pdf_proof_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42095783671"
+verified_original_pdf_bytes_and_text_markers = true
+independently_verified_by_second_environment = false
+publisher_raw_pdf_committed = false
+publisher_bulk_redistribution_rights_cleared = false
+source_document_is_customer_exposure = false
+cat_model_input_approved = false
+financial_scope_review = "solo_solvency_ii_sfcr_gross_written_fire_and_other_property"
+gross_written_property_premium_eur = "2223182000"
+currency = "EUR"
+amount_not_tiv_or_cat_premium = true

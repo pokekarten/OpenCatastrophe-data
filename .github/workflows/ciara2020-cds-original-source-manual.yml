@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Ciara 2020 original ERA5 source one-shot (MANUAL TERMS + API FORM)
+
+# NEVER on push or pull_request. Only authorized by explicit manual dispatch.
+on:
+  workflow_dispatch:
+    inputs:
+      terms_confirmed:
+        description: "Have YOU already accepted THIS dataset's terms at CDS?"
+        type: choice
+        required: true
+        default: NOT_ACCEPTED
+        options:
+          - NOT_ACCEPTED
+          - I_ACCEPTED_DATASET_TERMS_ON_CDS_WEBSITE
+      api_form_confirmed:
+        description: "Is the exact dataset/time/area/variable request verified from CDS form?"
+        type: choice
+        required: true
+        default: NOT_VERIFIED
+        options:
+          - NOT_VERIFIED
+          - I_VERIFIED_THIS_DATASET_API_FORM
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ciara2020-cds-original-one-shot
+  cancel-in-progress: false
+
+jobs:
+  opt-in-original-CDS-source:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.terms_confirmed == 'I_ACCEPTED_DATASET_TERMS_ON_CDS_WEBSITE' &&
+      inputs.api_form_confirmed == 'I_VERIFIED_THIS_DATASET_API_FORM'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact HEAD without retained repository token
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install pinned NetCDF metadata and CDS client dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            -r requirements-glofas-acquisition.txt cdsapi==0.7.7
+          python -m pip check
+      - name: Run offline original-CDS consent and malicious-source tests
+        run: |
+          python -m unittest tests.test_ciara2020_cds_original_source_one_shot_v0 -v
+      - name: Print public preview of fixed Ciara 96-hour candidate request
+        run: |
+          python research_runners/ciara2020_cds_original_source_one_shot_v0.py --dry-run
+      - name: Require configured personal CDS token without printing it
+        env:
+          CDSAPI_KEY: ${{ secrets.CDS_API_KEY }}
+        run: |
+          if [ -z "$CDSAPI_KEY" ]; then
+            echo "::error::Repository secret CDS_API_KEY must be set by the operator after accepting the dataset terms on CDS."
+            exit 2
+          fi
+      - name: Authenticated CDS download and source-byte receipt (NO ORIGINAL UPLOAD)
+        env:
+          CDSAPI_KEY: ${{ secrets.CDS_API_KEY }}
+        run: |
+          python research_runners/ciara2020_cds_original_source_one_shot_v0.py \
+            --live \
+            --terms-confirmed 'I_ACCEPTED_DATASET_TERMS_ON_CDS_WEBSITE' \
+            --api-form-confirmed 'I_VERIFIED_THIS_DATASET_API_FORM' \
+            --original-response "${{ runner.temp }}/ciara2020-original-provider-response.nc" \
+            --receipt-json "${{ runner.temp }}/ciara2020-original-CDS-SHA-and-format-ONLY.json"
+      - name: Delete all original provider bytes after receipt
+        if: always()
+        run: |
+          rm -f -- "${{ runner.temp }}/ciara2020-original-provider-response.nc"
+      - name: Upload ONLY metadata receipt, not weather values or original bytes
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ciara2020-official-CDS-original-source-identity-NOT-INSURER-LOSS
+          path: ${{ runner.temp }}/ciara2020-original-CDS-SHA-and-format-ONLY.json
+          if-no-files-found: error
+          retention-days: 7

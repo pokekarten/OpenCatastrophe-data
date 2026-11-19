@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Berlin detailed SRGK bounded original GeoTIFF header metadata
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/berlin_srgk_original_tiff_header_prefix_v0.py
+      - tests/test_berlin_srgk_original_tiff_header_prefix_v0.py
+      - .github/workflows/berlin-srgk-original-tiff-header-prefix.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/berlin-srgk-original-tiff-header-prefix.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-locked-tiff-first-ifd:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout reviewed exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Pinned Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Synthetic-only TIFF IFD, ZIP integrity and 200 rejection tests
+        run: python -m unittest tests.test_berlin_srgk_original_tiff_header_prefix_v0 -v
+      - name: Original three GeoTIFF first-IFD source prefixes only
+        if: github.event_name != 'pull_request'
+        run: python -m research_runners.berlin_srgk_original_tiff_header_prefix_v0 --live

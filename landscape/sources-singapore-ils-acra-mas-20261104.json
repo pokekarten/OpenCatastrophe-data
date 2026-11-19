@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of Singapore original company-register, insurance regulator and ILS financial-source products with legal identity, historic claims and model-provenance constraints.",
+  "review_date": "2026-11-04",
+  "entries": [
+    {
+      "candidate_id": "sg.acra.entities-registered.20261014",
+      "name": "Singapore ACRA registered-entities government open-data snapshot",
+      "provider": "Accounting and Corporate Regulatory Authority (ACRA), Singapore",
+      "categories": [
+        "insurance",
+        "legal_entity",
+        "regulatory_identity",
+        "singapore",
+        "ils"
+      ],
+      "spatial_scope": "Singapore legal companies including insurance and special-purpose reinsurance entities",
+      "temporal_scope": "Monthly government dataset last updated 2026-10-14; coverage ending 2026-10-11",
+      "resolution_or_granularity": "Exact company name, UEN, issuing agency, registration status, entity type, UEN issue date and street; four SPRV identifiers independently checked",
+      "potential_roles": [
+        "singapore_uen_verification",
+        "insurance_spv_identity",
+        "mas_license_crosswalk",
+        "prevent_false_lei_fuzzy_matching"
+      ],
+      "authoritative_url": "https://data.gov.sg/datasets/d_3f960c10fed6145404ca7b821f263b87/view",
+      "access_class_hint": "government_open_data_api_rights_and_current_company_status_review_pending",
+      "note": "Original ACRA issuer and four exact UEN matches are checked and original JSON response SHA256 receipts are recorded. This dated public dataset is not a certified live Bizfile registry extract. Company registration does not establish a GLEIF LEI, licensed insurer portfolio, equity ownership or geolocated insured asset.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "sg.mas.fid.special-purpose-reinsurance.20261104",
+      "name": "MAS Singapore Financial Institutions Directory special-purpose reinsurance vehicles",
+      "provider": "Monetary Authority of Singapore (MAS)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "ils",
+        "legal_entity",
+        "regulation",
+        "singapore"
+      ],
+      "spatial_scope": "Licensed Singapore special-purpose reinsurance vehicles and service managers",
+      "temporal_scope": "Live official regulator directory viewed 2026-11-04; original page version must be independently archived",
+      "resolution_or_granularity": "Institution name, regulator institution code, permitted reinsurance category and named operating manager; Astro RA16G, Manatee RA03G, Nakama RA18G and Tomoni RA21G",
+      "potential_roles": [
+        "ils_legal_entity_and_license_crosswalk",
+        "special_purpose_vehicle_type",
+        "service_manager_is_not_parent_guard"
+      ],
+      "authoritative_url": "https://eservices.mas.gov.sg/fid/institution/detail/224391-MANATEE-RE-III-PTE-LTD",
+      "access_class_hint": "public_regulator_directory_discovery_without_original_page_license_review",
+      "note": "Distinct from separately registered MAS annual company financial returns. A MAS-listed operating manager such as Marsh or Aon is not automatically a cedant, contract issuer, ultimate legal parent, equity owner or holder of insured risk. No complete customer or policy book is present.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "sg.manatee-re-iii.fy2024.audited-financial-statements",
+      "name": "Signed audited Manatee Re III FY2024 and Hurricane Ida public claim observation",
+      "provider": "Manatee Re III Pte. Ltd., signed accounts hosted by Bermuda Stock Exchange",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "ils",
+        "company_report",
+        "cat_claim",
+        "reserving"
+      ],
+      "spatial_scope": "Singapore special-purpose reinsurer with one disclosed United States Hurricane Ida 2021 reinsurance loss",
+      "temporal_scope": "Fiscal year ended 2024-12-31 with 2023 comparative; directors signed 2025-04-29",
+      "resolution_or_granularity": "Audited company notes identify Manatee Shares Trust ownership role, Safepoint Hurricane Ida Class A estimate, cumulative paid and remaining reserve, plus principal-at-risk notes",
+      "potential_roles": [
+        "historical_ils_claim_validation",
+        "reinsurance_cedant_to_spv_claim_bridge",
+        "claims_paid_reserve_reconciliation",
+        "ownership_vs_ils_manager_separation"
+      ],
+      "authoritative_url": "https://content.bsx.com/CompanyDocuments/1099939271/Manatee%20Re%20III%20-%20FS%20FY2024_final%20%28SIGNED%29.pdf",
+      "access_class_hint": "public_issuer_signed_financial_pdf_reuse_rights_and_actual_treaty_wording_review_pending",
+      "note": "Original note 4 reports two-year exact paid-plus-reserve identities for one Ida event. Printed 28.57 percent is rounded and cannot be promoted as confirmed contract share; historical settlement is not complete policy wording, vendor event loss, insured TIV, retro settlement, FRS117 liability bridge or a CAT risk calibration.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "bm.bsx.manatee-re-iii-2019-1-note-lifecycle.2026",
+      "name": "BSX original Manatee Re III 2019-1 Class A and Class B delisting notices",
+      "provider": "Bermuda Stock Exchange (BSX), original issuer-supplied regulatory announcements",
+      "categories": [
+        "reinsurance",
+        "ils",
+        "cat_bond",
+        "security_lifecycle",
+        "historical_regulatory_news"
+      ],
+      "spatial_scope": "Singapore-domiciled ILS SPV, original Class A and Class B USD 20 million securities linked to Safepoint reinsurance",
+      "temporal_scope": "Class B early redemption announcement 2022-10-21; Class A and program maturity/redemption and delisting 2026-06-29",
+      "resolution_or_granularity": "Original issuer-supplied exchange notice URLs, class and program identity, nominal note face amount, announcement date, security maturity and delisting date; Class A ISIN US562011AA46",
+      "potential_roles": [
+        "ils_note_listing_status_by_class",
+        "avoid_stale_2026_covered_capacity",
+        "investment_security_vs_underlying_treaty_guard",
+        "cat_bond_issuance_to_exit_lifecycle"
+      ],
+      "authoritative_url": "https://www.bsx.com/article/1100807273",
+      "access_class_hint": "public_exchange_issuer_announcements_source_license_and_reinsurance_settlement_not_verified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "BSX announced early redemption and delisting of Class B on 2022-10-21 (https://www.bsx.com/article/1100801701), and maturity/redemption and delisting of Class A and note program on 2026-06-29. Nominal 2019 issuance is not amount repaid. Delisting does not prove full cedant claim runoff, company dissolution, zero residual liabilities, or any current in-force reinsurance treaty."
+    }
+  ]
+}

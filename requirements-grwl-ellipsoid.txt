@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Only the dedicated trusted GRWL WGS84 ellipsoid original-source workflow.
+# MIT/X11 licensed GeographicLib Python implementation of Karney geodesics.
+# Core validation and synthetic model runners do not require this profile.
+geographiclib==2.1

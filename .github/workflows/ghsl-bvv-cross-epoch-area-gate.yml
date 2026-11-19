@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: GHSL E2020 vs recent Bavarian original footprint descriptive area gate
+on:
+  pull_request:
+    paths:
+      - "research_runners/ghsl_bvv_cross_epoch_area_gate_v0.py"
+      - "tests/test_ghsl_bvv_cross_epoch_area_gate_v0.py"
+      - ".github/workflows/ghsl-bvv-cross-epoch-area-gate.yml"
+  push:
+    branches: [main]
+    paths:
+      - "research_runners/ghsl_bvv_cross_epoch_area_gate_v0.py"
+      - "tests/test_ghsl_bvv_cross_epoch_area_gate_v0.py"
+      - ".github/workflows/ghsl-bvv-cross-epoch-area-gate.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-comparability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout reviewed research code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Use pinned offline geometry dependencies
+        run: |
+          python -m pip install --no-input --disable-pip-version-check --only-binary=:all: "shapely==2.1.2" "pyproj==3.7.2"
+      - name: Run synthetic original-source identity, full SHA/CRC, union and temporal mismatch tests
+        run: |
+          python -m unittest tests.test_ghsl_bvv_cross_epoch_area_gate_v0 -v

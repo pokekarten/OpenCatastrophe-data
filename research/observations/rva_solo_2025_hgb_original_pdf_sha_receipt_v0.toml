@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Public issuer original PDF byte receipt; typed research only, raw PDF not committed.
+schema_version = "RVA_SOLO_2025_ISSUER_FINANCIAL_PDF_SHA_V0"
+source_id = "rva.solo.hgb.2025.original"
+legal_entity = "R+V Allgemeine Versicherung Aktiengesellschaft"
+issuer_alias = "R+V Allgemeine Versicherung AG"
+source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R%2BV%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf"
+report_year = 2025
+original_pdf_sha256 = "85a82b7a199d583e1e07efbc93317ce8bd3bab99381f54b742e997d70e2c19fa"
+original_pdf_bytes = 1468631
+original_pdf_pages = 98
+original_pdf_proof_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42095783671"
+verified_original_pdf_bytes_and_text_markers = true
+independently_verified_by_second_environment = false
+publisher_raw_pdf_committed = false
+publisher_bulk_redistribution_rights_cleared = false
+source_document_is_customer_exposure = false
+cat_model_input_approved = false
+financial_scope_review = "solo_hgb_self_written_connected_buildings"
+connected_buildings_direct_gross_written_premium_eur = "997710000"
+connected_buildings_contracts_at_2025_year_end = "1060546"
+contract_stock_as_of = "2025-12-31"
+contracts_not_geocoded_buildings = true

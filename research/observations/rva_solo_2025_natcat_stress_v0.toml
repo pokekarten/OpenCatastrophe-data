@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Hypothetical official solvency capital stress; NOT native insured event losses.
+schema_version = "OpenCatastrophe_RVA_SOLO_PUBLIC_NATCAT_STRESS_V0"
+as_of = "2025-12-31"
+observation_status = "official_source_observation_only_not_model_calibrated"
+legal_entity = "R+V Allgemeine Versicherung AG"
+perimeter = "solo_direct_insurer"
+source_url = "https://www.ruv.de/dam/jcr:9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf"
+source_document = "SFCR 2025"
+source_section = "C.1 Risikosensitivitaeten/-stresse"
+source_printed_page = 41
+visual_review_date = "2026-11-04"
+stress_type = "two_very_severe_storm_events"
+storm_analogy = "present-day equivalents of 2021 Bernd and 2007 Kyrill"
+base_solvency_coverage_percent = "241.2"
+stress_solvency_coverage_percent = "221.4"
+scr_increase_eur_million = "121.899"
+eligible_own_funds_decrease_eur_million = "314.118"
+coverage_decline_percentage_points = "19.8"
+is_insured_gross_or_net_loss = false
+is_event_frequency_calibration = false
+is_aal_or_pml_or_oep_aep_point = false
+original_event_footprints_present = false
+source_rights_and_model_admission = "not_approved"

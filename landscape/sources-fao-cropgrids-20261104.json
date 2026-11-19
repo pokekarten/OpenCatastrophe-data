@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission source discovery of a modelled global crop-area comparator to MapSPAM 2020; original CROPGRIDS and derived FAO/CGIAR file identities, data rights and scientific dependence require independent review.",
+  "review_date": "2026-11-04",
+  "entries": [
+    {
+      "candidate_id": "fao.cropgrids.2020.global",
+      "name": "FAO CROPGRIDS 2020 global crop and harvested area maps",
+      "provider": "Food and Agriculture Organization of the United Nations (FAO) / CROPGRIDS research consortium",
+      "categories": [
+        "agriculture",
+        "crop_exposure",
+        "crop_area",
+        "harvested_area",
+        "geospatial",
+        "model_comparison"
+      ],
+      "spatial_scope": "Global land grid, 0.05 degree (~5.6 km at equator); maps are modelled allocation, not field or insured parcel observations",
+      "temporal_scope": "Crop physical and harvested area for reference year 2020; original scientific data descriptor published 2024 and FAO page updated 2025, distinct from 2026 CGIAR COG rehosting",
+      "resolution_or_granularity": "173 crop identities at approximately 0.05-degree grid with physical crop area and harvested area; original research release NetCDF on Figshare DOI 10.6084/m9.figshare.22491997, FAO CGIAR 2.0 cloud COG layer offers 171 distinct per-crop file entries",
+      "potential_roles": [
+        "crop_area_exposure_prior",
+        "crop_specific_spatial_distribution_challenge",
+        "mapspam_2020_cross_source_comparator",
+        "synthetic_agriculture_portfolio_geography"
+      ],
+      "authoritative_url": "https://www.fao.org/agroinformatics/training-and-resources/data-sets/data-set-detail/cropgrids-data-on-harvested-and-crop-areas/en",
+      "access_class_hint": "public_fao_catalogue_figshare_netcdf_and_2026_cgiar_cog_exact_file_version_license_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "FAO and the 2024 Scientific Data paper describe 173 crops with original research NetCDF files (DOI 10.6084/m9.figshare.22491997); a 2026 CGIAR catalog presents a derived FAO COG representation with 171 unique crop file choices plus aliases. Do not silently equate 171 files with 173 crop concepts, or physical area with harvested area: multiple harvests can make harvested area greater. CROPGRIDS uses the older MRF dataset, gridded research products, 52-country subnational observations and FAOSTAT 2020 national totals; it is NOT an independent national-total validation for MapSPAM or FAOSTAT. Provider derivative catalog says CC BY 4.0 and a Figshare record v9 is indexed as CC BY 4.0; pin original exact file rights, version, provenance, crop-code mapping, nodata and aggregation before use. No TIV or observed insurer losses."
+    }
+  ]
+}

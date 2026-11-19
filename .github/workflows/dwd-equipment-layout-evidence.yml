@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DWD original equipment and parameter layout evidence
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/dwd_equipment_layout_evidence_v0.py'
+      - 'tests/test_dwd_equipment_layout_evidence_v0.py'
+      - '.github/workflows/dwd-equipment-layout-evidence.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-source-format-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline original SHA, row redaction and instrument-format negative tests
+        run: python -m unittest tests.test_dwd_equipment_layout_evidence_v0 -v
+
+  one-exact-original-equipment-audit:
+    needs: synthetic-source-format-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Only frozen DWD source ZIP, bounded and ephemeral
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          asset="$RUNNER_TEMP/Meta_Daten_zehn_min_fx_00003.zip"
+          trap 'rm -f "$asset"' EXIT
+          curl --fail --silent --show-error --noproxy '*' \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 120 --retry 0 \
+            --max-filesize 5242880 --output "$asset" \
+            'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/Meta_Daten_zehn_min_fx_00003.zip'
+          python -m scripts.dwd_equipment_layout_evidence_v0 --source-zip "$asset"
+          # Log metadata schemas and candidate date offsets only. Never source rows.

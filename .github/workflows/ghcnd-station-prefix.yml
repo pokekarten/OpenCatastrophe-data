@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: NOAA GHCN original station CSV prefix check
+
+on:
+  pull_request:
+    paths:
+      - 'access/noaa.nodd.ghcnd-central-park-range.*'
+      - 'scripts/probe_ghcnd_station_prefix_v0.py'
+      - 'tests/test_probe_ghcnd_station_prefix_v0.py'
+      - '.github/workflows/ghcnd-station-prefix.yml'
+  workflow_dispatch:
+  # PR review uses only synthetic fixtures. One 64-KiB original-prefix read
+  # runs on the reviewed workflow's first merge or explicit manual dispatch.
+  # One-shot replay after the provider's binary/octet-stream S3 media-type fix.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ghcnd-station-prefix.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghcnd-central-park-prefix-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fixed-original-prefix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Verify reviewed access contract
+        run: python scripts/validate_source_access.py access/noaa.nodd.ghcnd-central-park-range.json
+      - name: Verify generated access Markdown
+        run: python scripts/render_public_views.py --check --scope access
+      - name: Synthetic offline parser and network-control tests
+        run: python -m unittest tests.test_probe_ghcnd_station_prefix_v0 -v
+      - name: Record exact executable source identity
+        run: |
+          git rev-parse HEAD
+          sha256sum scripts/probe_ghcnd_station_prefix_v0.py
+      - name: One fixed original NOAA GHCN-Daily station range
+        if: github.event_name != 'pull_request'
+        run: python scripts/probe_ghcnd_station_prefix_v0.py --live

@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery for NASA GFWED versioned GEOS-5 experimental daily fire-weather NetCDF data; precise HTTP access and commercial rights unapproved.",
+  "review_date": "2026-11-02",
+  "entries": [
+    {
+      "candidate_id": "nasa.giss.gfwed.geos5.daily-fwi.v2.0",
+      "name": "NASA GISS GFWED GEOS-5 daily fire-weather indices v2.0",
+      "provider": "NASA Goddard Institute for Space Studies / Global Fire WEather Database",
+      "categories": [
+        "wildfire",
+        "fire_weather",
+        "meteorological_hazard",
+        "derived_index",
+        "global"
+      ],
+      "spatial_scope": "Global, with coverage of each original GEOS-5 daily fire-weather product dependent on its model and precipitation inputs",
+      "temporal_scope": "GEOS-5 experimental near-real-time analysis family begins in 2014; the provider documents an exact v2.0 example for sensing date 2014-05-01; do not infer a complete daily record without file-level inventory",
+      "resolution_or_granularity": "Daily modeled fire-weather indices in provider NetCDF files; GEOS-5 analysis meteorological fields are described at 0.25 x 0.25 degree, but exact NetCDF grid, variables, fill codes and units must be checked independently",
+      "potential_roles": [
+        "wildfire_fire_weather_hazard_covariate",
+        "seasonal_and_regional_fire_weather_context",
+        "independent_firms_fire_observation_crosscheck",
+        "wildfire_climate_driver_research"
+      ],
+      "authoritative_url": "https://data.giss.nasa.gov/impacts/gfwed/",
+      "access_class_hint": "public_provider_documented_netcdf_http_archive_exact_terms_and_file_sample_not_reviewed",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Fixed example product path: v2.0/fwiCalcs.GEOS-5/Default/GEOS-5/2014/FWI.GEOS-5.Daily.Default.20140501.nc, as published by NASA GISS. GFWED provides FWI-system derived danger and moisture/behavior indices, NOT observed wildfires, fire ignition event footprints, burned area, building damage, annual insured losses or an insurance vulnerability curve. NASA describes multiple forcing/precipitation variants including MERRA-2 and experimental GEOS-5 products: preserve exact variant, data vintage, local-noon convention, precipitation input, CRS, date, nodata and units, and avoid treating other MERRA-2/NASA products as independent meteorological truth. Public HTTP documentation is not proof of currently available exact bytes or commercial redistribution rights. No remote NetCDF, file range or archive download was performed."
+    }
+  ]
+}

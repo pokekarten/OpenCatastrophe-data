@@ -89,6 +89,14 @@ class DwdDirectoryTests(unittest.TestCase):
         self.assertEqual(result["latest_filename_coverage_end"], "2025-12-31")
         self.assertTrue(result["existing_station_00003_archive_found"])
 
+    def test_checked_in_dwd_contract_matches_the_reviewed_live_route(self):
+        """Ensure a real provider probe is never run using stale review fixtures."""
+        repo_root = Path(__file__).resolve().parents[1]
+        max_bytes, timeout, contract_digest = reviewed_contract(repo_root)
+        self.assertLessEqual(max_bytes, 1_048_576)
+        self.assertGreater(timeout, 0)
+        self.assertEqual(len(contract_digest), 64)
+
     def test_previous_pinned_archive_must_be_present(self):
         with self.assertRaisesRegex(DirectoryBlocked, "previously pinned"):
             inspect_index(html(SECOND, THIRD))
