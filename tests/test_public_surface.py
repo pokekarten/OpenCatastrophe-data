@@ -188,9 +188,8 @@ class PublicSurfaceTests(unittest.TestCase):
                             (manual_cds, upload_artifact)]
         expected_uploads += [
             (workflow_path, upload_artifact)
-            for workflow_path, paths in research_upload_paths.items()
-            for _ in paths
-            if paths
+            for workflow_path in research_upload_paths
+            for _ in range(2 if workflow_path.endswith("/rva-2025-oed-staging.yml") else 1)
         ]
         self.assertCountEqual(allowed_uploads, expected_uploads)
 
