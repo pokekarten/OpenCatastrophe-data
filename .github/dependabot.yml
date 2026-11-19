@@ -27,5 +27,10 @@ updates:
       time: "06:00"
       timezone: "Etc/UTC"
     open-pull-requests-limit: 1
+    # The sole gcsfs pin belongs to the isolated historical Google ARCO
+    # ERA5 smoke environment. Changing its reader without original-source
+    # parity invalidates reproducibility; test new readers separately.
+    ignore:
+      - dependency-name: "gcsfs"
     commit-message:
       prefix: "deps(python)"
