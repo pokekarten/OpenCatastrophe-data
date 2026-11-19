@@ -121,11 +121,10 @@ class SuggestTestsTests(unittest.TestCase):
         self.assertEqual(report["suggested_tests"], ["tests/test_alpha.py", "tests/test_beta.py"])
 
     def test_git_name_status_parser_handles_renames_and_copies(self) -> None:
-        data = (b"R100\\x00scripts/old.py\\x00scripts/new.py\\x00"
-                b"C75\\x00scripts/a.py\\x00scripts/b.py\\x00"
-                b"M\\x00tests/test_old.py\\x00")
-        # Real bytes use NUL separators, not escaped textual representations.
-        paths = suggest_tests._diff_name_status_paths(data.replace(b"\\\\x00", b"\\x00"))
+        data = (b"R100\x00scripts/old.py\x00scripts/new.py\x00"
+                b"C75\x00scripts/a.py\x00scripts/b.py\x00"
+                b"M\x00tests/test_old.py\x00")
+        paths = suggest_tests._diff_name_status_paths(data)
         self.assertEqual(paths, {
             "scripts/old.py", "scripts/new.py", "scripts/a.py", "scripts/b.py",
             "tests/test_old.py",
@@ -133,10 +132,10 @@ class SuggestTestsTests(unittest.TestCase):
 
     def test_git_name_status_parser_rejects_incomplete_or_unsafe_data(self) -> None:
         for malformed in (
-            b"R100\\x00scripts/old.py\\x00",  # missing destination
-            b"M\\x00scripts/a.py",  # missing terminating NUL
-            b"UNKNOWN\\x00scripts/a.py\\x00",
-            b"A\\x00../private.py\\x00",
+            b"R100\x00scripts/old.py\x00",  # missing destination
+            b"M\x00scripts/a.py",  # missing terminating NUL
+            b"UNKNOWN\x00scripts/a.py\x00",
+            b"A\x00../private.py\x00",
         ):
             with self.subTest(malformed=malformed), self.assertRaises(ValueError):
                 suggest_tests._diff_name_status_paths(malformed)
@@ -150,8 +149,8 @@ class SuggestTestsTests(unittest.TestCase):
         git("config", "user.email", "agent-tests@example.invalid")
         git("config", "user.name", "Synthetic Agent Test")
         (self.root / "scripts").mkdir()
-        (self.root / "scripts/old.py").write_text("def sample(): return 1\\n", encoding="utf-8")
-        (self.root / "tests/test_old.py").write_text("from scripts import old\\n", encoding="utf-8")
+        (self.root / "scripts/old.py").write_text("def sample(): return 1\n", encoding="utf-8")
+        (self.root / "tests/test_old.py").write_text("from scripts import old\n", encoding="utf-8")
         git("add", ".")
         git("commit", "-qm", "baseline")
         git("branch", "baseline")
@@ -164,7 +163,7 @@ class SuggestTestsTests(unittest.TestCase):
         self.assertIn("tests/test_old.py", report["suggested_tests"])
         (self.root / "scripts/new.py").rename(self.root / "scripts/final.py")
         git("add", "-A")
-        (self.root / "scripts/untracked.py").write_text("# untracked\\n", encoding="utf-8")
+        (self.root / "scripts/untracked.py").write_text("# untracked\n", encoding="utf-8")
         self.assertEqual(
             suggest_tests.git_changed_paths(self.root, "baseline"),
             ["scripts/final.py", "scripts/new.py", "scripts/old.py", "scripts/untracked.py"],
