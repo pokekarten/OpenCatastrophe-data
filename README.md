@@ -25,10 +25,12 @@ Structured public information follows a **one semantic truth, multiple verified 
 
 1. Read `AGENTS.md`, this `README.md` and `ARCHITECTURE.md`; add `DATA_LICENSING.md` or `SCIENTIFIC_METHOD.md` when the task touches those boundaries.
 2. Record the current `main` commit and check current Pull Requests plus any enabled public issue tracker for overlapping work.
-3. Install the validation-only dependency set with `python -m pip install --disable-pip-version-check --no-input -r requirements-validation.txt`, then run `python scripts/check_all.py` before material work so the starting state is explicit.
+3. Install the validation-only dependency set with `python -m pip install --disable-pip-version-check --no-input -r requirements-validation.txt`, then run `python scripts/check_all.py --fast` for a bounded baseline. This preflight is not a full test run.
 4. Keep the change bounded, deterministic and offline-testable; external bytes stay outside Git unless their exact public asset scope is explicitly admitted.
 5. If changing canonical data that has committed generated views, regenerate them with `python scripts/render_public_views.py --write` rather than editing the generated files.
-6. Use a short-lived branch and a draft Pull Request as the visible work claim, then rerun the definition-of-done command and record exact evidence, assumptions and blockers before handoff.
+6. Use a short-lived branch and a Pull Request for changes; a Draft PR is useful for unfinished or overlapping work but is not required for every routine fix. Run focused tests and `python scripts/check_all.py` (without `--fast`) before handoff; record exact evidence, assumptions and blockers.
+
+The fast preflight runs focused agent/contract/security tests and **all** repository-wide syntax, projection, hygiene, licence, link and manifest gates. It intentionally omits the complete domain-test discovery. A green fast run **does not** validate an affected source, scientific model, original external bytes, or the full suite. Run affected tests while editing and the unmodified `python scripts/check_all.py` for the final definition of done.
 
 No LLM, MCP host, IDE extension, paid API or hidden service is required to validate repository-authored behavior.
 
@@ -87,7 +89,7 @@ The project keeps two deliberately separate source layers. [`landscape/`](landsc
 
 Accepted sources currently span observation, hazard/hydrology, stochastic event catalogues, modelled/insured exposure, exposure geometry and observed insurance loss. Landscape candidates may cover additional terrain, climate, hydrology, earth-observation, seismic, wildfire, demographic and validation sources before a concrete OpenCatastrophe consumer exists.
 
-No external source-data bytes or derived source-data bytes are committed to this repository. Most manifests currently admit metadata only; an intentionally narrow exception is `efehr.esrm20.european-exposure-model.v1.0`, whose `approved_derived` review covers only one exact 2,666-byte canonical Kosovo-residential `TAXONOMY`-set derivative identified by SHA-256 in its manifest. That derivative is not committed here, the raw Kosovo exposure CSV is **not** approved for repository publication, and approval of this taxonomy identity does not authorize treating it as a model exposure, insured portfolio, or loss input. The project remains source-data-byte-free while exercising real provenance, rights, and scientific-review contracts.
+The repository does not redistribute original third-party source files or general source-derived datasets as admitted model inputs. It does contain explicitly attributed **published numerical aggregates** re-serialized as small research observations (for example, the 400-Kreis Zensus 2022 values in `research/observations/zensus2022_400_kreis_original_building_aggregates_v0.toml`), with original publisher identity, source-file SHA-256, data licence and non-admission indicators. These are not the original XLSX bytes, not synthetic insurer exposure and not an implicit licence for further redistribution, confidential joins or production CAT modelling. Scientific source scope and each use case still require independent rights and validation gates. Most manifests currently admit metadata only; an intentionally narrow exception is `efehr.esrm20.european-exposure-model.v1.0`, whose `approved_derived` review covers only one exact 2,666-byte canonical Kosovo-residential `TAXONOMY`-set derivative identified by SHA-256 in its manifest. That derivative is not committed here, the raw Kosovo exposure CSV is **not** approved for repository publication, and approval of this taxonomy identity does not authorize treating it as a model exposure, insured portfolio, or loss input. The narrow, identified EFEHR derivative is not distributed here; the project keeps original provider files out of Git while separately identifying the published aggregates it does record.
 
 For future OpenCatastrophe-owned models, discovery metadata is intentionally insufficient as an input contract. New scientific/model runs can use `schemas/run-evidence-v2.schema.json` to bind materially used data to an admitted manifest's identified `raw` or `derived` artifact, matching storage identity and exact SHA-256, explicit roles such as training/calibration/validation/holdout, and typed evidence references. This records split/provenance boundaries without pretending that a valid receipt alone establishes scientific adequacy or broader data rights.
 
@@ -122,7 +124,7 @@ Development is intended to happen through the public repository. Current public 
 For contributors and coding agents:
 
 1. start with `AGENTS.md` and `ARCHITECTURE.md`;
-2. use the most specific Issue Form when Issues are enabled; otherwise use a draft PR as the visible implementation claim once a non-trivial change has enough public evidence to review;
+2. check current `main` and overlapping PRs; use an Issue or draft PR when coordination, scientific/source review or an unfinished high-risk change needs a durable claim, not as a prerequisite for a bounded routine fix;
 3. keep data-rights review and scientific validation separate;
 4. treat declared canonical machine contracts as the only editable authority for facts repeated in generated views;
 5. use `schemas/agent-task-v1.schema.json` when a formal machine-readable task is useful; use `schemas/run-evidence-v2.schema.json` for new scientific/model run evidence, while `schemas/run-evidence-v1.schema.json` remains a compatibility profile for existing/simple receipts;

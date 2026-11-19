@@ -145,6 +145,33 @@ class GeoBoundariesMetadataProbeTests(unittest.TestCase):
                 with self.assertRaises(GeoBoundariesProbeError):
                     probe(open_request=lambda req, timeout: item)
 
+    def test_content_length_and_encoding_are_checked_against_original_bytes(self):
+        raw = raw_metadata()
+
+        def response_with(headers):
+            response = SyntheticResponse(raw)
+            response.headers.update(headers)
+            return response
+
+        valid = response_with({"Content-Length": str(len(raw))})
+        accepted = probe(open_request=lambda req, timeout: valid,
+                         utc_clock=lambda: datetime(2026, 11, 14, tzinfo=timezone.utc))
+        self.assertEqual(accepted["response_bytes"], len(raw))
+
+        for headers in (
+            {"Content-Length": str(len(raw) + 1)},
+            {"Content-Length": str(len(raw) - 1)},
+            {"Content-Length": str(MAX_RESPONSE_BYTES + 1)},
+            {"Content-Length": "-1"},
+            {"Content-Length": "abc"},
+            {"Content-Length": "1, 1"},
+            {"Content-Length": "  "},
+            {"Content-Encoding": "gzip"},
+            {"Content-Encoding": "br"},
+        ):
+            with self.subTest(headers=headers), self.assertRaises(GeoBoundariesProbeError):
+                probe(open_request=lambda req, timeout: response_with(headers))
+
     def test_invalid_receipt_clock_refused(self):
         with self.assertRaisesRegex(GeoBoundariesProbeError, "timezone-aware"):
             probe(open_request=lambda req, timeout: SyntheticResponse(raw_metadata()),

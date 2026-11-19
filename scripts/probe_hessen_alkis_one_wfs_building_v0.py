@@ -195,6 +195,8 @@ def probe(*, open_request=_open, diagnostic_only: bool = False) -> dict:
             ):
                 raise BuildingFeatureBlocked("original WFS Content-Length too large")
             raw = response.read(MAX_BYTES + 1)
+            if declared_size is not None and len(raw) != int(declared_size):
+                raise BuildingFeatureBlocked("original WFS body length differs from Content-Length")
     except (CapabilityBlocked, BuildingFeatureBlocked):
         raise
     except (error.HTTPError, error.URLError, TimeoutError, OSError) as exc:

@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: USGS WESM exact original CSV32k prefix
+
+on:
+  pull_request:
+    paths:
+      - "landscape/sources-usgs-3dep-wesm-20261116.json"
+      - "landscape/sources-usgs-3dep-wesm-20261116.md"
+      - "access/usgs.3dep.wesm.csv.32k-original-prefix.json"
+      - "access/usgs.3dep.wesm.csv.32k-original-prefix.md"
+      - "scripts/probe_usgs_wesm_original_csv32k_v0.py"
+      - "tests/test_probe_usgs_wesm_original_csv32k_v0.py"
+      - ".github/workflows/usgs-wesm-original-csv32k.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    name: WESM source contract and synthetic HTTP206 fail-closed checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact source without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Pinned Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Validate exact source and deterministic generated views
+        run: |
+          python scripts/validate_source_access.py access/usgs.3dep.wesm.csv.32k-original-prefix.json
+          python scripts/render_public_views.py --check
+      - name: Reject invalid original CSV header and HTTP 200/Range/redirect
+        run: python -m unittest tests.test_probe_usgs_wesm_original_csv32k_v0 -v
+
+  original-prefix:
+    # Explicitly one bound USGS WESM source call; not CI on default branch.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/usgs-wesm-csv-original-header-20261116'
+    needs: offline
+    name: One original USGS WESM CSV 32768-byte HTTP206 receipt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact commit without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Pinned Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: One exact official WESM.csv original 32 KiB Range GET
+        run: python scripts/probe_usgs_wesm_original_csv32k_v0.py --live

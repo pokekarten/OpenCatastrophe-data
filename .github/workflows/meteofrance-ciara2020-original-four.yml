@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: France Ciara 2020 original hourly four-department envelope
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-window:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        department: ['02', '62', '76', '80']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Synthetic exact-event-window, QC and security tests
+        run: python -m unittest tests.test_meteofrance_ciara2020_four_original_window_v0 -v
+      - name: Read one original hourly station file and produce aggregate envelope only
+        env:
+          DEPARTMENT: ${{ matrix.department }}
+        run: python -m research_runners.meteofrance_ciara2020_four_original_window_v0 --department "$DEPARTMENT" --live

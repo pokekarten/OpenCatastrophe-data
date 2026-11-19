@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: USGS S1M native GeoTIFF offline scientific QA
+
+on:
+  pull_request:
+    paths:
+      - "research_runners/usgs_s1m_original_tiff_profile_v0.py"
+      - "tests/test_usgs_s1m_original_tiff_profile_v0.py"
+      - ".github/workflows/usgs-s1m-original-offline-profile.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-header:
+    name: Pinned GDAL independent synthetic original-header checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact PR SHA without retaining credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup pinned Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install existing pinned GDAL/Rasterio scientific reader
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-cems-geotiff-profile.txt
+          python -m pip check
+      - name: Execute complete synthetic S1M TIFF / original-byte negative checks
+        run: python -m unittest tests.test_usgs_s1m_original_tiff_profile_v0 -v

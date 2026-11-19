@@ -1,0 +1,36 @@
+{
+  "schema": "KNMI_WIND_METADATA_REVIEW_V1",
+  "retrieved_on": "2026-11-14",
+  "source_url": "https://cdn.knmi.nl/system/data_center_publications/files/000/069/738/original/ir_2014_03_potentiele_wind_update_2013.pdf?1495621967",
+  "sha256": "f756d715578134bdf76119f1a53a8dc1c8c1ea42b95ac4ba4605a5621c6baf2b",
+  "bytes": 1156155,
+  "source_snapshot_date": "2013-08-05",
+  "current_archive_correction_status_verified": false,
+  "automatic_correction_allowed": false,
+  "findings": [
+    {
+      "printed_pages": "64, 66",
+      "stations": [
+        260,
+        310,
+        330
+      ],
+      "finding": "Historical Benschop height correction; mean and gust processing diverged. Snapshot does not prove current downloaded FX processing."
+    },
+    {
+      "printed_pages": "65",
+      "stations": [
+        235,
+        260,
+        280,
+        310,
+        330
+      ],
+      "finding": "KIS versus INFRA coordinate discrepancies; neither is an event-era station history."
+    },
+    {
+      "printed_pages": "3",
+      "finding": "Report defines KIS Umax as maximum 3-second mean gust within an hour; identity with every current FX archive release remains to be checked."
+    }
+  ]
+}

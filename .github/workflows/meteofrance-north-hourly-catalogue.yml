@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Météo-France north coast official catalogue metadata preflight
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/meteofrance_north_hourly_catalogue_v0.py'
+      - 'tests/test_meteofrance_north_hourly_catalogue_v0.py'
+      - '.github/workflows/meteofrance-north-hourly-catalogue.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  north-catalogue:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'research/20261115-meteofrance-north-original-catalogue'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Strict synthetic-only metadata regression
+        run: python -m unittest tests.test_meteofrance_north_hourly_catalogue_v0 -v
+      - name: Read one official metadata catalogue without any station file
+        run: python -m research_runners.meteofrance_north_hourly_catalogue_v0 --live-catalogue

@@ -71,18 +71,29 @@ def _serialize_decimal(value: Decimal) -> str:
     return format(value.normalize(), "f")
 
 
+def _validate_identifier(value: object, *, field: str) -> str:
+    """Reject ambiguous/noncanonical cell and support identities before counting."""
+    if not isinstance(value, str) or not value or value != value.strip():
+        raise SemanticError(f"{field} must be a non-empty trimmed string")
+    return value
+
+
 def _validate_support(support: HazardSupport) -> tuple[Decimal, str]:
-    if not support.support_id:
-        raise SemanticError("support_id must be non-empty")
+    _validate_identifier(support.support_id, field="support_id")
     fraction = _decimal(support.fraction, field="support fraction")
     if fraction <= 0 or fraction > 1:
         raise SemanticError("support fraction must be in (0, 1]")
 
+    # Do not coerce externally sourced quality flags: e.g. bool("false") is
+    # True and silently changes the scientific exposure classification.
     flags = {
-        "nodata": bool(support.nodata),
-        "permanent_water": bool(support.permanent_water),
-        "spurious_depth": bool(support.spurious_depth),
+        "nodata": support.nodata,
+        "permanent_water": support.permanent_water,
+        "spurious_depth": support.spurious_depth,
     }
+    for flag_name, flag_value in flags.items():
+        if type(flag_value) is not bool:
+            raise SemanticError(f"{flag_name} must be a boolean")
     active_flags = [name for name, active in flags.items() if active]
     if len(active_flags) > 1:
         raise SemanticError(
@@ -105,13 +116,36 @@ def _validate_support(support: HazardSupport) -> tuple[Decimal, str]:
     return fraction, classify_depth(support.depth_m)
 
 
+
+def validate_support_metadata(
+    *,
+    support_id: str,
+    depth_m: Decimal | str | int | float | None,
+    nodata: bool = False,
+    permanent_water: bool = False,
+    spurious_depth: bool = False,
+) -> None:
+    """Validate A0 quality and depth semantics before any spatial clipping.
+
+    Spatial allocation determines the fraction later. A nominal unit fraction
+    lets us reuse the exact A0 semantics without inventing an observed area.
+    """
+    _validate_support(
+        HazardSupport(
+            support_id, Decimal("1"), depth_m,
+            nodata=nodata,
+            permanent_water=permanent_water,
+            spurious_depth=spurious_depth,
+        )
+    )
+
+
 def aggregate_cells(cells: Iterable[CensusCell]) -> dict[str, object]:
     rows: list[dict[str, object]] = []
     seen_cells: set[str] = set()
 
     for cell in cells:
-        if not cell.cell_id:
-            raise SemanticError("cell_id must be non-empty")
+        _validate_identifier(cell.cell_id, field="cell_id")
         if cell.cell_id in seen_cells:
             raise SemanticError(f"duplicate census cell id: {cell.cell_id}")
         seen_cells.add(cell.cell_id)
@@ -138,6 +172,7 @@ def aggregate_cells(cells: Iterable[CensusCell]) -> dict[str, object]:
         }
 
         for support in cell.supports:
+            _validate_identifier(support.support_id, field="support_id")
             if support.support_id in support_ids:
                 raise SemanticError(
                     f"duplicate hazard support in cell {cell.cell_id}: {support.support_id}"
@@ -151,9 +186,26 @@ def aggregate_cells(cells: Iterable[CensusCell]) -> dict[str, object]:
                 )
             bucket_fractions[bucket] += fraction
 
+        # Small projection/overlay roundoff may put supported area above AOI
+        # by at most TOLERANCE. Merely zeroing the negative *missing* fraction
+        # silently creates exposed population (wet + excluded > source).
+        # Reconcile that tiny positive excess against actual support buckets in
+        # a canonical order, independent of the input support ordering.
+        excess = support_fraction - aoi_fraction
+        if excess > 0:
+            if excess > TOLERANCE:
+                raise SemanticError(f"hazard support overlaps/exceeds AOI in cell {cell.cell_id}")
+            for name in sorted(bucket_fractions, key=lambda key: (-bucket_fractions[key], key)):
+                if excess == 0:
+                    break
+                adjustment = min(bucket_fractions[name], excess)
+                bucket_fractions[name] -= adjustment
+                excess -= adjustment
+            if excess != 0:
+                raise SemanticError(f"cannot reconcile hazard support in cell {cell.cell_id}")
+            support_fraction = aoi_fraction
+
         uncovered_aoi_fraction = aoi_fraction - support_fraction
-        if uncovered_aoi_fraction < 0 and abs(uncovered_aoi_fraction) <= TOLERANCE:
-            uncovered_aoi_fraction = Decimal("0")
         if uncovered_aoi_fraction < 0:
             raise SemanticError(f"hazard support overlaps/exceeds AOI in cell {cell.cell_id}")
         bucket_fractions["hazard_support_missing"] += uncovered_aoi_fraction
