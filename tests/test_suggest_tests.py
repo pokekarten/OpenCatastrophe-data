@@ -106,6 +106,64 @@ class SuggestTestsTests(unittest.TestCase):
         self.assertEqual(found["suggested_tests"], [])
         self.assertIn("scripts/alpha.py", found["unmatched_paths"])
 
+    def test_subprocess_script_path_detected(self) -> None:
+        (self.root / "tests/test_manifest_contract.py").write_text(
+            'import subprocess, sys\n'
+            'result = subprocess.run(\n'
+            '    [sys.executable, "scripts/manifest_identity.py", "--help"],\n'
+            '    cwd=ROOT, check=False)\n',
+            encoding="utf-8",
+        )
+        report = suggest_tests.suggest(["scripts/manifest_identity.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], ["tests/test_manifest_contract.py"])
+
+    def test_subprocess_multiline_command_detected(self) -> None:
+        (self.root / "tests/test_cli.py").write_text(
+            'result = subprocess.run(\n'
+            '    [\n'
+            '        sys.executable,\n'
+            '        "scripts/audit_sample_candidates.py",\n'
+            '        "--json",\n'
+            '    ], cwd=ROOT)\n',
+            encoding="utf-8",
+        )
+        report = suggest_tests.suggest(["scripts/audit_sample_candidates.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], ["tests/test_cli.py"])
+
+    def test_subprocess_other_directory_not_suggested(self) -> None:
+        (self.root / "tests/test_cli.py").write_text(
+            'result = subprocess.run(\n'
+            '    [sys.executable, "scripts/audit_sample_candidates.py"], cwd=OTHER)\n',
+            encoding="utf-8",
+        )
+        report = suggest_tests.suggest(["scripts/audit_sample_candidates.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], [])
+
+    def test_subprocess_without_explicit_root_not_suggested(self) -> None:
+        (self.root / "tests/test_cli.py").write_text(
+            'result = subprocess.run([sys.executable, "scripts/audit_sample_candidates.py"])\n',
+            encoding="utf-8",
+        )
+        report = suggest_tests.suggest(["scripts/audit_sample_candidates.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], [])
+
+    def test_subprocess_wrong_interpreter_not_suggested(self) -> None:
+        (self.root / "tests/test_cli.py").write_text(
+            'subprocess.run(["python", "scripts/audit_sample_candidates.py"], cwd=ROOT)\n',
+            encoding="utf-8",
+        )
+        report = suggest_tests.suggest(["scripts/audit_sample_candidates.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], [])
+
+    def test_subprocess_similar_script_path_not_suggested(self) -> None:
+        (self.root / "tests/test_cli.py").write_text(
+            'subprocess.run([sys.executable, "scripts/audit_sample_candidates_v2.py"], cwd=ROOT)\n',
+            encoding="utf-8",
+        )
+        report = suggest_tests.suggest(["scripts/audit_sample_candidates.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], [])
+
+
     def test_non_python_changed_files_require_manual_mapping(self) -> None:
         (self.root / "tests/test_any.py").write_text("pass\n", encoding="utf-8")
         found = suggest_tests.suggest(["landscape/source.json", "AGENTS.md"], root=self.root)
