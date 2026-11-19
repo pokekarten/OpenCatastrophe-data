@@ -358,9 +358,12 @@ fields used by our bounded observation:
 - `horizontalGeometryEstimatedAccuracy` — nominal XY accuracy;
 - `verticalGeometryEstimatedAccuracy` — nominal Z accuracy.
 
-These extra properties may explain a real WFS reply rejected by the
-earlier **exactly-three-properties** audit, but their actual presence in
-the original Croatian response is **not yet observed or proven**. The
+These extra properties explained a plausible cause of the earlier
+**exactly-three-properties** audit rejection. As of 2026-11-19, a
+bounded original-provider response returned through an external HTTP
+intermediary **does show** `horizontalGeometryEstimatedAccuracy` by name;
+see the byte-pinned receipt below. Its numeric accuracy is **not**
+independently validated or admitted. The
 `--audit-semantics` mode now allows only those exact INSPIRE base
 property names, at most one of each, with no nested child elements.
 It checks that the three core properties still occur **exactly once**,
@@ -467,6 +470,61 @@ its sole sampled geometry is explicitly **`combined`**, outside the
 reviewed `footPrint` acceptance profile. Any expanded science
 interpretation needs an independent validated physical ground-footprint
 reference and legal/API use review.
+
+## Provider-advertised geometry scope and official INSPIRE `combined` meaning — 2026-11-19
+
+A second, **metadata-only** anonymous request to the fixed **cadastral**
+WFS endpoint using `SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities`
+was returned through a zero-retention HTTP intermediary. No building
+features, identifiers, coordinates, bulk downloads or private tokens were
+requested or stored. The **intermediary-delivered XML body** provides a
+bounded reproducibility fingerprint, not a trusted direct source-wire
+capture or a declaration of feature coverage:
+
+| Service metadata receipt | Observed value |
+| --- | --- |
+| Endpoint | `https://api.uredjenazemlja.hr/services/inspire/bu/wfs` |
+| Media type | `application/xml` |
+| XML byte count | **59,448** |
+| SHA-256 of intermediary-returned XML | `31ae7c96132b7ce2f14ee5a6639a73252cb975b8543a33df5d12e5c810f9adfe` |
+| Advertised feature types in this response | **`bu:Building` only (1)** |
+| Advertised `bu:Building` DefaultCRS | `urn:ogc:def:crs:EPSG::3765` |
+| Advertised `bu:BuildingPart` | **absent** |
+
+This is a negative **capability-advertisement** observation for the
+reviewed service URL and response, not a claim that Croatia does not
+maintain building parts or other related data products. No separate
+`bu:BuildingPart` GetFeature workflow can be assumed for this exact
+WFS just because it is allowed by the INSPIRE conceptual schema.
+
+The authoritative
+[INSPIRE Buildings Technical Guidelines, §5.4.1.1, Figure 26](https://inspire-mif.github.io/technical-guidelines/data/bu/dataspecification_bu.html)
+explain the **`combined`** horizontal geometry reference using an
+example where **BuildingPart A** is represented by its `footPrint`
+and **BuildingPart B** by its `lowestFloorAboveGround`; a building
+geometry merged from these parts takes the `combined` label.
+This is an **illustrative INSPIRE definition**, not a verified statement
+that the returned Zagreb building has those parts or exact provenance.
+For a CAT exposure, `combined` cannot be equated with a physical
+ground `footPrint`, even if the XML encodes a closed `gml:Polygon`
+and `referenceGeometry=true`.
+
+One additional synthetic regression test now exercises the **three
+actual observed properties together**: legacy native EPSG:3765
+polygon URI, `horizontalGeometryReference=combined`, and the optional
+`horizontalGeometryEstimatedAccuracy` name. It requires a non-admitting
+metadata receipt **without exposing the optional value**, while the
+strict footprint validator must still fail closed. No original XML,
+building IDs, accuracy values, source coordinates or third-party data
+have been added to the repository.
+
+**Scientific decision:** source geometry exists in a bounded response,
+but the service does not advertise an independently accessible
+`BuildingPart` feature type at this endpoint, and the observed
+`combined` reference remains outside the footprint profile. Keep
+the original-product CAT-exposure gate **NO-GO**; seek an authoritative
+independent footprint representation/lineage rather than relabel the
+polygon or silently construct building parts.
 
 ## Next causal evidence
 
