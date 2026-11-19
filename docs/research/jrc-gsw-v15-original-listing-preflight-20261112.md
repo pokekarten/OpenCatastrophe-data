@@ -13,6 +13,10 @@ This is a **provider catalogue observation**, not a successful TIFF asset downlo
 
 The original provider product page states that data may be used freely under the Copernicus framework with attribution `Source: EC JRC/Google`, and requires citing the dataset and publication. A source-use allowance does not replace exact-asset review, provenance, API/service terms or independent scientific checks. The original page also records an **occurrence >100% correction on 2026-11-10** for v1.5 and a **still unresolved monthly-recurrence sparse-observation defect**. Do not use old cached occurrence images/GeoTIFFs or treat recurrence as validated. v1.4 is deprecated.
 
+## Important: a Swift response is only one page
+
+The official [Swift object listing API](https://docs.openstack.org/swift/2026.2/api/pagination.html) normally caps a single request at **10,000 object names** and paginates via `marker`; the server can configure that cap. The `original_listing_sha256` emitted by the preflight is therefore a hash of **the supplied original listing page**, not an authenticated hash of all object names in the full JRC container. A matching pathname proves only presence on the received page. Its presence does not establish a completed global catalogue or the corrected original GeoTIFF. The checker explicitly reports `complete_original_catalogue_verified=false` and never contacts the provider or automatically requests missing pages.
+
 ## Repeatable next gate
 
 After a separately authorised, bounded download of the **plain UTF-8 original listing** outside Git, run:

@@ -23,6 +23,10 @@ SELECTED_ASSET = (
     "occurrence_10E_50N_v1_5_2024.tif"
 )
 MAX_LISTING_BYTES = 8_000_000
+# OpenStack Swift typically returns at most 10,000 names per listing GET.
+# This is a *default*, configurable by the server. Even fewer than 10,000
+# names do not prove completeness without pagination/host verification.
+SWIFT_DEFAULT_PAGE_LIMIT = 10_000
 
 
 class GSWListingError(ValueError):
@@ -39,7 +43,22 @@ def inspect_original_listing(payload: bytes) -> dict[str, object]:
         raise GSWListingError("original catalogue must be UTF-8") from exc
     if "\x00" in listing:
         raise GSWListingError("NUL in listing")
-    paths = [line.strip() for line in listing.splitlines() if line.strip()]
+    # Do not normalize provider object names: whitespace trimming can turn a
+    # different original object key into our exact fixed target, falsely
+    # asserting that the target path appeared in the original byte stream.
+    # Python str.splitlines() treats vertical tabs, Unicode NEL and other
+    # control characters as line separators. In an object listing that would
+    # silently turn a DIFFERENT original key into our exact selected key.
+    # Swift plain-text listings separate keys with LF; tolerate only CRLF,
+    # preserving all other characters for the strict safety check below.
+    paths = []
+    for raw_line in listing.split("\n"):
+        if not raw_line:
+            continue
+        line = raw_line[:-1] if raw_line.endswith("\r") else raw_line
+        if line:
+            paths.append(line)
+
     # No URL synthesis, fuzzy matching, or falling back to deprecated v1.4.
     selected_count = sum(line == SELECTED_ASSET for line in paths)
     if selected_count != 1:
@@ -58,8 +77,19 @@ def inspect_original_listing(payload: bytes) -> dict[str, object]:
         "source_id": SOURCE_ID,
         "source_product_version": "1.5 (1984-2024)",
         "original_listing_url": ORIGINAL_LISTING_URL,
+        # The SHA pins this *received page*, not the entire CloudFerro
+        # container. Swift normally requires marker pagination for >10k
+        # objects; we do not authorize more requests or infer an exhaustive
+        # listing even when the count is below the default page limit.
         "original_listing_sha256": hashlib.sha256(payload).hexdigest(),
         "original_listing_bytes": len(payload),
+        "listing_page_object_count": len(paths),
+        "swift_default_page_limit": SWIFT_DEFAULT_PAGE_LIMIT,
+        "swift_default_page_limit_reached": len(paths) >= SWIFT_DEFAULT_PAGE_LIMIT,
+        "listing_scope": "single_supplied_original_swift_listing_page",
+        "complete_original_catalogue_verified": False,
+        "additional_swift_pages_not_acquired_by_preflight": True,
+        "original_complete_catalogue_sha256": None,
         "selected_path": SELECTED_ASSET,
         "selected_path_occurrences": selected_count,
         "original_asset_sha256": None,
