@@ -1,0 +1,71 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# FEMA Building Codes Save / FEMA-0173: original-XLSX source preflight
+
+Research date: 2026-11-08. This is a **non-admission** research checkpoint, not an external-data asset or validation of any actual file bytes.
+
+## Source identity and limits (official publication)
+
+- [data.gov FEMA-0173](https://catalog.data.gov/dataset/aals-from-the-adoption-of-i-codes) identifies FEMA/Resilience/Risk Management Directorate as publisher, access level public, and one original Excel resource at `https://www.fema.gov/sites/default/files/documents/fema_building-codes-save-study-results.xlsx`. The data.gov **catalogue metadata** was modified in July 2024; that is *not* proof of the workbook data vintage, schema, or numeric contents. The catalogue references [government-works rights guidance](https://www.usa.gov/government-works), not an independently reviewed item-level licence.
+- [FEMA Building Codes Save: A Nationwide Study (November 2020)](https://www.fema.gov/sites/default/files/2020-11/fema_building-codes-save_study.pdf) evaluates **buildings constructed 2000-2016**, explicitly noting incomplete assessor records for 2017/2018; hazards modeled are **flood, hurricane wind, and earthquake/seismic**. Dollars in the 2020 study's national AALA totals use **2020 USD**, not claims-year dollars or insurer premium. It models damage to buildings/contents but excludes business interruption, life-safety benefits, and extra code compliance construction cost. Main inputs include Hazus and proprietary CoreLogic parcels; results are model-derived, not observed insurance claims.
+- [FEMA report appendices, Appendix A.2](https://www.fema.gov/sites/default/files/2020-11/fema_building-codes-save_study-appendices.pdf) describe an external sortable Excel results file and list tables A2-1 through A2-8. Examples include A2-6 (nationwide county AALA by building/contents and floor area) and A2-8 (positive, negative, neutral loss-avoidance categories by state). These are report *table captions*, **not verified worksheet names, column labels, row counts or evidence of workbook access**. Confirm actual workbook shape before applying any mappings.
+
+## Acquisition blocker and precise outstanding checks
+
+The original FEMA XLSX download URL is known from the catalogue, but binary retrieval in the 2026-11-08 research environment failed. **No original workbook bytes were inspected, no SHA-256 obtained, and no actual sheet names, values, or columns verified.** No FEMA XLSX or source-derived data are committed to Git.
+
+Before any operational use, in an explicitly rights-authorized external processing environment:
+1. Record exact retrieval URL, UTC timestamp, HTTP redirect chain, original file size, SHA-256, and applicable dataset/source rights; no raw external bytes or secrets in Git.
+2. Inspect actual XLSX sheet titles, table/field headers, geography IDs (county/state/FIPS), hazard and occupancy columns, missing/negative/neutral entries, cell formulas, hidden/external sheets, units and year/currency base. Keep original workbook/version strictly outside Git. Do not extrapolate from the Appendix A captions.
+3. Reconcile any compatible aggregate outputs with the reported FEMA national 2020 results; avoid summing overlapping physical building populations across perils. Record per-peril sampling frames and missing geography.
+4. Fix split rules and potential Hazus/CoreLogic input overlap **before** using any reported modeled loss difference as a calibration benchmark or holdout. The workbook's AALA is not a vulnerability curve, independently measured claim outcome, insurer-specific insured loss, or event loss table.
+5. Keep `rights_review_status=not_reviewed` and `admission_status=not_admitted` in the discovery registry until formal source-specific rights/science review approves an exact bounded model role.
+
+## Narrow synthetic regression improvement
+
+`research_runners/fema_bcs_aala_semantic_guard_v0.py` intentionally accepts *synthetic data only*, with paired risk baseline, annualized code scenario, perils, integer cents, and no event-loss/model claims. Its historical construction-cohort bounds now match **2000-2016** (inclusive), rejecting 2017/2018 whose source-building records were incomplete. This is a reproducible research constraint, not empirical validation. The guard cannot parse FEMA workbooks or claim AEP/OEP outputs.
+
+## Executable read-only original workbook receipt
+
+The implementation in `research_runners/fema_bcs_original_workbook_receipt_v0.py` is a bounded, standard-library-only OOXML/ZIP inspector. It records original byte size, full SHA-256, ZIP/relationship safety, sheet names, visibility, row-element counts, first-row **cell coordinates only**, and formula counts. It never emits original source cell values, computes AALA, loads external assets or claims scientific approval.
+
+Run in a rights-authorized external processing environment:
+
+```bash
+python research_runners/fema_bcs_original_workbook_receipt_v0.py --official-live
+python research_runners/fema_bcs_original_workbook_receipt_v0.py --original-xlsx /secure/external/input.xlsx
+```
+
+After an independently approved hash is known, append `--expected-sha256` with the full lowercase SHA-256. The workflow `.github/workflows/fema-bcs-original-workbook-receipt.yml` runs a read-only original-source canary on changes to its tightly scoped PR paths and also supports manual `workflow_dispatch`. The live source step is **nonblocking** because an external provider/network outage is not a scientific-contract regression. No raw XLSX file is uploaded as a GitHub artifact. The regular repository tests use synthetic fixtures and remain offline; the separate source canary explicitly needs network access.
+
+A successful structure receipt does **not** verify real column labels, FEMA study numeric totals, data rights, independent claims, model fitness, or permission for commercial insurance calibration. These require later scientifically and legally reviewed evidence. Direct original XLSX retrieval was unavailable in the model research environment on 2026-11-08; that does not establish global unavailability.
+
+### Exact-head live probe observation (2026-11-08)
+
+GitHub workflow `FEMA-0173 original XLSX structural source receipt`, run
+`42526472232`, executed 14 synthetic OOXML tests successfully, but its live
+`--official-live` step exited **2** with `BLOCKED: HTTP Error 403: Forbidden`.
+The overall workflow showed *success* only because this third-party source
+probe is explicitly nonblocking; it is **not** evidence that the official
+FEMA workbook was acquired, that its SHA-256 is known, or that any sheet
+metadata was validated. The subsequent workflow version emits an explicit
+`BLOCKED / NOT VERIFIED` gate in the run summary whenever the live probe
+fails, while preserving an independent green result for the synthetic tests.
+No alternative/unverified mirror is automatically followed.
+
+## Published-report sign convention: internally conflicting prose
+
+**Evidence checked 2026-11-08.** FEMA's November 2020 *Building Codes Save* main report has an inconsistent narrative statement: in the flood methodology discussion, page **4-17**, one sentence describes AALA in the reverse order (I-Code AAL less pre-I-Code AAL). **Do not use that isolated sentence as the authoritative sign rule.** The hurricane wind results discussion at page **5-23** and **Table 5-8** explicitly define/report AALA as **old/pre-I-Code AAL less new/I-Code AAL**. For example, Table 5-8's total row (in source units of **USD thousands**) lists modelled old-code AAL **2,503,785**, new-code AAL **1,646,961**, and AALA **+856,824**: 2,503,785 - 1,646,961 = 856,824. In the negative group, old-code AAL **115,084**, new-code AAL **141,140**, AALA **-26,056**. This is a check of sign conventions from a *published scientific report*, not ingestion of the unpublished exact FEMA-0173 Excel workbook.
+
+Evidence URLs: [official FEMA study](https://www.fema.gov/sites/default/files/2020-11/fema_building-codes-save_study.pdf); [public NAIC-hosted copy of original FEMA study](https://content.naic.org/sites/default/files/inline-files/fema_building-codes-save_study.pdf), pages 4-17 and 5-23.
+
+**Decision for synthetic tests:** `signed AALA = pre-I-Code AAL - I-Code AAL`. Positive indicates modelled savings; negative indicates a modelled increase in annual loss. Preserve negative values. Never scale such aggregate modeled differences into event-loss severities or reinterpret them as independent observed insurer claims. A hypothetical synthetic test explicitly checks positive, negative and zero cases but does **not** treat FEMA's published table data as admitted calibration/validation targets.
+
+## Official provider contact for inaccessible source XLSX
+
+[data.gov's FEMA-0173 catalogue](https://catalog.data.gov/dataset/aals-from-the-adoption-of-i-codes) lists **Open Data (MGMT), `edmo@hq.dhs.gov`** as the official contact. Data.gov's [contact page](https://data.gov/contact/) directs broken source-link requests to the publishing agency; the Data.gov catalogue itself does not serve source bytes. GitHub's `--official-live` original-file receipt returned HTTP **403**, recorded in [source canary workflow run 42526472232](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42526472232).
+
+A suitable narrowly scoped request to the data steward would ask for: (a) an authoritative public **accessible** download location for FEMA-0173's exact `fema_building-codes-save-study-results.xlsx`, (b) file release/version date and a published SHA-256 if available, (c) workbook-specific rights/attribution and underlying third-party restrictions, and (d) any archived data dictionary describing table keys, units and sign convention. **No email has been sent**. Until receipt of original bytes, all actual worksheet titles, headers, numeric cells and hashes remain **unverified**.

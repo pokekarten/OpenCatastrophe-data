@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0.0",
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-14",
+  "status": "documented_only",
+  "access_id": "eu.jrc.eurocropsv2.gsa-parcels.publisher-catalogue",
+  "source_ids": [
+    "eu.jrc.eurocropsv2.gsa-parcels"
+  ],
+  "provider": "European Commission Joint Research Centre / national agricultural paying agencies",
+  "interface_type": "http_file",
+  "documentation_url": "https://data.jrc.ec.europa.eu/dataset/b9fb9e67-78a9-4327-9d59-39a928d812d3",
+  "service_root": "https://jeodpp.jrc.ec.europa.eu",
+  "api_version": "EuroCropsV2 JRC distribution; edition and member-state/year GPQT must be pinned individually, no mutable directory admission",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_official_catalogue_metadata"
+    ],
+    "path_templates": [
+      "/ftp/public/JRC-OpenData/DRLL/EuroCropsV2/copyright.txt",
+      "/ftp/public/JRC-OpenData/DRLL/EuroCropsV2/readme.md"
+    ],
+    "parameter_rules": "Documentation only: no HTTP request from this contract. Never infer that one JRC listing URL or its 2026 CC BY notice identifies a frozen country/year parcel file. Before any runnable adapter, independently review the exact country-year/version GeoParquet path, use-case rights, automated-access terms, redirects and bytes. No user-selected path, arbitrary host, crawler, bulk GPQT, crop code list or GIS upload is authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/plain",
+      "text/markdown",
+      "text/html"
+    ],
+    "format": "Publisher copyright notice and explanatory catalogue/readme only; no parcel geometry or data product bytes.",
+    "scientific_semantics": "EuroCropsV2 harmonizes multi-year farmer-declared agricultural parcel and crop categories across participating European regions. The paper reports almost 47 million parcels, incomplete region-year coverage and a mix of member-state source vintages; a parcel declaration is neither an observed insured field nor TIV, crop yield, loss, vulnerability or independent validation against its contributing national agency. Native raster/projection use requires checked EPSG:3035 geometry, code dictionaries, source vintage and national lineage."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "No independent machine-use/automated retrieval terms established by this documentation contract. No scheduled or bulk requests. A reviewed future metadata-only request must establish rate limits and transport rights first.",
+    "mutability_notes": "The publisher listing exposes multiple gpqt, gpqtv2 and later patch directories with varying update dates; do not equate current catalogue discovery with an immutable full version or underlying source-country snapshot."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": "https://jeodpp.jrc.ec.europa.eu/ftp/public/JRC-OpenData/DRLL/EuroCropsV2/copyright.txt",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "The official JRC copyright.txt says that rights on the published dataset are licensed CC BY 4.0 subject to attribution and indication of changes. Dataset reuse permission does not by itself establish rights to automate this server or to redistribute particular reprocessed member-state parcel geometries unchanged; scope and upstream country/year provenance must be independently reviewed. No source byte, sample, input or insured exposure admission."
+  },
+  "evidence_urls": [
+    "https://jeodpp.jrc.ec.europa.eu/ftp/public/JRC-OpenData/DRLL/EuroCropsV2/copyright.txt",
+    "https://jeodpp.jrc.ec.europa.eu/ftp/public/JRC-OpenData/DRLL/EuroCropsV2/",
+    "https://data.jrc.ec.europa.eu/dataset/b9fb9e67-78a9-4327-9d59-39a928d812d3",
+    "https://doi.org/10.5194/essd-18-4075-2026"
+  ],
+  "notes": "Static documented-only source-access identity for the existing EuroCropsV2 candidate. Publisher catalogue and rights notice inspected externally 2026-11-14; no repository-native original provider GET, byte-level GeoParquet sample, scientific fitness or CAT admission proven. Separate product-specific review required before API execution."
+}

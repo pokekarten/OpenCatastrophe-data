@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "isimip.isimip3b.mit-tc-wind-rain-fields.20251001.documented",
+  "source_ids": [
+    "isimip.isimip3b.mit-tc-wind-rain-fields.20251001"
+  ],
+  "provider": "ISIMIP Repository / Potsdam Institute for Climate Impact Research",
+  "interface_type": "web_portal",
+  "status": "documented_only",
+  "documentation_url": "https://data.isimip.org/10.48364/ISIMIP.779038",
+  "service_root": "https://data.isimip.org",
+  "api_version": "ISIMIP3b fields v1.0 / family vintage 20251001",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "review_pinned_file_metadata"
+    ],
+    "path_templates": [
+      "/files/1d48a26c-8483-4973-a8ba-8a49624abc55/"
+    ],
+    "parameter_rules": "One published file identity only: h08-wind_mit_mpi-esm1-2-hr_ssp585_windlifetimemax_2025.nc, UUID 1d48a26c-8483-4973-a8ba-8a49624abc55, provider SHA-512 ff9fdc51bf160f88e51a62b4a0508423c9a9ef9d687430332c1ad6c8caf6f3dcffdb50d8891212bfe0a26a69133c7a5b88a5a7a23456e6cecf70c02d2c0289e2. This contract is NOT an executable GET permission; no NetCDF retrieval, DOI crawl, search API, metadata auto-fetch, wildcard request, redirect, or user-configurable URL is allowed. Further asset-specific source, API and upstream licence review is required."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html"
+    ],
+    "format": "ISIMIP publisher HTML describing the exact CC0-labelled NetCDF field and file identity, not a NetCDF byte response.",
+    "scientific_semantics": "Climate-model-conditioned, synthetic TC H08 windlifetimemax field. Confirm native grid, units, time/event/annual aggregation, masks, wind averaging, scenario and interannual dependence from original CF metadata before using physical intensities; no per-risk insured loss, ELT or independent observational truth."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 262144,
+    "max_sample_bytes": 262144,
+    "retry_policy": "none",
+    "rate_limit_notes": "Documentation-only; no live provider request, bulk download or automated enumeration is authorized by this contract.",
+    "mutability_notes": "Version 20251001 and publisher SHA-512 are only stated on the file metadata page; no independently acquired bytes, original response SHA-256, file-size exact integer, event metadata or model approval established."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": "https://www.isimip.org/gettingstarted/terms-of-use/licenses-publicly-available-isimip-data/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Provider file page marks the selected derived fields CC0, but the underlying MIT tracks are a legally separate noncommercial product without a commercial licence. Do not download or reconstruct restricted tracks on the strength of field CC0, or grant commercial use or redistribution without exact product lineage and terms review."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-15",
+  "evidence_urls": [
+    "https://data.isimip.org/10.48364/ISIMIP.779038",
+    "https://data.isimip.org/files/1d48a26c-8483-4973-a8ba-8a49624abc55/",
+    "https://data.isimip.org/access/ISIMIP3b/InputData/climate/tropical_cyclones/MIT/tracks/",
+    "https://www.isimip.org/gettingstarted/terms-of-use/licenses-publicly-available-isimip-data/"
+  ],
+  "notes": "Documented T0 identity for one exact derived field, preserving the legally distinct restricted upstream track family. The example field was not fetched, hashed, parsed or admitted; next gate is separately reviewed small metadata-only probe with bounded original response SHA-256 and scientific field-schema assessment."
+}

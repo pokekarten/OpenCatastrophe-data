@@ -207,6 +207,8 @@ def _one_wfs_bytes(*, opener) -> bytes:
             ):
                 raise PairBlocked("original WFS declared body exceeds source cap")
             raw=response.read(wfs.MAX_BYTES+1)
+            if length is not None and len(raw)!=int(length):
+                raise PairBlocked("original WFS body length differs from Content-Length")
     except (PairBlocked,wfs.CapabilityBlocked):
         raise
     except (error.HTTPError,error.URLError,TimeoutError,OSError) as exc:

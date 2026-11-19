@@ -49,6 +49,54 @@ class TsunamiPreflightTests(unittest.TestCase):
         self.assertEqual(result["checks"]["nonmonotonic_exceedance_rates"],1)
         self.assertEqual(result["checks"]["point_outside_95pct_bounds"],1)
 
+    def append_second_site(self, *, longitude="-170.0", rate_25=None):
+        """Append a fully synthetic second FID; original-provider bytes are never used."""
+        lines = self.path.read_text(encoding="utf-8").splitlines()
+        header = lines[0].split(";")
+        fields = dict(zip(header, lines[1].split(";")))
+        fields["FID"] = "1"
+        fields["POINT_X"] = longitude
+        if rate_25 is not None:
+            fields["rate_25"] = str(rate_25)
+        lines.append(";".join(fields[col] for col in header))
+        self.path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return hashlib.md5(self.path.read_bytes()).hexdigest()
+
+    def test_duplicate_site_across_longitude_conventions_is_an_anomaly(self):
+        self.run_sample()  # Original synthetic x=190E, y=30N.
+        checksum = self.append_second_site(longitude="-170.0")
+        result = audit(self.path, expected_md5=checksum)
+        self.assertEqual(result["status"], "quality_anomalies")
+        self.assertEqual(result["admission"], "none")
+        self.assertEqual(result["checks"]["rows"], 2)
+        self.assertEqual(result["checks"]["duplicate_spatial_sites"], 1)
+        self.assertEqual(result["checks"]["duplicate_spatial_sites_conflicting_curves"], 0)
+        self.assertNotIn("-170.0", str(result))  # Aggregate-only reporting.
+
+    def test_conflicting_duplicate_hazard_curves_are_counted_separately(self):
+        self.run_sample()
+        checksum = self.append_second_site(rate_25=0.061)
+        result = audit(self.path, expected_md5=checksum)
+        self.assertEqual(result["status"], "quality_anomalies")
+        self.assertEqual(result["checks"]["duplicate_spatial_sites"], 1)
+        self.assertEqual(result["checks"]["duplicate_spatial_sites_conflicting_curves"], 1)
+        self.assertEqual(result["admission"], "none")
+
+    def test_distinct_sites_do_not_produce_false_duplicate_flags(self):
+        self.run_sample()
+        checksum = self.append_second_site(longitude="-171.0")
+        result = audit(self.path, expected_md5=checksum)
+        self.assertEqual(result["status"], "parsed_with_no_flagged_anomalies")
+        self.assertEqual(result["checks"]["duplicate_spatial_sites"], 0)
+        self.assertEqual(result["checks"]["duplicate_spatial_sites_conflicting_curves"], 0)
+
+    def test_antimeridian_180_and_minus_180_are_the_same_site(self):
+        self.run_sample({"POINT_X": "180.0"})
+        checksum = self.append_second_site(longitude="-180.0")
+        result = audit(self.path, expected_md5=checksum)
+        self.assertEqual(result["checks"]["duplicate_spatial_sites"], 1)
+        self.assertEqual(result["admission"], "none")
+
     def test_fail_closed_missing_and_nonfinite(self):
         md5=self.run_sample({"ari100":"nan"})
         with self.assertRaisesRegex(InvalidOriginal,"non_finite_original_field"):

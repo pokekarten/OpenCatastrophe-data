@@ -91,13 +91,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Api terms status:** unknown
 
-**Terms url:** `null`
+**Terms url:** <https://www.ncei.noaa.gov/products/international-best-track-archive>
 
 **Commercial automation status:** unknown
 
 **Redistribution status:** unknown
 
-**Notes:** NCEI provides public anonymous electronic distribution and dataset citation/use-liability information, but the reviewed evidence does not establish one uniform downstream redistribution or commercial-automation grant for the globally merged multi-agency best-track record. Public availability is therefore not promoted into a rights decision. Exact dataset reuse/publication scope and any service-use terms require dedicated review before provider execution, repository sample persistence or redistribution.
+**Notes:** Official NCEI IBTrACS v04r01 Terms of Use (rechecked 2026-11-14) confirms World Data Center for Meteorology-style full/open research access and agreements from Regional Specialized Meteorological Centres for research distribution. For commercial use, NCEI explicitly points to WMO Resolution 40; that policy distinguishes essential from additional data and permits conditions on commercial re-export of additional products. This does not establish an unconditional insurer commercial CAT-modelling permission, automated bulk retrieval entitlement, raw/derived redistribution permission or terms for each agency component. The exact dataset commercial and redistribution rights and separate file-service terms remain unreviewed. Do not automate or promote to model admission without affirmative source-specific clearance.
 
 ## Probe contract
 
@@ -113,12 +113,13 @@ _Empty array._
 
 **Implementation decision:** document_only
 
-**Reviewed at:** 2026-08-12
+**Reviewed at:** 2026-11-14
 
 ## Evidence urls
 
 - <https://www.ncei.noaa.gov/products/international-best-track-archive>
 - <https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/netcdf/>
 - <https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ncdc:C01552>
+- <https://community.wmo.int/site/knowledge-hub/programmes-and-initiatives/operational-information-service-ois/resolution-40>
 
 **Notes:** Static documentation contract only. This source is NOAA/NCEI observed best-track IBTrACS v04r01 and is explicitly distinct from the repository's synthetic STORM present-climate dataset. No provider file was fetched or persisted by this change. Any future acquisition or admission must independently review exact rights, freeze one versioned object and preserve multi-agency provenance and variable semantics.

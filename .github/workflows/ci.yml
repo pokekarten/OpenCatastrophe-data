@@ -19,7 +19,6 @@ concurrency:
 jobs:
   check:
     name: Python ${{ matrix.python-version }}
-    needs: [eu-flood-spatial]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
@@ -62,7 +61,44 @@ jobs:
       - name: Verify acquisition dependency consistency
         run: python -m pip check
       - name: Exercise real NetCDF4 reader with synthetic bytes
-        run: python -m unittest tests.test_glofas_v4_uparea_reader -v
+        run: >-
+          python -m unittest
+          tests.test_glofas_v4_uparea_reader
+          tests.test_ciara2020_nrw_era5_normalized_netcdf_v0
+          tests.test_ciara2020_cds_original_source_one_shot_v0
+          -v
+
+  ciara2020-dwd-original-station-metadata:
+    # Three original SHA-pinned DWD FX911 ZIPs. Inspect metadata ONLY;
+    # no station temporal/geography harmonization or insurer model GO.
+    if: github.event_name == 'pull_request' && github.head_ref == 'research/ciara2020-dwd-2020-station-metadata-inventory-20261114'
+    name: Ciara 2020 DWD original historical station instrument/geography metadata
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Exact PR checkout with no stored auth
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup pinned Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Adversarial source metadata archive tests without external data
+        run: |
+          python -m unittest tests.test_ciara2020_dwd_original_2020_station_metadata_inventory_v0 -v
+          python research_runners/ciara2020_dwd_original_2020_station_metadata_inventory_v0.py --dry-run
+      - name: Independently challenge actual 2020 historical station rows and UTC definition
+        run: |
+          python -m unittest tests.test_ciara2020_dwd_historical_feb2020_station_attestation_v0 -v
+          python research_runners/ciara2020_dwd_historical_feb2020_station_attestation_v0.py --dry-run
+      - name: Read exact 3 original publisher ZIP SHA and 2020 source metadata previews
+        run: python research_runners/ciara2020_dwd_original_2020_station_metadata_inventory_v0.py --live-original-metadata
+      - name: Attest three 2020 historical DWD original site/device/FX UTC metadata against nine publisher SHAs
+        run: python research_runners/ciara2020_dwd_historical_feb2020_station_attestation_v0.py --live-feb2020-attestation
 
   eu-flood-spatial:
     name: EU flood spatial A1
@@ -92,6 +128,10 @@ jobs:
           -v
       - name: Exercise bounded synthetic building geometry matching
         run: python -m unittest tests.test_building_footprint_overlap_v0 -v
+      - name: Verify EA defended 3.3% synthetic CRS and polygon-area partition
+        run: |
+          python -c 'from shapely.geometry import box; from pyproj import Transformer'
+          python -m unittest tests.test_ea_flood_synthetic_crs_overlay_v0 -v
       - name: Verify official Luxembourg GPKG schema and bounded window with synthetic bytes
         run: python -m unittest tests.test_luxembourg_gpkg_schema_window_v0 -v
       - name: Challenge original Luxembourg EPSG2169 coordinate axis hypotheses with synthetic extents
@@ -197,13 +237,14 @@ jobs:
   required:
     name: Required
     if: always()
-    needs: [check, glofas-acquisition, luxembourg-lidar-inset-spatial, cems-geotiff-profile, reuse, dependency-review]
+    needs: [check, eu-flood-spatial, glofas-acquisition, luxembourg-lidar-inset-spatial, cems-geotiff-profile, reuse, dependency-review]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Verify required jobs
         env:
           CHECK_RESULT: ${{ needs.check.result }}
+          EU_FLOOD_SPATIAL_RESULT: ${{ needs.eu-flood-spatial.result }}
           GLOFAS_ACQUISITION_RESULT: ${{ needs.glofas-acquisition.result }}
           CEMS_GEOTIFF_PROFILE_RESULT: ${{ needs.cems-geotiff-profile.result }}
           LUX_LIDAR_INSET_RESULT: ${{ needs.luxembourg-lidar-inset-spatial.result }}
@@ -211,6 +252,7 @@ jobs:
           DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
         run: |
           test "$CHECK_RESULT" = "success"
+          test "$EU_FLOOD_SPATIAL_RESULT" = "success"
           test "$GLOFAS_ACQUISITION_RESULT" = "success"
           test "$CEMS_GEOTIFF_PROFILE_RESULT" = "success"
           test "$LUX_LIDAR_INSET_RESULT" = "success"

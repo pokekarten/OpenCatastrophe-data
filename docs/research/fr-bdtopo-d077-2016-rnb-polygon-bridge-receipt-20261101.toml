@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Research receipt only. No original IGN/RNB geometry or insurance data here.
+
+schema_version = "1.0.0"
+receipt_kind = "FR_BDTOPO_D077_2016_RNB_2026_POLYGON_BRIDGE_V0"
+analysis_date = "2026-11-01"
+full_source_ci_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41354770553"
+refined_source_ci_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41354979208"
+pr_url = "https://github.com/pokekarten/OpenCatastrophe-data/pull/937"
+historical_archive_release_date = "2016-03-24"
+historical_archive_department = "D077"
+historical_archive_mirror_sha256 = "ab3e1bab127d0e71e372d736572d80e6a8a9578131992475c23a1f0ee1871a06"
+historical_mirror_byte_count = 110738399
+original_provider_checksum_independently_verified = false
+historical_source_epsg = 2154
+current_rnb_api_source_epsg = 4326
+comparison_epsg = 2154
+historic_intersecting_pilot_box_candidates = 3
+current_rnb_polygon_count = 2
+exact_pairwise_polygons_evaluated = 6
+archived_2016_building_family = "BATI_INDIFFERENCIE"
+historic_source_ordinal_is_not_provider_building_id = true
+
+rnb_ids = ["5TR6PNH2YQPT", "TCHNNF59Y27V"]
+rnb_source_api_prefix = "https://rnb-api.beta.gouv.fr/api/alpha/buildings/"
+rnb_current_http_response_sha256 = ["6b5b91ae23fa05c481e2438425d18d046eff099475dd166ec0e1b86bd28afe89", "2a786b13bdde7b807ce0f069c45c68dd6f5a4058d8225d0f2e782a9c9a700cf5"]
+rnb_current_polygon_area_m2 = [59.6, 116.52]
+
+historic_selected_source_ordinals_zero_based = [0, 1, 2]
+historic_selected_footprint_area_m2 = [1480.23, 116.52, 59.61]
+historic_source_ordinal_index_1_rnb2_iou_high_precision = 0.9999999999
+historic_source_ordinal_index_2_rnb1_iou_high_precision = 0.9999999998
+historic_rnb_good_pairs_topologically_equal_exact = [false, false]
+historic_rnb_good_pairs_symmetric_difference_area_m2_rounded6 = [0.0, 0.0]
+historic_rnb_good_pairs_hausdorff_distance_m_rounded6 = [0.0, 0.0]
+other_four_pairwise_polygon_intersection_m2 = [0.0, 0.0, 0.0, 0.0]
+other_four_pairwise_iou = [0.0, 0.0, 0.0, 0.0]
+
+interpretation = "Two archived 2016 mapped footprints are almost identical to two current RNB shapes, but nonindependent BD TOPO lineage and unknown 2016 product rights block identity and CAT admissions. The larger third historic polygon is a separate pilot bbox candidate. IoU rounded to ten decimal places; equals() returns false despite zero area/distance rounded to 6 decimals."
+modern_historic_independent_surveys_proven = false
+stable_real_world_building_identity_verified = false
+original_product_2016_rights_review_complete = false
+historical_building_status_on_2016_event_date_independently_proven = false
+historical_flood_depth_inundation_verified = false
+insurer_tiv_contracts_or_claims_present = false
+geometry_changed_in_neon = false
+model_input_admitted = false
+source_shapefile_or_current_api_polygon_payloads_committed = false

@@ -12,6 +12,10 @@ on:
       - "research_runners/gdw_v1_original_spatial_quality_v0.py"
       - "research_runners/gdw_v1_original_spatial_source_receipt_v0.py"
       - "tests/test_gdw_v1_original_spatial_quality_v0.py"
+      - "research_runners/gdw_v1_research_point_overlay_v0.py"
+      - "tests/test_gdw_v1_research_point_overlay_v0.py"
+      - "research_runners/gdw_v1_independent_ring_geodesic_v0.py"
+      - "tests/test_gdw_v1_independent_ring_geodesic_v0.py"
   push:
     branches: [main]
     paths:
@@ -41,11 +45,18 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install pinned spatial source readers
-        run: python -m pip install --disable-pip-version-check --no-cache-dir --no-input "pyshp==2.3.1" "shapely==2.1.2"
+      - name: Install pinned spatial source and geodesic readers
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir --no-input --only-binary=:all: \
+            "pyshp==2.3.1" "shapely==2.1.2" "pyproj==3.7.2" "geographiclib==2.1"
+          python -m pip check
 
       - name: Synthetic geometry/ID and publisher evidence regressions
-        run: python -m unittest tests.test_gdw_v1_shapefile_archive_preflight_v0 tests.test_gdw_v1_original_spatial_quality_v0 -v
+        run: |
+          python -m unittest tests.test_gdw_v1_shapefile_archive_preflight_v0 tests.test_gdw_v1_original_spatial_quality_v0 -v
+          python -m unittest tests.test_gdw_v1_invalid_polygons_area_sensitivity_v0 -v
+          python -m unittest tests.test_gdw_v1_independent_ring_geodesic_v0 -v
+          python -m unittest tests.test_gdw_v1_research_point_overlay_v0 -v
 
       - name: Check one original Figshare GDW v1 ZIP and aggregate GEOS spatial quality
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -55,7 +66,9 @@ jobs:
           umask 077
           original="$RUNNER_TEMP/GDW_v1_0_shp.zip"
           aggregate="$RUNNER_TEMP/gdw-v1-spatial-aggregate.json"
-          trap 'rm -f "$original" "$aggregate"' EXIT
+          sensitivity="$RUNNER_TEMP/gdw-v1-invalid-area-aggregate.json"
+          independent="$RUNNER_TEMP/gdw-v1-independent-ring-geodesic.json"
+          trap 'rm -f "$original" "$aggregate" "$sensitivity" "$independent"' EXIT
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 240 --retry 0 \
@@ -100,7 +113,179 @@ jobs:
           assert not a["source_coordinates_ids_attributes_exported"]
           assert not a["polygon_repairs_or_snapping_performed"]
           assert sum(a["invalid_geometry_reason_family_counts"].values()) == 221
+          # First *original archive* replay of the strict native spatial
+          # predicate merged in PR #1746. Do not assume all GEOS-valid
+          # reservoirs survive the separate dateline/strict-point gate.
+          candidates = a["native_reservoir_geometry_overlay_candidate_count"]
+          excluded = a["native_reservoir_geometry_overlay_excluded_count"]
+          assert type(candidates) is int and type(excluded) is int, (
+              "BLOCKED: noninteger native overlay disposition"
+          )
+          assert 0 <= candidates <= e["valid_reservoir_polygons"], (
+              "BLOCKED: overlay candidate count exceeds GEOS-valid source"
+          )
+          assert (excluded >= e["invalid_reservoir_polygons"]
+                  + e["unparseable_reservoir_polygons"]
+                  + e["valid_polygon_matched_point_boundary"]
+                  + e["valid_polygon_matched_point_outside"]), (
+              "BLOCKED: source-invalid or unpaired reservoir not excluded"
+          )
+          assert candidates + excluded == e["reservoir_polygons"], (
+              "BLOCKED: original reservoir overlay dispositions do not reconcile"
+          )
+          assert a["native_reservoir_geometry_overlay_mask_is_scoped_to_verified_original_archive"] is True
+          assert a["native_reservoir_geometry_overlay_decision_is_geometry_only"] is True
+          assert a["native_reservoir_geometry_overlay_is_model_admitted"] is False
+          assert a["source_reservoir_ordinal_ids_or_coordinates_emitted"] is False
+          assert a["original_archive_sha256"] == e["original_file_sha256"]
+          # Only a non-identifying aggregate is released in the workflow log.
+          # No ID, footprint, original feature or model-use approval.
+          print("GDW original native geometry overlay screen, "
+                "research only / not model admitted:",
+                json.dumps({
+                    "original_archive_sha256": a["original_archive_sha256"],
+                    "original_reservoir_count": a["reservoir_polygons"],
+                    "native_geometry_candidates": candidates,
+                    "excluded_original_reservoir_geometries": excluded,
+                    "geos_invalid_reservoirs": a["invalid_reservoir_polygons"],
+                    "independent_scientific_model_admission": False,
+                }, sort_keys=True))
           print("GDW original independent GEOS family diagnostic, source-only, "
                 "no model admission:", json.dumps(a, sort_keys=True))
           PY
-          echo "GDW source spatial diagnostic complete; no model admission or source bytes exported."
+          # One already-reviewed exact original ZIP is reused IN THE SAME
+          # trusted-main step. A second provider fetch or public artifact is
+          # prohibited. This adds independent numeric what-if diagnostics,
+          # NOT a repair or an insured-exposure/model-input promotion.
+          python research_runners/gdw_v1_invalid_polygons_area_sensitivity_v0.py \
+            --original-zip "$original" > "$sensitivity"
+          python - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+          from research_runners.gdw_v1_original_spatial_source_receipt_v0 import (
+              GDW_V1_ORIGINAL_SPATIAL_RECEIPT_V0 as e,
+          )
+          r = json.loads((Path(os.environ["RUNNER_TEMP"]) /
+                          "gdw-v1-invalid-area-aggregate.json").read_text())
+          assert r["source_id"] == "globaldamwatch.gdw.v1.0"
+          assert r["source_original_full_zip_sha256"] == e["original_file_sha256"]
+          assert r["original_archive_bytes"] == 69745749
+          assert r["original_invalid_polygon_count"] == e["invalid_reservoir_polygons"] == 221
+          assert r["original_valid_polygon_count"] == e["valid_reservoir_polygons"] == 35074
+          comparable = r["geodesic_comparable_invalid_polygons"]
+          excluded = r["excluded_antimeridian_or_polar_cases"]
+          assert (type(comparable) is int and type(excluded) is int
+                  and 0 <= comparable <= 221 and 0 <= excluded <= 221
+                  and comparable + excluded == 221)
+          assert r["complete_geodesic_population_evaluated"] is (excluded == 0)
+          assert r["counterfactual_methods"] == [
+              "GEOS make_valid(linework)", "GEOS buffer(0)"]
+          for k in ("linework_area_km2_sum", "buffer_zero_area_km2_sum",
+                    "absolute_per_feature_area_delta_km2_sum",
+                    "footprint_symmetric_difference_km2_sum",
+                    "intersection_area_km2_sum", "union_area_km2_sum"):
+              value = r[k]
+              assert type(value) in (int, float) and math.isfinite(value) and value >= 0, (
+                  "BLOCKED: nonfinite or negative GDW counterfactual area")
+          jaccard = r["area_weighted_jaccard_of_alternatives"]
+          assert jaccard is None or (
+              type(jaccard) in (int, float) and math.isfinite(jaccard)
+              and 0 <= jaccard <= 1 + 1e-8)
+          assert r["source_geometries_or_ids_exported"] is False
+          assert r["source_geometry_overwritten_or_repaired"] is False
+          assert r["independent_gis_engine_checked"] is False
+          assert r["CAT_model_input_approved"] is False
+          assert r["method_difference_is_not_a_ground_truth_error"] is True
+          # Output only curated aggregate evidence; never original source
+          # GDW_ID, coordinate, polygons, untrusted error/GEOS explanation.
+          public_keys = (
+              "source_id", "original_invalid_polygon_count",
+              "geodesic_comparable_invalid_polygons",
+              "excluded_antimeridian_or_polar_cases",
+              "linework_area_km2_sum", "buffer_zero_area_km2_sum",
+              "absolute_per_feature_area_delta_km2_sum",
+              "footprint_symmetric_difference_km2_sum",
+              "material_footprint_disagreement_over_1pct_count",
+              "equal_area_but_material_footprint_disagreement_count",
+              "paired_barrier_coverage_disagreement",
+              "area_weighted_jaccard_of_alternatives",
+          )
+          print("GDW original invalid polygon two-method counterfactual, "
+                "research-only not model-admitted:",
+                json.dumps({k: r[k] for k in public_keys},
+                           sort_keys=True, allow_nan=False))
+          PY
+          # Independent numeric WGS84 implementation and exact native SHP
+          # ring-vertex witness. Reuse the SAME pinned, previously verified
+          # original ZIP; no second provider request, upload or raw record log.
+          # Exact raw duplicate-vertex count is NOT a full topology verdict.
+          python research_runners/gdw_v1_independent_ring_geodesic_v0.py \
+            --original-zip "$original" > "$independent"
+          python - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+          from research_runners.gdw_v1_original_spatial_source_receipt_v0 import (
+              GDW_V1_ORIGINAL_SPATIAL_RECEIPT_V0 as e,
+          )
+          r = json.loads((Path(os.environ["RUNNER_TEMP"]) /
+                          "gdw-v1-independent-ring-geodesic.json").read_text())
+          assert r["source_id"] == "globaldamwatch.gdw.v1.0"
+          assert r["original_sha256"] == e["original_file_sha256"]
+          assert r["original_reservoir_count"] == e["reservoir_polygons"] == 35295
+          assert r["original_geos_invalid_count"] == e["invalid_reservoir_polygons"] == 221
+          count = r["exact_raw_ring_repeated_vertex_witness_count"]
+          compared = r["numerically_crosschecked_counterfactuals"]
+          domain = r["independent_geodesic_domain_excluded"]
+          budget = r["independent_geodesic_vertex_budget_excluded"]
+          for value in (count, compared, domain, budget):
+              assert type(value) is int and 0 <= value <= 221, (
+                  "BLOCKED: invalid independent aggregate count")
+          assert compared + domain + budget == 221
+          single = r["per_feature_vertex_excluded"]
+          total = r["total_vertex_budget_excluded"]
+          assert (type(single) is int and type(total) is int and
+                  0 <= single <= 221 and 0 <= total <= 221 and
+                  single + total == budget), (
+                  "BLOCKED: bounded independent exclusion categories do not reconcile")
+          assert r["max_source_vertices_per_feature_cap"] == 180000
+          assert r["total_geodesic_source_vertices_cap"] == 3000000
+          assert r["independent_geodesic_source_vertex_budget_used"] <= 3000000
+          original_vertex_total = r["invalid_original_source_vertices_total"]
+          largest_original = r["largest_invalid_original_source_vertices"]
+          assert (type(original_vertex_total) is int and
+                  type(largest_original) is int and
+                  original_vertex_total >= largest_original >= 0)
+          discrepancy = r["max_wgs84_area_mismatch_km2"]
+          assert type(discrepancy) in (int, float)
+          assert math.isfinite(discrepancy) and discrepancy >= 0
+          assert r["raw_ring_witness_is_complete_topology_check"] is False
+          assert r["independent_topology_engine_verified"] is False
+          assert r["same_geos_counterfactual_geometry_used"] is True
+          assert r["source_geometries_ids_coordinates_or_bytes_exported"] is False
+          assert r["source_geometry_repaired_or_overwritten"] is False
+          assert r["CAT_model_input_admitted"] is False
+          print("GDW independent raw-ring and WGS84 numerical diagnostic; "
+                "GEOS topology still not independently validated:",
+                json.dumps({
+                    "original_sha256": r["original_sha256"],
+                    "geos_invalid_original_polygons": 221,
+                    "exact_native_repeated_vertex_witnesses": count,
+                    "independent_numeric_geodesic_comparisons": compared,
+                    "numeric_geodesic_domain_exclusions": domain,
+                    "numeric_geodesic_vertex_budget_exclusions": budget,
+                    "per_feature_vertex_exclusions": single,
+                    "total_vertex_budget_exclusions": total,
+                    "all_original_invalid_source_vertices": original_vertex_total,
+                    "max_original_invalid_polygon_vertices": largest_original,
+                    "numeric_geodesic_source_vertices_checked":
+                        r["independent_geodesic_source_vertex_budget_used"],
+                    "max_geodesic_area_mismatch_km2": discrepancy,
+                    "independent_topology_engine_verified": False,
+                    "CAT_model_input_admitted": False,
+                }, sort_keys=True, allow_nan=False))
+          PY
+          echo "GDW source spatial, sensitivity and independent diagnostics complete; original ZIP removed at exit."
