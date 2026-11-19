@@ -12,6 +12,7 @@ download rights or scientific hazard-model admission from source-code text.
 """
 from __future__ import annotations
 
+from html.parser import HTMLParser
 import re
 
 SOURCE = "ec-jrc.global-surface-water.1984-2024"
@@ -25,9 +26,6 @@ CLOUDFERRO_ACTIVE = (
 PUBLISHED_ORDER = (GCS_2021_OLD, GCS_2024_OVERWRITTEN, CLOUDFERRO_ACTIVE)
 ONE_TILE_SUFFIX = "occurrence/occurrence_10E_50N_v1_5_2024.tif"
 MAX_HTML_BYTES = 262144
-_SCRIPT_BLOCK = re.compile(
-    r"<script\b[^>]*>(.*?)</script\s*>", flags=re.IGNORECASE | re.DOTALL
-)
 _FUNCTION = re.compile(r"\bfunction\s+set_paths\s*\(")
 _BASE_ASSIGNMENT = re.compile(
     r"\bvar\s+BASE_URL\s*=\s*(['\"])(https://[^'\"\s<>]+)\1\s*;"
@@ -37,6 +35,45 @@ _ALL_BASE_WRITES = re.compile(r"\bBASE_URL\s*=")
 
 class JSRouteBlocked(ValueError):
     """The JRC page's first-party original route selector has changed."""
+
+
+class _ScriptCollector(HTMLParser):
+    """Read inline script elements using HTML tokens, not a tag regexp.
+
+    Noncanonical/ambiguous closing tags must not produce an accepted
+    first-party script. No JavaScript is executed or source HTML echoed.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=False)
+        self.blocks: list[tuple[str, bool]] = []
+        self._parts: list[str] | None = None
+        self._has_src = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "script":
+            if self._parts is not None:
+                raise JSRouteBlocked("ambiguous nested script element")
+            self._parts = []
+            self._has_src = any(name == "src" for name, _ in attrs)
+
+    def handle_data(self, data: str) -> None:
+        if self._parts is not None:
+            self._parts.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "script":
+            if self._parts is None:
+                raise JSRouteBlocked("unmatched publisher script closing tag")
+            self.blocks.append(("".join(self._parts), self._has_src))
+            self._parts = None
+
+    def extract(self, page: str) -> list[tuple[str, bool]]:
+        self.feed(page)
+        self.close()
+        if self._parts is not None:
+            raise JSRouteBlocked("unclosed publisher script element")
+        return self.blocks
 
 
 def inspect_inline_tile_routes(raw: bytes) -> dict[str, object]:
@@ -49,11 +86,9 @@ def inspect_inline_tile_routes(raw: bytes) -> dict[str, object]:
     if "\x00" in page:
         raise JSRouteBlocked("binary content in publisher HTML")
     blocks = []
-    for item in _SCRIPT_BLOCK.finditer(page):
-        code = item.group(1)
+    for code, has_external_src in _ScriptCollector().extract(page):
         if _FUNCTION.search(code):
-            opening_tag = item.group(0).split(">", 1)[0]
-            if re.search(r"\bsrc\s*=", opening_tag, flags=re.IGNORECASE):
+            if has_external_src:
                 raise JSRouteBlocked("external script src cannot prove inline publisher routing")
             blocks.append(code)
     if len(blocks) != 1:
