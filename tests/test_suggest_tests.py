@@ -42,6 +42,39 @@ class SuggestTestsTests(unittest.TestCase):
         found = suggest_tests.suggest(["scripts/check_repository_hygiene.py"], root=self.root)
         self.assertEqual(found["suggested_tests"], ["tests/test_loader.py"])
 
+    def test_direct_root_join_for_importlib_loader(self) -> None:
+        (self.root / "tests/test_manifest_contract.py").write_text(
+            'SPEC = importlib.util.spec_from_file_location(\n'
+            '    "validator", ROOT / "scripts/validate_manifest.py")\n',
+            encoding="utf-8",
+        )
+        report = suggest_tests.suggest(["scripts/validate_manifest.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], ["tests/test_manifest_contract.py"])
+
+    def test_direct_root_join_for_research_runner(self) -> None:
+        (self.root / "tests/test_runner.py").write_text(
+            'SCRIPT = ROOT / "research_runners/probe.py"\n', encoding="utf-8"
+        )
+        report = suggest_tests.suggest(["research_runners/probe.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], ["tests/test_runner.py"])
+
+    def test_arbitrary_parent_is_not_a_root_join(self) -> None:
+        (self.root / "tests/test_random.py").write_text(
+            'SCRIPT = OTHER / "scripts/validate_manifest.py"\n',
+            encoding="utf-8",
+        )
+        report = suggest_tests.suggest(["scripts/validate_manifest.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], [])
+
+    def test_direct_root_join_requires_exact_area_and_filename(self) -> None:
+        (self.root / "tests/test_other.py").write_text(
+            'SCRIPT = ROOT / "research_runners/validate_manifest.py"\n'
+            'ANOTHER = ROOT / "scripts/validate_manifest_v2.py"\n',
+            encoding="utf-8",
+        )
+        report = suggest_tests.suggest(["scripts/validate_manifest.py"], root=self.root)
+        self.assertEqual(report["suggested_tests"], [])
+
     def test_string_mentions_of_script_in_fixture_do_not_count_as_coverage(self) -> None:
         (self.root / "tests/test_reader.py").write_text(
             'assert "scripts/alpha.py" == "scripts/alpha.py"\n', encoding="utf-8"
