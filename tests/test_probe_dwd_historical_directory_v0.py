@@ -9,6 +9,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
+import yaml
+
 from scripts.acquire_dwd_extreme_wind_receipt import FILENAME as FROZEN_ARCHIVE
 from scripts.probe_dwd_historical_directory_v0 import (
     DirectoryBlocked, SOURCE, URL, inspect_index, reviewed_contract, run_probe,
@@ -80,6 +82,22 @@ class DwdDirectoryTests(unittest.TestCase):
         if mutate:
             mutate(value)
         (self.root / "access" / (SOURCE + ".json")).write_text(json.dumps(value))
+
+    def test_original_provider_workflow_requires_manual_trusted_main(self):
+        workflow = (Path(__file__).resolve().parents[1] / ".github"
+                    / "workflows" / "dwd-historical-directory-probe.yml")
+        parsed = yaml.load(workflow.read_text(encoding="utf-8"),
+                           Loader=yaml.BaseLoader)
+        self.assertIn("pull_request", parsed["on"])
+        self.assertIn("workflow_dispatch", parsed["on"])
+        jobs = parsed["jobs"]
+        self.assertNotIn("if", jobs["synthetic-security-tests"])
+        self.assertEqual(jobs["bounded-provider-index"]["if"],
+                         "github.event_name == 'workflow_dispatch' "
+                         "&& github.ref == 'refs/heads/main'")
+        self.assertEqual(jobs["bounded-provider-index"]["needs"],
+                         "synthetic-security-tests")
+        self.assertEqual(parsed["permissions"], {"contents": "read"})
 
     def test_valid_index_retains_exact_archive_identity_and_date_span(self):
         result = inspect_index(html(FROZEN_ARCHIVE, SECOND, THIRD))
