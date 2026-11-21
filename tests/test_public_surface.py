@@ -147,20 +147,78 @@ class PublicSurfaceTests(unittest.TestCase):
         upload_artifact = "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"
         self.assertNotIn(gateway_call, allowed)
         self.assertNotIn(upload_artifact, allowed)
+        # A narrowly reviewed, path-specific exception for source-gated R+V
+        # research artifacts. Never add upload-artifact to the global action
+        # allowlist: each authorized workflow and output must stay immutable.
+        research_upload_paths = {
+            ".github/workflows/eiopa-2023-exposure-zip-index-one-shot.yml": (
+                "${{ runner.temp }}/eiopa-2023-exposure-original-OOXML-members-NOT-CLAIMS.json",
+            ),
+            ".github/workflows/eiopa-2023-original-xlsx-provenance-one-shot.yml": (
+                "${{ runner.temp }}/eiopa-official-two-original-workbooks-metadata-NOT-CLAIMS.json",
+            ),
+            ".github/workflows/rva-2025-oed-staging.yml": (
+                "${{ runner.temp }}/rva-oed-research-matrix/",
+                "${{ runner.temp }}/rva-nrw-53-oed-conditional-pilot/",
+            ),
+            ".github/workflows/rva-nrw-hu-2022-source-index.yml": (
+                "${{ runner.temp }}/rva-nrw-hu2022-3-geocoded-test/",
+            ),
+            ".github/workflows/rva-nrw-hu22-daria-fresh-independent-replay.yml": (
+                "${{ runner.temp }}/fresh-independent-replay-method-parity-NOT-RV-LOSS.json",
+                "${{ runner.temp }}/fresh-daria-original-csv-rights-sha.json",
+            ),
+            ".github/workflows/rva-nrw-xws-daria-source.yml": (
+                "${{ runner.temp }}/xws-daria-source-only-NOT-10k-NOT-CAT.json",
+                "${{ runner.temp }}/xws-daria-1990-original-metadata-receipt.json",
+            ),
+        }
         allowed_uploads = []
         for workflow_path, item in uses:
             with self.subTest(workflow=workflow_path, uses=item):
                 self.assertRegex(item, r"^[^@\s]+@[0-9a-f]{40}$")
                 if workflow_path == gateway:
                     self.assertEqual(item, gateway_call)
-                elif workflow_path in (one_shot, manual_cds) and item == upload_artifact:
+                elif (workflow_path in (one_shot, manual_cds, *research_upload_paths)
+                      and item == upload_artifact):
                     allowed_uploads.append((workflow_path, item))
                 else:
                     self.assertIn(item, allowed)
-        self.assertCountEqual(allowed_uploads, [
-            (one_shot, upload_artifact),
-            (manual_cds, upload_artifact),
-        ])
+        expected_uploads = [(one_shot, upload_artifact),
+                            (manual_cds, upload_artifact)]
+        expected_uploads += [
+            (workflow_path, upload_artifact)
+            for workflow_path in research_upload_paths
+            for _ in range(2 if workflow_path.endswith("/rva-2025-oed-staging.yml") else 1)
+        ]
+        self.assertCountEqual(allowed_uploads, expected_uploads)
+
+        # Pin the exact payload path(s), read-only token, no silent
+        # missing files, and a bounded lifetime for every exception.
+        for workflow_path, expected_paths in research_upload_paths.items():
+            with self.subTest(research_upload_scope=workflow_path):
+                wf = yaml.load((ROOT / workflow_path).read_text(encoding="utf-8"),
+                               Loader=StrictWorkflowLoader)
+                self.assertEqual(wf["permissions"], {"contents": "read"})
+                self.assertFalse(set(wf["on"]) & {"push", "schedule", "pull_request_target"})
+                if workflow_path.startswith(".github/workflows/eiopa-2023-"):
+                    self.assertEqual(set(wf["on"]), {"workflow_dispatch"})
+                if "fresh-independent-replay" in workflow_path:
+                    self.assertEqual(set(wf["on"]), {"workflow_dispatch", "workflow_call"})
+                uploads = [
+                    step for job in wf["jobs"].values()
+                    for step in job.get("steps", [])
+                    if step.get("uses") == upload_artifact
+                ]
+                self.assertEqual(
+                    sorted(p.strip() for step in uploads
+                           for p in step["with"]["path"].splitlines() if p.strip()),
+                    sorted(expected_paths),
+                )
+                for step in uploads:
+                    self.assertEqual(step["with"]["if-no-files-found"], "error")
+                    self.assertEqual(step["with"]["retention-days"], 14)
+                    self.assertIn("name", step["with"])
 
     def test_manual_cds_source_workflow_is_opt_in_metadata_only(self) -> None:
         manual = ROOT / ".github/workflows/ciara2020-cds-original-source-manual.yml"
