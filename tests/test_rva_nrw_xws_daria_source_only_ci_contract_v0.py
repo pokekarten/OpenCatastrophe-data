@@ -61,6 +61,40 @@ class SourceOnlyCISeparation(unittest.TestCase):
             with self.subTest(required=term):
                 self.assertIn(term, self.fast)
 
+    def test_live_original_provider_sources_require_trusted_manual_main(self):
+        # PR changes must only test offline contracts. The original XWS CSV
+        # and CLIMADA method downloads depend on external availability and
+        # must never run automatically for pull_request heads.
+        for step_name in (
+            "Read exact original external GPL CLIMADA 6.1.0 source metadata (no redistribution)",
+            "Source-original FULL CSV byte hashes and licence receipt (no raw upload)",
+            "Validate original four Daria CSV SHA pins and original CLIMADA PAA/MDD method definitions ONLY",
+            "Publish source-only SHA/method scope receipt (NO 10k site run)",
+        ):
+            with self.subTest(step=step_name):
+                step = self.fast.split("      - name: " + step_name + "\n", 1)
+                self.assertEqual(len(step), 2)
+                body = step[1].split("\n      - name: ", 1)[0]
+                self.assertIn(
+                    "        if: github.event_name == 'workflow_dispatch' "
+                    "&& github.ref == 'refs/heads/main'\n", body,
+                )
+        for step_name in (
+            "Original XWS CSV source, geographic identity and no-model negative tests",
+            "Entirely invented conditional impact arithmetic and negative tests",
+            "Independent fixed-threshold wind severity index and fail-closed tests",
+            "Original-code-isolated CLIMADA 6.1.0 PAA MDD interpolation negative tests",
+            "Offline 1990 XWS 3-second original site overlay negative checks",
+        ):
+            with self.subTest(offline_step=step_name):
+                step = self.fast.split("      - name: " + step_name + "\n", 1)
+                self.assertEqual(len(step), 2)
+                body = step[1].split("\n      - name: ", 1)[0]
+                self.assertNotIn("if: github.event_name", body)
+        self.assertIn("  pull_request:\n", self.fast)
+        self.assertIn("  workflow_dispatch:\n", self.fast)
+        self.assertIn("permissions:\n  contents: read\n", self.fast)
+
     def test_clean_ephemeral_provider_bytes_prior_to_no_loss_receipt(self):
         first=self.fast.index("Always remove original wind and GPL method source bytes")
         later=self.fast.index("Publish source-only SHA/method scope receipt")
