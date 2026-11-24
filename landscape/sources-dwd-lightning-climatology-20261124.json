@@ -13,9 +13,9 @@
         "convective_storm",
         "climatology"
       ],
-      "spatial_scope": "Central Europe in product title; Germany in metadata coverage field; actual grid bounds unverified",
-      "temporal_scope": "January 2007 onward; monthly additions per DWD documentation",
-      "resolution_or_granularity": "Monthly NetCDF grids at 0.05 x 0.05 degrees, EPSG:4326; flash counts and mean current in kA",
+      "spatial_scope": "Central Europe; July 2013 sample grid centers verified at 46 to 56 degrees N and 5 to 16 degrees E; rectangular extent does not certify detection coverage",
+      "temporal_scope": "January 2007 onward per documentation; December 2025 is the latest month listed in both directories checked on 2026-11-24; completeness across all months not tested",
+      "resolution_or_granularity": "Monthly NetCDF4/HDF5 grids; July 2013 sample verified at 0.05 x 0.05 degrees, EPSG:4326, 1 x 201 x 221 (time, latitude, longitude); LInum (unit 1) and LIkA (kA)",
       "potential_roles": [
         "convective_climatology",
         "hail_frequency_covariate",
@@ -27,7 +27,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Official product description dated 2025-10-02 explicitly states CC BY 4.0 for the gridded product; do not extend this to raw LINET data. DWD describes a spatial association between mean current and hail probability, not event-level hail size or causation. Method reference: https://doi.org/10.20944/preprints202502.1749.v2 (preprint). Monthly counts cannot reconstruct storm tracks or lightning jumps. Confirm actual coverage, fill values, count definition, current sign/aggregation, missing observation intervals, grid-cell area and network changes before analysis; never interpret missing coverage as zero hazard. Exact historical file bytes and directory access not verified in this run; no data sample, database write or admission. A future test should compare matched monthly count/current rasters against independent radar hail climatology using held-out regions and years, including a count-only baseline and an ERA5 baseline."
+      "note": "Official product description (2025-10-02) and both sample file headers explicitly state CC BY 4.0 for the gridded product, not raw LINET. On 2026-11-24 a bounded HTTPS download of two July 2013 files succeeded via macOS, after Linux DNS failure. Original compressed bytes: https://opendata.dwd.de/climate_environment/CDC/grids_europe/monthly/lightning/density/LInumsum201307.nc.gz (59485 bytes, SHA-256 2b6d5dfc1da8977e9a351dc2913cfd093c539bebde68b19911ff3224bfc320cf); https://opendata.dwd.de/climate_environment/CDC/grids_europe/monthly/lightning/mean_amperage/LIkAmm201307.nc.gz (150582 bytes, SHA-256 d1e28898bc430c489bd4916b9a54dc90d1d3c82511f0d23a99adba872b2145da). Gzip integrity passed; h5py 3.16.0 and NumPy 2.5.5 read both HDF5 files. Both advertise CF-1.6, LIclim-Linet-v1, float64 data, fill/missing -0.01, and identical lat/lon/time arrays (time zero hours since 2013-07-01 00:00:00). All 44421 data cells finite and not fill in this sample; matching zero masks (11914 cells); 32507 positive count cells. LInum is integer-valued (0 to 672, sum 969164); LIkA ranges 0 to 5.998963253472441 kA. Pearson correlation of log1p(LInum) and LIkA over positive-count cells is 0.4297129826308147; this is descriptive, not hail validation. Method reference: https://doi.org/10.20944/preprints202502.1749.v2 (preprint), section 2, describes hourly summed amperage divided by hourly lightning count and then monthly averaging. Do not interpret LIkA as peak current or a monthly count-weighted mean; zero-current cells with zero count are not measured low-current strikes. Confirm exact current normalization, detection efficiency, network changes and missing-hour handling; never interpret missing coverage as zero hazard. Monthly data cannot reconstruct storm tracks, hail size or lightning jumps. Validate against independent radar hail climatology with held-out years and regions; compare count-only, ERA5-only and combined models. Original bytes remain outside Git; no database write, full-series test, formal rights or scientific approval, or admission."
     }
   ]
 }
