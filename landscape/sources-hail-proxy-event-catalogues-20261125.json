@@ -1,0 +1,202 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery and bounded sample evidence for complementary hail event and multimodal convective datasets.",
+  "review_date": "2026-11-25",
+  "entries": [
+    {
+      "candidate_id": "nixon.allen.storm-interactions.hail.2008-2021",
+      "name": "Nixon and Allen extreme hail storm interactions dataset",
+      "provider": "Nixon and Allen / Central Michigan University",
+      "categories": [
+        "hail",
+        "storm_reports",
+        "convective_storm"
+      ],
+      "spatial_scope": "USA within 90 km of a WSR-88D radar",
+      "temporal_scope": "Hail subset 2008-2021; combined record has other hazard years",
+      "resolution_or_granularity": "CSV point reports and surrounding cell characteristics",
+      "potential_roles": [
+        "extreme_hail_case_validation",
+        "storm_interaction_feature"
+      ],
+      "authoritative_url": "https://zenodo.org/records/10672225",
+      "access_class_hint": "public_versioned_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Zenodo API license cc-by-4.0. Bounded original GET on 2026-11-25 https://zenodo.org/records/10672225/files/StormInteractions_HAIL.csv?download=1 yielded 48878 bytes, SHA-256 1f5d061ddee6e721bbf356ede3358dcb667f0cc0fba64991a0df3ff1440cc696 and MD5 2fc284273a32085b35fb0b3d2c4e60a2 matching provider. CSV parsed 331 data rows; observed Date, Time, Radar, Lat, Lon, Mag, SM, Sample, Mode1-4, Orientation, neighboring Cell1-5 at 00/10/20/30 minute offsets and blank spacer columns. Selected >=3 inch hail reports, not representative occurrence sample; do not infer annual rates, treat blank headers explicitly, confirm magnitude units and date/time convention from authors. No original data in Git or database; third-party report lineage and scientific independence require review."
+    },
+    {
+      "candidate_id": "noaa.cimss.probsevere.archive",
+      "name": "NOAA/CIMSS ProbSevere storm-object archive",
+      "provider": "NOAA / University of Wisconsin CIMSS / Iowa State archive",
+      "categories": [
+        "hail",
+        "lightning",
+        "radar",
+        "convective_storm"
+      ],
+      "spatial_scope": "Contiguous United States",
+      "temporal_scope": "V3 operational since August 2025; historic archive availability varies",
+      "resolution_or_granularity": "GeoJSON storm features, nominal 2 minute cadence; ProbHail, ProbWind, ProbTor",
+      "potential_roles": [
+        "multimodal_feature_reference",
+        "model_output_benchmark"
+      ],
+      "authoritative_url": "https://cimss.ssec.wisc.edu/probsevere/ps/",
+      "access_class_hint": "public_archive_rights_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Exact bounded GET on 2026-11-25 https://mtarchive.geol.iastate.edu/2025/12/30/mrms/ncep/ProbSevere/MRMS_PROBSEVERE_20251230_000000.json returned 18033 bytes, SHA-256 2c51ef06867fe62c8e7f3c88c0b31d55755ea185cc730a1e4adf587864a5e6c8. JSON parsed 6 features; properties include MaxFED, MaxFCD, MUCAPE, EBSHEAR, MESH, EchoTop_50, VIL, FLASH_RATE, FLASH_DENSITY, WETBULB_0C_HGT, LJA, ProbHail, ID; many values encoded as strings. Provider live directory https://mrms.ncep.noaa.gov/ProbSevere/PROBSEVERE/. Model predicts severe hail >=1 inch, not observed hail or diameter; probabilities and input predictors are dependent. CIMSS product page https://cimss.ssec.wisc.edu/severe_conv/psv3.html displays a reproduction/dissemination restriction; clarify scope and contracted upstream data rights before retention or reuse. No raw data committed or ingested."
+    },
+    {
+      "candidate_id": "cimss.probsevere.v3.models.training",
+      "name": "ProbSevere v3 models and training dataset",
+      "provider": "CIMSS / NOAA",
+      "categories": [
+        "hail",
+        "convective_storm",
+        "research_software",
+        "machine_learning"
+      ],
+      "spatial_scope": "Contiguous United States",
+      "temporal_scope": "Training archive named 2018-2023",
+      "resolution_or_granularity": "Python pickle model and storm attribute files",
+      "potential_roles": [
+        "model_architecture_reference",
+        "predictor_benchmark"
+      ],
+      "authoritative_url": "https://zenodo.org/records/10891477",
+      "access_class_hint": "public_download_untrusted_pickle",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Live Zenodo metadata 2026-11-25: 7 files, 10760638082 total bytes, cc-by-4.0; hail classifier phv3_lgb_classifier.pkl 7819023 bytes, MD5 9c9b3d34b5bebda73ed0a6f92a4d50bf. Do not deserialize untrusted pickle or execute downloaded models; require trusted isolated conversion to auditable safe format, exact upstream rights review, feature and label definitions. Metadata only; no pickle downloaded."
+    },
+    {
+      "candidate_id": "brazil.hitob.v1",
+      "name": "HIToB GOES ABI hail-associated storm polygons Brazil",
+      "provider": "HIToB research authors",
+      "categories": [
+        "hail",
+        "satellite_observations",
+        "event_tracks"
+      ],
+      "spatial_scope": "Brazil hail reports; GOES-16 South American domain",
+      "temporal_scope": "2018-06-05 to 2023-09-30",
+      "resolution_or_granularity": "2 km grid infrared cloud objects tracked with TATHU; database file",
+      "potential_roles": [
+        "storm_geometry_calibration",
+        "southern_hemisphere_transfer"
+      ],
+      "authoritative_url": "https://zenodo.org/records/11152458",
+      "access_class_hint": "public_large_database_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Paper https://pmc.ncbi.nlm.nih.gov/articles/PMC11295460/. Live Zenodo API 2026-11-25 returned cc-by-4.0 and HIToB_v1.db 6911950848 bytes, MD5 2ae0f679345d7a97c9e825692359de17. Archive not downloaded due to size; seek bounded subset or author-provided export, do not claim a byte range is a valid SQLite database. Cold cloud threshold 235 K; storms selected by hail association and cloud polygons not actual hail damage swaths. Check report bias, geometry, time and third-party report rights."
+    },
+    {
+      "candidate_id": "pnnl.pyflextrkr.global.mcs.v3",
+      "name": "PyFLEXTRKR global MCS tracking V3",
+      "provider": "Feng and Zhang / PNNL",
+      "categories": [
+        "convective_storm",
+        "satellite_observations",
+        "event_tracks"
+      ],
+      "spatial_scope": "60 S to 60 N, global longitude",
+      "temporal_scope": "January 1998 to September 2025",
+      "resolution_or_granularity": "Hourly 0.1 degree merged IR and IMERG V07B, two MCS definitions",
+      "potential_roles": [
+        "global_convective_system_context",
+        "storm_lifecycle_prior"
+      ],
+      "authoritative_url": "https://zenodo.org/records/23523604",
+      "access_class_hint": "public_large_versioned_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Live Zenodo metadata 2026-11-25: 20 files, 29569660540 bytes, cc-by-4.0. Small README 6783 bytes and checksum file 1670 bytes; smallest climatology archive 270842421 bytes. MCS definition requires spatial/temporal persistence and precipitation thresholds; misses small isolated hailstorms, excludes tracks overlapping tropical cyclones, not a hail catalogue. Read README and choose bounded region/month export before full archive acquisition; no source data downloaded."
+    },
+    {
+      "candidate_id": "dong.global.mcs.1985-2024",
+      "name": "Dong near-global 40-year MCS database",
+      "provider": "Wenhao Dong",
+      "categories": [
+        "convective_storm",
+        "satellite_observations",
+        "climatology"
+      ],
+      "spatial_scope": "Near-global geostationary IR coverage",
+      "temporal_scope": "1985-2024",
+      "resolution_or_granularity": "KFyAO tracked systems from CLAUS and NCEP/CPC brightness temperature, CSV and NetCDF",
+      "potential_roles": [
+        "long_term_convective_context",
+        "frequency_sensitivity"
+      ],
+      "authoritative_url": "https://zenodo.org/records/19634724",
+      "access_class_hint": "public_large_versioned_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Live Zenodo metadata 2026-11-25: 6 files, 15032621710 bytes, cc-by-4.0; smallest CLAUS_CSVFILE.tar.gz 218241779 bytes. Transition adjustments are latitude/season dependent; check homogeneity and storm definition, avoid double-counting overlapping source years. No direct hail intensity or isolated cell representation. No source bytes downloaded."
+    },
+    {
+      "candidate_id": "ipsl.toocan.dcs.v2.08",
+      "name": "IPSL TOOCAN tropical deep convective system database",
+      "provider": "Fiolleau and Roca / IPSL ESPRI",
+      "categories": [
+        "convective_storm",
+        "satellite_observations",
+        "event_tracks"
+      ],
+      "spatial_scope": "40 S to 40 N, five tropical regions",
+      "temporal_scope": "2012-2020",
+      "resolution_or_granularity": "30 minute lifecycle statistics, regional monthly NetCDF4/ASCII and segmented images",
+      "potential_roles": [
+        "tropical_storm_tracking_context",
+        "lifecycle_and_geometry_prior"
+      ],
+      "authoritative_url": "https://doi.org/10.14768/1be7fd53-8b81-416e-90d5-002b36b30cf8",
+      "access_class_hint": "provider_data_portal",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Paper https://doi.org/10.5194/essd-16-4021-2024. Provider page https://toocan.ipsl.fr/toocandatabase/2012-2020tropicaltoocandataset/ names CC BY 4.0 with research/publication attribution wording; confirm exact product rights and required acknowledgment before commercial use. DCS cloud shield not hail footprint; misses Germany entirely, useful tropical context only. No original sample."
+    },
+    {
+      "candidate_id": "eumetsat.opera.seviri.nordlis.fusion",
+      "name": "OPERA-SEVIRI-NORDLIS ML/AI fusion dataset",
+      "provider": "EUMETSAT / EUMETNET / NORDLIS / European Weather Cloud",
+      "categories": [
+        "lightning",
+        "radar",
+        "satellite_observations",
+        "machine_learning"
+      ],
+      "spatial_scope": "European OPERA/SEVIRI overlap; lightning covers Northern Europe",
+      "temporal_scope": "2018-2023 per EWC bucket listing",
+      "resolution_or_granularity": "Co-registered OPERA radar composites, SEVIRI rapid scan radiances and ground lightning in Zarr",
+      "potential_roles": [
+        "multimodal_hail_feature_training",
+        "satellite_radar_lightning_alignment"
+      ],
+      "authoritative_url": "https://europeanweather.cloud/index.php/news/update-opera-seviri-fusion-dataset",
+      "access_class_hint": "european_weather_cloud_access",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "EWC guide https://confluence.ecmwf.int/spaces/EWCLOUDKB/pages/488063253/Using%2BEUMETSAT%2Bdata%2Bbuckets%2Blocal%2Bdata%2Bpool lists bucket opera-seviri-nordlis.composite.zarr, endpoint https://s3.r1.cloud.eumetsat.int, 2018-2023. EWC-internal credential-free access does not imply public internet access or uniform rights. OPERA data policy https://www.eumetnet.eu/data-access/data-policy/ announces CC BY 4.0 via MeteoGate for qualifying products; SEVIRI and NORDLIS terms must be checked independently. No bucket bytes tested; verify Zarr chunk layout, spatial/time alignment, coverage masks and licensing per layer. Radar composites not necessarily hail size labels."
+    }
+  ]
+}
