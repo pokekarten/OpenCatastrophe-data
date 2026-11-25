@@ -26,7 +26,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Live macOS HTTPS metadata response verified ImageServer scientific service, extent and pixel size. Provider lists daily-occurrence aggregates, not individual OT time/position detections. Preserve calendar/hour bins, coverage, nodata and exact units; never treat OT days as hail days. Rights for exact layer and image export not yet reviewed; no raster bytes sampled."
+      "note": "Live macOS HTTPS metadata response verified ImageServer scientific service, extent and pixel size. Provider lists daily-occurrence aggregates, not individual OT time/position detections. Preserve calendar/hour bins, coverage, nodata and exact units; never treat OT days as hail days. Rights for exact layer and image export not yet reviewed; no raster bytes sampled. On 2026-11-25 bounded macOS HTTPS exportImage request (bbox 10,47,12,49; bboxSR/imageSR 4326; size 64,64; format tiff; pixelType F32; f image) returned image/tiff, 66342 bytes, SHA-256 371ce0ec153e6529cf32924c378fccf72f8bf174ce16bc4f01bc169fda31f659, little-endian TIFF magic; actual variable/time slice and raster values not inspected. Earlier no-raster statement refers to prior run; this is a derived service export not original provider raster. Do not use scientifically until slice/units/rights confirmed."
     },
     {
       "candidate_id": "nasa.langley.svrstormsig",
@@ -51,7 +51,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Paper https://doi.org/10.1175/AIES-D-24-0037.1; training labels, inputs and checkpoints listed at https://science-data.larc.nasa.gov/LaRC-SD-Publications/2023-05-05-001-JWC/data/. Repository contains License.pdf and License_Appendix.pdf; inspect code, checkpoints, training data and dependencies separately before reuse. Freeze commit, model config and sensor compatibility; compare MSG/MTG performance independently and correct parallax. OT and AACP are correlated severe-convection signatures, not surface hail labels; no code executed."
+      "note": "Paper https://doi.org/10.1175/AIES-D-24-0037.1; training labels, inputs and checkpoints listed at https://science-data.larc.nasa.gov/LaRC-SD-Publications/2023-05-05-001-JWC/data/. Repository contains License.pdf and License_Appendix.pdf; inspect code, checkpoints, training data and dependencies separately before reuse. Freeze commit, model config and sensor compatibility; compare MSG/MTG performance independently and correct parallax. OT and AACP are correlated severe-convection signatures, not surface hail labels; no code executed. On 2026-11-25 GitHub REST metadata identified license as Other / NOASSERTION, so inspect actual License.pdf and appendix rather than assume Apache. README documents native MTG-1 support from release V3 (April 2025), not verified MSG support; no inference run. Public checkpoint URL https://science-data.larc.nasa.gov/LaRC-SD-Publications/2023-05-05-001-JWC/data/ML_data.zip returned HEAD 200 application/zip, Content-Length 8182492479; too large for bounded sample, request smaller pinned weights or inspect archive index safely. No weights downloaded."
     },
     {
       "candidate_id": "hong.modis.ot.climatology.2023",
@@ -99,7 +99,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Live CMR collection C2196515446-GHRC_DAAC returned COMBO_HailClimatology_BC2019_2deg.nc, TRMM_HailClimatology_BC2019_2deg.nc and GPM_HailClimatology_BC2019_2deg.nc with protected Earthdata URLs; metadata only, no NetCDF downloaded. Older NASA landing page ended March 2025; live CMR confirms March 2026. Severe-hail frequency inferred from passive microwave ice scattering; coarse climatology, not observed hail diameter or swath. Account, licence and granule variable/normalization check needed."
+      "note": "Live CMR collection C2196515446-GHRC_DAAC returned COMBO_HailClimatology_BC2019_2deg.nc, TRMM_HailClimatology_BC2019_2deg.nc and GPM_HailClimatology_BC2019_2deg.nc with protected Earthdata URLs; metadata only, no NetCDF downloaded. Older NASA landing page ended March 2025; live CMR confirms March 2026. Severe-hail frequency inferred from passive microwave ice scattering; coarse climatology, not observed hail diameter or swath. Account, licence and granule variable/normalization check needed. Anonymous HEAD to the exact COMBO protected URL returned 303 to a CloudFront host on 2026-11-25, not a data payload. Earthdata login flow not completed; no access claim."
     },
     {
       "candidate_id": "nasa.jaxa.gpm.dpr.v07",
@@ -148,7 +148,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Exact collection EO:EUM:DAT:MSG:HRSEVIRI. Preserve platform transitions, spectral response, scan timing, calibration and parallax; review historical archive completeness and product-specific licence before authenticated acquisition. Raw imagery, not OT catalogue. Pair with published OT detector rather than assuming GOES model transfers."
+      "note": "Exact collection EO:EUM:DAT:MSG:HRSEVIRI. Preserve platform transitions, spectral response, scan timing, calibration and parallax; review historical archive completeness and product-specific licence before authenticated acquisition. Raw imagery, not OT catalogue. Pair with published OT detector rather than assuming GOES model transfers. Live anonymous EUMETSAT OpenSearch https://api.eumetsat.int/data/search-products/1.0.0/os with pi EO:EUM:DAT:MSG:HRSEVIRI, dtstart 2013-07-28T12:00:00Z, dtend 2013-07-28T12:30:00Z, c 1, format json returned totalResults 2; product MSG3-SEVI-MSG15-0100-NA-20130728122744.999000000Z-NA (12:15:11.055 to 12:27:44.999 UTC) with provider ZIP download link. Anonymous bounded range GET on exact advertised link returned HTTP 404; authenticated service test required, not evidence archive missing. No image data downloaded."
     },
     {
       "candidate_id": "wwlln.wglc.v2026",
@@ -245,7 +245,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Publisher links a catalogue; paper https://doi.org/10.1002/joc.8123. Underlying Met Office ATDnet is third party; public link and open-access article do not establish commercial reuse. Confirm catalogue terms and file identity before downloading or ingesting. Thunderstorms are not hail events."
+      "note": "Publisher links a catalogue; paper https://doi.org/10.1002/joc.8123. Underlying Met Office ATDnet is third party; public link and open-access article do not establish commercial reuse. Confirm catalogue terms and file identity before downloading or ingesting. Thunderstorms are not hail events. Direct provider link https://www.torro.org.uk/pdf/Thunderstorm_catalogue_2008-2018_(LH).xlsx returned anonymous HEAD 200, XLSX content type and 16213773 byte length on 2026-11-25. No workbook bytes acquired pending exact reuse permission; underlying ATDnet terms remain open."
     },
     {
       "candidate_id": "kit.trace3d.pht.2005-2024",
@@ -293,7 +293,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Code https://github.com/agiord/hail-analysis; SPHERA from corresponding author; NASA OT data via provider request; ESWD reports separate restricted terms. Inspect code licence and verify exact feature definitions. No external data downloaded. Avoid circular validation against reports used for training."
+      "note": "Code https://github.com/agiord/hail-analysis; SPHERA from corresponding author; NASA OT data via provider request; ESWD reports separate restricted terms. Inspect code licence and verify exact feature definitions. No external data downloaded. Avoid circular validation against reports used for training. GitHub REST metadata on 2026-11-25 identifies hail-analysis repository licence as CC0-1.0; inspect actual licence and third-party dependencies before incorporating code. This does not grant SPHERA, NASA OT or ESWD dataset rights."
     },
     {
       "candidate_id": "nasa.smash.ot.aacp.experimental.202504",

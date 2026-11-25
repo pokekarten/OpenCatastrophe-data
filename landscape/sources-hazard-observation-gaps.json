@@ -7,11 +7,20 @@
       "candidate_id": "copernicus.cems.gfm.v4.1.1",
       "name": "Copernicus CEMS Global Flood Monitoring v4.1.1",
       "provider": "Copernicus Emergency Management Service / Global Flood Awareness System",
-      "categories": ["flood", "satellite_observations", "event_footprint", "validation"],
+      "categories": [
+        "flood",
+        "satellite_observations",
+        "event_footprint",
+        "validation"
+      ],
       "spatial_scope": "global Sentinel-1 coverage",
       "temporal_scope": "Sentinel-1 archive from 2015 plus near-real-time monitoring; operational v4.1.1 from June 2026",
       "resolution_or_granularity": "Sentinel-1 SAR-derived flood and water products with 10 m input pixel sampling and multiple uncertainty/advisory layers",
-      "potential_roles": ["flood_extent_validation", "event_footprint_observation", "inundation_model_benchmark"],
+      "potential_roles": [
+        "flood_extent_validation",
+        "event_footprint_observation",
+        "inundation_model_benchmark"
+      ],
       "authoritative_url": "https://global-flood.emergency.copernicus.eu/react/technical-information/glofas-gfm/",
       "access_class_hint": "public_web_services_api_and_download",
       "candidate_status": "evidence_checked",
@@ -24,11 +33,20 @@
       "candidate_id": "nasa.modis.mcd64a1.v6.1",
       "name": "MODIS Terra+Aqua MCD64A1 Burned Area v6.1",
       "provider": "NASA LP DAAC / MODIS",
-      "categories": ["wildfire", "burned_area", "remote_sensing", "validation"],
+      "categories": [
+        "wildfire",
+        "burned_area",
+        "remote_sensing",
+        "validation"
+      ],
       "spatial_scope": "global",
       "temporal_scope": "November 2000-present",
       "resolution_or_granularity": "monthly 500 m burned-area grids with burn-date and quality information",
-      "potential_roles": ["wildfire_footprint_validation", "burned_area_baseline", "fire_event_extent_benchmark"],
+      "potential_roles": [
+        "wildfire_footprint_validation",
+        "burned_area_baseline",
+        "fire_event_extent_benchmark"
+      ],
       "authoritative_url": "https://doi.org/10.5067/MODIS/MCD64A1.061",
       "access_class_hint": "public_earthdata_dataset",
       "candidate_status": "evidence_checked",
@@ -41,11 +59,20 @@
       "candidate_id": "noaa.ncei.etopo.2022",
       "name": "ETOPO 2022 15 Arc-Second Global Relief Model",
       "provider": "NOAA National Centers for Environmental Information",
-      "categories": ["terrain", "bathymetry", "global_relief", "baseline_geography"],
+      "categories": [
+        "terrain",
+        "bathymetry",
+        "global_relief",
+        "baseline_geography"
+      ],
       "spatial_scope": "global",
       "temporal_scope": "2022 release",
       "resolution_or_granularity": "15 arc-second global grids with Ice Surface and Bedrock variants plus source-ID and geoid products",
-      "potential_roles": ["tsunami_modelling_context", "coastal_hazard_context", "global_relief_baseline"],
+      "potential_roles": [
+        "tsunami_modelling_context",
+        "coastal_hazard_context",
+        "global_relief_baseline"
+      ],
       "authoritative_url": "https://www.ncei.noaa.gov/products/etopo-global-relief-model",
       "access_class_hint": "public_download_and_grid_extract",
       "candidate_status": "evidence_checked",
@@ -58,11 +85,20 @@
       "candidate_id": "emodnet.bathymetry.dtm.2024",
       "name": "EMODnet Bathymetry Digital Terrain Model 2024",
       "provider": "European Marine Observation and Data Network / European Commission",
-      "categories": ["bathymetry", "coastal_hazard", "marine_context", "baseline_geography"],
+      "categories": [
+        "bathymetry",
+        "coastal_hazard",
+        "marine_context",
+        "baseline_geography"
+      ],
       "spatial_scope": "European seas plus the EMODnet 2024 Caribbean DTM region",
       "temporal_scope": "2024 release",
       "resolution_or_granularity": "1/16 x 1/16 arc-minute grid, approximately 115 m, with source-reference and quality-index layers",
-      "potential_roles": ["storm_surge_context", "tsunami_modelling_context", "coastal_bathymetry_baseline"],
+      "potential_roles": [
+        "storm_surge_context",
+        "tsunami_modelling_context",
+        "coastal_bathymetry_baseline"
+      ],
       "authoritative_url": "https://emodnet.ec.europa.eu/en/emodnet-bathymetry-dtm-2024-release",
       "access_class_hint": "public_view_download_and_web_services",
       "candidate_status": "evidence_checked",
@@ -75,28 +111,46 @@
       "candidate_id": "eumetsat.mtg-li.l2",
       "name": "Meteosat Third Generation Lightning Imager Level 2",
       "provider": "EUMETSAT",
-      "categories": ["lightning", "convective_storm", "satellite_observations", "validation"],
+      "categories": [
+        "lightning",
+        "convective_storm",
+        "satellite_observations",
+        "validation"
+      ],
       "spatial_scope": "MTG Lightning Imager field of view from geostationary orbit near 0 degrees longitude",
       "temporal_scope": "current MTG-I mission products",
       "resolution_or_granularity": "continuous optical total-lightning detections grouped into events, groups and flashes",
-      "potential_roles": ["convective_hazard_validation", "lightning_event_catalogue", "storm_tracking_context"],
+      "potential_roles": [
+        "convective_hazard_validation",
+        "lightning_event_catalogue",
+        "storm_tracking_context"
+      ],
       "authoritative_url": "https://user.eumetsat.int/resources/user-guides/mtg-li-level-2-data-guide",
       "access_class_hint": "eumetsat_data_store_and_eumetcast",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "LI detects optical total-lightning activity rather than surface damage or precipitation; freeze product processing version and preserve event/group/flash definitions and detection-efficiency limitations."
+      "note": "LI detects optical total-lightning activity rather than surface damage or precipitation; freeze product processing version and preserve event/group/flash definitions and detection-efficiency limitations. Live catalogue JSON for collection EO:EUM:DAT:0691 returned HTTP 200 on 2026-11-25. Anonymous OpenSearch with pi EO:EUM:DAT:0691, dtstart 2025-06-15T12:00:00Z, dtend 2025-06-15T12:15:00Z, c 1, format json returned totalResults 3, product W_XX-EUMETSAT-Darmstadt,IMG+SAT,MTI1+LI-2-LFL--FD--x-x--ARC-x_C_EUMT_20250615122021_L2PF_OPE_20250615121003_20250615122003_N__O_0074_0000, 12:10:03 to 12:20:03 UTC. Catalogue lists NoConditions for flash product; exact provider ZIP link anonymous bounded Range GET returned HTTP 404; authenticated Data Store download and exact service terms still need verification. No flash bytes downloaded; do not interpret anonymous 404 as absence of archive."
     },
     {
       "candidate_id": "gfz.world-stress-map.2025",
       "name": "World Stress Map Database Release 2025",
       "provider": "GFZ Helmholtz Centre for Geosciences / World Stress Map Project",
-      "categories": ["tectonics", "crustal_stress", "earthquake_context", "geomechanics"],
+      "categories": [
+        "tectonics",
+        "crustal_stress",
+        "earthquake_context",
+        "geomechanics"
+      ],
       "spatial_scope": "global",
       "temporal_scope": "database release 2025",
       "resolution_or_granularity": "quality-ranked point records of present-day crustal stress indicators",
-      "potential_roles": ["tectonic_context", "fault_mechanics_context", "geophysical_model_benchmark"],
+      "potential_roles": [
+        "tectonic_context",
+        "fault_mechanics_context",
+        "geophysical_model_benchmark"
+      ],
       "authoritative_url": "https://www.world-stress-map.org/download/",
       "access_class_hint": "public_open_access_download",
       "candidate_status": "evidence_checked",
@@ -109,11 +163,20 @@
       "candidate_id": "gfz.geomagnetic-kp",
       "name": "GFZ Geomagnetic Kp Index",
       "provider": "GFZ Helmholtz Centre for Geosciences",
-      "categories": ["space_weather", "geomagnetic_activity", "time_series", "validation"],
+      "categories": [
+        "space_weather",
+        "geomagnetic_activity",
+        "time_series",
+        "validation"
+      ],
       "spatial_scope": "planetary geomagnetic index derived from contributing observatories",
       "temporal_scope": "historical definitive series plus continuously updated nowcast products",
       "resolution_or_granularity": "3-hour Kp index with derived ap, Ap, Cp and C9 products",
-      "potential_roles": ["geomagnetic_hazard_baseline", "space_weather_event_definition", "infrastructure_risk_context"],
+      "potential_roles": [
+        "geomagnetic_hazard_baseline",
+        "space_weather_event_definition",
+        "infrastructure_risk_context"
+      ],
       "authoritative_url": "https://doi.org/10.5880/Kp.0001",
       "access_class_hint": "public_gfz_data_service",
       "candidate_status": "evidence_checked",
@@ -126,11 +189,20 @@
       "candidate_id": "noaa.swpc.real-time-solar-wind",
       "name": "NOAA SWPC Real-Time Solar Wind",
       "provider": "NOAA Space Weather Prediction Center",
-      "categories": ["space_weather", "solar_wind", "magnetometer", "plasma_observations"],
+      "categories": [
+        "space_weather",
+        "solar_wind",
+        "magnetometer",
+        "plasma_observations"
+      ],
       "spatial_scope": "upstream solar-wind observations near the Sun-Earth L1 point",
       "temporal_scope": "archive from 1998 plus continuously updated operational data",
       "resolution_or_granularity": "spacecraft-dependent magnetometer and thermal-plasma time series with resolution up to seconds",
-      "potential_roles": ["geomagnetic_storm_driver", "space_weather_event_context", "infrastructure_hazard_forcing"],
+      "potential_roles": [
+        "geomagnetic_storm_driver",
+        "space_weather_event_context",
+        "infrastructure_hazard_forcing"
+      ],
       "authoritative_url": "https://www.swpc.noaa.gov/products/real-time-solar-wind",
       "access_class_hint": "public_web_and_json_services",
       "candidate_status": "evidence_checked",
