@@ -1,0 +1,323 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry for satellite severe convection, lightning and hail proxy sources with distinct observational and research lineage.",
+  "review_date": "2026-11-25",
+  "entries": [
+    {
+      "candidate_id": "nasa.smash.eu.ot.climatology",
+      "name": "NASA SMASH European overshooting-top frequency",
+      "provider": "NASA",
+      "categories": [
+        "hail",
+        "satellite_observations",
+        "convective_storm",
+        "climatology"
+      ],
+      "spatial_scope": "European domain; live monthly ImageServer extent approximately 32.29 to 60 N and -11.71 to 39.64 E",
+      "temporal_scope": "2004-2024 climatology",
+      "resolution_or_granularity": "Monthly, annual and hourly-binned OT days; monthly service pixel step 0.0357143 degrees, EPSG:4326",
+      "potential_roles": [
+        "convective_frequency_calibration",
+        "regional_hazard_context"
+      ],
+      "authoritative_url": "https://gis.earthdata.nasa.gov/portal/rest/services/SMASH/eu_monthly_ot_frequency_allhours/ImageServer",
+      "access_class_hint": "public_arcgis_metadata_and_image_service",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Live macOS HTTPS metadata response verified ImageServer scientific service, extent and pixel size. Provider lists daily-occurrence aggregates, not individual OT time/position detections. Preserve calendar/hour bins, coverage, nodata and exact units; never treat OT days as hail days. Rights for exact layer and image export not yet reviewed; no raster bytes sampled."
+    },
+    {
+      "candidate_id": "nasa.langley.svrstormsig",
+      "name": "NASA severe-storm-signatures OT/AACP software and training assets",
+      "provider": "NASA Langley / Cooney, Bedka and Liles",
+      "categories": [
+        "hail",
+        "satellite_observations",
+        "convective_storm",
+        "research_software"
+      ],
+      "spatial_scope": "Geostationary imager domains; regional transfer unvalidated",
+      "temporal_scope": "2025 peer-reviewed method; evolving repository",
+      "resolution_or_granularity": "Semantic segmentation of overshooting tops and above-anvil cirrus plumes from satellite imagery and atmospheric inputs",
+      "potential_roles": [
+        "historical_event_detection",
+        "convective_severity_feature"
+      ],
+      "authoritative_url": "https://github.com/nasa/svrstormsig",
+      "access_class_hint": "public_source_code_and_model_assets",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Paper https://doi.org/10.1175/AIES-D-24-0037.1; training labels, inputs and checkpoints listed at https://science-data.larc.nasa.gov/LaRC-SD-Publications/2023-05-05-001-JWC/data/. Repository contains License.pdf and License_Appendix.pdf; inspect code, checkpoints, training data and dependencies separately before reuse. Freeze commit, model config and sensor compatibility; compare MSG/MTG performance independently and correct parallax. OT and AACP are correlated severe-convection signatures, not surface hail labels; no code executed."
+    },
+    {
+      "candidate_id": "hong.modis.ot.climatology.2023",
+      "name": "Hong et al. near-global MODIS overshooting-top climatology",
+      "provider": "Hong, Nesbitt, Trapp and Di Girolamo",
+      "categories": [
+        "satellite_observations",
+        "hail",
+        "climatology"
+      ],
+      "spatial_scope": "Near-global Terra/Aqua MODIS swaths",
+      "temporal_scope": "Approximately 20 years, study published 2023",
+      "resolution_or_granularity": "1 km thermal IR imagery; logistic OT detection model",
+      "potential_roles": [
+        "global_convective_frequency_context",
+        "algorithm_reference"
+      ],
+      "authoritative_url": "https://doi.org/10.5194/amt-16-1391-2023",
+      "access_class_hint": "publication_and_upstream_satellite_archive",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Original MODIS/CloudSat/GPM sources cited in study; downloadable derived individual OT catalogue not established. Polar-orbiting sampling and local overpass-time bias preclude continuous tracks. Obtain derived data or reproduce detection with observation opportunity normalization. Rights for source files and derived product separate."
+    },
+    {
+      "candidate_id": "nasa.ghrc.pmhailclim.v1",
+      "name": "NASA Passive Microwave Hail Climatology V1",
+      "provider": "NASA GHRC DAAC",
+      "categories": [
+        "hail",
+        "satellite_observations",
+        "climatology"
+      ],
+      "spatial_scope": "Global catalogue extent; actual observation coverage constrained by TRMM and GPM orbits",
+      "temporal_scope": "1998-01-01 to 2026-03-31 per live CMR granules; TRMM through 2014-09-30; GPM from 2014-04-01",
+      "resolution_or_granularity": "2-degree NetCDF-3 annual severe-hailstorm frequency estimates; three CMR granules",
+      "potential_roles": [
+        "global_hail_frequency_calibration",
+        "regional_hazard_benchmark"
+      ],
+      "authoritative_url": "https://doi.org/10.5067/MODEL/DATA101",
+      "access_class_hint": "earthdata_login_protected_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Live CMR collection C2196515446-GHRC_DAAC returned COMBO_HailClimatology_BC2019_2deg.nc, TRMM_HailClimatology_BC2019_2deg.nc and GPM_HailClimatology_BC2019_2deg.nc with protected Earthdata URLs; metadata only, no NetCDF downloaded. Older NASA landing page ended March 2025; live CMR confirms March 2026. Severe-hail frequency inferred from passive microwave ice scattering; coarse climatology, not observed hail diameter or swath. Account, licence and granule variable/normalization check needed."
+    },
+    {
+      "candidate_id": "nasa.jaxa.gpm.dpr.v07",
+      "name": "GPM DPR Level 2A precipitation profiles V07",
+      "provider": "NASA / JAXA",
+      "categories": [
+        "hail",
+        "radar",
+        "satellite_observations"
+      ],
+      "spatial_scope": "Approximately 70 S to 70 N orbital coverage",
+      "temporal_scope": "March 2014 onward",
+      "resolution_or_granularity": "HDF5 orbital swaths, nominal 5 km footprints; V07 hail classification",
+      "potential_roles": [
+        "spaceborne_hail_proxy_validation",
+        "vertical_storm_structure"
+      ],
+      "authoritative_url": "https://doi.org/10.5067/GPM/DPR/GPM/2A/07",
+      "access_class_hint": "earthdata_login_and_opendap",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Catalogue https://disc.gsfc.nasa.gov/datasets/GPM_2ADPR_07/summary; algorithm basis https://gpm.nasa.gov/sites/default/files/2022-06/ATBD_DPR_V07A.pdf. flagHail/flagGraupelHail are algorithmic hydrometeor indicators, not ground diameter. Validate exact field path and flags with small authenticated subset before bulk download; full granules large. Orbit sampling, attenuation and nonuniform beam filling matter."
+    },
+    {
+      "candidate_id": "eumetsat.msg.hrseviri.l15",
+      "name": "EUMETSAT MSG SEVIRI High Rate Level 1.5",
+      "provider": "EUMETSAT",
+      "categories": [
+        "satellite_observations",
+        "convective_storm",
+        "hail"
+      ],
+      "spatial_scope": "Meteosat full disk, Europe/Africa",
+      "temporal_scope": "19 January 2004 onward per catalogue",
+      "resolution_or_granularity": "12 spectral channels, historical 15-minute nominal imagery; latency-dependent availability",
+      "potential_roles": [
+        "historical_ot_reconstruction",
+        "cloud_top_cooling",
+        "storm_tracking"
+      ],
+      "authoritative_url": "https://user.eumetsat.int/catalogue/EO:EUM:DAT:MSG:HRSEVIRI",
+      "access_class_hint": "eumetsat_data_store",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Exact collection EO:EUM:DAT:MSG:HRSEVIRI. Preserve platform transitions, spectral response, scan timing, calibration and parallax; review historical archive completeness and product-specific licence before authenticated acquisition. Raw imagery, not OT catalogue. Pair with published OT detector rather than assuming GOES model transfers."
+    },
+    {
+      "candidate_id": "wwlln.wglc.v2026",
+      "name": "WWLLN Global Lightning Climatology v2026.0.0",
+      "provider": "Jed O. Kaplan / WWLLN",
+      "categories": [
+        "lightning",
+        "climatology",
+        "convective_storm"
+      ],
+      "spatial_scope": "Global WGS84",
+      "temporal_scope": "2010-2025",
+      "resolution_or_granularity": "NetCDF; monthly 5 arc-minute and 0.5 degree; daily 0.5 degree; stroke density and power",
+      "potential_roles": [
+        "global_convective_frequency_calibration",
+        "lightning_power_covariate"
+      ],
+      "authoritative_url": "https://zenodo.org/records/20277101",
+      "access_class_hint": "public_versioned_download_rights_conflict",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Live Zenodo API returned 7 files totaling 3299540376 bytes, metadata license cc-by-4.0; deposit description explicitly states CC BY-SA 4.0. Treat rights as conflicting until publisher confirms; no WGLC data downloaded or admitted. README is 2747 bytes, 30m monthly climatology 27325956 bytes. Detection-efficiency-adjusted stroke density is not optical flash count; no event-level tracks or jumps. Do not generalize derived grid licence to raw WWLLN."
+    },
+    {
+      "candidate_id": "nasa.iss.lis.v3.fin",
+      "name": "NASA ISS Lightning Imaging Sensor quality-controlled V3",
+      "provider": "NASA GHRC DAAC",
+      "categories": [
+        "lightning",
+        "satellite_observations",
+        "convective_storm"
+      ],
+      "spatial_scope": "55 S to 55 N",
+      "temporal_scope": "2017-03-01 to 2023-11-16",
+      "resolution_or_granularity": "NetCDF-4/HDF4 optical total-lightning detections",
+      "potential_roles": [
+        "historical_lightning_proxy",
+        "cross_sensor_calibration"
+      ],
+      "authoritative_url": "https://doi.org/10.5067/LIS/ISSLIS/DATA114",
+      "access_class_hint": "earthdata_login",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "CMR collection C3838944284-GHRC_DAAC. Intermittent ISS observation windows require exposure normalization; flash/stroke distinction and detection efficiency must be retained. Not continuous tracks. Exact granule rights and bytes untested."
+    },
+    {
+      "candidate_id": "noaa.goes.glm.l2.lcfa",
+      "name": "NOAA GOES GLM L2 events groups flashes",
+      "provider": "NOAA NCEI / GOES-R Program",
+      "categories": [
+        "lightning",
+        "satellite_observations",
+        "convective_storm"
+      ],
+      "spatial_scope": "Americas geostationary fields of view",
+      "temporal_scope": "GOES-R era from 2017/2018; satellite-specific archive dates",
+      "resolution_or_granularity": "Time-stamped optical lightning events, groups and flashes; NetCDF",
+      "potential_roles": [
+        "lightning_jump_feature",
+        "storm_tracking",
+        "cross_sensor_validation"
+      ],
+      "authoritative_url": "https://doi.org/10.7289/V5KH0KK6",
+      "access_class_hint": "public_cloud_archive",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NCEI catalog gov.noaa.ncdc:C01527; public archive https://registry.opendata.aws/noaa-goes/. Freeze satellite and exact file, account for viewing geometry, outages, flash clustering and sensor transitions. No live granule downloaded. Not hail measurements."
+    },
+    {
+      "candidate_id": "torro.atdnet.thunderstorm.catalogue.2008-2018",
+      "name": "TORRO / Hayward Northwest Europe thunderstorm catalogue",
+      "provider": "Hayward et al. / TORRO / UK Met Office ATDnet",
+      "categories": [
+        "lightning",
+        "convective_storm",
+        "event_tracks"
+      ],
+      "spatial_scope": "48 to 65 N, 15 W to 10 E",
+      "temporal_scope": "2008-2018",
+      "resolution_or_granularity": "Tracked lightning clusters of at least three flashes; duration, motion, flash rate",
+      "potential_roles": [
+        "historical_thunderstorm_tracking",
+        "event_geometry_context"
+      ],
+      "authoritative_url": "https://www.torro.org.uk/research/thunderstorm-observer",
+      "access_class_hint": "public_catalogue_link_rights_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher links a catalogue; paper https://doi.org/10.1002/joc.8123. Underlying Met Office ATDnet is third party; public link and open-access article do not establish commercial reuse. Confirm catalogue terms and file identity before downloading or ingesting. Thunderstorms are not hail events."
+    },
+    {
+      "candidate_id": "kit.trace3d.pht.2005-2024",
+      "name": "KIT TRACE3D potential hail tracks Germany",
+      "provider": "KIT / Mohr et al. / DWD radar",
+      "categories": [
+        "hail",
+        "radar",
+        "event_tracks"
+      ],
+      "spatial_scope": "Germany",
+      "temporal_scope": "April-September 2005-2024; 2005 partial coverage",
+      "resolution_or_granularity": "15577 potential hail tracks from 3D radar PZ volumes",
+      "potential_roles": [
+        "hail_track_geometry_calibration",
+        "historical_frequency_benchmark"
+      ],
+      "authoritative_url": "https://doi.org/10.3389/fenvs.2026.1736782",
+      "access_class_hint": "publication_upstream_data_author_request",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Published 2026-02-06. Article validated against building insurance data; no public direct track-file link established. Data availability statement points to https://opendata.dwd.de/weather/radar/sites/pz/ and ERA5 regimes https://zenodo.org/records/17080146; confirm historic PZ access separately from operational directory. Paper does not provide hailstone diameter distribution. Request derived tracks and explicit rights or reproduce method with authorized radar archive."
+    },
+    {
+      "candidate_id": "giordani.ot.sphera.hail.2024",
+      "name": "Giordani et al. OT and SPHERA hail-environment method",
+      "provider": "University of Bologna / KIT / NASA / ARPAE",
+      "categories": [
+        "hail",
+        "convective_storm",
+        "research_software"
+      ],
+      "spatial_scope": "South-central Europe",
+      "temporal_scope": "Study published 2024",
+      "resolution_or_granularity": "OT detections joined to convection-permitting reanalysis and hail reports",
+      "potential_roles": [
+        "feature_selection_reference",
+        "hail_environment_model"
+      ],
+      "authoritative_url": "https://doi.org/10.5194/nhess-24-2331-2024",
+      "access_class_hint": "public_code_data_on_request",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Code https://github.com/agiord/hail-analysis; SPHERA from corresponding author; NASA OT data via provider request; ESWD reports separate restricted terms. Inspect code licence and verify exact feature definitions. No external data downloaded. Avoid circular validation against reports used for training."
+    },
+    {
+      "candidate_id": "nasa.smash.ot.aacp.experimental.202504",
+      "name": "NASA experimental US severe-weather OT/AACP product April 2025",
+      "provider": "NASA Earthdata GIS / Langley",
+      "categories": [
+        "hail",
+        "satellite_observations",
+        "event_footprint"
+      ],
+      "spatial_scope": "United States event domain",
+      "temporal_scope": "2025-04-02 to 2025-04-06",
+      "resolution_or_granularity": "Experimental raster detections derived from GOES 500 m imagery at 5-minute cadence",
+      "potential_roles": [
+        "algorithm_output_benchmark",
+        "storm_track_context"
+      ],
+      "authoritative_url": "https://gis.earthdata.nasa.gov/portal/home/item.html?id=b1dbafac653b41e8b4716de1020a201e",
+      "access_class_hint": "public_gis_item_metadata",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Provider marks product experimental. Time-aggregated repeated detections may indicate severe storm tracks but not hail swaths. Check exact raster service/licence and independent surface hail reports before quantitative use."
+    }
+  ]
+}
