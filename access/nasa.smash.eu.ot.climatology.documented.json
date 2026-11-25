@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "nasa.smash.eu.ot.climatology.documented",
+  "source_ids": [
+    "nasa.smash.eu.ot.climatology"
+  ],
+  "provider": "NASA",
+  "interface_type": "arcgis_rest",
+  "status": "documented_only",
+  "documentation_url": "https://gis.earthdata.nasa.gov/portal/rest/services/SMASH/eu_monthly_ot_frequency_allhours/ImageServer",
+  "service_root": "https://gis.earthdata.nasa.gov",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/portal/rest/services/SMASH/eu_monthly_ot_frequency_allhours/ImageServer/exportImage"
+    ],
+    "parameter_rules": "Documented exact path only. No execution authorized by this contract; review provider terms, fixed request and bounded acquisition plan before activation."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "image/tiff"
+    ],
+    "format": "Monthly, annual and hourly-binned OT days; monthly service pixel step 0.0357143 degrees, EPSG:4326",
+    "scientific_semantics": "Live macOS HTTPS metadata response verified ImageServer scientific service, extent and pixel size. Provider lists daily-occurrence aggregates, not individual OT time/position detections. Preserve calendar/hour bins, coverage, nodata and exact units; never treat OT days as hail days. Rights for exact layer and image export not yet reviewed; no raster bytes sampled. On 2026-11-25 bounded macOS HTTPS exportImage request (bbox 10,47,12,49; bboxSR/imageSR 4326; size 64,64; format tiff; pixelType F32; f image) returned image/tiff, 66342 bytes, SHA-256 371ce0ec153e6529cf32924c378fccf72f8bf174ce16bc4f01bc169fda31f659, little-endian TIFF magic; actual variable/time slice and raster values not inspected. Earlier no-raster statement refers to prior run; this is a derived service export not original provider raster. Do not use scientifically until slice/units/rights confirmed."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 10485760,
+    "retry_policy": "none",
+    "rate_limit_notes": "No new automated requests authorized. Future route must review service terms and enforce explicit provider-specific request and byte limits.",
+    "mutability_notes": "Freeze exact version, UTC retrieval time, selected object, response byte size, SHA-256 and coverage; never use a mutable directory or catalogue as original byte identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://science.data.nasa.gov/about/license",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Anonymous TIFF export received, but units, time slice and source rights remain unclear. Resolve layer metadata and slice selection, original source or export licence; decode numerical values. Do not infer surface hail."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://gis.earthdata.nasa.gov/portal/rest/services/SMASH/eu_monthly_ot_frequency_allhours/ImageServer",
+    "https://science.data.nasa.gov/about/license"
+  ],
+  "notes": "Open-first qualification queue. Anonymous TIFF export received, but units, time slice and source rights remain unclear. Resolve layer metadata and slice selection, original source or export licence; decode numerical values. Do not infer surface hail. Discovery/access only: no admission, no external bytes in Git, no model approval."
+}
