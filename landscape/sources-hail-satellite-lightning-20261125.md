@@ -151,7 +151,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://doi.org/10.7289/V5KH0KK6>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** NCEI catalog gov.noaa.ncdc:C01527; public archive https://registry.opendata.aws/noaa-goes/. Freeze satellite and exact file, account for viewing geometry, outages, flash clustering and sensor transitions. No live granule downloaded. Not hail measurements.
+**Note:** NCEI catalog gov.noaa.ncdc:C01527; public archive https://registry.opendata.aws/noaa-goes/; data.gov metadata lists CC0 1.0 for this collection (formal rights review still open). On 2026-11-25 anonymous S3 prefix listing and one bounded original GET succeeded via macOS: https://noaa-goes16.s3.amazonaws.com/GLM-L2-LCFA/2024/167/12/OR_GLM-L2-LCFA_G16_s20241671200000_e20241671200200_c20241671200216.nc, 198460 bytes, SHA-256 ce0beb46fc01ea6e271f8c97eda042a8720452903a52ed7742f56c5111516506. HDF5 magic and h5py read passed; platform G16, FM1, coverage 2024-06-15 12:00:00 to 12:00:20 UTC, 71 flashes, 1189 groups and 2325 events. Verified flash_id, flash_lat/lon (degrees), flash_energy (J), flash_area (m2), flash_time_offset_of_first_event (seconds since granule start), flash_quality_flag, group_id and event_id. Counts are optical observations, not confirmed ground strikes or hail. Decode packed values, flags, parent-child relationships, viewing geometry, outages and sensor transitions before regional flash rates or tracks. No external bytes in Git or Neon, no scientific admission.
 
 ## TORRO / Hayward Northwest Europe thunderstorm catalogue
 
