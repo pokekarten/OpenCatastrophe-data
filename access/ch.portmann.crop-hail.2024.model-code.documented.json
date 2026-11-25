@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "ch.portmann.crop-hail.2024.model-code.documented",
+  "source_ids": [
+    "ch.portmann.crop-hail.2024.model-code"
+  ],
+  "provider": "Portmann, Schmid and Villiger / Zenodo / CLIMADA-project",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://doi.org/10.5281/zenodo.12784190",
+  "service_root": "https://zenodo.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/api/records/12784190/files/raphael-portmann/202403_crop_hail_damage_footprint-1.0.zip/content"
+    ],
+    "parameter_rules": "Exact published version and filename only. Historical data-file GET used download=1; code used exact API content path. Documentation-only; no new live request, scheduled fetch or bulk transfer authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/zip"
+    ],
+    "format": "Python 3.9 study-specific model/reproduction code; dependency CLIMADA platform and public crop/radar/damage-grid research records",
+    "scientific_semantics": "NHESS 10.5194/nhess-24-2541-2024 provides DOI 10.5281/zenodo.12784190 for the published study code, as well as links to the three separately identified data assets in this shard. CLIMADA's cited platform license is GPL-3.0; do not assume the same license applies to all study code or linked third-party datasets. This is a hail crop-damage footprint classification research model, not an Oasis-ready insured loss model: pin archive checksum, code/dependency versions, valid tests and scientific limits before use. Review actual per-file code licences and dependency compatibility, including CLIMADA GPL-3.0, separately from deposit CC BY label. Do not execute downloaded code without isolation and review; method reproduces binary crop footprints, not monetary losses."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 41943040,
+    "retry_policy": "none",
+    "rate_limit_notes": "No new automated requests authorized. Review current Zenodo service terms, aggregate transfer budget, exact file and acquisition scope before any replay.",
+    "mutability_notes": "Version-specific record ID and publisher MD5; record exact observed size, SHA-256 and retrieval time separately for every asset. Do not replace original release with concept DOI or latest version."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://about.zenodo.org/terms/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Live Zenodo record API on 2026-11-25 reports access_right=open and license.id=cc-by-4.0; original file sizes match prior receipts. This deposit-level licence is not a blanket grant covering upstream third-party inputs, code dependencies, privacy or automation. Review actual per-file code licences and dependency compatibility, including CLIMADA GPL-3.0, separately from deposit CC BY label. Do not execute downloaded code without isolation and review; method reproduces binary crop footprints, not monetary losses."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://doi.org/10.5281/zenodo.12784190",
+    "https://zenodo.org/api/records/12784190",
+    "https://doi.org/10.5194/nhess-24-2541-2024",
+    "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42184430327",
+    "https://github.com/pokekarten/OpenCatastrophe-data/blob/cb566576e27fa85bbc9c387224061aa9d97283b9/research/observations/swiss_crop_hail_zenodo_original_eight_file_receipts_v0.toml"
+  ],
+  "notes": "Historical original-byte evidence from PR #1396, not newly downloaded this run: Code ZIP 2240460 bytes, MD5 96f72406c1464824434e66c54998be0e, SHA-256 e72954eca06346d1b67c6a4d7287f4c102e65e2b5871193a5224419cb21d15e2, 21 members. Historical code-only source run 42184430327 did not execute code. Original workflow and pinned branch receipt identify those prior observations; live metadata rechecked 2026-11-25. Do not relabel historic branch proof as main-origin acquisition. No external data bytes or private Neon information committed; non-admission."
+}
