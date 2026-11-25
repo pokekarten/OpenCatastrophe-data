@@ -127,7 +127,7 @@ class PublicSurfaceTests(unittest.TestCase):
         # the previous pin admitted while every workflow migrates to v7.1.0.
         setup_python_v7_0 = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
         setup_python_v7_1 = "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0"
-        dependency_review = "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
+        dependency_review = "actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec"
         allowed = {checkout, setup_python_v7_0, setup_python_v7_1, dependency_review}
 
         # Narrow, immutable same-repository replay approval for this gateway
