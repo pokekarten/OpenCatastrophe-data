@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission original Environment Agency source discovery of two distinct defended 3.3 percent AEP river/sea depth products missing from the existing 2026 EA flood family; research-only metadata, no original geospatial assets or approved loss model.",
+  "review_date": "2026-11-10",
+  "entries": [
+    {
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "candidate_id": "uk.ea.rivers-sea-depth-3p3.present.2026",
+      "name": "England Environment Agency 3.3% AEP defended river and sea flood depths - present day",
+      "provider": "Environment Agency / Defra Data Services Platform",
+      "categories": [
+        "flood",
+        "river_flood",
+        "coastal_flood",
+        "defended",
+        "hazard_depth",
+        "england"
+      ],
+      "spatial_scope": "England where the national flood-zone modelling depth layers are available; the original publisher marks unsupported areas as Unavailable",
+      "temporal_scope": "Present-day static scenario, official catalogue last modified 2026-10-30",
+      "resolution_or_granularity": "Seven flood-depth bands in mm (up to 150; 150-300; 300-600; 600-900; 900-1200; 1200-2300; over 2300), 3.3% AEP (approximately 1-in-30 years) river/sea; EPSG:27700; catalogue lists WFS, OGC API Features, WMS, GPKG/GeoJSON/GDB ZIP",
+      "potential_roles": [
+        "aep_3p3_river_sea_hazard_screening",
+        "defended_1in30_flood_depth_scenario_benchmark",
+        "england_hazard_curve_shape_sanity_check"
+      ],
+      "authoritative_url": "https://www.data.gov.uk/dataset/2b1dc7a4-ff9f-42fd-9971-11638eabf814/rivers-and-sea-3-3-defended-flood-risk-depths-present-day",
+      "access_class_hint": "public_ea_ckan_2026_ogl_label_machine_asset_rights_and_service_terms_not_admitted",
+      "note": "Original data.gov.uk CKAN package UUID 2b1dc7a4-ff9f-42fd-9971-11638eabf814, modified 2026-10-30T14:00:33.438078, with exactly nine documented catalogue resources: 3 archive formats, product PDF, layer style, download landing page, WFS/WMS and OGC API Features. UK OGL label in product catalogue does not equal exact asset right/admission. Defences are assumed to operate as designed; failure not represented. Unavailable must never be mapped to zero. This 3.3% AEP defended scenario has no undefended companion in this product and is not the independent third stochastic flood event or observed property depth. Shared national modelling lineage with the EA present-day 0.1% and river 1%/sea 0.5% products; do not add scenario counts or multiply loss curves independently. AEP is a scenario exceedance probability, not an event-frequency/occurrence catalogue."
+    },
+    {
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "candidate_id": "uk.ea.rivers-sea-depth-3p3.climate.2026",
+      "name": "England Environment Agency 3.3% AEP defended river and sea flood depths - climate change",
+      "provider": "Environment Agency / Defra Data Services Platform",
+      "categories": [
+        "flood",
+        "river_flood",
+        "coastal_flood",
+        "defended",
+        "climate_scenario",
+        "hazard_depth",
+        "england"
+      ],
+      "spatial_scope": "England where national flood-zone depth simulations are available, with explicit Unavailable attribute outside supported areas",
+      "temporal_scope": "Projected 2080s river central allowance 2070-2125 and upper-end coastal sea-level rise allowance to 2125 under UKCP18 RCP8.5; catalogue last modified 2026-10-30",
+      "resolution_or_granularity": "Seven flood-depth bands up to and above 2300 mm, 3.3% AEP defended river/sea climate-change scenario, EPSG:27700; nine catalogue resources including GPKG/GeoJSON/GDB ZIP, WFS, WMS and OGC API",
+      "potential_roles": [
+        "climate_1in30_flood_scenario_sensitivity",
+        "regional_hazard_scenario_alignment",
+        "defence_assumption_counterfactual_comparison"
+      ],
+      "authoritative_url": "https://www.data.gov.uk/dataset/9d5e56d5-7713-42a1-890f-3d0a3e895cd5/rivers-and-sea-3-3-defended-flood-risk-depths-climate-change",
+      "access_class_hint": "public_ea_ckan_2026_ogl_label_exact_asset_and_api_terms_unreviewed_not_admitted",
+      "note": "Original data.gov.uk CKAN package UUID 9d5e56d5-7713-42a1-890f-3d0a3e895cd5, modified 2026-10-30T14:00:32.171469; nine documented catalogue resources: three formats, product PDF, style, download landing, WFS/WMS and OGC API. Publisher models UKCP18 RCP8.5 climate allowances; existing flood defences assumed unchanged, not a projection of future defence works or failure. This cannot be interpreted as an independent historical 1-in-30 event, insured-building water depth, claims dataset, or calibrated climate-change AEP curve. Scenario lineage overlaps present-day and EA river/sea climate datasets. Missing Unavailable support is not zero. Rights and source-scientific reviews remain required for actual spatial feature access."
+    }
+  ]
+}
