@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.cimss.probsevere.archive.documented",
+  "source_ids": [
+    "noaa.cimss.probsevere.archive"
+  ],
+  "provider": "NOAA / University of Wisconsin CIMSS / Iowa State archive",
+  "interface_type": "http_file",
+  "status": "restricted_by_terms",
+  "documentation_url": "https://cimss.ssec.wisc.edu/probsevere/ps/",
+  "service_root": "https://mtarchive.geol.iastate.edu",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/2025/12/30/mrms/ncep/ProbSevere/MRMS_PROBSEVERE_20251230_000000.json"
+    ],
+    "parameter_rules": "Documentation only. Exact asset path; no new automated requests or bulk transfer authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "GeoJSON storm features, nominal 2 minute cadence; ProbHail, ProbWind, ProbTor",
+    "scientific_semantics": "Exact bounded GET on 2026-11-25 https://mtarchive.geol.iastate.edu/2025/12/30/mrms/ncep/ProbSevere/MRMS_PROBSEVERE_20251230_000000.json returned 18033 bytes, SHA-256 2c51ef06867fe62c8e7f3c88c0b31d55755ea185cc730a1e4adf587864a5e6c8. JSON parsed 6 features; properties include MaxFED, MaxFCD, MUCAPE, EBSHEAR, MESH, EchoTop_50, VIL, FLASH_RATE, FLASH_DENSITY, WETBULB_0C_HGT, LJA, ProbHail, ID; many values encoded as strings. Provider live directory https://mrms.ncep.noaa.gov/ProbSevere/PROBSEVERE/. Model predicts severe hail >=1 inch, not observed hail or diameter; probabilities and input predictors are dependent. CIMSS product page https://cimss.ssec.wisc.edu/severe_conv/psv3.html displays a reproduction/dissemination restriction; clarify scope and contracted upstream data rights before retention or reuse. No raw data committed or ingested."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 10485760,
+    "retry_policy": "none",
+    "rate_limit_notes": "Review provider terms and explicit request/byte budget before any future execution.",
+    "mutability_notes": "Freeze exact asset/version, UTC retrieval, size and SHA-256; mutable metadata is not data identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "unknown",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Original JSON read; CIMSS reproduction/dissemination terms need product-specific interpretation. Request written clarification; keep as benchmark only until clearance, not independent hail truth."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://cimss.ssec.wisc.edu/probsevere/ps/"
+  ],
+  "notes": "Open-first qualification. Original JSON read; CIMSS reproduction/dissemination terms need product-specific interpretation. Request written clarification; keep as benchmark only until clearance, not independent hail truth. No admission or authorization to acquire data."
+}

@@ -25,10 +25,12 @@ Structured public information follows a **one semantic truth, multiple verified 
 
 1. Read `AGENTS.md`, this `README.md` and `ARCHITECTURE.md`; add `DATA_LICENSING.md` or `SCIENTIFIC_METHOD.md` when the task touches those boundaries.
 2. Record the current `main` commit and check current Pull Requests plus any enabled public issue tracker for overlapping work.
-3. Install the validation-only dependency set with `python -m pip install --disable-pip-version-check --no-input -r requirements-validation.txt`, then run `python scripts/check_all.py` before material work so the starting state is explicit.
+3. Install the validation-only dependency set with `python -m pip install --disable-pip-version-check --no-input -r requirements-validation.txt`, then run `python scripts/check_all.py --fast` for a bounded baseline. This preflight is not a full test run.
 4. Keep the change bounded, deterministic and offline-testable; external bytes stay outside Git unless their exact public asset scope is explicitly admitted.
 5. If changing canonical data that has committed generated views, regenerate them with `python scripts/render_public_views.py --write` rather than editing the generated files.
-6. Use a short-lived branch and a draft Pull Request as the visible work claim, then rerun the definition-of-done command and record exact evidence, assumptions and blockers before handoff.
+6. Use a short-lived branch and a Pull Request for changes; a Draft PR is useful for unfinished or overlapping work but is not required for every routine fix. Run focused tests and `python scripts/check_all.py` (without `--fast`) before handoff; record exact evidence, assumptions and blockers.
+
+The fast preflight runs focused agent/contract/security tests and **all** repository-wide syntax, projection, hygiene, licence, link and manifest gates. It intentionally omits the complete domain-test discovery. A green fast run **does not** validate an affected source, scientific model, original external bytes, or the full suite. Run affected tests while editing and the unmodified `python scripts/check_all.py` for the final definition of done.
 
 No LLM, MCP host, IDE extension, paid API or hidden service is required to validate repository-authored behavior.
 

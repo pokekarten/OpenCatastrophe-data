@@ -91,7 +91,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://user.eumetsat.int/resources/user-guides/mtg-li-level-2-data-guide>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** LI detects optical total-lightning activity rather than surface damage or precipitation; freeze product processing version and preserve event/group/flash definitions and detection-efficiency limitations.
+**Note:** LI detects optical total-lightning activity rather than surface damage or precipitation; freeze product processing version and preserve event/group/flash definitions and detection-efficiency limitations. Live catalogue JSON for collection EO:EUM:DAT:0691 returned HTTP 200 on 2026-11-25. Anonymous OpenSearch with pi EO:EUM:DAT:0691, dtstart 2025-06-15T12:00:00Z, dtend 2025-06-15T12:15:00Z, c 1, format json returned totalResults 3, product W_XX-EUMETSAT-Darmstadt,IMG+SAT,MTI1+LI-2-LFL--FD--x-x--ARC-x_C_EUMT_20250615122021_L2PF_OPE_20250615121003_20250615122003_N__O_0074_0000, 12:10:03 to 12:20:03 UTC. Catalogue lists NoConditions for flash product; exact provider ZIP link anonymous bounded Range GET returned HTTP 404; authenticated Data Store download and exact service terms still need verification. No flash bytes downloaded; do not interpret anonymous 404 as absence of archive.
 
 ## World Stress Map Database Release 2025
 

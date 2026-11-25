@@ -1,0 +1,199 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: landscape/sources-building-topography-damage-validation-2026.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Source landscape: `sources-building-topography-damage-validation-2026.json`
+
+> This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
+
+**Schema version:** `1.0.0`  
+**Review date:** `2026-11-01`  
+**Purpose:** Non-admission discovery of source-specific high-resolution terrain, LiDAR and observed-versus-modelled building damage evidence for bounded catastrophe exposure and vulnerability validation. No external data bytes, model approval or redistribution rights are conferred.
+
+**Entries:** 12
+
+## USGS 3DEP seamless 1-meter bare-earth digital elevation model (S1M)
+
+**Candidate ID:** `usgs.3dep.seamless-1m-dem`  
+**Provider:** U.S. Geological Survey / The National Map  
+**Categories:** `terrain`, `high_resolution_dem`, `flood`, `exposure_context`, `united_states`  
+**Spatial scope:** United States and territories where S1M tiles have been produced; tile availability is incomplete and expands over time  
+**Temporal scope:** S1M production since mid-2025; underlying LiDAR acquisition years differ by project and tile  
+**Resolution / granularity:** 1-meter ground spacing; cloud-optimized GeoTIFF tiles of approximately 10 km by 10 km, incorporating project-source metadata  
+**Potential roles:** `ground_elevation_reference`, `terrain_control_for_flood_model_validation`, `building_elevation_context`  
+**Access hint:** `official_public_domain_tile_catalog_metadata_only_no_acquisition`  
+**Authoritative source:** <https://www.usgs.gov/3d-elevation-program/about-3dep-products-services>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** S1M is bare-earth elevation, not roof/building height and not a parcel flood-water-depth surface. Freeze exact tile/product URL, byte SHA-256, acquisition/production date, CRS, vertical reference/datum, source LiDAR quality, no-data rules and pixel footprint before any use. Do not infer building-first-floor or insured-value data; compare modelled flood depths only with matched elevation datums. USGS publishes 3DEP as free and unrestricted, but exact artifact/use scope and scientific suitability are not yet reviewed in this repository.
+
+## USGS 3DEP original lidar point-cloud (LPC) collection
+
+**Candidate ID:** `usgs.3dep.lidar-point-cloud`  
+**Provider:** U.S. Geological Survey / The National Map  
+**Categories:** `lidar`, `point_cloud`, `building_geometry`, `terrain`, `united_states`  
+**Spatial scope:** United States and territories, by individual acquired lidar project and available coverage  
+**Temporal scope:** Acquisition vintages from 2004 onward vary by project; selected source work-unit must be pinned  
+**Resolution / granularity:** Project-native 3D point clouds in lossless LAZ/LAS with acquisition metadata, classification and variable quality levels  
+**Potential roles:** `independent_roof_terrain_height_test`, `observed_building_geometry_context`, `lidar_to_dem_lineage_audit`  
+**Access hint:** `official_public_domain_per_project_metadata_only_no_acquisition`  
+**Authoritative source:** <https://data.usgs.gov/datacatalog/data/USGS%3Ab7e353d2-325f-4fc6-8d95-01254705638a>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** LPC is an underlying source family of 3DEP DEMs, so LPC-vs-S1M agreement is NOT independent replication. Required checks: exact work-unit, source date, LAZ/LAS classifications, coordinates/units, vertical datum, quality level, point density, building-versus-vegetation confusion and alignment to a footprint observation date. Dataset is not a ready-made building-footprint, building-material or insurance exposure file. Public-domain publisher statements do not substitute for exact-file identification.
+
+## FEMA Historical Geospatial Damage Assessment Database public feature layer
+
+**Candidate ID:** `us.fema.historical-geospatial-damage-assessments`  
+**Provider:** U.S. Federal Emergency Management Agency (FEMA)  
+**Categories:** `observed_impacts`, `building_damage`, `event_validation`, `flood`, `wind`, `earthquake`, `united_states`  
+**Spatial scope:** United States historical disaster-event coverage limited to events assessed and published in the FEMA layer; not a complete national census  
+**Temporal scope:** Past FEMA event assessments; service metadata reports last content edit 2021-06-22; feature EVENT_DATE, IMG_DATE and PROD_DATE determine per-record vintages  
+**Resolution / granularity:** Point features with DMG_LEVEL, DMG_TYPE, ASMT_TYPE, IN_DEPTH in feet, disaster ID and event dates; ArcGIS layer supports JSON/GeoJSON; max record count 2000  
+**Potential roles:** `field_observed_damage_holdout_candidates`, `remote_sensed_damage_comparison`, `modelled_damage_leakage_detection`  
+**Access hint:** `public_arcgis_feature_service_exact_export_reuse_and_currentness_review`  
+**Authoritative source:** <https://services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/FEMA_Historical_Geospatial_Damage_Assessment_Database/FeatureServer/0>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Crucial provenance boundary: ASMT_TYPE=FA is field-assessed; RS is remote-sensing classification; MOD and other methods are model predictions and cannot serve as independent measured damage truth against the same model. Inundation depth can itself be modelled and its unit is feet, not metres. Event_name, disaster number, date and feature ID require exact-snapshot identity and deduplication; point location alone does not prove a building identity or insured claim. Old service edit date requires freshness check. 'Public use' on the feature layer has not been promoted to source-specific commercial or redistribution approval. 2026-11-01 READ-ONLY IMAGE LINEAGE CHECK: source cohort DR-4399 RS WI has 23,682 assessments; 212 have COMMENTS IS NOT NULL, but exact source count-only queries for 15 image-hint words (NOAA, NICB, NCIB, GIC, VEXCEL, IMAGE, IMAGERY, AERIAL, ORTHO, 2018, DATE, SATELLITE, FLIGHT, GOOGLE, FEMA) returned 0 hits for each. IMG_DATE nonnull=0 and PROD_DATE nonnull=0. These 212 provider comments were never retrieved or inspected: lack of keyword hits does NOT prove lack of source imagery, and no per-label scene linkage/independence is established. See docs/research/fema-michael-2018-comments-image-source-count-audit-20261101.md.
+
+## xBD / xView2 pre-post disaster building-damage annotation dataset
+
+**Candidate ID:** `xview2.xbd.building-damage`  
+**Provider:** Defense Innovation Unit / xView2 challenge and Carnegie Mellon Software Engineering Institute  
+**Categories:** `remote_sensing`, `building_damage`, `damage_labels`, `vulnerability_validation`, `global_events`  
+**Spatial scope:** Selected disaster-affected image scenes worldwide; highly nonrandom coverage rather than global building census  
+**Temporal scope:** Event-specific pre- and post-disaster satellite image acquisitions in published xBD training and evaluation splits; freeze exact download release  
+**Resolution / granularity:** Very-high-resolution paired imagery, building outlines and ordinal damage classes (no damage, minor, major, destroyed)  
+**Potential roles:** `noncommercial_research_benchmark_candidate`, `damage_classification_quality_assessment`, `event_holdout_leakage_audit`  
+**Access hint:** `registration_and_provider_license_noncommercial_restriction_must_be_verified`  
+**Authoritative source:** <https://xview2.org/dataset>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** The project is documented as CC BY-NC-SA 4.0/noncommercial in dataset catalogues; exact xView2 provider terms and image/subset rights must be checked independently before any use, especially commercial CAT or model training. Labels describe visible damage rather than loss ratios or paid insurance claims; pre/post scenes, event overlap and geographic splits can leak between training and validation. This is research discovery only: do not download, redistribute, train or publish source imagery/labels under the current record.
+
+## 2018 NOAA NGS Emergency Response Imagery: Hurricane Michael
+
+**Candidate ID:** `noaa.ngs.hurricane-michael-2018-emergency-imagery`  
+**Provider:** NOAA National Geodetic Survey / Remote Sensing Division  
+**Categories:** `aerial_imagery`, `post_event_observation`, `building_damage`, `wind`, `united_states`  
+**Spatial scope:** Selected coastal and inland areas of the Florida Panhandle and adjacent southeast United States; published bounding extent is not an image-coverage mask  
+**Temporal scope:** Post-landfall image collection 2018-10-11 to 2018-10-14, with individual flight/scene timestamps requiring retrieval and verification  
+**Resolution / granularity:** 9,580 aerial images across approximately 10,756 square kilometres; approximate 15-30 cm image sample spacing and location accuracy not independently certified  
+**Potential roles:** `independent_imagery_source_candidate`, `fema_remote_sensing_label_challenge`, `event_timing_and_coverage_review`  
+**Access hint:** `noaa_public_emergency_imagery_browse_and_selective_download_exact_tile_rights_review`  
+**Authoritative source:** <https://www.fisheries.noaa.gov/inport/item/57759>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** NOAA provider metadata reports no access restriction, warns against critical-use and legal-use reliance, documents partial coverage, clouds and estimated positional accuracy; exact derivative/commercial scope and attribution for a selected image still need review. Source NOAA photographs are direct event observations, but FEMA RS annotations might have USED NOAA imagery: audit image/label lineage before claiming an independent visual test. Record original scene ID/time/footprint, flight mission, ortho/oblique geometry and source byte identity. A photo alone is NOT a verified building-loss label or financially insured loss. Verified 2026-11-01 official NOAA Digital Coast ID 8883 exposes individual GeoTIFFs, a tile-index ZIP, a metadata XML and a STAC catalog with source-native item JSON; full bulk acquisition is ~85 GB and must NOT be automatic. Two inspected items declare EPSG:4326, 9,340x9,340 RGBA pixels and a coarse collection datetime, not independently verified individual flight time. NOAA InPort item 57759 explicitly states CC0-1.0, while those STAC items declare license=NLPL (SPDX No Limit Public License, independently verified against https://spdx.org/licenses/NLPL.html). Both are permissive; identifier difference alone does NOT prove restrictive rights. Exact item-level applicability and the source-to-derived-GeoTIFF licence crosswalk still require review before commercial/image-model admission. A 2026-11-01 bounded HTTP Range request read only the first 4,096 bytes of NOAA tile 20181011aC0844330w294330n.tif and confirmed original little-endian TIFF, 9340x9340 RGBA, Deflate compression, 512x512 tiled layout (361 blocks) and original GeoKey EPSG:4326; no original imagery bytes were committed, no full-file hash or pixel mask was verified. Provider item bbox/polygon/alpha is NOT proof of scene completeness or FEMA label independence. See docs/research/noaa-hurricane-michael-stac-metadata-receipt-20261101.md. **SCIENCE CORRECTION 2026-11-01:** the first three source STAC tile **projected envelope** counts were 0/8/0, but WGS84 **true polygon** counts are 0/7/0. NOAA tile 20181011aC0853300w302100n has seven true-polygon DR-4399 RS/WI AFF classifications and seven total DR-4399 entries, whereas the original projected WGS84 envelope query overcounted one due to non-additive EPSG:4326-envelope versus EPSG:32616-layer geometry. All downstream source-area intersections must use explicit WGS84 polygon rings and reconcile subdivisions. Alpha-visible pixels, complete image bytes, unique structures and FEMA image-label independence remain unproven. See docs/research/noaa-fema-michael-2018-three-tile-spatial-receipt-20261101.md. Original NOAA image proof (2026-11-01): exact center 512x512 raster block index 180 of tile 20181011aC0853300w302100n was read as one 1,039-byte HTTP Range (64665046-64666084); SHA256 1e6d5d105f8ee78fd7a403adeac8aef4913dc356ac3f66d3ab300309a1ca8a66, Deflate expands into 1,048,576 all-zero RGBA bytes. Therefore 262,144 source pixels in this specific block have transparent alpha, not necessarily other blocks or the eight FEMA bbox hits. Count-only exact original raster-block geographic query returned 0 FEMA DR-4399 RS/WI points; west/east coarse tile halves returned 8/0. No complete TIFF bytes or hash, full alpha coverage, source-label independence, policy exposure or commercial admission verified. See docs/research/noaa-michael-original-center-alpha-block-20261101.md. Additional original byte checks: source blocks 18 and 360 each independently returned 1,039 compressed bytes identical to the proven all-zero Deflate stream of block 180; thus at least 341,008 disjoint valid raster pixels are demonstrated alpha-transparent across exactly these three original blocks. Public NOAA index claims 18.94 MB for this named TIFF, but verified first original IFD tile offsets and lengths require at least 67,126,397 file bytes, corroborated by a successful source HTTP byte range ending at offset 67,126,396. Do not treat directory MB label as exact Content-Length or assert file corruption; current authoritative size, ETag and full SHA-256 remain unverified. Source-specific evidence: docs/research/noaa-michael-original-center-alpha-block-20261101.md. This corrected 0/7/0 source overlap supersedes any unqualified 0/8/0 or eight-building text in earlier receipts; see docs/research/noaa-fema-michael-2018-three-tile-spatial-receipt-20261101.md. Live 2026-11-01 corrected true-polygon 12-block source partition: all seven FEMA DR-4399 RS/WI AFF aggregate counts fall in NOAA TIFF rows 16-18, columns 0-3. Four exact original compressed source blocks 305/306/325/326 match the independently decoded all-zero 1,039-byte Deflate stream byte-for-byte (block SHA256 1e6d5d105f8ee78fd7a403adeac8aef4913dc356ac3f66d3ab300309a1ca8a66): five of seven aggregate counts occur in entirely transparent NOAA raster blocks; two counts occur in blocks 324 and 344 with unverified alpha. Not original-image-validatable observations, not unique properties, and never model-admitted. No complete full-file TIFF hash or independently documented building/claim/source labels. See docs/research/noaa-fema-michael-seven-count-alpha-negative-blocks-20261101.md. FOLLOW-UP ORIGINAL DATA 2026-11-01 (supersedes earlier size/alpha gaps): GitHub successful live original TIFF HTTP206/ETag-pinned run https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41329301340 confirmed total TIFF object 67,126,397 bytes (the public HTML 18.94 MB listing is not the authoritative current object size). Exact compressed block 324 (81,979 bytes; SHA256 61640a5e3a0ab60f46eb257f27089ea792f28239be0ff44f32931bc0de8461ff) Adler-32/Predictor2 yields 39,316 alpha-positive pixels of 262,144; block 344 (21,239 bytes; SHA256 3bf7fffaf8f6acb516e12001d27b4e28077174596ffea5d186a003282d1e5eef) yields 7,948 alpha-positive pixels of 63,488. Actual FEMA true-polygon count of source block 344 is 1 but count in conservative polygon enclosing ALL alpha-positive pixels is 0. Thus 5+1=6 of 7 corrected FEMA RS/WI source count scopes cannot be validated as visible pixels in this NOAA tile; remaining block 324 count1 lies only in an alpha-bbox and is NOT proven pixel visible or independently labeled. Full original TIFF SHA256, building identity and model admission remain unverified. See docs/research/noaa-michael-324-344-original-alpha-provenance-20261101.md. VERIFIED FOLLOW-UP 2026-11-01: final source original exact raster alpha-mask experiment against FEMA count-only API (https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41331414001) resolved the last block 324 candidate. The source's original 39,316 alpha-positive pixel squares form 372 georeferenced WGS84 polygon rings/2842 vertices. Corrected FEMA DR-4399 RS/WI true-polygon point counts: complete block 324 positive control=1; bounding polygon of all alpha-positive pixels positive control=1; EXACT source alpha-positive pixel union=0; same source mask conservatively expanded by 2 raster pixels=0. Across 7 true source FEMA classification counts, none is actually covered by demonstrably nontransparent pixels of this exact NOAA TIFF; five in fully transparent source blocks, one outside all visible block 344 pixels, one outside even 2px-expanded exact block324 alpha mask. This does not invalidate FEMA damage assessments or prove independent imagery provenance. Full TIFF SHA256, exact flight acquisition time, independent labels, licensed building geometry and model input admission remain NO-GO. Grounded receipt docs/research/noaa-michael-seven-fema-alpha-mask-final-20261101.md.
+
+## Florida DEP Hurricane Michael field-assessed coastal structural damage report (2019)
+
+**Candidate ID:** `florida.dep.hurricane-michael-2018-coastal-structural-damage`  
+**Provider:** Florida Department of Environmental Protection, Coastal Engineering and Geology  
+**Categories:** `field_assessment`, `observed_structural_damage`, `coastal_buildings`, `wind`, `storm_surge`, `united_states`  
+**Spatial scope:** Northwest Florida coastal building zone, specifically selected surveyed coastlines in Bay, Gulf, Franklin and Wakulla counties; not an inland or complete statewide census  
+**Temporal scope:** Field surveys immediately after 2018-10-10 landfall; final report and revisions published 2019  
+**Resolution / granularity:** Expert-compiled report, field observations, photos and area/type summary counts; no independently verified openly downloadable building-level machine table confirmed  
+**Potential roles:** `independent_field_damage_report_candidate`, `coastal_damage_definition_comparison`, `external_validation_scope_limit`  
+**Access hint:** `public_government_report_pdf_and_photos_no_machine_readable_microdata_admission`  
+**Authoritative source:** <https://floridadep.gov/rcp/coastal-engineering-geology/documents/hurricane-michael-post-storm-beach-conditions-and-coastal>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Florida DEP explicitly documents damage-assessment team field observations in Bay, Gulf, Franklin and Wakulla counties, with NOAA imagery also used. The report concerns coastal structures and erosion, not all FEMA DR-4399 structures or purely wind damage: surge, wave and erosion mechanisms must be disentangled. Its report totals and methods could offer a bounded independent challenge only after geography, damage definitions, survey selection, lineage and precise reuse rights are verified. Do NOT divide FEMA RS point counts by coastal field survey totals, infer parcel-level matches, claim an independent label at every location, or redistribute report imagery as unrestricted model training data.
+
+## Florida Geographic Data Library statewide parcel polygons — 2017 edition
+
+**Candidate ID:** `florida.fgdl.parcels-2017`  
+**Provider:** University of Florida GeoPlan Center / Florida Department of Revenue / County Property Appraisers  
+**Categories:** `historical_parcels`, `exposure_context`, `building_attributes`, `florida`, `pre_event`  
+**Spatial scope:** Florida statewide parcel coverage; cannot assume any particular parcel is a unique building footprint or has exact 2018 geometry  
+**Temporal scope:** Provider content dates 2017-09-26 through 2017-12-22; publication 2018-01-19, prior to Hurricane Michael on 2018-10-10  
+**Resolution / granularity:** 10,086,830 parcel polygon records statewide (not houses/buildings) with tax fields such as ACTYRBLT, TOTLVGAREA, NOBULDNG, DORUC and owner/address personal information  
+**Potential roles:** `pre_event_parcel_context_candidate`, `construction_year_metadata_research`, `parcel_to_building_identity_leakage_control`  
+**Access hint:** `fgdl_historical_parcel_zip_withdrawn_by_state_request_metadata_viewable_no_data_acquisition`  
+**Authoritative source:** <https://fgdl.org/zips/metadata/htm/parcels_2017.htm>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official FGDL PARCELS_2017 metadata confirms 10,086,830 statewide parcel polygons, content 2017-09-26–2017-12-22 and publication 2018-01-19. This is a genuine pre-Hurricane Michael source-vintage candidate, but no original geodatabase/ZIP bytes, current archive download URL, source-specific reuse terms or county subset are verified. Parcel geometry is NOT an observed building/roof footprint. The metadata lists owner names, owner mailing/site addresses, parcel IDs, property values and building attributes; DO NOT retrieve owner/address or identifiable parcel records into this research register or infer an insured location. A 2017 polygon cannot prove that a structure survived, existed in 2018, or matched a FEMA RS assessment. Requires privacy, accuracy, CRS, geometry, archival acquisition, licensing, split/merge and building-identity checks. See docs/research/florida-michael-2018-historical-parcel-and-imagery-lineage-20261101.md. ACCESS CORRECTION verified 2026-11-01: UF GeoPlan's explicit 2025-10-08 withdrawal notice https://www.geoplan.ufl.edu/parcel-layers-removed-from-fgdl-per-state-request/ states ALL FGDL parcel layers including historic versions were removed at Florida State GIS Office (GIO) request. The FGDL ZIP archive does not offer parcels_2017/2018 and the archival metadata links are NOT an entitlement or source file download. Do not bypass the stated state-requested FGDL removal by guessing ZIP URLs or using unofficial mirror datasets. UF directs users to the official Florida DOR state FeatureServer, whose explicitly labelled 2025 cadastral product CANNOT replace the original event-era pre-2018 FGDL parcels. Separate dated county-level or authorized FDOR historical original releases require their own confirmed provenance, current permission, and rights/security review.
+
+## Florida Geographic Data Library statewide parcel polygons — 2018 edition (mixed event vintage)
+
+**Candidate ID:** `florida.fgdl.parcels-2018`  
+**Provider:** University of Florida GeoPlan Center / Florida Department of Revenue / County Property Appraisers  
+**Categories:** `historical_parcels`, `exposure_context`, `building_attributes`, `florida`, `temporal_leakage`  
+**Spatial scope:** Florida statewide parcel coverage; publication does not prove a consistent pre-event spatial snapshot  
+**Temporal scope:** Provider content dates 2018-07-24 through 2018-12-28, spanning Hurricane Michael 2018-10-10; publication 2019-03-12  
+**Resolution / granularity:** 10,261,260 statewide parcel polygons (not building footprints) with mixed-date source inputs and tax-roll attributes  
+**Potential roles:** `post_event_temporal_contamination_check`, `parcel_change_and_renumbering_diagnostics`, `historical_taxroll_lineage`  
+**Access hint:** `fgdl_historical_parcel_zip_withdrawn_by_state_request_metadata_viewable_no_data_acquisition`  
+**Authoritative source:** <https://fgdl.org/zips/metadata/htm/parcels_2018.htm>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** FGDL PARCELS_2018 metadata directly states publication 2019-03-12 and content window 2018-07-24 to 2018-12-28; it combines summer GIS geometry acquisition with late-December tax roll information. It must NOT be called an entirely pre-event 2018 building inventory or used to validate damage labels without per-record pre-event lineage. It contains private owner/address fields; research does not ingest rows. Comparing its 10,261,260 parcel records with 2017's 10,086,830 records does not yield building growth, loss or damage counts; differences can reflect splits, duplicates, scope and update conventions. Exact file source license, archived ZIP byte identity, event-era spatial geometry, county-level snapshots and building roofs remain unverified. See docs/research/florida-michael-2018-historical-parcel-and-imagery-lineage-20261101.md. ACCESS CORRECTION verified 2026-11-01: UF GeoPlan's explicit 2025-10-08 withdrawal notice https://www.geoplan.ufl.edu/parcel-layers-removed-from-fgdl-per-state-request/ states ALL FGDL parcel layers including historic versions were removed at Florida State GIS Office (GIO) request. The FGDL ZIP archive does not offer parcels_2017/2018 and the archival metadata links are NOT an entitlement or source file download. Do not bypass the stated state-requested FGDL removal by guessing ZIP URLs or using unofficial mirror datasets. UF directs users to the official Florida DOR state FeatureServer, whose explicitly labelled 2025 cadastral product CANNOT replace the original event-era pre-2018 FGDL parcels. Separate dated county-level or authorized FDOR historical original releases require their own confirmed provenance, current permission, and rights/security review.
+
+## NICB Geospatial Intelligence Center post-Hurricane Michael 2018 aerial imagery
+
+**Candidate ID:** `nicb.gic.hurricane-michael-2018-imagery`  
+**Provider:** National Insurance Crime Bureau / Geospatial Intelligence Center (GIC) / Vexcel Imaging  
+**Categories:** `aerial_imagery`, `post_event_observation`, `building_damage`, `florida`, `imagery_provenance`  
+**Spatial scope:** Reported hurricane-response flyovers after Michael in affected U.S. regions; exact image/scene and pilot tile overlap unverified  
+**Temporal scope:** NICB's 2018-11-05 announcement confirms post-Michael image collection, not a specific pilot image acquisition time or coverage  
+**Resolution / granularity:** High-resolution commercial airborne imagery, dates and access rights per collection and scene unknown for the target NOAA/FEMA tile  
+**Potential roles:** `alternate_post_event_imagery_source_candidate`, `fema_imagery_lineage_hypothesis`, `source_independence_leakage_challenge`  
+**Access hint:** `official_public_news_evidence_only_scene_access_and_redistribution_not_verified`  
+**Authoritative source:** <https://www.nicb.com/news/news-releases/video-shows-how-gic-imagery-transforming-catastrophe-response>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** NICB announced on 2018-11-05 that GIC/Vexcel aircraft collected imagery after Hurricanes Florence and Michael, shared with emergency personnel, insurers and members. The NOAA National Geodetic Survey 2022 presentation shows separate 'NCIB Imagery' and 'NOAA Imagery' layer names on a FEMA Michael damage dashboard; whether that NCIB label corresponds to this NICB/GIC source is a plausible but NOT independently verified spelling/identity mapping. The source visualization does NOT prove which image or imagery family produced individual FEMA DR-4399 RS labels. No scene URL, flight timestamp, spatial extent, pixel/orthophoto bytes or rights were acquired. Public viewing or insurer access must never be mistaken for open commercial redistribution or independent scientific ground truth. See docs/research/florida-michael-2018-historical-parcel-and-imagery-lineage-20261101.md.
+
+## Florida Department of Revenue official current statewide cadastral polygon FeatureServer (2025 labelled)
+
+**Candidate ID:** `florida.fdor.statewide-cadastral-2025`  
+**Provider:** State of Florida Department of Revenue / Property Tax Oversight (PTO) / county property appraisers  
+**Categories:** `parcel_polygons`, `current_cadastral`, `exposure_context`, `florida`, `temporal_incompatibility`  
+**Spatial scope:** All 67 Florida counties; separate official state product from the removed GeoPlan-standardized historical FGDL parcel layers  
+**Temporal scope:** Layer called FDOR Cadastral 2025, original annual source GIS submissions April 2025 and joined NAL tax roll; service may receive later maintenance; NOT pre-Hurricane-Michael-2018  
+**Resolution / granularity:** ArcGIS FeatureServer layer 0 polygon with statewide count-only public API, live original count 10,950,670 features at 2026-11-01; parcel features not unique buildings and contain sensitive owner/address fields  
+**Potential roles:** `separately_versioned_current_parcel_context`, `current_source_access_and_field_schema_validation`, `historical_2017_temporal_substitution_negative_control`  
+**Access hint:** `official_state_public_feature_service_metadata_and_count_only_verified_original_features_not_downloaded`  
+**Authoritative source:** <https://services9.arcgis.com/Gh9awoU677aKree0/arcgis/rest/services/Florida_Statewide_Cadastral/FeatureServer/0>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official UF withdrawal notice 2025-10-08 recommends the separate Florida Department of Revenue source after ALL FGDL historical parcels were removed on state request. Original state FeatureServer itemId efa909d6b1c841d298b0a649e7f71cf2 layer 0 name CADASTRAL_DOR, public-facing label FDOR Cadastral 2025, original polygon in state CRS and source attributes OBJECTID, CO_NO, ASMNT_YR, OWN_NAME verified against live provider metadata; public source count-only where=1=1 returnCountOnly=true returnGeometry=false returned 10,950,670 parcel polygon features on 2026-11-01. This is NOT 10,950,670 buildings, not the 2017 pre-event geometry, and not the same standardized FGDL layer. Source layer includes personal owner names and mailing addresses, and layer warns of confidential property records under Florida Statutes Chapter 119. No source features or personally identifying attributes downloaded. Source-specific dataset licensing, export reuse, original raw bytes, source snapshot/ETag, per-county 2018 vintage and CAT model admission remain unverified. See docs/research/florida-michael-2018-official-parcel-access-withdrawal-20261101.md.
+
+## Bay County Florida hosted Building Footprints polygons with roof and height fields (live nonversioned)
+
+**Candidate ID:** `us.fl.bay-county.building-footprints-current`  
+**Provider:** Bay County, Florida GIS and GIS service  
+**Categories:** `building_footprints`, `roof_type`, `building_height`, `event_validation`, `florida`, `temporal_leakage`  
+**Spatial scope:** Bay County, Florida, current county-hosted local-building-basemap service; original features not downloaded  
+**Temporal scope:** Live service checked 2026-11-01; provider does not expose historicMoment or versioned data; source building capture dates unknown; no 2018-10-10 freeze  
+**Resolution / granularity:** Original ArcGIS Hosted/FC_BuildingFootprints FeatureServer layer 22, polygon CRS EPSG:2238, 117,646 feature count-only; roof_type, bldgheight, numstories, lastupdate and create_date fields  
+**Potential roles:** `modern_building_geometry_schema_candidate`, `roof_height_field_definition_research`, `negative_test_for_false_2018_building_snapshot`  
+**Access hint:** `official_count_only_and_metadata_verified_no_historic_moment_no_original_polygon_acquisition`  
+**Authoritative source:** <https://gis.baycountyfl.gov/arcgis/rest/services/Hosted/FC_BuildingFootprints/FeatureServer/22>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Original public Bay County GIS Hosted/FC_BuildingFootprints/FeatureServer/22 layer itemId 6b68c1a8d4354fc3b6f38cf41f46b754, native Florida StatePlane EPSG:2238 (latestWkid), esriGeometryPolygon. Live count-only 2026-11-01 gave 117,646 features; lastupdate IS NULL=117,500, IS NOT NULL=146, earlier than 2018-10-10=146; create_date earlier than 2018-10-10=0. Hosted service isDataVersioned=false and supportsQueryWithHistoricMoment=false. Dates in a few individual database fields CANNOT reconstruct historical roof shape or prove the other 117,500 features' historical state; create_date is a data-edit timestamp, not roof age. The field schema includes roof_type, bldgheight, numstories, not measured insured values. No feature geometry, addresses, IDs or exact vintage captured; source reuse and license not reviewed; not admitted. See docs/research/bay-county-microsoft-2018-building-snapshot-lineage-20261101.md.
+
+## Microsoft US Building Footprints original pre-Hurricane-Michael GitHub catalog, Florida V1.1
+
+**Candidate ID:** `microsoft.usbuildingfootprints.2018-florida-v1-1`  
+**Provider:** Microsoft Bing Maps (original 2018 building extraction)  
+**Categories:** `historical_building_footprints`, `computer_vision`, `building_geometry`, `florida`, `pre_event_release`, `rights_conflict`  
+**Spatial scope:** Statewide Florida originally reported; exact Bay County polygon subset not acquired or validated  
+**Temporal scope:** Public June 28, 2018 Microsoft original release; pinned original repo commit c9fb49b5f7475102b2923ae2c7fc455412c7f0e8 (2018-10-09 21:48:57 UTC) predates hurricane on 2018-10-10; source Bing image composite captures are not per-building date-verified  
+**Resolution / granularity:** Historical README's Florida V1.1 ZIP reports 6,903,772 automatically inferred building polygons in GeoJSON; original V1.1 ZIP byte identity, availability and SHA-256 currently unverified  
+**Potential roles:** `candidate_pre_event_published_roof_geometry`, `historical_building_detection_completeness_benchmark`, `satellite_imagery_age_leakage_diagnostic`  
+**Access hint:** `original_2018_github_commit_pinned_fl_v1_1_zip_not_retrieved_exact_archive_rights_conflict`  
+**Authoritative source:** <https://github.com/microsoft/USBuildingFootprints/blob/c9fb49b5f7475102b2923ae2c7fc455412c7f0e8/README.md>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Original Microsoft repo commit 2018-10-09 c9fb49b5f7475102b2923ae2c7fc455412c7f0e8 specifically links Florida V1.1 original https://usbuildingdata.blob.core.windows.net/usbuildings-v1-1/Florida.zip and reports 6,903,772 polygons. A targeted range access check for that original ZIP failed (WEBSITE_ACCESS_ERROR); no source ZIP bytes, immutable identity/hash, county subset or import verified. README calls the 2018 data Open Database License ODbL, while the SAME historical repo commit's LICENSE file contains CC BY 4.0 legal text: licensing scope is conflicting and requires legal/maintainer review rather than optimistic commercial use. Microsoft 2018 README warns Bing aerial imagery is a multi-vintage composite, individual image dates unknowable; June release and Oct pinned commit DO NOT prove each Florida building existed as roof on 2018-10-09. No counts from updated v2 dataset substitute for original V1.1. Research-only, not training/model admitted. See docs/research/bay-county-microsoft-2018-building-snapshot-lineage-20261101.md.

@@ -27,5 +27,12 @@ updates:
       time: "06:00"
       timezone: "Etc/UTC"
     open-pull-requests-limit: 1
+    # This isolated historical Google ARCO ERA5 requirements file is a frozen
+    # source-reproduction profile, not a rolling dependency set. Exclude the
+    # entire one-off manifest, not just one package (gcsfs, numpy, xarray,
+    # zarr and numcodecs must be tested together before any upgrade).
+    # All other pip manifests remain eligible for Dependabot updates.
+    exclude-paths:
+      - "requirements-google-arco-2020-original-smoke.txt"
     commit-message:
       prefix: "deps(python)"

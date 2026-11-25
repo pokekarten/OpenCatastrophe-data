@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "nixon.allen.storm-interactions.hail.2008-2021.documented",
+  "source_ids": [
+    "nixon.allen.storm-interactions.hail.2008-2021"
+  ],
+  "provider": "Nixon and Allen / Central Michigan University",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://zenodo.org/records/10672225",
+  "service_root": "https://zenodo.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/records/10672225/files/StormInteractions_HAIL.csv"
+    ],
+    "parameter_rules": "Documentation only. Exact asset path; no new automated requests or bulk transfer authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/plain"
+    ],
+    "format": "CSV point reports and surrounding cell characteristics",
+    "scientific_semantics": "Zenodo API license cc-by-4.0. Bounded original GET on 2026-11-25 https://zenodo.org/records/10672225/files/StormInteractions_HAIL.csv?download=1 yielded 48878 bytes, SHA-256 1f5d061ddee6e721bbf356ede3358dcb667f0cc0fba64991a0df3ff1440cc696 and MD5 2fc284273a32085b35fb0b3d2c4e60a2 matching provider. CSV parsed 331 data rows; observed Date, Time, Radar, Lat, Lon, Mag, SM, Sample, Mode1-4, Orientation, neighboring Cell1-5 at 00/10/20/30 minute offsets and blank spacer columns. Selected >=3 inch hail reports, not representative occurrence sample; do not infer annual rates, treat blank headers explicitly, confirm magnitude units and date/time convention from authors. No original data in Git or database; third-party report lineage and scientific independence require review."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 10485760,
+    "retry_policy": "none",
+    "rate_limit_notes": "Review provider terms and explicit request/byte budget before any future execution.",
+    "mutability_notes": "Freeze exact asset/version, UTC retrieval, size and SHA-256; mutable metadata is not data identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://about.zenodo.org/policies/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "CC BY 4.0 deposit; original 331-row CSV and MD5 verified. Review report lineage, magnitude/time definitions and exact reuse scope; priority open source for extreme hail validation, not frequency."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://zenodo.org/records/10672225"
+  ],
+  "notes": "Open-first qualification. CC BY 4.0 deposit; original 331-row CSV and MD5 verified. Review report lineage, magnitude/time definitions and exact reuse scope; priority open source for extreme hail validation, not frequency. No admission or authorization to acquire data."
+}

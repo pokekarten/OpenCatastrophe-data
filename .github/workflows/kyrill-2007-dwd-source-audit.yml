@@ -2,17 +2,17 @@
 # SPDX-License-Identifier: Apache-2.0
 name: Kyrill 2007 original DWD station-window audit
 
+# Historical PR-specific source replay. The original head branch no longer
+# exists; keep explicit, reviewed manual execution on trusted main rather
+# than creating a skipped run on every unrelated pull request.
 on:
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   original-dwd-window:
-    if: github.event_name == 'pull_request' && github.head_ref == 'research/kyrill-2007-dwd-source-audit-v0'
     name: Original Kyrill DWD station observations and history
     runs-on: ubuntu-24.04
     timeout-minutes: 15
