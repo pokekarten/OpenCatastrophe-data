@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of independently versioned open-first global lightning climatology alternatives.",
+  "review_date": "2026-11-25",
+  "entries": [
+    {
+      "candidate_id": "pangaea.wglc.lightning.2019",
+      "name": "WGLC 2019 PANGAEA global lightning climatology and monthly density",
+      "provider": "Kaplan and Lau / PANGAEA",
+      "categories": [
+        "lightning",
+        "climatology",
+        "convective_storm"
+      ],
+      "spatial_scope": "Global WGS84",
+      "temporal_scope": "2010-2018",
+      "resolution_or_granularity": "0.5 degree monthly NetCDF4, 108 months and 12 climatological bins",
+      "potential_roles": [
+        "global_convective_frequency_calibration",
+        "lightning_climatology_benchmark"
+      ],
+      "authoritative_url": "https://doi.pangaea.de/10.1594/PANGAEA.904253",
+      "access_class_hint": "public_versioned_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinct immutable DOI release; not a licence for 2026 WGLC or raw WWLLN. PANGAEA landing page explicitly CC BY 4.0 and gives ZIP locator https://store.pangaea.de/Publications/KaplanJ-LauH_2019/WWLLN.zip. On 2026-11-25 bounded HTTPS GET on macOS downloaded 37038662 bytes, SHA-256 ef9ef83797f861c68930856ab4f57e392d575c79e7ca46bc7c2f8cf13e19f7d5. ZIP CRC check passed; two entries WWLLN_climatology.nc (5947906 bytes) and WWLLN_monthly.nc (31343698 bytes). HDF5 inspection of climatology verified lon 720, lat 360, time 12, lightning shape 12 x 360 x 720, units strokes km-2, CF-1.7 and source AE detection-efficiency corrected stroke counts. Calendar units days since 0000-01-01 00:00:00 require explicit CF calendar handling; monthly file not yet parsed. Stroke counts not optical flashes; monthly density cannot track storms. Open-first priority: complete exact archive reuse/API review, inspect monthly data/missingness/cell-area and compare to independent radar hail frequencies. No raw bytes in Git or Neon; not admitted."
+    },
+    {
+      "candidate_id": "nasa.ghrc.lis-otd.reprocessed.lorfc",
+      "name": "NASA LIS/OTD Reprocessed Flash Climatology",
+      "provider": "NASA GHRC DAAC / Cecil et al.",
+      "categories": [
+        "lightning",
+        "climatology",
+        "convective_storm"
+      ],
+      "spatial_scope": "Near-global orbital coverage; mission-dependent latitudes",
+      "temporal_scope": "OTD April 1995-March 2000; TRMM LIS December 1997-April 2015; ISS LIS March 2017-November 2023, 27 sampled calendar years",
+      "resolution_or_granularity": "0.1 degree gridded annual mean flash rate, annual/diurnal cycle and mission-specific time series",
+      "potential_roles": [
+        "global_convective_frequency_calibration",
+        "lightning_climatology_benchmark"
+      ],
+      "authoritative_url": "https://doi.org/10.5067/LIS/LISCLIMO/DATA101",
+      "access_class_hint": "earthdata_login_protected_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NASA catalog https://catalog.data.gov/dataset/lis-otd-reprocessed-flash-climatology identifies US government works rights label and collection C3671144020-GHRC_DAAC; paper https://doi.org/10.1175/JAMC-D-25-0110.1. Live anonymous CMR granule query on 2026-11-25 returned COMB_OTD_TRMM_ISS_AnnualMean.hdf, COMB_OTD_TRMM_ISS_AnnualDiurnalCycle.hdf, COMB_OTD_TRMM_ISS_AnnualCycle.hdf and OTD monthly/annual files under https://data.ghrc.earthdata.nasa.gov/ghrcw-protected/lorfc__2/. Combined granules span 1995-04-13 to 2023-11-16; not continuous observing time. CMR reported granule_size 0, not evidence files are empty or free to acquire. Exact version, Earthdata account and HDF reader required; review mission-specific rights, detection efficiency, observation opportunity, time bins and units. No original payload downloaded. Use as frequency/diurnal context, not hail events."
+    }
+  ]
+}

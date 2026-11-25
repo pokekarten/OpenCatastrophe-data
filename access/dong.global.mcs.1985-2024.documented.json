@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "dong.global.mcs.1985-2024.documented",
+  "source_ids": [
+    "dong.global.mcs.1985-2024"
+  ],
+  "provider": "Wenhao Dong",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://zenodo.org/records/19634724",
+  "service_root": "https://zenodo.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/records/19634724/files/CLAUS_CSVFILE.tar.gz"
+    ],
+    "parameter_rules": "Documentation only. Exact asset path; no new automated requests or bulk transfer authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/gzip"
+    ],
+    "format": "KFyAO tracked systems from CLAUS and NCEP/CPC brightness temperature, CSV and NetCDF",
+    "scientific_semantics": "Live Zenodo metadata 2026-11-25: 6 files, 15032621710 bytes, cc-by-4.0; smallest CLAUS_CSVFILE.tar.gz 218241779 bytes. Transition adjustments are latitude/season dependent; check homogeneity and storm definition, avoid double-counting overlapping source years. No direct hail intensity or isolated cell representation. No source bytes downloaded."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 10485760,
+    "retry_policy": "none",
+    "rate_limit_notes": "Review provider terms and explicit request/byte budget before any future execution.",
+    "mutability_notes": "Freeze exact asset/version, UTC retrieval, size and SHA-256; mutable metadata is not data identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://about.zenodo.org/policies/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "CC BY 4.0 deposit; smallest archive 218 MB. Plan bounded acquisition with disk budget, upstream CLAUS/NCEP rights and overlap/homogeneity checks; not hail diameter."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://zenodo.org/records/19634724"
+  ],
+  "notes": "Open-first qualification. CC BY 4.0 deposit; smallest archive 218 MB. Plan bounded acquisition with disk budget, upstream CLAUS/NCEP rights and overlap/homogeneity checks; not hail diameter. No admission or authorization to acquire data."
+}

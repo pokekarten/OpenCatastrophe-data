@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "hong.modis.ot.climatology.2023.documented",
+  "source_ids": [
+    "hong.modis.ot.climatology.2023"
+  ],
+  "provider": "Hong, Nesbitt, Trapp and Di Girolamo",
+  "interface_type": "web_portal",
+  "status": "documented_only",
+  "documentation_url": "https://doi.org/10.5194/amt-16-1391-2023",
+  "service_root": "https://doi.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "other",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/10.5194/amt-16-1391-2023"
+    ],
+    "parameter_rules": "Documented exact path only. No execution authorized by this contract; review provider terms, fixed request and bounded acquisition plan before activation."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html"
+    ],
+    "format": "1 km thermal IR imagery; logistic OT detection model",
+    "scientific_semantics": "Original MODIS/CloudSat/GPM sources cited in study; downloadable derived individual OT catalogue not established. Polar-orbiting sampling and local overpass-time bias preclude continuous tracks. Obtain derived data or reproduce detection with observation opportunity normalization. Rights for source files and derived product separate."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 10485760,
+    "retry_policy": "none",
+    "rate_limit_notes": "No new automated requests authorized. Future route must review service terms and enforce explicit provider-specific request and byte limits.",
+    "mutability_notes": "Freeze exact version, UTC retrieval time, selected object, response byte size, SHA-256 and coverage; never use a mutable directory or catalogue as original byte identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "unknown",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Published method, no derived catalogue download established. Request exact detection data and reuse terms, or reproduce from separately reviewed MODIS archive; account for orbital sampling."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": true,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://doi.org/10.5194/amt-16-1391-2023"
+  ],
+  "notes": "Open-first qualification queue. Published method, no derived catalogue download established. Request exact detection data and reuse terms, or reproduce from separately reviewed MODIS archive; account for orbital sampling. Discovery/access only: no admission, no external bytes in Git, no model approval."
+}

@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "dwd.konrad3d.zenodo.18087045.documented",
+  "source_ids": [
+    "dwd.konrad3d.zenodo.18087045"
+  ],
+  "provider": "Deutscher Wetterdienst",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://zenodo.org/records/18087045",
+  "service_root": "https://zenodo.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/records/18087045/files/KONRAD3D_201904.tar.bz2"
+    ],
+    "parameter_rules": "Documented exact path only. No execution authorized by this contract; review provider terms, fixed request and bounded acquisition plan before activation."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/x-bzip2"
+    ],
+    "format": "Monthly tar.bz2 archives of XML snapshots; 5-minute analysis cadence in April 2019 sample",
+    "scientific_semantics": "Distinct historical reprocessing archive, not the already documented operational endpoint dwd.konrad3d.operational. Zenodo API returned 88 files, 2219772181 bytes, license cc-by-4.0 on 2026-11-25. Bounded macOS download of https://zenodo.org/records/18087045/files/KONRAD3D_201904.tar.bz2?download=1 succeeded: 8792122 bytes, SHA-256 d573694526df63d2233bafa21176510c0336b23c30bb36c84f60155b76e188aa, MD5 14200f3dd87df73eec5c7a04ac56dc3c matches provider. Streaming tar scan without extraction: 8640 XML members, sum member bytes 209615753; v1.7 root and UTC reference times confirmed. File KONRAD3D_20190401T193500.xml includes cell identifier, geodetic centroid, polygons, echo top, reflectivity thresholds, VIL/VII, hail_flag, HYMEC hail/large-hail area and volume, ICON-EU CAPE/shear and lightning_rate (strokes/5min), lightning_density. Sentinel -1000000000 observed; preserve missingness and radar-sweep availability. Header grid DE4800_WGS84 250 m is underlying processing grid, not measured hail footprint resolution. Hail flag and HYMEC are radar-derived, not observed ground hail size; cell detection uses lightning, so not independent validation of lightning-only predictors without lineage-aware split/holdout. Archive was retrospectively processed in 2025; do not treat creation date as event date or forecast as observation. No raw bytes committed, no database ingestion; formal rights review and scientific admission remain open."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 10485760,
+    "retry_policy": "none",
+    "rate_limit_notes": "No new automated requests authorized. Future route must review service terms and enforce explicit provider-specific request and byte limits.",
+    "mutability_notes": "Freeze exact version, UTC retrieval time, selected object, response byte size, SHA-256 and coverage; never use a mutable directory or catalogue as original byte identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://about.zenodo.org/terms/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "DWD deposit API CC BY 4.0 and full April 2019 sample verified with provider MD5. Strong open-first priority. Review exact deposit and embedded third-party inputs; validate sentinel, units, track continuity and sample hail flags; admission must precede model training."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://zenodo.org/records/18087045",
+    "https://about.zenodo.org/terms/"
+  ],
+  "notes": "Open-first qualification queue. DWD deposit API CC BY 4.0 and full April 2019 sample verified with provider MD5. Strong open-first priority. Review exact deposit and embedded third-party inputs; validate sentinel, units, track continuity and sample hail flags; admission must precede model training. Discovery/access only: no admission, no external bytes in Git, no model approval."
+}
