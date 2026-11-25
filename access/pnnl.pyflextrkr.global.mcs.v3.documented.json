@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "pnnl.pyflextrkr.global.mcs.v3.documented",
+  "source_ids": [
+    "pnnl.pyflextrkr.global.mcs.v3"
+  ],
+  "provider": "Feng and Zhang / PNNL",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://zenodo.org/records/23523604",
+  "service_root": "https://zenodo.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/records/23523604/files/01_README.md"
+    ],
+    "parameter_rules": "Documentation only. Exact asset path; no new automated requests or bulk transfer authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/plain"
+    ],
+    "format": "Hourly 0.1 degree merged IR and IMERG V07B, two MCS definitions",
+    "scientific_semantics": "Live Zenodo metadata 2026-11-25: 20 files, 29569660540 bytes, cc-by-4.0. Small README 6783 bytes and checksum file 1670 bytes; smallest climatology archive 270842421 bytes. MCS definition requires spatial/temporal persistence and precipitation thresholds; misses small isolated hailstorms, excludes tracks overlapping tropical cyclones, not a hail catalogue. Read README and choose bounded region/month export before full archive acquisition; no source data downloaded."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 10485760,
+    "retry_policy": "none",
+    "rate_limit_notes": "Review provider terms and explicit request/byte budget before any future execution.",
+    "mutability_notes": "Freeze exact asset/version, UTC retrieval, size and SHA-256; mutable metadata is not data identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://about.zenodo.org/policies/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "CC BY 4.0 deposit; 29.57 GB. Read README and choose regional or monthly subset; confirm source lineage and model role before transfer. Large organized storms only."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://zenodo.org/records/23523604"
+  ],
+  "notes": "Open-first qualification. CC BY 4.0 deposit; 29.57 GB. Read README and choose regional or monthly subset; confirm source lineage and model role before transfer. Large organized storms only. No admission or authorization to acquire data."
+}
