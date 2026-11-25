@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "brazil.hitob.v1.documented",
+  "source_ids": [
+    "brazil.hitob.v1"
+  ],
+  "provider": "HIToB research authors",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://zenodo.org/records/11152458",
+  "service_root": "https://zenodo.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/records/11152458/files/HIToB_v1.db"
+    ],
+    "parameter_rules": "Documentation only. Exact asset path; no new automated requests or bulk transfer authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/octet-stream"
+    ],
+    "format": "2 km grid infrared cloud objects tracked with TATHU; database file",
+    "scientific_semantics": "Paper https://pmc.ncbi.nlm.nih.gov/articles/PMC11295460/. Live Zenodo API 2026-11-25 returned cc-by-4.0 and HIToB_v1.db 6911950848 bytes, MD5 2ae0f679345d7a97c9e825692359de17. Archive not downloaded due to size; seek bounded subset or author-provided export, do not claim a byte range is a valid SQLite database. Cold cloud threshold 235 K; storms selected by hail association and cloud polygons not actual hail damage swaths. Check report bias, geometry, time and third-party report rights."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 10485760,
+    "retry_policy": "none",
+    "rate_limit_notes": "Review provider terms and explicit request/byte budget before any future execution.",
+    "mutability_notes": "Freeze exact asset/version, UTC retrieval, size and SHA-256; mutable metadata is not data identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://about.zenodo.org/policies/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "CC BY 4.0 deposit; 6.91 GB archive. Request small regional/temporal export or plan disk budget; verify report rights and cloud polygon semantics."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://zenodo.org/records/11152458"
+  ],
+  "notes": "Open-first qualification. CC BY 4.0 deposit; 6.91 GB archive. Request small regional/temporal export or plan disk budget; verify report rights and cloud polygon semantics. No admission or authorization to acquire data."
+}
