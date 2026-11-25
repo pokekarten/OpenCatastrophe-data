@@ -150,6 +150,14 @@ class EA3p3OgcMetadataTests(unittest.TestCase):
         with self.assertRaises(EAOgcMetadataError):
             check(data, "collection")
 
+    def test_reject_malformed_crs_entries_even_with_required_strings(self):
+        for unexpected in ({"invalid": True}, [BBOX_CRS], None, 1, True):
+            with self.subTest(unexpected=unexpected):
+                data = fixture("collection")
+                data["crs"].append(unexpected)
+                with self.assertRaises(EAOgcMetadataError):
+                    check(data, "collection")
+
     def test_depth_band_is_string_not_numeric_metres(self):
         data = fixture("queryables")
         data["properties"]["depth_band"]["type"] = "number"

@@ -17,8 +17,8 @@ A read-only, limited original-provider OGC API Features request to the
 returned one **2,489-byte GeoJSON FeatureCollection** for
 `depth_band = '150-300mm'`. Its response advertises
 `crs.properties.name=urn:ogc:def:crs:EPSG::4326` and the actual
-coordinates are longitude/latitude: aggregate bounds
-`[-6.332526, 49.890311, -6.331644, 49.891144]`.
+coordinates are longitude/latitude. Exact feature bounds are deliberately
+omitted from this public research note; the source response remains outside Git.
 The single feature is a **MultiPolygon with 13 component polygons,
 13 closed rings and 70 coordinate pairs** (no malformed coordinate pairs
 in this one response). This is a one-record structural check, not a proof

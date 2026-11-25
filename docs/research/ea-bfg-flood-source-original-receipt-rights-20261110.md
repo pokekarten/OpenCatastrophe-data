@@ -121,8 +121,9 @@ area-type and depth-class digits; it is not a property water depth or loss.
    OGL-marked WFS/OGC service after source-specific legal/technical review,
    obtain one limited original capability document (no feature records),
    pin final URL and content SHA-256, then investigate a synthetic-only
-   `Unavailable`/AEP/defence/CRS schema validator. Keep this PR Draft until
-   genuine data admission evidence permits promotion.
+   `Unavailable`/AEP/defence/CRS schema validator. Publish only the research metadata and offline validators after repository
+   review; source activation and data/model admission remain separate,
+   explicitly blocked until the stated evidence is available.
 
 ## Follow-up: 3.3% defended depth scenarios (2026-11-10)
 

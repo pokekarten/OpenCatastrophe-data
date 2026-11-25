@@ -45,8 +45,10 @@ The previously obtained original OGC API JSON schema for the present-day
 `flood_source:string`, `shape_length:number`, `shape_area:number`,
 and `shape:Geometry`, with storage CRS EPSG:27700 and extent CRS84.
 See [original OGC API receipt and schema audit](ea-river-3p3-present-ogc-metadata-proof-20261110.md).
-The actual recorded lexical values of the `depth_band` field have **not**
-been observed and must not be guessed from the description's captions.
+At the earlier metadata-only review the actual lexical values of
+`depth_band` had not been observed. The later 2026-11-11 bounded feature
+observations below establish the sampled vocabulary; the captions alone do
+not establish it.
 
 ## Executable bounded, synthetic-only check
 

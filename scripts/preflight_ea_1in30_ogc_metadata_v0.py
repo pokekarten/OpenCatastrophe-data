@@ -133,7 +133,8 @@ def inspect_metadata(raw: bytes, document: str) -> dict[str, Any]:
         if obj.get("id") != COLLECTION or obj.get("storageCrs") != STORAGE_CRS:
             raise EAOgcMetadataError("collection or native EPSG:27700 differs")
         crs = obj.get("crs")
-        if type(crs) is not list or not {STORAGE_CRS, BBOX_CRS}.issubset(set(crs)):
+        if (type(crs) is not list or any(type(value) is not str for value in crs)
+                or not {STORAGE_CRS, BBOX_CRS}.issubset(set(crs))):
             raise EAOgcMetadataError("declared collection coordinate systems changed")
         _bbox(obj)
         _links(obj)
