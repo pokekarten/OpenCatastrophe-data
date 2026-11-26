@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "ch.portmann.crop-hail.2024.radar-hazard-grids.documented",
+  "source_ids": [
+    "ch.portmann.crop-hail.2024.radar-hazard-grids"
+  ],
+  "provider": "Portmann, Schmid, Villiger, Bresch and Calanca / Zenodo / MeteoSwiss research context",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://doi.org/10.5281/zenodo.11064781",
+  "service_root": "https://zenodo.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/records/11064781/files/metadata.csv",
+      "/records/11064781/files/hail_MESHS_CH_12_events_2017_2021.h5",
+      "/records/11064781/files/hail_POH_CH_12_events_2017_2021.h5"
+    ],
+    "parameter_rules": "Exact published version and filename only. Historical data-file GET used download=1; code used exact API content path. Documentation-only; no new live request, scheduled fetch or bulk transfer authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/csv",
+      "application/octet-stream"
+    ],
+    "format": "Gridded radar Maximum Expected Severe Hail Size (MESHS) research event data; published method compares crop resolutions of 8 km and vineyard resolutions of 1 km",
+    "scientific_semantics": "The NHESS article cites Zenodo 11064781 as 'Radar data for 12 hail events in Switzerland'. MESHS is an inferred radar hail-size indicator, not direct point-measured hailstone size, a building-damage vulnerability function, or a stochastic event frequency. Review upstream MeteoSwiss rights separately from the paper license and Zenodo record; verify NetCDF/other format, CRS, cell size, units, nodata and event-year identity. No OEP/AEP or insurer loss calibration is warranted by 12 selected historical events. Resolve MeteoSwiss upstream derivative rights for exact released grids. MESHS mm and POH percent are different radar proxies, not measured ground hail. Preserve coordinate and time keys; selected events not a climatology."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 41943040,
+    "retry_policy": "none",
+    "rate_limit_notes": "No new automated requests authorized. Review current Zenodo service terms, aggregate transfer budget, exact file and acquisition scope before any replay.",
+    "mutability_notes": "Version-specific record ID and publisher MD5; record exact observed size, SHA-256 and retrieval time separately for every asset. Do not replace original release with concept DOI or latest version."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://about.zenodo.org/terms/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Live Zenodo record API on 2026-11-25 reports access_right=open and license.id=cc-by-4.0; original file sizes match prior receipts. This deposit-level licence is not a blanket grant covering upstream third-party inputs, code dependencies, privacy or automation. Resolve MeteoSwiss upstream derivative rights for exact released grids. MESHS mm and POH percent are different radar proxies, not measured ground hail. Preserve coordinate and time keys; selected events not a climatology."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://doi.org/10.5281/zenodo.11064781",
+    "https://zenodo.org/api/records/11064781",
+    "https://doi.org/10.5194/nhess-24-2541-2024",
+    "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42114240145",
+    "https://github.com/pokekarten/OpenCatastrophe-data/blob/cb566576e27fa85bbc9c387224061aa9d97283b9/research/observations/swiss_crop_hail_zenodo_original_eight_file_receipts_v0.toml"
+  ],
+  "notes": "Historical original-byte evidence from PR #1396, not newly downloaded this run: metadata.csv 227 bytes, MD5 c4d4090b272eb9969a9045f93b2ce2c2, SHA-256 682dc230bfaa3d416a07c04874ca6d0e8222eb9280e467b8228f72fc1c579474; MESHS HDF5 6205459 bytes, MD5 f18b4e27342a374b08ca4c0ec8f90b5c, SHA-256 4ec457cfad8019cfb50d1e03399f2a7c53063eb2d6bd0d26e007d8201786db5b; POH HDF5 8919115 bytes, MD5 3eee87725577ee3b74e0c33601dbfffa, SHA-256 f6773a9152e9954f271c7d0951e27403dd46b9142b4253a54b97f374171a0ae7. Prior source HDF5 structural replay found 12 events and 454400 radar grid positions each. Original workflow and pinned branch receipt identify those prior observations; live metadata rechecked 2026-11-25. Do not relabel historic branch proof as main-origin acquisition. No external data bytes or private Neon information committed; non-admission."
+}

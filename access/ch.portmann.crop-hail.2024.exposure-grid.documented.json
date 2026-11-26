@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "ch.portmann.crop-hail.2024.exposure-grid.documented",
+  "source_ids": [
+    "ch.portmann.crop-hail.2024.exposure-grid"
+  ],
+  "provider": "Portmann, Schmid, Villiger, Bresch and Calanca / Zenodo / CLIMADA",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://doi.org/10.5281/zenodo.11064756",
+  "service_root": "https://zenodo.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/records/11064756/files/metadata.csv",
+      "/records/11064756/files/data-files.zip"
+    ],
+    "parameter_rules": "Exact published version and filename only. Historical data-file GET used download=1; code used exact API content path. Documentation-only; no new live request, scheduled fetch or bulk transfer authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/csv",
+      "application/zip"
+    ],
+    "format": "Published gridded Swiss crop exposure for wheat, maize, barley, rapeseed and grapevine; exact files, grid geometry, units and land-use provenance to verify per asset",
+    "scientific_semantics": "The peer-reviewed NHESS crop-hail paper 10.5194/nhess-24-2541-2024 explicitly cites Zenodo 11064756 for gridded crop exposure and explains crop-density dependence of hail damage-footprint skill. This source is linked to the same 12-event research as the damage and hazard datasets below: never count the linked assets as independent validation samples. No insurance TIV, insured parcel membership, carrier allocation or crop policy terms established. The exact Zenodo release/file license, hashes, spatial reference, time alignment and crop-code mapping must be checked before source admission. Review exact archive redistribution and upstream land-use rights, historical geography mismatch (2021 exposure versus 2017-2021 damage), crop code and n_fields support. No insurer TIV or membership."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 41943040,
+    "retry_policy": "none",
+    "rate_limit_notes": "No new automated requests authorized. Review current Zenodo service terms, aggregate transfer budget, exact file and acquisition scope before any replay.",
+    "mutability_notes": "Version-specific record ID and publisher MD5; record exact observed size, SHA-256 and retrieval time separately for every asset. Do not replace original release with concept DOI or latest version."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://about.zenodo.org/terms/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Live Zenodo record API on 2026-11-25 reports access_right=open and license.id=cc-by-4.0; original file sizes match prior receipts. This deposit-level licence is not a blanket grant covering upstream third-party inputs, code dependencies, privacy or automation. Review exact archive redistribution and upstream land-use rights, historical geography mismatch (2021 exposure versus 2017-2021 damage), crop code and n_fields support. No insurer TIV or membership."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://doi.org/10.5281/zenodo.11064756",
+    "https://zenodo.org/api/records/11064756",
+    "https://doi.org/10.5194/nhess-24-2541-2024",
+    "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42114240145",
+    "https://github.com/pokekarten/OpenCatastrophe-data/blob/cb566576e27fa85bbc9c387224061aa9d97283b9/research/observations/swiss_crop_hail_zenodo_original_eight_file_receipts_v0.toml"
+  ],
+  "notes": "Historical original-byte evidence from PR #1396, not newly downloaded this run: metadata.csv 1720 bytes, MD5 05faf6e57f0b37130b3fc1c16190ed6c, SHA-256 45a9e2bccd7571ada9e3bbb77482dbadfa4868c704527164e544e18d4013b9db; data-files.zip 31930278 bytes, MD5 7db8df4c81ba5d1c1c7b8371cee53e15, SHA-256 347bde669b4077b5350d2260eba0e4bcd68977434cb3ad95b7e056c67d1f6326, 24 HDF5 archive members. Original workflow and pinned branch receipt identify those prior observations; live metadata rechecked 2026-11-25. Do not relabel historic branch proof as main-origin acquisition. No external data bytes or private Neon information committed; non-admission."
+}
