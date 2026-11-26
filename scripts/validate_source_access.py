@@ -173,7 +173,8 @@ def _https_url(value: Any, where: str, *, nullable: bool = False, root: bool = F
         _ = parsed.port
     except ValueError as exc:
         raise SourceAccessError(f"{where} has an invalid host or port") from exc
-    if parsed.scheme != "https" or not parsed.netloc or not hostname or parsed.username or parsed.password:
+    if (parsed.scheme != "https" or not parsed.netloc or not hostname
+            or parsed.username is not None or parsed.password is not None):
         raise SourceAccessError(f"{where} must be a public https URL without embedded credentials")
 
     try:
@@ -182,7 +183,7 @@ def _https_url(value: Any, where: str, *, nullable: bool = False, root: bool = F
         raise SourceAccessError(f"{where} host must use ASCII/IDNA-canonical form in source-access v1") from exc
 
     host = hostname.rstrip(".").casefold()
-    if host == "localhost" or host.endswith(".localhost") or host.endswith(".local"):
+    if host == "localhost" or host.endswith((".localhost", ".local", ".internal")):
         raise SourceAccessError(f"{where} must not target a local host")
     if _ambiguous_numeric_host(host):
         raise SourceAccessError(f"{where} must not use an ambiguous numeric host")
@@ -309,6 +310,8 @@ def validate_contract(contract: Any) -> dict[str, Any]:
     _text(rights["notes"], "rights_and_policy.notes")
     if dataset_rights != "verified" and (commercial == "allowed" or redistribution == "allowed"):
         raise SourceAccessError("non-verified dataset rights cannot claim allowed commercial automation or redistribution")
+    if api_terms not in {"same_as_dataset", "separate_reviewed"} and commercial == "allowed":
+        raise SourceAccessError("unreviewed API terms cannot claim allowed commercial automation")
 
     probe = _exact_keys(obj["probe_contract"], {"mode", "operation", "requires_credentials", "expected_evidence"}, "probe_contract")
     probe_mode = _enum(probe["mode"], PROBE_MODES, "probe_contract.mode")

@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "eumetsat.opera.seviri.nordlis.fusion.documented",
+  "source_ids": [
+    "eumetsat.opera.seviri.nordlis.fusion"
+  ],
+  "provider": "EUMETSAT / EUMETNET / NORDLIS / European Weather Cloud",
+  "interface_type": "object_store",
+  "status": "blocked_credentials",
+  "documentation_url": "https://europeanweather.cloud/index.php/news/update-opera-seviri-fusion-dataset",
+  "service_root": "https://s3.r1.cloud.eumetsat.int",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "provider_account",
+    "credential_reference": "EWC_CREDENTIAL",
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/opera-seviri-nordlis.composite.zarr/.zmetadata"
+    ],
+    "parameter_rules": "Documentation only. Exact asset path; no new automated requests or bulk transfer authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "Co-registered OPERA radar composites, SEVIRI rapid scan radiances and ground lightning in Zarr",
+    "scientific_semantics": "EWC guide https://confluence.ecmwf.int/spaces/EWCLOUDKB/pages/488063253/Using%2BEUMETSAT%2Bdata%2Bbuckets%2Blocal%2Bdata%2Bpool lists bucket opera-seviri-nordlis.composite.zarr, endpoint https://s3.r1.cloud.eumetsat.int, 2018-2023. EWC-internal credential-free access does not imply public internet access or uniform rights. OPERA data policy https://www.eumetnet.eu/data-access/data-policy/ announces CC BY 4.0 via MeteoGate for qualifying products; SEVIRI and NORDLIS terms must be checked independently. No bucket bytes tested; verify Zarr chunk layout, spatial/time alignment, coverage masks and licensing per layer. Radar composites not necessarily hail size labels. On 2026-11-25 an anonymous HTTPS GET of https://s3.r1.cloud.eumetsat.int/opera-seviri-nordlis.composite.zarr/.zmetadata from authorized macOS returned HTTP 403. This confirms public-internet access was not demonstrated; it does not refute documented EWC-internal availability. Request EWC access and exact layer terms; no Zarr bytes downloaded."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 10485760,
+    "retry_policy": "none",
+    "rate_limit_notes": "Review provider terms and explicit request/byte budget before any future execution.",
+    "mutability_notes": "Freeze exact asset/version, UTC retrieval, size and SHA-256; mutable metadata is not data identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "unknown",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Anonymous GET 403. Request EWC access and individual OPERA, SEVIRI and NORDLIS permissions; confirm storage/compute conditions, chunk size and alignment. Do not automate public access."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": true,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://europeanweather.cloud/index.php/news/update-opera-seviri-fusion-dataset"
+  ],
+  "notes": "Open-first qualification. Anonymous GET 403. Request EWC access and individual OPERA, SEVIRI and NORDLIS permissions; confirm storage/compute conditions, chunk size and alignment. Do not automate public access. No admission or authorization to acquire data."
+}

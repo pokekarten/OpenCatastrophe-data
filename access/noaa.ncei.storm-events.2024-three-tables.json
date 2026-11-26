@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.ncei.storm-events.2024-three-tables",
+  "source_ids": [
+    "noaa.ncei.storm-events"
+  ],
+  "provider": "NOAA National Centers for Environmental Information / National Weather Service",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://www.ncei.noaa.gov/access/storm-events-database/",
+  "service_root": "https://www.ncei.noaa.gov",
+  "api_version": "Storm Events bulk CSV v1.0: three separate 2024 source tables, data year d2024 and generation c20260728; NOT current-year rolling files",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_2024_three_table_index"
+    ],
+    "path_templates": [
+      "/pub/data/swdi/stormevents/csvfiles/",
+      "/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2024_c20260728.csv.gz",
+      "/pub/data/swdi/stormevents/csvfiles/StormEvents_fatalities-ftp_v1.0_d2024_c20260728.csv.gz",
+      "/pub/data/swdi/stormevents/csvfiles/StormEvents_locations-ftp_v1.0_d2024_c20260728.csv.gz"
+    ],
+    "parameter_rules": "DOCUMENTATION ONLY; no live request is authorized by this access contract. The frozen future 2024 original-file identities are exactly the details, fatalities and locations names listed here; directory index and file paths are provider-owned HTTPS discovery evidence, not an approved executable probe or licence. Do not accept caller-supplied year, creation date, table, host, query, headers, redirects, signed URLs, fallback filenames, bulk mirror, pagination or download. Future original retrieval must independently review dataset and service terms, fix exact per-file request/byte/time/decompression bounds, use the trusted default-branch execution plane and preserve each original compressed SHA-256. Never infer that a newer c-date or another d-year is the tested d2024/c20260728 snapshot."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html",
+      "application/gzip",
+      "application/octet-stream"
+    ],
+    "format": "Official NCEI directory HTML with three exact gzip-compressed CSV files, each independently versioned details/fatalities/locations v1.0 d2024 c20260728. No original CSV bytes are acquired under this contract.",
+    "scientific_semantics": "Storm Events details rows are reported EVENT_ID records, grouped by EPISODE_ID; fatalities and locations are one-to-many child tables keyed to EVENT_ID and MUST NOT be naively joined before summing parent damage or event counts. Dates use source-specific local timezone codes; reported geographic units can be counties, forecast zones or marine zones. Historical event-type coverage and event submission/reporting standards change over time; missing reports do not imply zero hazard. DAMAGE_PROPERTY and DAMAGE_CROPS are reported event estimates, NOT policyholder insured losses, gross/net claims or validated TIV. Already executed 2024 original-source relational audit in docs/research/executed-source-findings-20261103.md found 3 parent-level fatality-count contradictions and up to 72x naive child-join multiplication; these are blocking scientific review findings, not grounds for silently discarding or repairing source events. This documentation-only contract does NOT establish CAT event frequency, hail/wind intensity, physics, commercial use or model admission."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "Provider advertises a public download directory and public Cloud Storage access for bulk usage, but service-specific automated polling/scraping quotas and commercial model-use permissions for this exact three-table release have not been reviewed. No request, retry, redirect, scheduled fetch or bulk download is permitted by this contract.",
+    "mutability_notes": "2026-11-15 original provider directory index displays three distinct 2024 c20260728 source filenames, with compressed sizes of 12693243 bytes (details), 13057 (fatalities) and 983723 (locations). These are index values, NOT newly downloaded content hashes. Previously observed original compressed SHA-256 digests (2026-11-03 historical audit, NOT freshly recomputed): details=2070b83eccab041b36360ab73645b9a249c3eefc5b92b5b3fc0cbba4d9fcc09c; fatalities=7113ce3232c98056867cf8d144df770e9e6b140cce40dff3ef46ff805ba17fdb; locations=8847a6336e1af94000f7ecfb4a80c06bf0d5c1ac122fe39da5b2e379dc62c1b4. The supporting acquisition report is docs/research/executed-source-findings-20261103.md. New acquisitions MUST independently reverify these complete-file compressed hashes and record exact retrieval UTC; a matching name/size cannot substitute for a byte hash. cYYYYMMDD denotes generation/revision; source archive may change and different table/year editions are not interchangeable. Current index date/size alone proves neither same bytes nor model fitness."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00510/html",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "The public provider is a U.S. federal agency and the official site invites public bulk CSV downloads; public availability and federal origin do not independently clear service automation terms, reported third-party narratives/location or casualty information, protected personal attributes, commercial insurance-model use, source/derived publication or onward redistribution of exact release bytes. Keep all such permissions unknown until a source- and use-specific review. Fatalities data may contain individual attributes; do not commit original rows or private-person details. The earlier 2024 scientific audit is research evidence, not a dataset licence, trusted new API entitlement or model admission."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-15",
+  "evidence_urls": [
+    "https://www.ncei.noaa.gov/access/storm-events-database/",
+    "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/",
+    "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/README",
+    "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00510/html"
+  ],
+  "notes": "SOURCE_ID=noaa.ncei.storm-events; exact 2024 d2024 c20260728 details/fatalities/locations release. Gate T0 source identity/format/index/known historic original-acquisition links only. Previously acquired externally by an earlier researcher; this run neither downloaded any of the 3 source files nor reverified SHA nor wrote to Neon. Existing research_runners/noaa_storm_events_relational_audit_v0.py remains the sole offline event/fatality/location consistency gate, and the existing source discovery landscape remains authoritative. Source rights, scientific admission, model input and future direct network probe are all blocked."
+}

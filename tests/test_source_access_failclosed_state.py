@@ -83,6 +83,26 @@ class SourceAccessFailClosedStateTests(unittest.TestCase):
                 with self.assertRaisesRegex(SourceAccessError, "ambiguous numeric host"):
                     validate_contract(contract)
 
+    def test_internal_dns_hosts_rejected_across_access_url_fields(self) -> None:
+        # Internal DNS does not belong in public agent-consumable contracts.
+        for field in ("documentation_url", "service_root", "evidence_urls"):
+            for host in ("metadata.internal", "metadata.internal."):
+                with self.subTest(field=field, host=host):
+                    contract = self.mutated()
+                    url = f"https://{host}/resource"
+                    contract[field] = [url] if field == "evidence_urls" else url
+                    with self.assertRaisesRegex(SourceAccessError, "local host"):
+                        validate_contract(contract)
+
+    def test_empty_url_userinfo_is_not_an_anonymous_public_url(self) -> None:
+        for field in ("documentation_url", "service_root", "evidence_urls"):
+            with self.subTest(field=field):
+                contract = self.mutated()
+                url = "https://@example.org/resource"
+                contract[field] = [url] if field == "evidence_urls" else url
+                with self.assertRaisesRegex(SourceAccessError, "embedded credentials"):
+                    validate_contract(contract)
+
     def test_dwd_active_recipe_is_probe_ready(self) -> None:
         dwd = load_strict_json_bytes(
             (ROOT / "access" / "dwd.cdc.extreme-wind.http-file.json").read_bytes()

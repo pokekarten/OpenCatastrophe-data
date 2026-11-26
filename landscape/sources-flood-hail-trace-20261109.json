@@ -1,0 +1,171 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission original-provider discovery of six Germany/England/Europe flood-depth, radar-hail and regional climate-risk research products; no source bytes, data admission, model approval or publication permission.",
+  "review_date": "2026-11-09",
+  "entries": [
+    {
+      "candidate_id": "de.bfg.hwrm3-flood-depth.2026",
+      "name": "Germany HWRM-RL cycle 3 harmonised river and coastal flood-depth classes",
+      "provider": "Bundesanstalt fuer Gewaesserkunde (BfG) / WasserBLIcK / German federal and state water authorities",
+      "categories": [
+        "flood",
+        "river_flood",
+        "coastal_flood",
+        "hazard_depth",
+        "germany"
+      ],
+      "spatial_scope": "Germany; national harmonised reporting coverage, regional higher-resolution original layers may differ",
+      "temporal_scope": "EU Floods Directive HWRM-RL third cycle 2022-2027; GovData publication 2026-03-06, reporting snapshot not an annual event chronology",
+      "resolution_or_granularity": "Flood-depth polygon classes 0-0.5, 0.5-1, 1-2, 2-4 and over 4 metres; low/medium/high probability and river/coastal scenarios; T_class combines area type with depth class",
+      "potential_roles": [
+        "germany_flood_depth_hazard_prior",
+        "synthetic_property_flood_screening",
+        "regional_flood_model_crosscheck"
+      ],
+      "authoritative_url": "https://data.gov.de/suche/daten/uberflutungstiefen-de-hochwasserrisikomanagement-rl-3-zyklus-2022-2027",
+      "access_class_hint": "public_govdata_catalogue_bin_resource_exact_service_and_terms_review_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official GovData page describes HWRM third-cycle reporting, probability classes and depth-band T_class encoding (for example 23 indicates the informational flood area and 1-2 m depth). This is a nationally harmonised static scenario product; it is not a gauge-observed historic event, individual-property water depth, annual occurrence model, insured loss, or proof of local completeness. Verify the original BfG service endpoints, CRS, source authority, exact source vintage, provider-specific terms and state-level alternatives before access or commercial model use. Publisher metadata defines river/inland depth relative to the watercourse bed and coastal depth relative to seabed/chart datum and tide; this is not independently validated inundation above building ground elevation. Area-type digit 3 of T_class is a flood-protected area, not evidence of a flooded insured building. Do not translate these classes directly into building-depth loss without original service schema, terrain reference and spatial support verification."
+    },
+    {
+      "candidate_id": "uk.ea.rivers-sea-flood-depth.present.2026",
+      "name": "England Environment Agency rivers and sea defended and undefended flood depths present day",
+      "provider": "UK Environment Agency / Defra Data Services Platform",
+      "categories": [
+        "flood",
+        "river_flood",
+        "coastal_flood",
+        "defences",
+        "hazard_depth",
+        "england"
+      ],
+      "spatial_scope": "England; only areas with national flood-zone modelling, with explicit Unavailable attribute elsewhere",
+      "temporal_scope": "Present-day risk scenarios; metadata updated 2026-10-30",
+      "resolution_or_granularity": "Seven depth bands up to and over 2300 mm; defended and undefended 0.1% AEP; river 1% AEP and sea 0.5% AEP; OGC API Features, WFS, WMS and GeoJSON/Geodatabase ZIP links listed",
+      "potential_roles": [
+        "england_flood_defence_sensitivity",
+        "probabilistic_flood_depth_screening",
+        "synthetic_property_flood_hazard_prior"
+      ],
+      "authoritative_url": "https://www.data.gov.uk/dataset/e4698ae1-184b-4b5d-801a-90364a93e229/rivers-and-sea-defended-and-undefended-flood-risk-depths-present-day",
+      "access_class_hint": "public_catalogue_ogc_and_geojson_downloads_ogl_reported_exact_assets_and_service_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher lists Open Government Licence, EPSG:27700 and explicit Unavailable regions. Defended assumes flood defences perform as designed; no defence-failure scenario. Depths are categorical scenario estimates, not exact depth at an individual insured building or event observations. Confirm the exact 2026 revised asset/OGC layer URL, request limits, geographic completeness, attribution and commercial automation before download or modelling. Never coerce Unavailable to zero depth."
+    },
+    {
+      "candidate_id": "uk.ea.rivers-sea-flood-depth.climate.2026",
+      "name": "England Environment Agency rivers and sea flood-depth climate-change scenarios",
+      "provider": "UK Environment Agency / Defra Data Services Platform",
+      "categories": [
+        "flood",
+        "river_flood",
+        "coastal_flood",
+        "climate_scenario",
+        "hazard_depth",
+        "england"
+      ],
+      "spatial_scope": "England; national flood-zone modelling supported polygons, local depth may be Unavailable",
+      "temporal_scope": "Climate-change scenario dataset updated 2026-10-30; river 2080s epoch 2070-2125 and coastal sea-level-rise allowance to 2125",
+      "resolution_or_granularity": "Seven depth bands in defended/undefended 0.1% AEP and river 1% / sea 0.5% AEP cases; UKCP18 RCP8.5 allowances",
+      "potential_roles": [
+        "climate_flood_sensitivity",
+        "england_flood_hazard_scenario_benchmark",
+        "portfolio_climate_stress_test"
+      ],
+      "authoritative_url": "https://www.data.gov.uk/dataset/67a734bb-2b7b-491a-aafd-3f7e52c8d7f3/rivers-and-sea-defended-and-undefended-flood-risk-depths-climate-change",
+      "access_class_hint": "public_catalogue_ogc_and_geojson_downloads_provider_rights_and_scenario_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official climate-change product is scenario-conditioned, not observed annual losses and not a current-baseline flood-frequency distribution. River central allowance for the 2080s and coastal upper-end allowance to 2125 use UKCP18/RCP8.5; defences assumed to function unchanged. Preserve scenario, epoch, exceedance definition, Unavailable cells, and shared lineage with the corresponding present-day product; these two products are not independent observed evidence."
+    },
+    {
+      "candidate_id": "uk.ea.surface-water-depth.present.2026",
+      "name": "England Environment Agency surface-water spatial-planning flood-depth classes present day",
+      "provider": "UK Environment Agency / Defra Data Services Platform",
+      "categories": [
+        "flood",
+        "surface_water_flood",
+        "pluvial",
+        "hazard_depth",
+        "england"
+      ],
+      "spatial_scope": "England, within coverage and planning-product limitations",
+      "temporal_scope": "Present-day planning scenario product published 2026-05-28, catalogue updated 2026-07-06",
+      "resolution_or_granularity": "Depth bands up to 150 mm, 150-300, 300-600, 600-900, 900-1200, 1200-2300 and over 2300 mm; 3.3%, 1% and 0.1% AEP scenarios; WMS and download links",
+      "potential_roles": [
+        "england_pluvial_flood_screening",
+        "multi_peril_flood_benchmark",
+        "building_exposure_pluvial_hazard_prior"
+      ],
+      "authoritative_url": "https://www.data.gov.uk/dataset/b0bbfacf-ccf7-4ed9-a94c-be18d91c258d/flood-map-for-planning-surface-water-spatial-planning-depths-present-day",
+      "access_class_hint": "public_catalogue_wms_download_ogl_listed_exact_service_asset_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "A separate pluvial/surface-water source, not a replacement for fluvial/coastal depth mapping. The Environment Agency explicitly says planning depth bands are not suitable for determining whether an individual property floods. Retain AEP, spatial support, depth bins, release and lineage; avoid counting overlap with river/sea flooding as independent losses. Review service access and original product licence for automated commercial use."
+    },
+    {
+      "candidate_id": "de.dwd.radar-pz-volume.hailresearch.2026",
+      "name": "DWD single-radar PZ volume reflectivity data for historical hail-cell research",
+      "provider": "Deutscher Wetterdienst (DWD); 2026 analysis by KIT and CEDIM (Mohr et al.)",
+      "categories": [
+        "hail",
+        "convective_storm",
+        "radar",
+        "weather_observation",
+        "germany"
+      ],
+      "spatial_scope": "German DWD radar stations; individual station footprints may cross national borders",
+      "temporal_scope": "DWD directory observed 2026-11; 2026 paper analyses summer seasons 2005-2024 using archived PZ volumes, but public directory's exact historical availability is not yet established",
+      "resolution_or_granularity": "Per-station 3D radar reflectivity PZ files, 12 altitude layers and six reflectivity classes in the study; original study uses a homogeneous 15-minute composite for 2005-2024",
+      "potential_roles": [
+        "hail_storm_cell_hazard_research",
+        "radar_track_reconstruction",
+        "regional_hail_frequency_validation"
+      ],
+      "authoritative_url": "https://opendata.dwd.de/weather/radar/sites/pz/",
+      "access_class_hint": "public_dwd_station_file_directory_licence_and_historical_exact_byte_receipt_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The original station directory contains PZ radar files and station folders; the 2026 peer-reviewed publication https://doi.org/10.3389/fenvs.2026.1736782 reports 15,577 potential hail tracks for 2005-2024, not a publicly verified separately downloadable PHT dataset. Reflectivity indicates potential hail cells, not confirmed hailstone size, individual insured property loss or independent claims. Historical file retention, polarimetric/version changes, outage coverage, machine access, exact DWD weather-radar terms and licence need source-specific verification. Do not extend CDC-specific CC BY terms to this weather-radar product without review."
+    },
+    {
+      "candidate_id": "eu.jrc.trace.pesetav-regional-risk.2026",
+      "name": "JRC TRACE / PESETA V pan-European regional climate-risk and economic-impact scenarios",
+      "provider": "European Commission Joint Research Centre (JRC) / Disaster Risk Management Knowledge Centre",
+      "categories": [
+        "multi_peril",
+        "climate_scenario",
+        "regional_risk",
+        "economic_impacts",
+        "europe"
+      ],
+      "spatial_scope": "European regions covered by JRC TRACE / PESETA V regional dashboard",
+      "temporal_scope": "Dashboard announced 2026-10-30; regional modelled impacts across global warming levels and socioeconomic scenarios",
+      "resolution_or_granularity": "Regional economic impact and exposure scenario tables by risk, geography and warming level; underlying table reported downloadable from dashboard",
+      "potential_roles": [
+        "european_regional_climate_impact_benchmark",
+        "multi_peril_scenario_consistency",
+        "aggregate_economic_loss_sanity_check"
+      ],
+      "authoritative_url": "https://drmkc.jrc.ec.europa.eu/risk-data-hub/projects/PesetaV",
+      "access_class_hint": "public_jrc_dashboard_table_download_claim_api_auth_and_exact_table_license_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "JRC official 2026-10-30 announcement https://joint-research-centre.ec.europa.eu/jrc-news-and-updates/jrc-makes-climate-risk-data-europes-regions-available-through-single-dashboard-2026-10-30_en describes region/hazard/warming-level comparability and downloadable dashboard tables. These are modelled economic damages/exposures, not independent insurer claims or catastrophe event losses; preserve inflation base year, scenario, spatial aggregation, hazard models and common upstream assumptions. Risk Data Hub API portal documents EU Login/API-token requirements; do not assume that dashboard tables are available through an anonymous API, or that the API licence covers every table. Obtain exact table receipt and publication terms separately."
+    }
+  ]
+}

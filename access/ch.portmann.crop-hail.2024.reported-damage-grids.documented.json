@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "ch.portmann.crop-hail.2024.reported-damage-grids.documented",
+  "source_ids": [
+    "ch.portmann.crop-hail.2024.reported-damage-grids"
+  ],
+  "provider": "Portmann, Schmid, Villiger, Bresch and Calanca / Zenodo / CLIMADA",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://doi.org/10.5281/zenodo.11064767",
+  "service_root": "https://zenodo.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/records/11064767/files/metadata.csv",
+      "/records/11064767/files/data-files.zip"
+    ],
+    "parameter_rules": "Exact published version and filename only. Historical data-file GET used download=1; code used exact API content path. Documentation-only; no new live request, scheduled fetch or bulk transfer authorized."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/csv",
+      "application/zip"
+    ],
+    "format": "Published gridded reported crop-damage information; original insurer reports are not automatically public and are not interchangeable with these research grids",
+    "scientific_semantics": "The NHESS Portmann et al. 2024 article explicitly identifies Zenodo 11064767 as 'Reported hail damage for 12 hail events in Switzerland' and says gridded damage information is available. This is a candidate for footprint occurrence validation, not permission to distribute underlying insurer claims, loss amounts or identifiable records. Review the precise Zenodo license, anonymization/aggregation, per-event units and linkage to hazard and exposure before download, rehosting or use. The same insured source data were used to design/assess the published method, so no independent holdout is implied. Confirm insurer-derived gridded observations are within depositor authority and intended commercial-use scope; review anonymization, spatial granularity and disclosure. 10-12 selected days by crop. Do not infer monetary severity or annual frequency. Historical original replay found 550 positive event-grid entries without matched exposure position across three 2 km pairs. Preserve outside-support counts; no naive positional join."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 41943040,
+    "retry_policy": "none",
+    "rate_limit_notes": "No new automated requests authorized. Review current Zenodo service terms, aggregate transfer budget, exact file and acquisition scope before any replay.",
+    "mutability_notes": "Version-specific record ID and publisher MD5; record exact observed size, SHA-256 and retrieval time separately for every asset. Do not replace original release with concept DOI or latest version."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://about.zenodo.org/terms/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Live Zenodo record API on 2026-11-25 reports access_right=open and license.id=cc-by-4.0; original file sizes match prior receipts. This deposit-level licence is not a blanket grant covering upstream third-party inputs, code dependencies, privacy or automation. Confirm insurer-derived gridded observations are within depositor authority and intended commercial-use scope; review anonymization, spatial granularity and disclosure. 10-12 selected days by crop. Do not infer monetary severity or annual frequency. Historical original replay found 550 positive event-grid entries without matched exposure position across three 2 km pairs. Preserve outside-support counts; no naive positional join."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-25",
+  "evidence_urls": [
+    "https://doi.org/10.5281/zenodo.11064767",
+    "https://zenodo.org/api/records/11064767",
+    "https://doi.org/10.5194/nhess-24-2541-2024",
+    "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42114240145",
+    "https://github.com/pokekarten/OpenCatastrophe-data/blob/cb566576e27fa85bbc9c387224061aa9d97283b9/research/observations/swiss_crop_hail_zenodo_original_eight_file_receipts_v0.toml"
+  ],
+  "notes": "Historical original-byte evidence from PR #1396, not newly downloaded this run: metadata.csv 2368 bytes, MD5 0260ae2047e3fc02aa7ad88cf7911dda, SHA-256 cc88233701f06f952d5881a762b690bd9e14d55c24995298a61fbf70ea7759a5; data-files.zip 2455518 bytes, MD5 c17119f9cd35f57ad49662a6f8ba1166, SHA-256 8db4322059791952c9f886f7eb798a5ee66c395c7f0921ca3d003c8f0b06b6bc, 24 HDF5 archive members. Original workflow and pinned branch receipt identify those prior observations; live metadata rechecked 2026-11-25. Do not relabel historic branch proof as main-origin acquisition. No external data bytes or private Neon information committed; non-admission."
+}

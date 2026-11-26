@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery and bounded original-sample evidence for historical DWD convective storm objects.",
+  "review_date": "2026-11-25",
+  "entries": [
+    {
+      "candidate_id": "dwd.konrad3d.zenodo.18087045",
+      "name": "DWD KONRAD3D historical convective cells v1.7",
+      "provider": "Deutscher Wetterdienst",
+      "categories": [
+        "hail",
+        "lightning",
+        "radar",
+        "convective_storm"
+      ],
+      "spatial_scope": "Germany and adjacent radar domain",
+      "temporal_scope": "2018-03-01 to 2025-06-30",
+      "resolution_or_granularity": "Monthly tar.bz2 archives of XML snapshots; 5-minute analysis cadence in April 2019 sample",
+      "potential_roles": [
+        "storm_tracking",
+        "hail_proxy_calibration",
+        "convective_feature_training"
+      ],
+      "authoritative_url": "https://zenodo.org/records/18087045",
+      "access_class_hint": "public_versioned_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinct historical reprocessing archive, not the already documented operational endpoint dwd.konrad3d.operational. Zenodo API returned 88 files, 2219772181 bytes, license cc-by-4.0 on 2026-11-25. Bounded macOS download of https://zenodo.org/records/18087045/files/KONRAD3D_201904.tar.bz2?download=1 succeeded: 8792122 bytes, SHA-256 d573694526df63d2233bafa21176510c0336b23c30bb36c84f60155b76e188aa, MD5 14200f3dd87df73eec5c7a04ac56dc3c matches provider. Streaming tar scan without extraction: 8640 XML members, sum member bytes 209615753; v1.7 root and UTC reference times confirmed. File KONRAD3D_20190401T193500.xml includes cell identifier, geodetic centroid, polygons, echo top, reflectivity thresholds, VIL/VII, hail_flag, HYMEC hail/large-hail area and volume, ICON-EU CAPE/shear and lightning_rate (strokes/5min), lightning_density. Sentinel -1000000000 observed; preserve missingness and radar-sweep availability. Header grid DE4800_WGS84 250 m is underlying processing grid, not measured hail footprint resolution. Hail flag and HYMEC are radar-derived, not observed ground hail size; cell detection uses lightning, so not independent validation of lightning-only predictors without lineage-aware split/holdout. Archive was retrospectively processed in 2025; do not treat creation date as event date or forecast as observation. No raw bytes committed, no database ingestion; formal rights review and scientific admission remain open."
+    }
+  ]
+}

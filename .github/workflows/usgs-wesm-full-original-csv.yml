@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: USGS WESM exact complete original CSV hash
+
+on:
+  pull_request:
+    paths:
+      - "access/usgs.3dep.wesm.csv.full-original-once.json"
+      - "access/usgs.3dep.wesm.csv.full-original-once.md"
+      - "scripts/probe_usgs_wesm_full_original_csv_v0.py"
+      - "tests/test_probe_usgs_wesm_full_original_csv_v0.py"
+      - ".github/workflows/usgs-wesm-full-original-csv.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    name: Full CSV strict contract and synthetic quality status regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout exact branch without saved credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Pinned Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Check reviewed source contract and generated Markdown
+        run: |
+          python scripts/validate_source_access.py access/usgs.3dep.wesm.csv.full-original-once.json
+          python scripts/render_public_views.py --check
+      - name: Falsify full-source identity and model-admission confusion
+        run: python -m unittest tests.test_probe_usgs_wesm_full_original_csv_v0 -v
+
+  live-source:
+    if: github.event_name == 'pull_request' && github.head_ref == 'science/usgs-wesm-full-original-csv-hash-20261116'
+    needs: offline
+    name: One original USGS WESM CSV complete 2267051-byte SHA256
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout reviewed commit without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Pinned Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Hash one full official public WESM CSV and print only aggregates
+        run: python scripts/probe_usgs_wesm_full_original_csv_v0.py --live

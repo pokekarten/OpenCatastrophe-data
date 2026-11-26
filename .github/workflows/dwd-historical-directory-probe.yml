@@ -25,6 +25,9 @@ jobs:
         run: python -m unittest tests.test_probe_dwd_historical_directory_v0 -v
 
   bounded-provider-index:
+    # Never contact the original provider on PR heads. Explicit trusted-main
+    # manual replay is required; synthetic PR checks stay automatic.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     needs: synthetic-security-tests
     timeout-minutes: 4
