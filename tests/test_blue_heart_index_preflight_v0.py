@@ -123,6 +123,36 @@ class BlueHeartIndexPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(BlueHeartPreflightError, "repeated"):
             inspect_index_csv(self.make_index([self.sample(), self.sample()]))
 
+    def test_cross_role_paths_rejected_in_both_directions(self):
+        first = self.sample()
+        for second in (
+            self.sample(dataPath=first["dataQualityFlagsPath"],
+                        dataQualityFlagsPath="7_rain/OTHER_QC.csv"),
+            self.sample(dataPath="7_rain/OTHER.csv",
+                        dataQualityFlagsPath=first["dataPath"]),
+        ):
+            with self.subTest(second=second), self.assertRaisesRegex(
+                BlueHeartPreflightError, "ambiguous or repeated"
+            ):
+                inspect_index_csv(self.make_index([first, second]))
+
+    def test_redundant_separator_rejected(self):
+        with self.assertRaisesRegex(BlueHeartPreflightError, "relative CSV"):
+            inspect_index_csv(self.make_index([
+                self.sample(dataPath="7_rain//SYNTHETIC.csv")
+            ]))
+
+    def test_extra_and_short_csv_rows_rejected(self):
+        for suffix, trim in ((",unexpected", False), ("", True)):
+            path = self.make_index([self.sample()])
+            lines = path.read_text().splitlines()
+            row = lines[1].rsplit(",", 1)[0] if trim else lines[1] + suffix
+            path.write_text(lines[0] + "\n" + row + "\n")
+            with self.subTest(trim=trim), self.assertRaisesRegex(
+                BlueHeartPreflightError, "malformed index CSV row shape"
+            ):
+                inspect_index_csv(path)
+
     def test_missing_required_column_rejected(self):
         fields = [x for x in self.FIELDS if x != "dataQualityFlagsPath"]
         row = self.sample()

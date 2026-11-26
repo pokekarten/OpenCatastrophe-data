@@ -92,7 +92,7 @@ def _relative_csv_path(value: str, *, field: str) -> str:
     if (
         normalized.startswith("/")
         or not parts
-        or any(part in ("..", ".") for part in normalized.split("/"))
+        or any(part in ("", "..", ".") for part in normalized.split("/"))
         or ":" in parts[0]
         or not normalized.lower().endswith(".csv")
     ):
@@ -157,6 +157,8 @@ def inspect_index_csv(path: Path, *, expected_gauges: int | None = None) -> dict
         for index, row in enumerate(reader, start=1):
             if index > 10000:
                 raise BlueHeartPreflightError("source index exceeds bounded 10000-row preflight")
+            if None in row or any(value is None for value in row.values()):
+                raise BlueHeartPreflightError("malformed index CSV row shape")
             gauge_type = row.get("gaugeType")
             if gauge_type not in GAUGE_TYPES:
                 raise BlueHeartPreflightError("unknown gaugeType")
@@ -166,7 +168,13 @@ def inspect_index_csv(path: Path, *, expected_gauges: int | None = None) -> dict
             _optional_numeric_fields(row, gauge_type, optional_populated)
             data_path = _relative_csv_path(row.get("dataPath"), field="dataPath")
             qc_path = _relative_csv_path(row.get("dataQualityFlagsPath"), field="dataQualityFlagsPath")
-            if data_path == qc_path or data_path in seen_data_paths or qc_path in seen_qc_paths:
+            if (
+                data_path == qc_path
+                or data_path in seen_data_paths
+                or data_path in seen_qc_paths
+                or qc_path in seen_data_paths
+                or qc_path in seen_qc_paths
+            ):
                 raise BlueHeartPreflightError("ambiguous or repeated telemetry/QC path")
             seen_data_paths.add(data_path)
             seen_qc_paths.add(qc_path)
