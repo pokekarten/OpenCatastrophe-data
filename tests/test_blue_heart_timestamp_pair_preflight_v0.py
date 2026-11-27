@@ -42,6 +42,27 @@ class BlueHeartTemporalPairTests(unittest.TestCase):
         self.assertFalse(report["source_bytes_admitted"])
         self.assertNotIn("2025", str(report))
 
+    def test_submicrosecond_distinct_instants_cannot_alias(self):
+        raw = self.csv_file("raw.csv", ["2025-06-30T15:42:43.1234561Z"])
+        qc = self.csv_file("quality.csv", ["2025-06-30T15:42:43.1234569Z"])
+        with self.assertRaisesRegex(BlueHeartPreflightError, "six fractional digits"):
+            inspect_timestamp_pair(raw, qc)
+
+    def test_supported_fractional_precision_preserved(self):
+        raw = self.csv_file("raw.csv", ["2025-06-30T16:42:43.123456+01:00"])
+        qc = self.csv_file("quality.csv", ["2025-06-30T15:42:43.123455Z"])
+        report = inspect_timestamp_pair(raw, qc)
+        self.assertEqual(report["matched_timestamp_count"], 0)
+        self.assertFalse(report["timestamp_sets_identical"])
+        qc = self.csv_file("quality.csv", ["2025-06-30T15:42:43.123456Z"])
+        self.assertTrue(inspect_timestamp_pair(raw, qc)["timestamp_sets_identical"])
+
+    def test_invalid_offset_minutes_cannot_normalize(self):
+        raw = self.csv_file("raw.csv", ["2025-06-30T16:42:43+00:60"])
+        qc = self.csv_file("quality.csv", ["2025-06-30T15:42:43Z"])
+        with self.assertRaisesRegex(BlueHeartPreflightError, "explicit UTC offset"):
+            inspect_timestamp_pair(raw, qc)
+
     def test_raw_gully_time_without_offset_rejected(self):
         raw = self.csv_file("raw.csv", ["2025-06-30 16:42:43"])
         qc = self.csv_file("quality.csv", ["2025-06-30 16:42:43+00:00"])
