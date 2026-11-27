@@ -21,6 +21,7 @@ import math
 import sys
 import unicodedata
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
@@ -33,6 +34,8 @@ KGG_BASE = (
 KGG_STADTTEIL_BOUNDS = (6.77146787, 50.82547445, 7.16351331, 51.09018683)
 NEGATIVE_POINT = (13.405, 52.52)  # Fixed public Berlin control.
 MAX_RESPONSE_BYTES = 16_384
+REST_ACCESS_ID = "de.koeln.statistik-rbs-kgg-stadtteil.arcgis-rest.2026"
+CONTRACT_PATH = Path(__file__).resolve().parents[1] / "access" / (REST_ACCESS_ID + ".json")
 
 
 class PolygonChallengeError(ValueError):
@@ -42,6 +45,38 @@ class PolygonChallengeError(ValueError):
 class DenyRedirects(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
+
+
+def require_reviewed_rest_access() -> None:
+    """Fail closed before *any* request while the REST contract is document-only."""
+    try:
+        from scripts.validate_source_access import validate_path
+        contract = validate_path(CONTRACT_PATH)
+    except (ImportError, OSError, ValueError) as exc:
+        raise PolygonChallengeError("KGG REST access contract unavailable or invalid") from exc
+    rights = contract["rights_and_policy"]
+    limits = contract["operational_constraints"]
+    probe = contract["probe_contract"]
+    if (contract["access_id"] != REST_ACCESS_ID
+            or contract["source_ids"] != ["de.koeln.statistik.rbs-geopackage.2026"]
+            or contract["interface_type"] != "arcgis_rest"
+            or contract["status"] not in {"probe_ready", "verified_anonymous"}
+            or contract["service_root"] != "https://geoportal.stadt-koeln.de"
+            or contract["authentication"]["mode"] != "none"
+            or contract["request_contract"]["allowed_operations"] != ["point_stadtteil_membership"]
+            or contract["request_contract"]["path_templates"] != [
+                "/arcgis/rest/services/basiskarten/kgg/MapServer/3/query"]
+            or rights["dataset_rights_status"] != "verified"
+            or rights["api_terms_status"] not in {"same_as_dataset", "separate_reviewed"}
+            or rights["commercial_automation_status"] != "allowed"
+            or not rights["terms_url"]
+            or probe["mode"] != "provider_specific"
+            or probe["operation"] != "point_stadtteil_membership"
+            or probe["requires_credentials"] is not False
+            or limits["timeout_seconds"] != 20
+            or limits["max_probe_bytes"] != MAX_RESPONSE_BYTES
+            or limits["retry_policy"] != "none"):
+        raise PolygonChallengeError("KGG REST live access requires separate reviewed service rights")
 
 
 def query_url(lon: float, lat: float) -> str:
@@ -111,6 +146,7 @@ def parse_point_reply(payload: bytes) -> str | None:
 
 def fetch_official_stadtteil(lon: float, lat: float) -> str | None:
     """One fixed-origin provider-side polygon intersection, no raw polygons."""
+    require_reviewed_rest_access()
     url = query_url(lon, lat)
     req = Request(url, headers={
         "Accept": "application/json",
@@ -197,6 +233,7 @@ def review_samples(samples: list[dict[str, object]], transform, lookup) -> dict[
 
 
 def run_live() -> dict[str, object]:
+    require_reviewed_rest_access()
     try:
         from pyproj import Transformer
     except ImportError as exc:
@@ -220,7 +257,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--live", action="store_true",
-        help="explicit 6 tree WFS + 5 official polygon + 1 negative-control requests",
+        help="requires reviewed REST contract; 6 tree WFS + 5 polygon + 1 control requests",
     )
     args = parser.parse_args(argv)
     if not args.live:
