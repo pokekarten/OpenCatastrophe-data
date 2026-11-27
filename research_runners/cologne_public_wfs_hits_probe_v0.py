@@ -50,6 +50,13 @@ class DenyRedirects(HTTPRedirectHandler):
         return None
 
 
+class _NoDTDTreeBuilder(ElementTree.TreeBuilder):
+    """Reject DTDs at the parser boundary, independently of XML encoding."""
+
+    def doctype(self, name, pubid, system):
+        raise WfsProbeError("DTD forbidden")
+
+
 def parse_hits(payload: bytes) -> dict[str, object]:
     """Validate a feature-free WFS 2.0 hits response, and record its byte hash."""
     if not payload or len(payload) > MAX_RESPONSE_BYTES:
@@ -57,7 +64,9 @@ def parse_hits(payload: bytes) -> dict[str, object]:
     if b"<!DOCTYPE" in payload.upper() or b"<!ENTITY" in payload.upper():
         raise WfsProbeError("DTD and entities forbidden")
     try:
-        root = ElementTree.fromstring(payload)
+        root = ElementTree.fromstring(
+            payload, parser=ElementTree.XMLParser(target=_NoDTDTreeBuilder())
+        )
     except ElementTree.ParseError as exc:
         raise WfsProbeError("invalid WFS XML") from exc
     if root.tag != "{" + WFS_NAMESPACE + "}FeatureCollection":
