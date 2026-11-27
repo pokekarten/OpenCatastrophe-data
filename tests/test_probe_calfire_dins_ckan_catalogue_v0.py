@@ -5,7 +5,11 @@ from __future__ import annotations
 
 from contextlib import redirect_stderr
 from io import StringIO
+import hashlib
+from http.client import IncompleteRead
 import json
+from pathlib import Path
+import tempfile
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -30,12 +34,19 @@ def fixture() -> bytes:
 
 
 class FakeResponse:
-    def __init__(self, raw=None, status=200, media="application/json; charset=utf-8", declared=None):
+    def __init__(self, raw=None, status=200, media="application/json; charset=utf-8", declared=None,
+                 url=p.ENDPOINT, encoding=None):
         self.raw = fixture() if raw is None else raw
         self.status = status
+        self.url = url
         self.headers = {"Content-Type": media}
         if declared is not None:
             self.headers["Content-Length"] = declared
+        if encoding is not None:
+            self.headers["Content-Encoding"] = encoding
+
+    def geturl(self):
+        return self.url
 
     def read(self, count):
         return self.raw[:count]
@@ -62,7 +73,7 @@ class CalFireDinsCkanMetadataTests(TestCase):
         p.verify_reviewed_contract()
 
     def test_contract_rejects_stale_response_version_before_network(self):
-        original = p.validate_path
+        original = p.validate_contract
 
         def stale(path):
             c = original(path)
@@ -71,7 +82,7 @@ class CalFireDinsCkanMetadataTests(TestCase):
             )
             return c
 
-        with patch.object(p, "validate_path", side_effect=stale):
+        with patch.object(p, "validate_contract", side_effect=stale):
             with self.assertRaisesRegex(p.CkanProbeBlocked, "contract changed"):
                 p.verify_reviewed_contract()
 
@@ -105,6 +116,46 @@ class CalFireDinsCkanMetadataTests(TestCase):
         with self.assertRaises(p.CkanProbeBlocked):
             p.probe_one(FakeOpener(FakeResponse(declared=str(p.MAX_BYTES + 1))))
 
+    def test_reject_declared_body_length_mismatch(self):
+        for length in (len(fixture()) - 1, len(fixture()) + 1):
+            with self.subTest(length=length):
+                with self.assertRaises(p.CkanProbeBlocked):
+                    p.probe_one(FakeOpener(FakeResponse(declared=str(length))))
+
+    def test_exact_content_length_is_accepted(self):
+        opener = FakeOpener(FakeResponse(declared=str(len(fixture())), encoding="identity"))
+        self.assertEqual(p.probe_one(opener)["response_bytes"], len(fixture()))
+        self.assertEqual(opener.requests[0][0].get_header("Accept-encoding"), "identity")
+
+    def test_wrong_response_url_and_content_encoding_block(self):
+        for response in (FakeResponse(url="https://invalid.test/wrong"),
+                         FakeResponse(encoding="gzip"), FakeResponse(declared="١٥٥٥")):
+            with self.subTest(headers=response.headers, url=response.url):
+                with self.assertRaises(p.CkanProbeBlocked):
+                    p.probe_one(FakeOpener(response))
+
+    def test_incomplete_http_read_fails_closed(self):
+        response = FakeResponse()
+        with patch.object(response, "read", side_effect=IncompleteRead(b"{}", 4)):
+            with self.assertRaises(p.CkanProbeBlocked):
+                p.probe_one(FakeOpener(response))
+
+    def test_receipt_binds_contract_snapshot(self):
+        original = p.CONTRACT_PATH.read_bytes()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "contract.json"
+            path.write_bytes(original)
+
+            class ChangingOpener(FakeOpener):
+                def open(self, req, timeout):
+                    path.write_bytes(b"{}")
+                    return super().open(req, timeout)
+
+            with patch.object(p, "CONTRACT_PATH", path):
+                out = p.probe_one(ChangingOpener(FakeResponse()))
+            self.assertEqual(out["contract_sha256"], hashlib.sha256(original).hexdigest())
+            self.assertNotEqual(out["contract_sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
+
     def test_reject_actual_too_large(self):
         with self.assertRaises(p.CkanProbeBlocked):
             p.probe_one(FakeOpener(FakeResponse(raw=b"x" * (p.MAX_BYTES + 5))))
@@ -133,14 +184,14 @@ class CalFireDinsCkanMetadataTests(TestCase):
             p.probe_one(FakeOpener(FakeResponse(raw=json.dumps(x).encode())))
 
     def test_denied_rights_fail_without_network(self):
-        original = p.validate_path
+        original = p.validate_contract
 
         def blocked(path):
             c = original(path)
             c["rights_and_policy"]["commercial_automation_status"] = "unknown"
             return c
 
-        with patch.object(p, "validate_path", side_effect=blocked):
+        with patch.object(p, "validate_contract", side_effect=blocked):
             with self.assertRaisesRegex(p.CkanProbeBlocked, "contract changed"):
                 p.probe_one(FakeOpener(FakeResponse()))
 

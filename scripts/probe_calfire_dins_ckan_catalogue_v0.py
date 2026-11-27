@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import hashlib
+from http.client import HTTPException
 import json
 from pathlib import Path
 import sys
@@ -21,7 +22,7 @@ from urllib.parse import urlsplit
 from scripts.preflight_calfire_dins_ckan_catalogue_v0 import (
     ENDPOINT, MAX_BYTES, CkanMetadataError, inspect_ckan_metadata,
 )
-from scripts.validate_source_access import validate_path
+from scripts.validate_source_access import SourceAccessError, load_strict_json_bytes, validate_contract
 
 ROOT = Path(__file__).resolve().parents[1]
 ACCESS_ID = "us.calfire.dins.ckan-package-catalogue"
@@ -41,8 +42,14 @@ class NoRedirect(request.HTTPRedirectHandler):
         raise CkanProbeBlocked("redirect blocked")
 
 
-def verify_reviewed_contract(path: Path = CONTRACT_PATH) -> None:
-    c = validate_path(path)
+def verify_reviewed_contract(path: Path | None = None) -> str:
+    """Return the SHA-256 of exactly the bytes reviewed before any request."""
+    path = CONTRACT_PATH if path is None else path
+    try:
+        raw = path.read_bytes()
+        c = validate_contract(load_strict_json_bytes(raw))
+    except (OSError, SourceAccessError, ValueError) as exc:
+        raise CkanProbeBlocked("invalid CKAN metadata-only contract") from exc
     rights = c["rights_and_policy"]
     u = urlsplit(ENDPOINT)
     if (
@@ -73,6 +80,7 @@ def verify_reviewed_contract(path: Path = CONTRACT_PATH) -> None:
         or u.fragment or u.username or u.password
     ):
         raise CkanProbeBlocked("CKAN fixed metadata-only contract changed")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def fetch_one_original(opener=None) -> bytes:
@@ -81,22 +89,28 @@ def fetch_one_original(opener=None) -> bytes:
         opener = request.build_opener(NoRedirect, request.ProxyHandler({}))
     req = request.Request(
         ENDPOINT,
-        headers={"Accept": "application/json", "User-Agent": USER_AGENT},
+        headers={"Accept": "application/json", "Accept-Encoding": "identity",
+                 "User-Agent": USER_AGENT},
         method="GET",
     )
     try:
         with opener.open(req, timeout=TIMEOUT) as response:
-            if response.status != 200:
-                raise CkanProbeBlocked("CKAN status differs from reviewed 200")
+            if response.status != 200 or response.geturl() != ENDPOINT:
+                raise CkanProbeBlocked("CKAN status or URL differs from reviewed endpoint")
+            if response.headers.get("Content-Encoding", "identity").strip().lower() != "identity":
+                raise CkanProbeBlocked("unexpected CKAN response encoding")
             media = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             if media != "application/json":
                 raise CkanProbeBlocked("CKAN content type differs from reviewed JSON")
             declared = response.headers.get("Content-Length")
             if declared is not None:
-                if not declared.isdecimal() or not 0 < int(declared) <= MAX_BYTES:
+                if (type(declared) is not str or not declared.isascii()
+                        or not declared.isdecimal() or not 0 < int(declared) <= MAX_BYTES):
                     raise CkanProbeBlocked("CKAN content-length outside reviewed bound")
             raw = response.read(MAX_BYTES + 1)
-    except (error.HTTPError, error.URLError, TimeoutError, OSError) as exc:
+            if declared is not None and len(raw) != int(declared):
+                raise CkanProbeBlocked("CKAN body length differs from Content-Length")
+    except (error.HTTPError, error.URLError, HTTPException, TimeoutError, OSError) as exc:
         raise CkanProbeBlocked("fixed CKAN provider read unavailable") from exc
     if not raw or len(raw) > MAX_BYTES:
         raise CkanProbeBlocked("CKAN response byte bound exceeded")
@@ -104,7 +118,7 @@ def fetch_one_original(opener=None) -> bytes:
 
 
 def probe_one(opener=None) -> dict:
-    verify_reviewed_contract()
+    contract_sha256 = verify_reviewed_contract()
     original = fetch_one_original(opener)
     checked = inspect_ckan_metadata(original, expected_metadata_modified=CURRENT_METADATA_MODIFIED)
     return {
@@ -118,7 +132,7 @@ def probe_one(opener=None) -> dict:
         "source_package_modified": checked["dataset_metadata_modified"],
         "source_resource_count": checked["resource_count"],
         "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
-        "contract_sha256": hashlib.sha256(CONTRACT_PATH.read_bytes()).hexdigest(),
+        "contract_sha256": contract_sha256,
         "code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "provider_asset_downloads_performed": 0,
         "external_bytes_persisted": False,
