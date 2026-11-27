@@ -406,3 +406,15 @@ data as hazard, exposure or validation inputs.
 - https://www.offenedaten-koeln.de/dataset/geopackage-raumbezugssystem-koeln
 - https://www.offenedaten-koeln.de/dataset/baumkataster-koeln-fortlaufend-aktualisiert
 - https://steb-koeln.de/service/karten-und-anwendungen/ueberflutungsgefahrenkarten
+
+## 2026-11-27 REST replay boundary
+
+The historical KGG point/polygon research observations above are preserved. The
+current ArcGIS REST contract is still `documented_only` with `probe_contract.mode=none`
+and `api_terms_status=separate_unreviewed`. Both executable live entry points
+(the combined tree/polygon challenge and direct polygon lookup) now require a
+validated, exact, executable REST contract before any request. Under the current
+contract, `--live` is intentionally blocked before even the tree WFS reads.
+Offline synthetic verification remains available; separate source-specific REST
+rights review is required before another live replay. This changes neither the
+independently reviewed NRW WMS metadata contract nor source/model admission.
