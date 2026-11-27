@@ -48,7 +48,7 @@ REQUIRED_COLUMNS = frozenset(
 QUALITY_CATEGORIES = {"1": "good", "2": "suspect", "3": "bad"}
 QUALITY_RE = re.compile(r"^([123])([A-E]*)$")
 OFFSET_TIMESTAMP_RE = re.compile(
-    r"^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
+    r"^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$"
 )
 
 
@@ -73,7 +73,7 @@ def explicit_utc_timestamp(value: str) -> str:
 
     if not isinstance(value, str) or not OFFSET_TIMESTAMP_RE.fullmatch(value.strip()):
         raise BlueHeartPreflightError(
-            "timestamp requires an explicit UTC offset; source highway-gully raw times are ambiguous"
+            "timestamp requires an explicit UTC offset and at most six fractional digits; source highway-gully raw times are ambiguous"
         )
     try:
         instant = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
