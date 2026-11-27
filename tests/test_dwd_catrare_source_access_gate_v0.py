@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import hashlib
+import tempfile
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -88,11 +90,51 @@ class CatRaRESourceAccessGatesTests(unittest.TestCase):
                 else:
                     fake["operational_constraints"][changed] = 8192
                 with (self.subTest(variant=variant, changed=changed),
-                      patch.object(runner, "validate_path", return_value=fake),
+                      patch.object(runner, "validate_contract", return_value=fake),
                       patch.object(runner, "build_opener") as opener):
                     with self.assertRaises(runner.DWDRangeBlocked):
                         runner.probe(variant)
                     opener.assert_not_called()
+
+    def test_receipt_binds_pre_request_contract_snapshot(self):
+        for variant in runner.ALLOWED:
+            with self.subTest(variant=variant), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                path = root / "access" / (runner.ALLOWED[variant]["source"] + ".json")
+                path.parent.mkdir()
+                original = (ROOT / "access" / path.name).read_bytes()
+                path.write_bytes(original)
+                raw = synthetic_prefix(variant)
+
+                class ChangingOpener(FakeOpener):
+                    def open(self, req, timeout):
+                        path.write_bytes(b"{}")
+                        return super().open(req, timeout)
+
+                opener = ChangingOpener(FakeRangeResponse(raw, variant))
+                # Stub only the historical digest comparison: the fixture is synthetic.
+                with (patch.object(runner, "ROOT", root),
+                      patch.object(runner, "build_opener", return_value=opener),
+                      patch.object(runner, "verify_original_prefix_digest") as digest):
+                    receipt = runner.probe(variant)
+                digest.assert_called_once()
+                self.assertEqual(len(opener.requests), 1)
+                self.assertEqual(receipt["source_access_contract_sha256"],
+                                 hashlib.sha256(original).hexdigest())
+                self.assertNotEqual(receipt["source_access_contract_sha256"],
+                                    hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def test_invalid_contract_blocks_before_network(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "access" / (runner.ALLOWED["W3"]["source"] + ".json")
+            path.parent.mkdir()
+            path.write_bytes(b'{"access_id":"a","access_id":"b"}')
+            with (patch.object(runner, "ROOT", root),
+                  patch.object(runner, "build_opener") as opener):
+                with self.assertRaises(runner.DWDRangeBlocked):
+                    runner.probe("W3")
+                opener.assert_not_called()
 
     def test_explicit_live_only_not_default(self):
         with patch.object(runner, "probe") as probe:

@@ -26,16 +26,21 @@ jobs:
   range:
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [W3, T5]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
       - name: Offline exact W3 v2026.01 and 4KiB rights gate
         run: python3 -m unittest tests.test_probe_dwd_catrare_w3_range_v0 tests.test_dwd_catrare_source_access_gate_v0 -v
-      - name: Both exact DWD W3 and T5 4096-byte Range probes, no provider bytes
+      - name: Exact DWD ${{ matrix.variant }} 4096-byte Range probe, no provider bytes
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          VARIANT: ${{ matrix.variant }}
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m scripts.probe_dwd_catrare_w3_range_v0 --variant W3 --live
-          python3 -m scripts.probe_dwd_catrare_w3_range_v0 --variant T5 --live
+          python3 -m scripts.probe_dwd_catrare_w3_range_v0 --variant "$VARIANT" --live
