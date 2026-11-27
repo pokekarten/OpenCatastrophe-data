@@ -19,6 +19,11 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
+try:
+    from scripts.validate_source_access import SourceAccessError, load_strict_json_bytes, validate_contract
+except ModuleNotFoundError:  # direct script execution
+    from validate_source_access import SourceAccessError, load_strict_json_bytes, validate_contract
+
 ROOT = Path(__file__).resolve().parents[1]
 # Exact routes taken from existing reviewed access/*.json probe contracts.
 # Do not expand queries without updating the corresponding source contract.
@@ -73,17 +78,26 @@ def _bad_number(value):
 
 
 def reviewed_probe(source: str, root: Path = ROOT):
+    url, operation, max_bytes, timeout, _ = _reviewed_probe_snapshot(source, root)
+    return url, operation, max_bytes, timeout
+
+
+def _reviewed_probe_snapshot(source: str, root: Path):
     if source not in PROBES:
         raise ProbeBlocked("source not in the fixed reviewed probe allowlist")
     url, operation = PROBES[source]
     contract_path = root / "access" / (source + ".json")
     try:
-        contract = json.loads(contract_path.read_text(encoding="utf-8"),
-                              object_pairs_hook=_unique_object,
-                              parse_constant=_bad_number)
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        contract_bytes = contract_path.read_bytes()
+        contract = validate_contract(load_strict_json_bytes(contract_bytes))
+    except (OSError, SourceAccessError, ValueError) as exc:
         raise ProbeBlocked("unavailable or invalid reviewed source contract") from exc
+    # Access IDs and candidate IDs are distinct for the Dresden station.
+    # Schema validity alone does not bind this fixed request to its source.
+    expected_source = ("wsv.pegelonline.elbe-dresden-discharge.2020-2023"
+                       if source == "wsv.pegelonline.rest-v2.dresden" else source)
     if (contract.get("access_id") != source
+            or contract.get("source_ids") != [expected_source]
             or contract.get("status") != "probe_ready"
             or contract.get("authentication", {}).get("mode") != "none"
             or contract.get("probe_contract", {}).get("requires_credentials") is not False
@@ -109,7 +123,11 @@ def reviewed_probe(source: str, root: Path = ROOT):
         # Reuse the independent strict FDSN service review. The one-event
         # query is a fixed contract, never a caller-selected catalogue search.
         from scripts.probe_emsc_fdsn_event_v0 import PROBE_URL, verify_frozen_contract
-        verify_frozen_contract(contract_path)
+        try:
+            if verify_frozen_contract(contract_path) != contract:
+                raise ProbeBlocked("EMSC contract changed during review")
+        except ValueError as exc:
+            raise ProbeBlocked("EMSC frozen source contract invalid") from exc
         path_authorized = (
             request.path in reviewed_paths and url == PROBE_URL
             and request.query == "format=json&limit=1&orderby=time&nodata=204"
@@ -128,7 +146,7 @@ def reviewed_probe(source: str, root: Path = ROOT):
         raise ProbeBlocked("invalid probe byte bound")
     if not isinstance(timeout, int) or not 0 < timeout <= 60:
         raise ProbeBlocked("invalid timeout")
-    return url, operation, max_bytes, timeout
+    return url, operation, max_bytes, timeout, hashlib.sha256(contract_bytes).hexdigest()
 
 
 
@@ -305,7 +323,7 @@ def verify_response(source: str, raw: bytes) -> dict:
 
 
 def probe(source: str, *, root: Path = ROOT, opener=None) -> dict:
-    url, operation, max_bytes, timeout = reviewed_probe(source, root)
+    url, operation, max_bytes, timeout, contract_sha256 = _reviewed_probe_snapshot(source, root)
     # No caller supplied path/headers/query, no redirect or retry. No response is
     # written to disk. Keep response values out of the log/receipt.
     client = opener if opener is not None else build_opener(NoRedirect(), ProxyHandler({}))
@@ -340,7 +358,7 @@ def probe(source: str, *, root: Path = ROOT, opener=None) -> dict:
         "retrieval_utc": datetime.now(timezone.utc).isoformat(),
         "request_sha256": hashlib.sha256(url.encode("ascii")).hexdigest(),
         "probe_code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-        "access_contract_sha256": hashlib.sha256((root / "access" / (source + ".json")).read_bytes()).hexdigest(),
+        "access_contract_sha256": contract_sha256,
         "response_sha256": hashlib.sha256(raw).hexdigest(),
         "response_bytes": len(raw),
         "content_type": content_type,
