@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "de.koeln.statistik-rbs-kgg.wfs.2026",
+  "source_ids": [
+    "de.koeln.statistik.rbs-geopackage.2026"
+  ],
+  "provider": "Stadt Köln / Amt für Stadtentwicklung und Statistik",
+  "interface_type": "wfs",
+  "status": "verified_anonymous",
+  "documentation_url": "https://www.offenedaten-koeln.de/dataset/geopackage-raumbezugssystem-koeln",
+  "service_root": "https://geoportal.stadt-koeln.de",
+  "api_version": "OGC WFS 2.0.0",
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "get_capabilities",
+      "get_feature_hits",
+      "get_one_feature"
+    ],
+    "path_templates": [
+      "/arcgis/services/basiskarten/kgg/MapServer/WFSServer"
+    ],
+    "parameter_rules": "Only the publicly documented Basiskarten_kgg:Stadtviertel WFS 2.0 layer. GetCapabilities; GetFeature RESULTTYPE=hits COUNT=1; or one original GeoJSON MultiPolygon with COUNT=1 and OUTPUTFORMAT=GEOJSON. No arbitrary geographies, addresses, bulk ZIP, hidden fields, arbitrary query parameters, redirects, uncontrolled pagination or automated polling. Never treat the first returned district polygon as a frozen or representative sample."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/xml",
+      "text/xml",
+      "application/json"
+    ],
+    "format": "OGC WFS 2.0 GetCapabilities XML; hits-only FeatureCollection; one GeoJSON MultiPolygon with provider-declared EPSG:4326 and 13 source attribute keys.",
+    "scientific_semantics": "Municipal administrative Stadtviertel polygon geometry and attributes are spatial join context, NOT individual building exposure or insurance policy records. WFS default CRS is EPSG:25832 but GeoJSON returned named EPSG:4326; honor exact per-response CRS and axis handling. The provider listed 374 matching Stadtviertel features for one bounded hits query, not a national building count or immutable vintage. BBOX may exclude places outside city but is not a point-in-polygon proof."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 8192,
+    "max_sample_bytes": 160000,
+    "retry_policy": "none",
+    "rate_limit_notes": "Only explicitly initiated bounded research checks, no provider polling, uncontrolled pagination, arbitrary BBOX or bulk extracts. No numeric API quota established.",
+    "mutability_notes": "Live municipality layers are mutable. Pin request URL, retrieval UTC, response SHA-256, source identity and geometry/CRS; offset ordering alone is not a stable snapshot."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "same_as_dataset",
+    "terms_url": "https://www.govdata.de/dl-de/zero-2-0",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "unknown",
+    "notes": "Original city WFS ServiceIdentification/AccessConstraints explicitly states Datenlizenz Deutschland Zero 2.0 and no fees. For this access contract only a tightly bounded anonymous manual metadata/hits/one-feature research operation is treated as technically and legally accessible. General redistribution, committed raw source rows, automatic scheduled collection, model training, insurer allocation, personal claims or asset-specific model admission are NOT approved. Independent source/scientific/admission review remains required. No unbounded automated polling is authorised."
+  },
+  "probe_contract": {
+    "mode": "provider_specific",
+    "operation": "get_one_feature",
+    "requires_credentials": false,
+    "expected_evidence": [
+      "Original anonymous HTTP 200, no redirect; exact official host, path, fixed WFS query and documented layer.",
+      "Bounded Content-Type and original response SHA-256, byte count and retrieval UTC.",
+      "Response XML/JSON structure, layer identity, limited count and geometry/CRS semantics explicitly inspected.",
+      "External source bytes persisted=false, model admitted=false; protect source fields and IDs from raw logging."
+    ]
+  },
+  "implementation_decision": "build_later",
+  "reviewed_at": "2026-11-14",
+  "evidence_urls": [
+    "https://www.offenedaten-koeln.de/dataset/geopackage-raumbezugssystem-koeln",
+    "https://geoportal.stadt-koeln.de/arcgis/services/basiskarten/kgg/MapServer/WFSServer?request=GetCapabilities&service=WFS",
+    "https://www.govdata.de/dl-de/zero-2-0",
+    "https://github.com/pokekarten/OpenCatastrophe-data/blob/research/cologne-open-geodata-20261114/docs/research/cologne-public-geodata-pilot-20261114.md"
+  ],
+  "notes": "Original official WFS GetCapabilities advertises GeoJSON and GeoPackage output and states Datenlizenz Deutschland Zero 2.0. Original COUNT=1 hits returned WFS 2.0 FeatureCollection numberMatched=374, numberReturned=0. The independently examined first original GeoJSON MultiPolygon response measured 5650 bytes with SHA-256 4c3e48d56fbcdcbc703d142b6caea4cd0546965331fa94ded300279057be44b6. The probe only establishes technical source access and a per-response CRS/range sanity check, not accurate boundary membership, model admission or insured exposure. Replay via research_runners/cologne_public_wfs_feature_probe_v0.py. No original provider row committed."
+}
