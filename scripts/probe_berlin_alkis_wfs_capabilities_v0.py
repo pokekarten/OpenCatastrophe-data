@@ -75,6 +75,13 @@ def verify_reviewed_contract(path: Path = CONTRACT_PATH) -> None:
         raise BerlinWFSBlocked("Berlin metadata-only rights/request contract changed")
 
 
+class _NoDTDTreeBuilder(ET.TreeBuilder):
+    """Reject DTDs at the XML parser boundary, regardless of encoding."""
+
+    def doctype(self, name, pubid, system):
+        raise BerlinWFSBlocked("XML external entities or DTD forbidden")
+
+
 def inspect_capabilities(raw: bytes) -> dict:
     if not raw or len(raw) > MAX_BYTES:
         raise BerlinWFSBlocked("original WFS capabilities byte bound invalid")
@@ -82,7 +89,7 @@ def inspect_capabilities(raw: bytes) -> dict:
     if b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
         raise BerlinWFSBlocked("XML external entities or DTD forbidden")
     try:
-        root = ET.fromstring(raw)
+        root = ET.fromstring(raw, parser=ET.XMLParser(target=_NoDTDTreeBuilder()))
     except ET.ParseError as exc:
         raise BerlinWFSBlocked("invalid original WFS XML") from exc
     if root.tag != WFS + "WFS_Capabilities" or root.get("version") != "2.0.0":
