@@ -121,6 +121,25 @@ class BerlinWFSProbeTests(unittest.TestCase):
                 with self.assertRaises(BerlinWFSBlocked):
                     inspect_capabilities(body)
 
+    def test_dtd_rejected_independently_of_xml_encoding(self):
+        # The previous ASCII byte scan missed UTF-16 declarations, allowing
+        # an internal entity to manufacture the expected service title.
+        original = CAPABILITIES.decode("ascii").replace('encoding="UTF-8"',
+                                                        'encoding="UTF-16"')
+        malicious = original.replace(
+            "?>", '?>' + '<!DOCTYPE wfs:WFS_Capabilities ['
+            '<!ENTITY title "ALKIS Berlin Geb&#228;ude">]>', 1,
+        ).replace("ALKIS Berlin Geb&#228;ude</ows:Title>", "&title;</ows:Title>")
+        for encoding, bom in (("utf-16-le", b"\xff\xfe"),
+                              ("utf-16-be", b"\xfe\xff")):
+            with self.subTest(encoding=encoding):
+                clean = bom + original.encode(encoding)
+                self.assertTrue(inspect_capabilities(clean)["service_identity_verified"])
+                for payload in (malicious, original.replace(
+                        "?>", "?><!DOCTYPE wfs:WFS_Capabilities>", 1)):
+                    with self.assertRaisesRegex(BerlinWFSBlocked, "DTD forbidden"):
+                        inspect_capabilities(bom + payload.encode(encoding))
+
     def test_strict_one_response_receipt_no_payload_leak(self):
         calls = []
 
