@@ -8,8 +8,10 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 RUNNERS = Path(__file__).resolve().parents[1] / "research_runners"
 sys.path.insert(0, str(RUNNERS))
@@ -68,6 +70,33 @@ def make_reply(names):
 
 
 class CologneTreePolygonTests(unittest.TestCase):
+    def test_document_only_rest_contract_blocks_both_live_entry_points(self):
+        with (patch.object(challenge, "build_opener") as opener,
+              patch.object(challenge.tree, "acquire_one") as acquire):
+            with self.assertRaisesRegex(challenge.PolygonChallengeError, "reviewed service rights"):
+                challenge.fetch_official_stadtteil(6.96, 50.95)
+            with self.assertRaisesRegex(challenge.PolygonChallengeError, "reviewed service rights"):
+                challenge.run_live()
+            opener.assert_not_called()
+            acquire.assert_not_called()
+
+    def test_missing_and_invalid_rest_contract_block_before_network(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "access.json"
+            with (patch.object(challenge, "CONTRACT_PATH", path),
+                  patch.object(challenge, "build_opener") as opener,
+                  patch.object(challenge.tree, "acquire_one") as acquire):
+                for invalid in (None, b"{}", b'{"access_id":"x","access_id":"y"}'):
+                    if invalid is not None:
+                        path.write_bytes(invalid)
+                    with self.subTest(invalid=invalid):
+                        with self.assertRaises(challenge.PolygonChallengeError):
+                            challenge.run_live()
+                        with self.assertRaises(challenge.PolygonChallengeError):
+                            challenge.fetch_official_stadtteil(6.96, 50.95)
+                opener.assert_not_called()
+                acquire.assert_not_called()
+
     def test_source_bound_point_query_no_raw_polygon(self):
         url = challenge.query_url(6.96, 50.95)
         self.assertIn("/basiskarten/kgg/MapServer/3/query?", url)
