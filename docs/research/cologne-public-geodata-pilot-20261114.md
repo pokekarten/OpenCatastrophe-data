@@ -418,3 +418,14 @@ contract, `--live` is intentionally blocked before even the tree WFS reads.
 Offline synthetic verification remains available; separate source-specific REST
 rights review is required before another live replay. This changes neither the
 independently reviewed NRW WMS metadata contract nor source/model admission.
+
+## 2026-11-27 additional original publisher REST evidence and convergence
+
+The City of Cologne's own publication *Die Kommunale Gebietsgliederung – Ein räumlicher Bezug für statistische Daten*, printed page 5, section 3, explicitly presents REST APIs for obtaining geographic data for analyses, including the exact unlabeled KGG MapServer root used here:
+
+- https://www.stadt-koeln.de/mediaasset/content/pdf15/statistiksonstige/die_kommunale_gebietsgliederung.pdf
+- https://geoportal.stadt-koeln.de/arcgis/rest/services/basiskarten/kgg/MapServer
+
+This is positive publisher-side documentation of the API, rather than merely an observed anonymous endpoint. The city dataset catalogue (updated 2026-09-24) explicitly associates DL-DE Zero 2.0 with the ZIP, WFS and both WMS distributions, and identifies the address attributes for ALKIS building ID and building function as originating in the official cadastre: https://www.offenedaten-koeln.de/dataset/geopackage-raumbezugssystem-koeln . This is a promising separately reviewed address-to-building join key for exposure research, not a policy/TIV or complete building-count claim. The city's general geobase-data rights page also discusses open data and service rights: https://www.stadt-koeln.de/artikel/06228/index.html . However, neither the publication nor the catalogue was found to state explicit separate automation conditions for the exact REST query operation or a numerical quota. Do not silently transfer WFS/WMS rights to REST. Keep REST documented_only / probe none / separate_unreviewed; no live REST replay until its scoped contract is reviewed. No source bytes or geometry acquired and no rights or model-admission change. Publisher PDF text was accessible; page image verification was unavailable because the PDF exceeded the screenshot size limit.
+
+The exact earlier PR head `0830e704c81476b6a67fb2da1de223ccf900a30d` passed both GitHub workflows (CI 46058471264 and Berlin 46058471234, including all four Python versions and Required). The main tree at `d4cf09105d63c15ad390be1ff6a31b9755ef51f6` already contains both Cologne landscape files byte-for-byte; the four access JSON contracts are not yet present. The branch was 214 commits behind that main revision, with 22 changed paths including the two identical landscape files. Exact-head tests do not alone establish current-main integration. This documentation update requires its own CI. Preserve research-only status and original-provider evidence.
