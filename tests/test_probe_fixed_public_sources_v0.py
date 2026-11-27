@@ -159,6 +159,17 @@ class FixedSourceProbesTests(unittest.TestCase):
             probe(source, root=self.root, opener=client)
         self.assertEqual(client.requests, [])
 
+    def test_fixed_probe_rejects_unrelated_or_extra_source_ids_before_network(self):
+        for source in PROBES:
+            expected = contract(source)["source_ids"]
+            for wrong_ids in (["unrelated.source"], expected + ["unrelated.source"]):
+                with self.subTest(source=source, source_ids=wrong_ids):
+                    self.write(source, change=lambda d: d.update(source_ids=wrong_ids))
+                    client = Client(Reply(b"{}"))
+                    with self.assertRaises(ProbeBlocked):
+                        probe(source, root=self.root, opener=client)
+                    self.assertEqual(client.requests, [])
+
     def test_geo_boundaries_frozen_identity_and_original_licence(self):
         source = "geoboundaries.gbopen"
         payload = {"boundaryISO": "DEU", "boundaryType": "ADM1",
