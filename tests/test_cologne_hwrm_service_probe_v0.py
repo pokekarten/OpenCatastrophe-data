@@ -87,6 +87,22 @@ class CologneHwrmProbeTests(unittest.TestCase):
         with self.assertRaises(probe.SourceProbeError):
             probe.parse_wms_capabilities(WMS.replace(b'1.3.0', b'2.0.0'))
 
+    def test_utf16_dtd_rejected_before_entity_expansion(self):
+        clean = WMS.decode("ascii")
+        dtd = clean.replace("?>", '?>' + '<!DOCTYPE WMS_Capabilities ['
+                            '<!ENTITY title "NRW HWRM flood hazard WMS">]>', 1)
+        dtd = dtd.replace("<Title>NRW HWRM flood hazard WMS</Title>",
+                          "<Title>&title;</Title>")
+        empty_dtd = clean.replace("?>", "?><!DOCTYPE WMS_Capabilities>", 1)
+        for encoding, bom in (("utf-16-le", b"\xff\xfe"),
+                              ("utf-16-be", b"\xfe\xff")):
+            with self.subTest(encoding=encoding):
+                self.assertEqual(probe.parse_wms_capabilities(
+                    bom + clean.encode(encoding))["named_layer_count"], 2)
+                for payload in (dtd, empty_dtd):
+                    with self.assertRaisesRegex(probe.SourceProbeError, "DTD forbidden"):
+                        probe.parse_wms_capabilities(bom + payload.encode(encoding))
+
     def test_doctype_rejected(self):
         with self.assertRaises(probe.SourceProbeError):
             probe.parse_wms_capabilities(b'<!DOCTYPE x><WMS_Capabilities version="1.3.0"/>')
