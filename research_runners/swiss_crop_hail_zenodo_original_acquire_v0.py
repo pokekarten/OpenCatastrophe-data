@@ -139,13 +139,54 @@ def verify(assets: tuple[str, ...], opener=None) -> dict[str, object]:
     }
 
 
+def verify_local(assets: tuple[tuple[str, Path], ...]) -> dict[str, object]:
+    """Inspect explicitly supplied operator-held files; never create an opener."""
+    keys = [asset for asset, _ in assets]
+    if not keys or len(keys) != len(set(keys)) or any(a not in SOURCE_FILES for a in keys):
+        raise Blocked("unknown or duplicate local source selection")
+    if sum(ASSETS[a][3] for a in keys) > MAX_TOTAL:
+        raise Blocked("aggregate size ceiling exceeded")
+    receipts = [inspect_local(asset, path) for asset, path in assets]
+    return {
+        "schema_version": "swiss-hail-local-original-receipts-v0",
+        "source_replay": "operator-held-local-publisher-md5-verified",
+        "receipts": receipts,
+        "provider_requests_performed": 0,
+        "source_bytes_committed": False,
+        "source_files_copied_by_verifier": False,
+        "scientific_admission": False,
+        "annual_event_frequency_validated": False,
+        "insurer_loss_estimation_validated": False,
+    }
+
+
+def parse_local_files(values: list[str]) -> tuple[tuple[str, Path], ...]:
+    pairs = []
+    for value in values:
+        asset, separator, path = value.partition("=")
+        if not separator or asset not in SOURCE_FILES or not path:
+            raise Blocked("local file must be ASSET=PATH with an allowlisted asset")
+        pairs.append((asset, Path(path)))
+    return tuple(pairs)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--include-radar", action="store_true")
     parser.add_argument("--include-archives", action="store_true", help="also verify original two crop data ZIPs")
     parser.add_argument("--include-code", action="store_true", help="verify original Zenodo software archive (never execute)")
     parser.add_argument("--code-only", action="store_true", help="diagnose exact software archive independently without other downloads")
+    parser.add_argument("--local-file", action="append", default=[], metavar="ASSET=PATH",
+                        help="inspect an operator-held exact source file without network access")
     args = parser.parse_args()
+    if args.local_file:
+        if args.include_radar or args.include_archives or args.include_code or args.code_only:
+            parser.error("--local-file cannot be combined with original download selections")
+        try:
+            print(json.dumps(verify_local(parse_local_files(args.local_file)), sort_keys=True))
+        except (Blocked, OSError) as exc:
+            parser.exit(2, f"BLOCKED: {exc}\n")
+        return 0
     assets = ("exposure_metadata", "damage_metadata", "radar_metadata")
     if args.include_radar:
         assets += ("radar_meshs_h5", "radar_poh_h5")

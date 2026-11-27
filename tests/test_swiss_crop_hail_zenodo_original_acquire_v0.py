@@ -58,6 +58,38 @@ class OriginalAcquisitionTests(unittest.TestCase):
             open_request.assert_not_called()
         self.assertFalse(self.target.exists())
 
+    def test_local_batch_receipt_is_not_live_and_does_not_copy_files(self):
+        first = b"field,value\nA,1\n"
+        second = b"field,value\nB,2\n"
+        other = self.target.with_name("second.csv")
+        self.target.write_bytes(first)
+        other.write_bytes(second)
+        pins = {
+            "radar_metadata": (11064781, hashlib.md5(first, usedforsecurity=False).hexdigest(), "csv", 100),
+            "damage_metadata": (11064767, hashlib.md5(second, usedforsecurity=False).hexdigest(), "csv", 100),
+        }
+        with patch.dict(existing.ASSETS, pins), patch.object(subject, "build_reviewed_opener") as live:
+            out = subject.verify_local((("radar_metadata", self.target), ("damage_metadata", other)))
+        live.assert_not_called()
+        self.assertEqual(out["provider_requests_performed"], 0)
+        self.assertEqual([x["sha256"] for x in out["receipts"]],
+                         [hashlib.sha256(first).hexdigest(), hashlib.sha256(second).hexdigest()])
+        self.assertFalse(out["scientific_admission"])
+        self.assertFalse(out["source_files_copied_by_verifier"])
+        self.assertEqual(self.target.read_bytes(), first)
+        self.assertEqual(other.read_bytes(), second)
+
+    def test_local_selection_and_parser_fail_closed(self):
+        for bad in ((), (("wrong", self.target),),
+                    (("radar_metadata", self.target), ("radar_metadata", self.target))):
+            with self.assertRaises(subject.Blocked):
+                subject.verify_local(bad)
+        for value in ("radar_metadata", "radar_metadata=", "wrong=somewhere"):
+            with self.assertRaises(subject.Blocked):
+                subject.parse_local_files([value])
+        self.assertEqual(subject.parse_local_files(["radar_metadata=a=b.csv"]),
+                         (("radar_metadata", Path("a=b.csv")),))
+
     def test_fixed_original_urls(self):
         self.assertEqual(len(subject.SOURCE_FILES), 8)
         for asset in subject.SOURCE_FILES:
