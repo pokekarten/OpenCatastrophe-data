@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Four linked research records, eight exact original bytes: non-admission receipts only.
+schema_version = "SWISS_CROP_HAIL_ZENODO_EIGHT_ORIGINAL_ASSET_RECEIPTS_V0"
+review_date = "2026-11-06"
+paper_doi = "https://doi.org/10.5194/nhess-24-2541-2024"
+zenodo_release_ids = [11064756, 11064767, 11064781, 12784190]
+seven_originals_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42114240145"
+software_original_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42184430327"
+publisher_listed_md5_verified_for_all = true
+recomputed_original_sha256_for_all = true
+original_file_count = 8
+archive_hdf5_member_count = 48
+original_files_in_git = false
+original_files_stored_in_database = false
+source_rights_fully_reviewed = false
+scientific_fitness_admitted = false
+insured_loss_severity_calibrated = false
+independent_year_frequency_calibrated = false
+annual_gross_net_oep_aep_ready = false
+note = "Validated original bytes across two distinct GitHub runs: 7 data/metadata files and 1 model-code ZIP. CRC/MD5/SHA identity is not scientific suitability or upstream rights clearance. Code archive was never executed. Model study has selected crop hail events only."
+
+[[file]]
+asset = "exposure_metadata"
+record_id = 11064756
+original_bytes = 1720
+sha256 = "45a9e2bccd7571ada9e3bbb77482dbadfa4868c704527164e544e18d4013b9db"
+
+[[file]]
+asset = "damage_metadata"
+record_id = 11064767
+original_bytes = 2368
+sha256 = "cc88233701f06f952d5881a762b690bd9e14d55c24995298a61fbf70ea7759a5"
+
+[[file]]
+asset = "radar_metadata"
+record_id = 11064781
+original_bytes = 227
+sha256 = "682dc230bfaa3d416a07c04874ca6d0e8222eb9280e467b8228f72fc1c579474"
+
+[[file]]
+asset = "radar_meshs_h5"
+record_id = 11064781
+original_bytes = 6205459
+sha256 = "4ec457cfad8019cfb50d1e03399f2a7c53063eb2d6bd0d26e007d8201786db5b"
+
+[[file]]
+asset = "radar_poh_h5"
+record_id = 11064781
+original_bytes = 8919115
+sha256 = "f6773a9152e9954f271c7d0951e27403dd46b9142b4253a54b97f374171a0ae7"
+
+[[file]]
+asset = "exposure_zip"
+record_id = 11064756
+original_bytes = 31930278
+zip_members = 24
+sha256 = "347bde669b4077b5350d2260eba0e4bcd68977434cb3ad95b7e056c67d1f6326"
+
+[[file]]
+asset = "damage_zip"
+record_id = 11064767
+original_bytes = 2455518
+zip_members = 24
+sha256 = "8db4322059791952c9f886f7eb798a5ee66c395c7f0921ca3d003c8f0b06b6bc"
+
+[[file]]
+asset = "code_zip"
+record_id = 12784190
+original_bytes = 2240460
+zip_members = 21
+sha256 = "e72954eca06346d1b67c6a4d7287f4c102e65e2b5871193a5224419cb21d15e2"
