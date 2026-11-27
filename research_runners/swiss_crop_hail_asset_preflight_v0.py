@@ -49,11 +49,12 @@ def _inspect_zip(path: Path) -> int:
             for entry in archive.infolist():
                 name = entry.filename.replace("\\", "/")
                 p = PurePosixPath(name)
-                if (not name or name.startswith("/") or ".." in p.parts or
+                canonical = p.as_posix()
+                if (not name or not p.parts or name.startswith("/") or ".." in p.parts or
                         any(part == "" for part in name.rstrip("/").split("/")) or
-                        ":" in p.parts[0] or name in seen):
+                        ":" in p.parts[0] or canonical in seen):
                     raise Blocked("unsafe or duplicate ZIP member")
-                seen.add(name)
+                seen.add(canonical)
                 mode = entry.external_attr >> 16
                 if stat.S_ISLNK(mode) or entry.flag_bits & 1:
                     raise Blocked("symlink or encrypted ZIP member")

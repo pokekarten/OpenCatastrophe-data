@@ -77,6 +77,22 @@ class SwissCropHailAssetPreflightTests(unittest.TestCase):
                 with self.assertRaisesRegex(preflight.Blocked, "unsafe or duplicate"):
                     self._check(content, "zip")
 
+    def test_zip_root_aliases_and_normalized_duplicates_blocked(self):
+        for entries in [
+            [(".", b"x")],
+            [("./", b"")],
+            [("a/b", b"x"), ("a/./b", b"y")],
+            [("a/", b""), ("a", b"x")],
+            [("a/b", b"x"), ("a\\b", b"y")],
+        ]:
+            with self.subTest(entries=entries):
+                with self.assertRaisesRegex(preflight.Blocked, "unsafe or duplicate"):
+                    self._check(self._zip(entries), "zip")
+
+    def test_zip_distinct_normalized_paths_and_directory_accepted(self):
+        content = self._zip([("a/", b""), ("a/b", b"x"), ("a/c", b"y")])
+        self.assertEqual(self._check(content, "zip")["zip_member_count"], 3)
+
     def test_zip_bomb_ratio_and_empty_archive_blocked(self):
         for content in [self._zip([("a", b"a" * 300_000)]), self._zip([])]:
             with self.assertRaises(preflight.Blocked):
