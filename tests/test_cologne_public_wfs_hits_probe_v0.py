@@ -60,6 +60,21 @@ class CologneWfsHitsTests(unittest.TestCase):
         with self.assertRaises(probe.WfsProbeError):
             probe.parse_hits(HITS.replace(b'2026-11-14T19:57:30Z', b'no-time'))
 
+    def test_utf16_dtd_rejected_before_entity_expansion(self):
+        clean = HITS.decode("ascii")
+        dtd = clean.replace("?>", '?>' + '<!DOCTYPE wfs:FeatureCollection ['
+                            '<!ENTITY count "374">]>', 1)
+        dtd = dtd.replace('numberMatched="374"', 'numberMatched="&count;"')
+        empty_dtd = clean.replace("?>", "?><!DOCTYPE wfs:FeatureCollection>", 1)
+        for encoding, bom in (("utf-16-le", b"\xff\xfe"),
+                              ("utf-16-be", b"\xfe\xff")):
+            with self.subTest(encoding=encoding):
+                self.assertEqual(probe.parse_hits(
+                    bom + clean.encode(encoding))["number_matched_reported"], 374)
+                for payload in (dtd, empty_dtd):
+                    with self.assertRaisesRegex(probe.WfsProbeError, "DTD forbidden"):
+                        probe.parse_hits(bom + payload.encode(encoding))
+
     def test_doctype_rejected(self):
         with self.assertRaises(probe.WfsProbeError):
             probe.parse_hits(b'<!DOCTYPE x>' + HITS)
