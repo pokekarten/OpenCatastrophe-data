@@ -30,6 +30,12 @@ URL = (
 MAX_BYTES = 131072
 TIMEOUT = 30
 MIME = re.compile(r"^[A-Za-z0-9.+_-]+/[A-Za-z0-9.+_-]+$")
+# FSDI publishes these exact parameterized media types for GeoTIFF/COG:
+# https://docs.geo.admin.ch/download-data/stac-api/supported-media.html
+FSDI_TIFF_MEDIA = frozenset({
+    "image/tiff; application=geotiff",
+    "image/tiff; application=geotiff; profile=cloud-optimized",
+})
 USER_AGENT = "OpenCatastrophe-data/1.0 (manual bounded MeteoSwiss hail climate metadata canary)"
 
 
@@ -94,7 +100,8 @@ def check_archive_metadata(raw: bytes) -> dict:
         reported = value.get("type")
         if reported is None:
             media["unspecified"] += 1
-        elif type(reported) is str and len(reported) <= 120 and MIME.fullmatch(reported):
+        elif (type(reported) is str and len(reported) <= 120
+              and (MIME.fullmatch(reported) or reported in FSDI_TIFF_MEDIA)):
             media[reported] += 1
         else:
             raise ArchiveBlocked("unsupported archive media-type metadata")
