@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from urllib.parse import urlsplit
+import hashlib
 
 from scripts.probe_fixed_public_sources_v0 import (
     NoRedirect, PROBES, ProbeBlocked, probe, reviewed_probe, verify_response,
@@ -44,21 +44,10 @@ class Client:
 
 
 def contract(source):
-    url, operation = PROBES[source]
-    uri = urlsplit(url)
-    return {
-        "access_id": source,
-        "status": "probe_ready",
-        "service_root": uri.scheme + "://" + uri.netloc + ("/webservices/rest-api/v2" if source == "wsv.pegelonline.rest-v2.dresden" else ""),
-        "authentication": {"mode": "none"},
-        "probe_contract": {"mode": "provider_specific",
-                           "operation": operation, "requires_credentials": False},
-        "request_contract": {"allowed_operations": [operation],
-                             "path_templates": ["/stations/{station_uuid}.json"]
-                             if source == "wsv.pegelonline.rest-v2.dresden" else [uri.path]},
-        "rights_and_policy": {"commercial_automation_status": "allowed"},
-        "operational_constraints": {"timeout_seconds": 30, "max_probe_bytes": 4194304},
-    }
+    # Exercise complete repository-authored contracts, not sparse stubs that
+    # omit the dataset-rights and API-terms gates.
+    root = Path(__file__).resolve().parents[1]
+    return json.loads((root / "access" / (source + ".json")).read_text(encoding="utf-8"))
 
 
 def gfz_day_fixture():
@@ -119,6 +108,11 @@ class FixedSourceProbesTests(unittest.TestCase):
         for mutate in (
             lambda d: d["authentication"].update(mode="bearer"),
             lambda d: d["rights_and_policy"].update(commercial_automation_status="unknown"),
+            lambda d: d["rights_and_policy"].update(dataset_rights_status="not_reviewed"),
+            lambda d: d["rights_and_policy"].update(api_terms_status="separate_unreviewed"),
+            lambda d: d.update(implementation_decision="do_not_automate"),
+            lambda d: d["operational_constraints"].update(timeout_seconds=True),
+            lambda d: d["operational_constraints"].update(max_probe_bytes=True),
             lambda d: d["probe_contract"].update(requires_credentials=True),
             lambda d: d.update(status="restricted_by_terms"),
             lambda d: d["request_contract"].update(allowed_operations=["other"]),
@@ -140,6 +134,30 @@ class FixedSourceProbesTests(unittest.TestCase):
             with self.subTest(mutation=repr(mutate)):
                 with self.assertRaises(ProbeBlocked):
                     reviewed_probe(source, self.root)
+
+    def test_contract_receipt_binds_bytes_validated_before_request(self):
+        source = "gfz.geomagnetic-kp"
+        self.write(source)
+        path = self.root / "access" / (source + ".json")
+        before = path.read_bytes()
+
+        class ChangingClient(Client):
+            def open(self, request, *, timeout):
+                path.write_bytes(b"{}")
+                return super().open(request, timeout=timeout)
+
+        client = ChangingClient(Reply(json.dumps(gfz_day_fixture()).encode()))
+        receipt = probe(source, root=self.root, opener=client)
+        self.assertEqual(receipt["access_contract_sha256"], hashlib.sha256(before).hexdigest())
+        self.assertNotEqual(receipt["access_contract_sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def test_incomplete_contract_blocks_before_network(self):
+        source = "gfz.geomagnetic-kp"
+        self.write(source, change=lambda d: d.pop("rights_and_policy"))
+        client = Client(Reply(b"{}"))
+        with self.assertRaises(ProbeBlocked):
+            probe(source, root=self.root, opener=client)
+        self.assertEqual(client.requests, [])
 
     def test_geo_boundaries_frozen_identity_and_original_licence(self):
         source = "geoboundaries.gbopen"
