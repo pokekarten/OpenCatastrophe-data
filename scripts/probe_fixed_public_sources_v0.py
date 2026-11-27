@@ -92,7 +92,12 @@ def _reviewed_probe_snapshot(source: str, root: Path):
         contract = validate_contract(load_strict_json_bytes(contract_bytes))
     except (OSError, SourceAccessError, ValueError) as exc:
         raise ProbeBlocked("unavailable or invalid reviewed source contract") from exc
+    # Access IDs and candidate IDs are distinct for the Dresden station.
+    # Schema validity alone does not bind this fixed request to its source.
+    expected_source = ("wsv.pegelonline.elbe-dresden-discharge.2020-2023"
+                       if source == "wsv.pegelonline.rest-v2.dresden" else source)
     if (contract.get("access_id") != source
+            or contract.get("source_ids") != [expected_source]
             or contract.get("status") != "probe_ready"
             or contract.get("authentication", {}).get("mode") != "none"
             or contract.get("probe_contract", {}).get("requires_credentials") is not False
