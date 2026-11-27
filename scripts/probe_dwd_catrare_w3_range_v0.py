@@ -17,7 +17,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from scripts.validate_source_access import validate_path
+from scripts.validate_source_access import (
+    SourceAccessError, load_strict_json_bytes, validate_contract,
+)
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener, ProxyHandler, HTTPRedirectHandler
 from urllib.parse import urlsplit
@@ -56,12 +58,22 @@ class DWDRangeBlocked(ValueError):
 
 
 def verify_reviewed_contract(variant: str) -> Path:
-    """Require exact source/version/rights contract before any original request."""
+    """Return the path after validating the exact reviewed contract."""
+    path, _ = _reviewed_contract_snapshot(variant)
+    return path
+
+
+def _reviewed_contract_snapshot(variant: str) -> tuple[Path, str]:
+    """Validate and hash the same contract bytes before any network request."""
     if variant not in ALLOWED:
         raise DWDRangeBlocked("only exact reviewed W3/T5 variants allowed")
     cfg = ALLOWED[variant]
     path = ROOT / "access" / (cfg["source"] + ".json")
-    contract = validate_path(path)
+    try:
+        raw = path.read_bytes()
+        contract = validate_contract(load_strict_json_bytes(raw))
+    except (OSError, SourceAccessError, ValueError) as exc:
+        raise DWDRangeBlocked("invalid original CatRaRE access contract") from exc
     rights = contract["rights_and_policy"]
     probe_contract = contract["probe_contract"]
     limits = contract["operational_constraints"]
@@ -88,7 +100,7 @@ def verify_reviewed_contract(variant: str) -> Path:
             or KNOWN_PREFIX_SHA256[variant] not in limits["mutability_notes"]
             or str(cfg["total_bytes"]) not in limits["mutability_notes"]):
         raise DWDRangeBlocked("original CatRaRE rights/variant/route contract changed")
-    return path
+    return path, hashlib.sha256(raw).hexdigest()
 
 
 def verify_original_prefix_digest(result: dict, *, variant: str) -> None:
@@ -152,7 +164,7 @@ def verify_csv_prefix(raw: bytes, *, status: int, content_range: str,
 def probe(variant: str = "W3") -> dict:
     if variant not in ALLOWED:
         raise DWDRangeBlocked("only exact reviewed W3/T5 variants allowed")
-    contract_path = verify_reviewed_contract(variant)
+    _, contract_sha256 = _reviewed_contract_snapshot(variant)
     cfg = ALLOWED[variant]
     url = BASE + cfg["filename"]
     parsed = urlsplit(url)
@@ -185,7 +197,7 @@ def probe(variant: str = "W3") -> dict:
                                media_type=media, variant=variant)
     verify_original_prefix_digest(result, variant=variant)
     result.update({
-        "source_access_contract_sha256": hashlib.sha256(contract_path.read_bytes()).hexdigest(),
+        "source_access_contract_sha256": contract_sha256,
         "source_probe_code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "operation": f"exact_{variant.lower()}_v2026_01_first_4096_csv_bytes",
         "request_sha256": hashlib.sha256(
