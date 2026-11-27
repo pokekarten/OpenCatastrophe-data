@@ -43,6 +43,13 @@ class BlockRedirects(HTTPRedirectHandler):
         return None
 
 
+class _NoDTDTreeBuilder(ElementTree.TreeBuilder):
+    """Reject DTDs at the parser boundary, independently of XML encoding."""
+
+    def doctype(self, name, pubid, system):
+        raise SourceProbeError("DTD forbidden")
+
+
 def parse_wms_capabilities(payload: bytes) -> dict[str, object]:
     """Validate the original WMS XML without asserting specific flood layers."""
     if not payload or len(payload) > MAX_RESPONSE_BYTES:
@@ -50,7 +57,9 @@ def parse_wms_capabilities(payload: bytes) -> dict[str, object]:
     if b"<!DOCTYPE" in payload.upper() or b"<!ENTITY" in payload.upper():
         raise SourceProbeError("DTD/entities forbidden")
     try:
-        root = ElementTree.fromstring(payload)
+        root = ElementTree.fromstring(
+            payload, parser=ElementTree.XMLParser(target=_NoDTDTreeBuilder())
+        )
     except ElementTree.ParseError as exc:
         raise SourceProbeError("invalid XML") from exc
     root_name = root.tag.rsplit("}", 1)[-1]
