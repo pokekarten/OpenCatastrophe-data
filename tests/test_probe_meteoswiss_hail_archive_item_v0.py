@@ -83,6 +83,39 @@ class MeteoSwissArchiveTests(unittest.TestCase):
         self.assertNotIn("invalid.example", json.dumps(x))
         self.assertNotIn("source-token-private", json.dumps(x))
 
+    def test_official_fsdi_geotiff_and_cog_media_types(self):
+        data = sample()
+        for index, media in enumerate((
+            "image/tiff; application=geotiff",
+            "image/tiff; application=geotiff; profile=cloud-optimized",
+        )):
+            data["assets"][f"synthetic-{index}"] = {
+                "href": "https://invalid.example/never-followed.tif", "type": media,
+            }
+        opener = MockOpener(MockResponse(data=test_bytes(data)))
+        result = p.probe(opener)
+        self.assertEqual(result["archive_asset_metadata_count"], 4)
+        for media in p.FSDI_TIFF_MEDIA:
+            self.assertEqual(result["archive_media_type_counts"][media], 1)
+        self.assertEqual(len(opener.requests), 1)
+        self.assertEqual(result["asset_links_followed"], 0)
+        self.assertEqual(result["raw_asset_bytes_downloaded"], 0)
+        self.assertFalse(result["model_input_approved"])
+
+    def test_unreviewed_media_parameters_still_block(self):
+        for media in (
+            "image/tiff; application=other",
+            "image/tiff; application=geotiff; profile=other",
+            "image/tiff; application=geotiff; profile=cloud-optimized; x=secret",
+            "image/tiff; application=geotiff\n",
+            "application/x-netcdf; token=secret",
+        ):
+            with self.subTest(media=media):
+                data = sample()
+                data["assets"]["synthetic-cog"]["type"] = media
+                with self.assertRaises(p.ArchiveBlocked):
+                    p.check_archive_metadata(test_bytes(data))
+
     def test_exact_single_request_and_timeout(self):
         opener = MockOpener(MockResponse())
         result = p.probe(opener)
