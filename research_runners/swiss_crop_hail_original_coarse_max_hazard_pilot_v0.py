@@ -14,12 +14,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import tempfile
-from urllib.request import build_opener
 import zipfile
 
 from research_runners.swiss_crop_hail_asset_preflight_v0 import Blocked, inspect_local
 from research_runners.swiss_crop_hail_zenodo_original_acquire_v0 import (
-    acquire_one, OriginalOnlyRedirect,
+    acquire_one, build_reviewed_opener,
 )
 from research_runners.swiss_crop_hail_hdf5_metadata_profile_v0 import (
     CROPS, RESOLUTIONS_KM, archive_member_index,
@@ -106,7 +105,7 @@ def map_aggregated_crop_coords(positions, km: int):
 def main() -> int:
     import h5py
     import numpy as np
-    opener = build_opener(OriginalOnlyRedirect())
+    opener = build_reviewed_opener()
     with tempfile.TemporaryDirectory(prefix="oc-swiss-crop-hail-coarse-skill-") as temp:
         paths = {}
         for i, asset in enumerate(SOURCE_ASSETS):

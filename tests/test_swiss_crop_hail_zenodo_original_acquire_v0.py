@@ -9,6 +9,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from urllib.request import build_opener
 
 from research_runners import swiss_crop_hail_zenodo_original_acquire_v0 as subject
 from research_runners import swiss_crop_hail_asset_preflight_v0 as existing
@@ -42,6 +43,20 @@ class OriginalAcquisitionTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.target = Path(self.tmp.name) / "original.bin"
         self.url = subject.source_url("radar_metadata")
+
+    def test_default_live_acquisition_blocked_before_network(self):
+        with self.assertRaisesRegex(subject.Blocked, "documented_only"):
+            subject.verify(("radar_metadata",))
+        with self.assertRaisesRegex(subject.Blocked, "documented_only"):
+            subject.build_reviewed_opener()
+
+    def test_standard_library_opener_blocked_before_request(self):
+        opener = build_opener()
+        with patch.object(opener, "open") as open_request:
+            with self.assertRaisesRegex(subject.Blocked, "documented_only"):
+                subject.acquire_one("radar_metadata", self.target, opener)
+            open_request.assert_not_called()
+        self.assertFalse(self.target.exists())
 
     def test_fixed_original_urls(self):
         self.assertEqual(len(subject.SOURCE_FILES), 8)

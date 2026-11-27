@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 import tempfile
 from urllib.parse import urlsplit, quote
-from urllib.request import Request, HTTPRedirectHandler, build_opener
+from urllib.request import Request, HTTPRedirectHandler, OpenerDirector
 from urllib.error import HTTPError, URLError
 
 from research_runners.swiss_crop_hail_asset_preflight_v0 import (
@@ -31,6 +31,15 @@ SOURCE_FILES = {
 }
 MAX_TOTAL = 80_000_000
 HOST = "zenodo.org"
+
+
+def build_reviewed_opener():
+    """No live acquisition under the current documented-only source contracts.
+
+    Replacing this gate requires a separate source-specific acquisition review.
+    Synthetic tests may inject an offline response double into verify/acquire_one.
+    """
+    raise Blocked("Swiss crop hail live acquisition blocked: documented_only")
 
 
 def require_original_host(url: str) -> None:
@@ -61,6 +70,8 @@ def source_url(asset: str) -> str:
 def acquire_one(asset: str, target: Path, opener) -> int:
     if asset not in SOURCE_FILES:
         raise Blocked("asset not explicitly allowlisted")
+    if isinstance(opener, OpenerDirector):
+        build_reviewed_opener()
     url = source_url(asset)
     require_original_host(url)
     maximum = ASSETS[asset][3]
@@ -108,7 +119,8 @@ def verify(assets: tuple[str, ...], opener=None) -> dict[str, object]:
         raise Blocked("unknown or duplicate source selection")
     if sum(ASSETS[a][3] for a in assets) > MAX_TOTAL:
         raise Blocked("aggregate size ceiling exceeded")
-    opener = opener or build_opener(OriginalOnlyRedirect())
+    if opener is None:
+        opener = build_reviewed_opener()
     receipts = []
     with tempfile.TemporaryDirectory(prefix="swiss-hail-zenodo-original-") as tmp:
         for i, asset in enumerate(assets):

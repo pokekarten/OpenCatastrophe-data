@@ -15,11 +15,10 @@ import json
 from pathlib import Path
 import tempfile
 import zipfile
-from urllib.request import build_opener
 
 from research_runners.swiss_crop_hail_asset_preflight_v0 import Blocked, inspect_local
 from research_runners.swiss_crop_hail_zenodo_original_acquire_v0 import (
-    acquire_one, OriginalOnlyRedirect,
+    acquire_one, build_reviewed_opener,
 )
 from research_runners.swiss_crop_hail_hdf5_metadata_profile_v0 import (
     CROPS, RESOLUTIONS_KM, archive_member_index, MAX_H5_MEMBER_BYTES,
@@ -208,7 +207,7 @@ def source_pair_summary(exposure, damage, hazard_dates) -> dict[str, object]:
 def main() -> int:
     import h5py
     import numpy as np
-    opener = build_opener(OriginalOnlyRedirect())
+    opener = build_reviewed_opener()
     with tempfile.TemporaryDirectory(prefix="oc-ch-hail-alignment-") as tmp:
         paths = {}
         for i, asset in enumerate(("radar_meshs_h5", "radar_poh_h5",

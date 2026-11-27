@@ -12,11 +12,10 @@ import json
 from pathlib import Path, PurePosixPath
 import tempfile
 import zipfile
-from urllib.request import build_opener
 
 from research_runners.swiss_crop_hail_asset_preflight_v0 import Blocked, inspect_local
 from research_runners.swiss_crop_hail_zenodo_original_acquire_v0 import (
-    acquire_one, OriginalOnlyRedirect,
+    acquire_one, build_reviewed_opener,
 )
 
 CROPS = ("barley", "field_crops", "grapevine", "maize", "rapeseed", "wheat")
@@ -143,7 +142,7 @@ def profile_zip(original_path: Path, role: str) -> dict[str, object]:
 
 
 def main() -> int:
-    opener = build_opener(OriginalOnlyRedirect())
+    opener = build_reviewed_opener()
     receipts, radar, crops = [], {}, {}
     with tempfile.TemporaryDirectory(prefix="oc-swiss-hail-h5-") as directory:
         for index, asset in enumerate(SOURCE_ASSETS):
