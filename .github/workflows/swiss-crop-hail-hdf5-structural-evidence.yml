@@ -40,6 +40,9 @@ jobs:
       - name: Run synthetic source-contract tests without internet
         run: python -m unittest -v tests.test_swiss_crop_hail_hdf5_metadata_profile_v0
       - name: Read original source HDF5 metadata only, no payload samples
+        # Original replay disabled: current source-access contracts are documented_only.
+        # Re-enable only after explicit, source-specific rights and acquisition review.
+        if: ${{ false }}
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python -m research_runners.swiss_crop_hail_hdf5_metadata_profile_v0

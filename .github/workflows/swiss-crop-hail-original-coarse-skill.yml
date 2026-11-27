@@ -41,6 +41,9 @@ jobs:
       - name: Offline resolution geometry/aggregation regression suite
         run: python -m unittest -v tests.test_swiss_crop_hail_original_coarse_max_hazard_pilot_v0
       - name: Original released source 2 4 8km LV95 max radar pilot
+        # Original replay disabled: current source-access contracts are documented_only.
+        # Re-enable only after explicit, source-specific rights and acquisition review.
+        if: ${{ false }}
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python -m research_runners.swiss_crop_hail_original_coarse_max_hazard_pilot_v0

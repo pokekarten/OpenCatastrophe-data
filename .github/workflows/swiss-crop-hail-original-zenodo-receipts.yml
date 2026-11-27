@@ -41,6 +41,9 @@ jobs:
           tests.test_swiss_crop_hail_asset_preflight_v0
           tests.test_swiss_crop_hail_zenodo_original_acquire_v0
       - name: Re-fetch seven pinned original crop and radar bytes
+        # Original replay disabled: current source-access contracts are documented_only.
+        # Re-enable only after explicit, source-specific rights and acquisition review.
+        if: ${{ false }}
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python -m research_runners.swiss_crop_hail_zenodo_original_acquire_v0 --include-radar --include-archives
@@ -65,6 +68,9 @@ jobs:
           tests.test_swiss_crop_hail_asset_preflight_v0
           tests.test_swiss_crop_hail_zenodo_original_acquire_v0
       - name: Re-fetch exact versioned published model code ZIP without execution
+        # Original replay disabled: current source-access contracts are documented_only.
+        # Re-enable only after explicit, source-specific rights and acquisition review.
+        if: ${{ false }}
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python -m research_runners.swiss_crop_hail_zenodo_original_acquire_v0 --code-only

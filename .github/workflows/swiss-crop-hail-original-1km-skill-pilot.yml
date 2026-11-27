@@ -40,6 +40,9 @@ jobs:
       - name: Strict no-network event, hazard-unit and 2021 field support tests
         run: python -m unittest -v tests.test_swiss_crop_hail_original_1km_skill_pilot_v0
       - name: Run original-source 1 km MESHS and POH binary model pilot, aggregate only
+        # Original replay disabled: current source-access contracts are documented_only.
+        # Re-enable only after explicit, source-specific rights and acquisition review.
+        if: ${{ false }}
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python -m research_runners.swiss_crop_hail_original_1km_skill_pilot_v0

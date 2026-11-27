@@ -40,6 +40,9 @@ jobs:
       - name: Synthetic event subset and archive family invariants
         run: python -m unittest -v tests.test_swiss_crop_hail_event_alignment_v0
       - name: Read original event metadata, no original coordinate or damage row exports
+        # Original replay disabled: current source-access contracts are documented_only.
+        # Re-enable only after explicit, source-specific rights and acquisition review.
+        if: ${{ false }}
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python -m research_runners.swiss_crop_hail_event_alignment_v0
