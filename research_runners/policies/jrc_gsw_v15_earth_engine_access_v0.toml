@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Alternative official JRC 1.5 source transport; separate from CloudFerro Swift.
+# This records an exact published Earth Engine asset, NOT an authorized client.
+schema_version = "1.0.0"
+source_id = "ec-jrc.global-surface-water.1984-2024"
+delivery_service = "Google Earth Engine"
+publisher_asset_id = "projects/global-surface-water/assets/GSW1_5/Occurrence"
+source_period = "1984-2024"
+source_product = "aggregated_occurrence"
+publisher_correction_announcement_date = "2026-11-10"
+publisher_asset_documentation_url = "https://global-surface-water.appspot.com/download"
+service_access_requirements_url = "https://developers.google.com/earth-engine/guides/access"
+commercial_subscription_rules_url = "https://developers.google.com/earth-engine/guides/transition_to_commercial"
+publisher_dataset_reuse = "allowed_with_attribution"
+required_attribution = "Source: EC JRC/Google"
+intended_use = "commercial_insurance_cat_research"
+service_registration_state = "unconfigured"
+reviewed_registered_commercial_cloud_project = false
+reviewed_paid_earth_engine_subscription = false
+reviewed_enabled_api_and_project_iam = false
+reviewed_exact_asset_visibility = false
+reviewed_post_correction_native_pixels = false
+reviewed_raw_bytes_persistence_rights = false
+approved_network_requests = 0
+live_network_probe_approved = false
+cat_model_input_approved = false
+web_map_rgb_numeric_input_approved = false
+access_note = "Official JRC GSW1_5 Occurrence is an alternative source route. Earth Engine requires an enabled registered Cloud project, commercial paid subscription and appropriate IAM for commercial insurer use. This policy has no credentials or provider requests; do not confuse GEE with CloudFerro original TIFF or RGB WMTS visualization."
