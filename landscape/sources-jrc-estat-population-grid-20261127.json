@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "purpose": "Discover the revised JRC-ESTAT 100 m population exposure proxy without conflating modelled cells with observed census or insured exposure.",
+  "purpose": "Non-admission: Discover the revised JRC-ESTAT 100 m population exposure proxy without conflating modelled cells with observed census or insured exposure.",
   "review_date": "2026-11-27",
   "entries": [
     {

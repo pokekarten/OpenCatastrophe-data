@@ -14,7 +14,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Schema version:** `1.0.0`  
 **Review date:** `2026-11-27`  
-**Purpose:** Discover the revised JRC-ESTAT 100 m population exposure proxy without conflating modelled cells with observed census or insured exposure.
+**Purpose:** Non-admission: Discover the revised JRC-ESTAT 100 m population exposure proxy without conflating modelled cells with observed census or insured exposure.
 
 **Entries:** 1
 
