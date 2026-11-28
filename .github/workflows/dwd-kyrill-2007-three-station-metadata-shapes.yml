@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DWD Kyrill 2007 Three Station Original Metadata Shapes
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dwd-kyrill-2007-three-station-metadata-shapes.yml'
+      - 'scripts/dwd_kyrill_2007_station_metadata_probe_v0.py'
+      - 'tests/test_dwd_kyrill_2007_station_metadata_probe_v0.py'
+      - 'scripts/dwd_kyrill_2007_station_validity_v0.py'
+      - 'tests/test_dwd_kyrill_2007_station_validity_v0.py'
+      - 'docs/research/dwd_kyrill_2007_three_station_metadata_probe_20261106.md'
+      - 'docs/research/evidence/dwd-kyrill-2007-three-station-history-source-receipt-20261106.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-station-metadata-shapes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout branch source without persisting credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Offline metadata ZIP security and provenance regression
+        run: |
+          python -m unittest tests.test_dwd_kyrill_2007_station_metadata_probe_v0 -v
+          python -m unittest tests.test_dwd_kyrill_2007_station_validity_v0 -v
+      - name: Acquire exactly three original DWD station metadata ZIPs and inspect shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          base='https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data'
+          tmp="$RUNNER_TEMP/dwd-kyrill-metadata-2007"
+          mkdir -p "$tmp"
+          trap 'rm -rf "$tmp"' EXIT
+          for id in 00433 01262 03379; do
+            curl --fail --silent --show-error --noproxy '*' \
+              --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+              --max-time 80 --retry 0 --max-filesize 30000 \
+              --output "$tmp/Meta_Daten_zehn_min_fx_${id}.zip" \
+              "$base/Meta_Daten_zehn_min_fx_${id}.zip"
+          done
+          python -m scripts.dwd_kyrill_2007_station_metadata_probe_v0 \
+            --zip-00433 "$tmp/Meta_Daten_zehn_min_fx_00433.zip" \
+            --zip-01262 "$tmp/Meta_Daten_zehn_min_fx_01262.zip" \
+            --zip-03379 "$tmp/Meta_Daten_zehn_min_fx_03379.zip" > "$tmp/source-schema-probe.json"
+          python -m scripts.dwd_kyrill_2007_station_validity_v0 \
+            --zip-00433 "$tmp/Meta_Daten_zehn_min_fx_00433.zip" \
+            --zip-01262 "$tmp/Meta_Daten_zehn_min_fx_01262.zip" \
+            --zip-03379 "$tmp/Meta_Daten_zehn_min_fx_03379.zip" > "$tmp/source-time-valid-2007.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import os
+          actual=json.loads((Path(os.environ['RUNNER_TEMP'])/'dwd-kyrill-metadata-2007'/'source-time-valid-2007.json').read_text())
+          source=Path('docs/research/evidence/dwd-kyrill-2007-three-station-history-source-receipt-20261106.md').read_text(encoding='utf-8')
+          nl=chr(10)
+          assert source.count('```json'+nl)==1
+          assert source.count(nl+'```'+nl)==1
+          expected=json.loads(source.split('```json'+nl,1)[1].split(nl+'```'+nl,1)[0])
+          assert actual==expected, 'time-valid original DWD geography/device/FX_10 research receipt drift'
+          assert len(actual['stations'])==3
+          assert [x['station_id'] for x in actual['stations']]==['00433','01262','03379']
+          assert [x['maxwind_instrument_sensor_height_over_ground_m'] for x in actual['stations']]==['10','10','29.28']
+          assert all(x['historical_2007_station_sensor_source_join_verified'] is True and
+                     x['QN1_data_reclassified_as_QN3'] is False for x in actual['stations'])
+          assert actual['scientific_model_admitted'] is False
+          print('ORIGINAL SOURCE VERIFIED three historical DWD sensor heights & FX_10 parameter dates: 10m, 10m, 29.28m; NOT calibrated wind')
+          PY
+          # All original metadata ZIPs stay ephemeral; no meteorological observations are read.
