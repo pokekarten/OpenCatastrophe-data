@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission: Discover the revised JRC-ESTAT 100 m population exposure proxy without conflating modelled cells with observed census or insured exposure.",
+  "review_date": "2026-11-27",
+  "entries": [
+    {
+      "candidate_id": "ec.jrc.census2021-population-grid-100m.r2026.07",
+      "name": "JRC-ESTAT Census Population Grid 2021, 100 m, revision 2026.07",
+      "provider": "European Commission Joint Research Centre / Eurostat",
+      "categories": [
+        "population",
+        "exposure",
+        "demography",
+        "europe"
+      ],
+      "spatial_scope": "Europe; exact country and raster extent require original asset inspection",
+      "temporal_scope": "2021 resident population, revision 2026.07 (catalogue modified 2026-07-24)",
+      "resolution_or_granularity": "100 m modelled resident population count per cell; 1 km census V2-0 of 2024-06-16 disaggregated using residential built-up volume",
+      "potential_roles": [
+        "population_exposure_prior",
+        "bounded_flood_population_overlay",
+        "aggregate_population_conservation_challenge"
+      ],
+      "authoritative_url": "https://data.jrc.ec.europa.eu/dataset/98336641-fd1c-4992-8c7b-c470dd5eb81e",
+      "access_class_hint": "public_anonymous_jrc_zip_ec_reuse_notice_upstream_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher identifies DOI 10.2905/JRC.VP18KXG and revision 2026.07 with updated LUISA residential areas. Uses Census V2-0, not V3 of May 2026; no independent V3 CSV-TIFF parity or independent building-footprint validation. Shared EUBUCCO, Overture, GHSL and TomTom inputs require lineage and third-party rights review. Fine-scale counts are estimated, not enumerated residents, insured locations, TIV or exact dwellings. Catalogue links a ZIP and declares anonymous access and EU reuse subject to attribution and third-party rights. Original ZIP member inventory, byte identity, CRS, NoData, units and aggregate conservation remain unverified."
+    }
+  ]
+}

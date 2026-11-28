@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "ec.jrc.census2021-dwelling-grid-1km.documented",
+  "source_ids": [
+    "ec.jrc.census2021-dwelling-grid-1km"
+  ],
+  "provider": "European Commission Joint Research Centre / Eurostat",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://data.jrc.ec.europa.eu/dataset/50cfa4c6-406e-47ce-a092-64a2c5d18303",
+  "service_root": "https://jeodpp.jrc.ec.europa.eu",
+  "api_version": "Census 2021 / catalogue modified 2026-03-25 / DOI 10.2905/JRC.1NNF45G",
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_documented_route"
+    ],
+    "path_templates": [
+      "/ftp/jrc-opendata/MAPS/JRC-ESTAT_Census_Dwelling_2021_1km/JRC-ESTAT_Census_Dwelling_2021_1km.zip"
+    ],
+    "parameter_rules": "Exact catalogue-linked ZIP path only. Documentation-only; no live request, automated retrieval, archive expansion or bulk acquisition authorized. Review exact source version and acquisition terms before any bounded HEAD or Range canary."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/zip",
+      "application/octet-stream"
+    ],
+    "format": "Publisher catalogue describes GeoTIFF raster distribution; exact download link ends in ZIP. Archive member names, byte length, checksum, CRS, NoData and data type are not yet independently verified.",
+    "scientific_semantics": "1 km estimated conventional dwelling counts disaggregated from LAU 2021 municipality totals using residential built-up volume. Dwellings are not buildings, insured locations or TIV. Shared EUBUCCO, Overture and GHSL sources prevent independent validation of those inputs. Verify conservation at municipality level and native grid alignment before use."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "Catalogue declares anonymous access without registration. Separate service automation and rate constraints remain unreviewed; zero original-byte requests authorized. A binary link was identified from public catalogue metadata, not a successful source download.",
+    "mutability_notes": "Catalogue revision and DOI identify the product, not an immutable ZIP digest. Future source receipt must pin exact URL, response size, retrieval time, SHA-256, archive members and native raster profile before scientific comparison."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://commission.europa.eu/legal-notice_en",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Catalogue declares European Commission reuse subject to attribution and excludes third-party intellectual property. Review upstream input rights and exact derivative scope; anonymous access does not independently establish commercial automation, raw redistribution or model admission."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-27",
+  "evidence_urls": [
+    "https://data.jrc.ec.europa.eu/dataset/50cfa4c6-406e-47ce-a092-64a2c5d18303",
+    "https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution/population-grids"
+  ],
+  "notes": "Catalogue metadata and exact linked ZIP route reviewed on 2026-11-27. No original ZIP body, checksum, pixel sample, insurer data, or model admission. The web reader could not process the ZIP response; do not infer availability of a complete valid archive from this observation."
+}
