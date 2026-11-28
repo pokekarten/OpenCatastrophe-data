@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Original source references only. No EIOPA XLSX data or other EIOPA original bytes are vendored.
+
+schema = "EIOPA_CATASTROPHE_HUB_2023_OFFICIAL_DOCS_NO_WORKBOOK_INGEST_V0"
+checked_as_of = "2026-11-06"
+publisher = "EIOPA - European Insurance and Occupational Pensions Authority"
+publication_date = "2023-12-05"
+technical_note_id = "EIOPA-BoS-22/505"
+technical_note_date = "2023-11-27"
+hub_url = "https://www.eiopa.europa.eu/tools-and-data/catastrophe-data-hub_en"
+technical_note_pdf = "https://www.eiopa.europa.eu/system/files/2023-12/Technical%20description%20-%20Catastrophe%20Data%20Hub.pdf"
+legal_notice_url = "https://www.eiopa.europa.eu/legal-notice_en"
+original_pdf_sha256 = "NOT_ACQUIRED"
+historical_loss_workbook_sha256 = "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
+exposure_workbook_sha256 = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"
+exposure_workbook_binary_bytes = 5593551
+exposure_generic_unpinned_OOXML_policy_passed = false
+exposure_source_pinned_CRC_sheet_metadata_passed = true
+exposure_financial_cells_model_admitted = false
+historical_loss_workbook_binary_bytes = 28209
+historical_loss_workbook_original_source_byte_receipt = "research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml"
+workbook_content_read_or_modelled = false
+publisher_general_reproduction_requires_credit = true
+publisher_transformed_redistribution_requires_special_notice = true
+publisher_third_party_rights_automatically_cleared = false
+insurer_site_data_or_German_model_calibration_admitted = false
+reinsurance_treaty_or_annual_frequency_verified = false
+
+# Windstorm insurance-event claim data are ONLY for Ciara / Sabine 2020,
+# not historical Daria January 1990.
+insured_wind_claim_event = "CIARA_SABINE_FEBRUARY_2020"
+insurer_Daria_1990_claim_event_available = false
+other_insured_claim_event_1 = "PORTUGAL_WILDFIRE_JUNE_2017"
+other_insured_claim_event_2 = "CENTRAL_EUROPE_FLOOD_JUNE_2013"
+observed_loss_class = "INCURRED_REPORTED_BUILDING_AND_OTHER_INSURED_CLAIMS"
+residential_commercial_loss_split_always_available = false
+each_disclosed_data_point_minimum_independent_company_submissions = 3
+
+insured_exposure_reference_date = "2020-12-31"
+insured_exposure_perils = ["WINDSTORM", "FLOOD"]
+original_exposure_resolution = "CRESTA_LOW_RESOLUTION_OR_NUTS3"
+public_exposure_and_loss_resolution = "NUTS2_ANONYMIZED_NO_SITE"
+building_sum_insured_basis = "EIOPA_DESCRIPTION_NET_OF_REINSURANCE_BUSINESS_AND_COINSURANCE"
+direct_GUL_IL_RI_definition_usable_without_contract_terms = false
+same_2020_wind_claim_event_and_1990_Daria_hazard = false
+
+sample_groups = 35
+sample_solo_undertakings = 9
+sample_is_100_percent_market = false
+sample_EEA_2020_property_fire_GWP_coverage_numerator = "58.3PCT_TABLE_4_APPROX_59PCT_TEXT"
+sample_Germany_2020_property_fire_GWP_coverage = "63.6PCT_TABLE_4"
+premium_share_can_be_treated_as_buildings_or_contracts_share = false
+GWP_sample_covers_RV_geolocated_NRW_book = false
+licence_workbook_specific_restrictions_checked = false
+actual_eiopa_xlsx_bytes_obtained_in_this_research = true
+source_event_and_workbook_rights_status = "Official EIOPA HTTPS GitHub Actions run 42270505316 delivered both originals: historical loss 28209 bytes SHA256 201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6 and exposure 5593551 bytes SHA256 f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79. Generic OOXML quarantine initially blocked one printerSettings binary; original source-SHA-pinned 5420B printerSettings metadata-only exception passed full ZIP CRC and one workbook sheet in GitHub Actions 42292320403. No insurer claim cells, workbook-specific third-party rights, German wind loss calibration or annual EP verified."
+admission = "PUBLIC_METADATA_REFERENCE_ONLY_NO_DARIA_FIT_NO_RV_POLICY_NO_EP"
+
+[[original_attachments]]
+id = "TECHNICAL_NOTE"
+name = "Technical description - Catastrophe Data Hub.pdf"
+publisher_size_label = "582.04 KB"
+page = 14
+original_url = "https://www.eiopa.europa.eu/document/download/874847f3-8ff1-4471-ad04-056855d05a3d_en?filename=Technical+description+-+Catastrophe+Data+Hub.pdf"
+source_sha256 = "NOT_ACQUIRED"
+
+[[original_attachments]]
+id = "HISTORICAL_INSURED_LOSSES"
+name = "Historical loss data - catastrophe data hub.xlsx"
+publisher_size_label = "27.55 KB"
+page = 0
+original_url = "https://www.eiopa.europa.eu/document/download/50e6b095-174c-4d9c-b9dd-1376dc1d43eb_en?filename=Historical+loss+data.xlsx"
+source_sha256 = "201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6"
+
+[[original_attachments]]
+id = "FLOOD_WIND_EXPOSURE"
+name = "Flood and Windstorm exposure data - catastrophe data hub.xlsx"
+publisher_size_label = "5.33 MB"
+page = 0
+original_url = "https://www.eiopa.europa.eu/document/download/d2be6f79-3e44-47f1-821f-97ff41e9d7b6_en?filename=Flood+and+Windstorm_exposure_data.xlsx"
+source_sha256 = "f3ec03e25be247a798d94ea9d5ece8bd03a34bcc27b6faf99b597bbd863c3e79"

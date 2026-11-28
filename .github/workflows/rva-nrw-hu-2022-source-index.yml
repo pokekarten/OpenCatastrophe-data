@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: R+V NRW 2022 historical HU original index only
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-nrw-hu-2022-source-index.yml"
+      - "research_runners/rva_nrw_hu_2022_original_index_receipt_v0.py"
+      - "research_runners/rva_nrw_hu_2022_original_zip_range_receipt_v0.py"
+      - "research_runners/rva_nrw_hu_2022_original_member_headers_v0.py"
+      - "research_runners/rva_nrw_hu_2022_first_polygons_v0.py"
+      - "research_runners/rva_nrw_hu_gfk_residential_candidate_v0.py"
+      - "research_runners/rva_nrw_hu_full_zip_stratified_reservoir_v0.py"
+      - "research_runners/rva_nrw_hu22_full_source_to_fictional_oed_v0.py"
+      - "tests/test_rva_nrw_hu_full_zip_stratified_reservoir_v0.py"
+      - "research_runners/export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py"
+      - "requirements-eu-flood-spatial.txt"
+      - "tests/test_rva_nrw_hu_2022_original_index_receipt_v0.py"
+      - "tests/test_rva_nrw_hu_2022_original_zip_range_receipt_v0.py"
+      - "tests/test_rva_nrw_hu_2022_original_member_headers_v0.py"
+      - "tests/test_rva_nrw_hu_2022_first_polygons_v0.py"
+      - "tests/test_rva_nrw_hu_gfk_residential_candidate_v0.py"
+      - "tests/test_export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py"
+      - "docs/research/rva-nrw-historical-hu-2022-footprint-oed-source-gate-20261105.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-source-listing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Read exact research commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Run bounded source index negative tests offline
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_hu_2022_original_index_receipt_v0.py' -v
+      - name: Probe primary NRW index only, not 859MB original ZIP
+        run: python research_runners/rva_nrw_hu_2022_original_index_receipt_v0.py --live
+      - name: Challenge ZIP EOCD and central directory with <=1.1 MiB official byte ranges
+        run: |
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_2022_original_zip_range_receipt_v0.py' -v
+          python research_runners/rva_nrw_hu_2022_original_zip_range_receipt_v0.py --live
+      - name: Verify 2022 source member PRJ DBF SHP headers with bounded original ZIP ranges
+        run: |
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_2022_original_member_headers_v0.py' -v
+          python research_runners/rva_nrw_hu_2022_original_member_headers_v0.py --live
+      - name: Pinned reprojection and GEOS geometry tools
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+          python -m pip check
+      - name: Source-only first physical polygons and EPSG4647 to WGS84 smoke
+        run: |
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_2022_first_polygons_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_gfk_residential_candidate_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_full_zip_stratified_reservoir_v0.py' -v
+          python research_runners/rva_nrw_hu_2022_first_polygons_v0.py --live
+      - name: Install pinned official Oasis ODS Tools 5.0.8
+        run: |
+          python -m pip install --disable-pip-version-check --no-input ods-tools==5.0.8
+          python -m pip check
+      - name: Three public physical source WGS84 geometries to fictitious OED location/account
+        run: |
+          python -m unittest discover -s tests -p 'test_export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py' -v
+          python research_runners/export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py "${{ runner.temp }}/rva-nrw-hu2022-3-geocoded-test" --live
+      - name: Publish source physical coordinates, fictional financial OED CSV (NOT insured sites)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rva-nrw-hu2022-three-public-physical-geocodes-fictitious-OED-NOT-insurer-sites
+          path: ${{ runner.temp }}/rva-nrw-hu2022-3-geocoded-test/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
