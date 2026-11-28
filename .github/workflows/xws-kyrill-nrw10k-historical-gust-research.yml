@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: XWS Kyrill source georeferenced 10k fictional NRW gust research
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/xws-kyrill-nrw10k-historical-gust-research.yml"
+      - "research_runners/xws_kyrill_2022_nrw_10k_source_gust_handoff_v0.py"
+      - "research_runners/xws_kyrill_original_netcdf_hazard_receipt_v0.py"
+      - "tests/test_xws_kyrill_nrw10k_source_gust_handoff_v0.py"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  original-kyrill-to-fictional-nrw:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Exact source checkout without retained GitHub credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Exact classic NetCDF and rotated-grid CRS dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input scipy==1.16.3 pyproj==3.7.2
+          python -m pip check
+      - name: Offline fake-coordinate, source identity and nonadmission guards
+        run: |
+          python -m unittest discover -s tests -p 'test_xws_kyrill_nrw10k_source_gust_handoff_v0.py' -v
+          python -m unittest discover -s tests -p 'test_xws_kyrill_original_netcdf_hazard_receipt_v0.py' -v
+      - name: Retrieve exact existing original-reviewed fictional OED research artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -H "Accept: application/vnd.github+json" \
+            "repos/pokekarten/OpenCatastrophe-data/actions/artifacts/13447603258/zip" \
+            > "${{ runner.temp }}/source-nrw-10k-geocoded-fictional-oed.zip"
+          test -s "${{ runner.temp }}/source-nrw-10k-geocoded-fictional-oed.zip"
+      - name: Source-authenticated rotated XWS wind gust at fictional NRW buildings only
+        run: |
+          python research_runners/xws_kyrill_2022_nrw_10k_source_gust_handoff_v0.py \
+            "${{ runner.temp }}/source-nrw-10k-geocoded-fictional-oed.zip" \
+            "${{ runner.temp }}/xws-kyrill-2007-fictitious-nrw-10k-gust-only.csv" \
+            "${{ runner.temp }}/xws-kyrill-2007-source-and-no-loss-receipt.json"
+      - name: Verify model remains unadmitted and no source NetCDF is published
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          d=pathlib.Path(os.environ["RUNNER_TEMP"])
+          p=d/"xws-kyrill-2007-source-and-no-loss-receipt.json"
+          x=json.loads(p.read_text())
+          assert x["fictional_geocoded_source_physical_site_count"]==10000
+          assert x["fictional_Kreis_count"]==53
+          assert x["historical_physical_storm_count"]==1
+          assert x["annual_Gross_Net_OEP_AEP_authorized"] is False
+          assert x["native_Oasis_GUL_IL_RI_ran_for_Kyrill"] is False
+          assert x["actual_RV_insured_site_identity_or_tiv_observed"] is False
+          print("SOURCE_REAL_HISTORIC_KYRILL_ROTATED_GRID_10K_FICTIONAL_SITE_GUST_QC_PASS")
+          PY
+      - name: Verify derived source SHA receipt in job logs without upload action
+        run: |
+          sha256sum "${{ runner.temp }}/xws-kyrill-2007-fictitious-nrw-10k-gust-only.csv"
+          test -s "${{ runner.temp }}/xws-kyrill-2007-source-and-no-loss-receipt.json"
+          rm -- "${{ runner.temp }}/xws-kyrill-2007-fictitious-nrw-10k-gust-only.csv" "${{ runner.temp }}/xws-kyrill-2007-source-and-no-loss-receipt.json"
