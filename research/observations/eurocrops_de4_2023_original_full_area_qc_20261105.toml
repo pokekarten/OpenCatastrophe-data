@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+schema_version = "1.0.0"
+purpose = "Non-admission aggregate quality finding from full original JRC EuroCropsV2 DE4 2023 area_ha scan and bounded WKB sample"
+source_candidate_id = "eu.jrc.eurocropsv2.gsa-parcels"
+original_url = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/DRLL/EuroCropsV2/gpqtv202/de4_2023.parquet"
+original_sha256_first_seen = "4fc38f688a117db6cd0821c7aafc71fbbd2e7a493044c51266ae289929d7b2b6"
+original_bytes = 143006611
+independently_observed_full_sha256_repeated_and_matched = true
+independently_observed_footer_tail_sha256_matched = true
+source_codebook_crosswalk_reference_gap_rows_total = 3
+original_geoparquet_primary_column = "geometry"
+original_geoparquet_crs = "EPSG:3035"
+original_geoparquet_encoding = "WKB"
+run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42115645801"
+aggregated_result_artifact_id = 13455712676
+original_geo_values_all_individually_validated = true
+original_geometries_of_65_zero_area_rows_examined = true
+source_license_and_scientific_admission = "NOT_ADMITTED"
+raw_original_asset_data_committed = false
+true_insurer_exposure_tiv_or_loss_estimated = false
+important_scope_limit = "Complete original WKB geometry topology, source area attributes, regional code join and cropfield ID uniqueness audited for all 285606 records. Exactly 65 empty WKB and 6 absent HCAT4 hierarchy references. Original parcel overlaps, region-wide completeness, licence admission, actual insured exposures, hazard calibration and event losses remain unknown; the 1324692.8892 ha field-area sum is NOT a de-duplicated union."
+
+[original_area_attribute_full_scan]
+rows_scanned = 285606
+area_ha_zero_count = 65
+area_ha_negative_count = 0
+area_ha_nonfinite_count = 0
+area_ha_null_count = 0
+area_ha_wrong_type_count = 0
+area_ha_minimum_positive = 3.0747463e-16
+area_ha_maximum_positive = 248.87251
+
+[original_geometry_and_taxonomy_sample]
+sampled = 1024
+sampled_parquet_row_groups = 1
+sampled_invalid_or_empty_geometry = 0
+sampled_non_polygon_geometry = 0
+sampled_area_disagreement_over_5pct = 0
+sampled_duplicate_cropfield = 0
+sampled_missing_crop_code = 0
+sampled_invalid_area_ha = 0
+resolved_to_hcat4 = 1024
+unknown_region_crop_code = 0
+code_to_absent_hcat4 = 0
+blank_or_nonstring_source_crop_code = 0
+
+[original_zero_area_wkb_quality]
+rows_with_stored_area_ha_exactly_zero = 65
+all_original_rows_reexamined_for_zero_area_attributes = 285606
+empty_wkb_geometry_rows = 65
+nonempty_valid_polygon_with_positive_geometric_area_rows = 0
+nonempty_polygon_with_zero_geometric_area_rows = 0
+invalid_topology_nonempty_rows = 0
+nonpolygon_geometry_rows = 0
+invalid_or_missing_wkb_rows = 0
+individual_original_parcel_coordinates_or_ids_emitted = false
+verification_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42116494785"
+original_aggregate_artifact_id = 13456856332
+interpretation = "Exactly 65 original source records have zero area_ha and empty WKB geometry; these 65 records have no usable spatial polygon and must be quarantined rather than made into point locations or synthetic insured assets."
+
+[full_original_wkb_and_regional_taxonomy_quality]
+profile = "eurocrops-de4-2023-original-full-wkb-and-hcat4-qc-v0"
+full_source_rows_processed = 285606
+full_original_wkb_positive_valid_polygon_rows = 285541
+full_original_wkb_empty_geometry_rows = 65
+full_original_wkb_invalid_topology_rows = 0
+full_original_wkb_nonpolygon_rows = 0
+full_original_wkb_unparseable_or_missing_rows = 0
+full_original_polygon_area_gt_1_percent_discrepancy_count = 0
+full_original_polygon_area_gt_5_percent_discrepancy_count = 0
+full_original_cropfield_duplicate_subsequent_rows = 0
+full_original_cropfield_noninteger_rows = 0
+regional_original_crop_codebook_nonempty_mapping_codes = 299
+full_original_hcat4_mapping_resolved_rows = 285600
+full_original_hcat4_unresolved_reference_rows = 6
+full_original_code_not_in_region_mapping_rows = 0
+full_original_blank_crop_code_rows = 0
+raw_sum_of_stored_areas_ha_not_unique_geographic_union = 1324692.8892
+raw_sum_of_valid_polygon_geometric_areas_ha_not_unique_geographic_union = 1324692.8892
+verified_source_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42117394009"
+original_aggregate_artifact_id = 13456897204
+exact_combined_spatial_and_hcat4_eligible_row_count_not_yet_computed = true
+original_parcel_overlap_and_land_coverage_unknown = true
